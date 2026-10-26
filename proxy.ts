@@ -1,0 +1,100 @@
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+const ROBOTS_TAG =
+  "noindex, nofollow, nocache, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai";
+
+// Names that do not already end in bot/crawler/spider/scraper/archiver.
+const NAMED_AGENTS = [
+  "chatgpt-user",
+  "claude-user",
+  "perplexity-user",
+  "anthropic-ai",
+  "google-extended",
+  "googleother",
+  "google-inspectiontool",
+  "mediapartners-google",
+  "meta-externalagent",
+  "meta-externalfetcher",
+  "facebookexternalhit",
+  "cohere-ai",
+  "mistralai",
+  "omgili",
+  "img2dataset",
+  "kangaroo",
+  "pangu",
+  "turnitin",
+  "velenpublic",
+  "iaskspider",
+  "friendlycrawler",
+  "megaindex",
+  "qwantify",
+  "mojeek",
+  "sogou",
+  "slurp",
+  "yandex",
+  "yeti/",
+  "bingpreview",
+  "python-requests",
+  "python-urllib",
+  "aiohttp",
+  "httpx/",
+  "go-http-client",
+  "java/",
+  "libwww",
+  "httpclient",
+  "curl/",
+  "wget",
+  "node-fetch",
+  "undici",
+  "axios/",
+  "scrapy",
+  "headless",
+  "phantomjs",
+  "selenium",
+  "puppeteer",
+  "playwright",
+  "lighthouse",
+  "pingdom",
+  "statuscake",
+  "site24x7",
+  "skypeuripreview",
+  "embedly",
+  "quora link preview",
+  "node/",
+  "bun/",
+];
+
+const GENERIC_AGENT =
+  /(?:bot|crawler|spider|scraper|archiver)(?:\/|\s|;|$)/i;
+
+function isBlockedClient(userAgent: string | null): boolean {
+  if (!userAgent?.trim()) return true;
+
+  const ua = userAgent.toLowerCase();
+  if (ua === "node") return true;
+  if (NAMED_AGENTS.some((agent) => ua.includes(agent))) return true;
+  // Cubot is a phone brand. Its UA ends in "bot" without being a crawler.
+  if (ua.includes("cubot")) return false;
+  return GENERIC_AGENT.test(userAgent);
+}
+
+export function proxy(request: NextRequest) {
+  // Crawlers need to read the disallow policy. Everything else is refused.
+  if (request.nextUrl.pathname === "/robots.txt") {
+    return NextResponse.next();
+  }
+
+  if (!isBlockedClient(request.headers.get("user-agent"))) {
+    return NextResponse.next();
+  }
+
+  return new NextResponse("This site is not open to crawlers.", {
+    status: 403,
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": ROBOTS_TAG,
+    },
+  });
+}
