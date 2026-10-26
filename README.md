@@ -13,3 +13,19 @@ WeStride.org is a platform for learning AI, mentorship and entrepreneurship.
 | Muse AI Assistant | AI-powered business planning, customer discovery, drafting, research, competitive analysis |
 | Build Studio | Generate applications, websites, prototypes, and MVPs through AI coding tools |
 | Community | Share progress, collaborate on ideas, form teams, participate in challenges |
+
+## Tech Used
+
+- React
+- React Native
+- Expo
+- Astryx
+- Muse
+- NodeJS
+- TurboRepo
+- Neon
+- Postgres
+- Vercel
+- Bun
+- TypeScript
+- Prisma
