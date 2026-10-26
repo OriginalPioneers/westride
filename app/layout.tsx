@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   },
   description:
     "A platform for learning AI, mentorship and entrepreneurship.",
+  // Pre-launch: do not index, follow, or offer pages to AI training crawlers.
+  robots:
+    "noindex, nofollow, nocache, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai",
 };
 
 export default function RootLayout({
