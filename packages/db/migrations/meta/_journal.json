@@ -15,6 +15,13 @@
       "when": 1793139992678,
       "tag": "0001_academy_track_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793142007057,
+      "tag": "0002_achievements",
+      "breakpoints": true
     }
   ]
 }

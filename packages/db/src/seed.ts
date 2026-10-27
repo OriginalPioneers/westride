@@ -2,9 +2,10 @@ import { sql } from "drizzle-orm";
 import { config } from "dotenv";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { achievementCatalog } from "./achievement-catalog";
 import { academyTracks } from "./academy-tracks";
 import { getDb } from "./client";
-import { tracks } from "./schema";
+import { achievements, tracks } from "./schema";
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -51,3 +52,26 @@ await db
   });
 
 console.log(`Seeded ${rows.length} academy tracks.`);
+
+const achievementRows = achievementCatalog.map((achievement) => ({
+  slug: achievement.slug,
+  name: achievement.name,
+  description: achievement.description,
+  badgeUrl: achievement.badgeUrl,
+  sortOrder: achievement.sortOrder,
+}));
+
+await db
+  .insert(achievements)
+  .values(achievementRows)
+  .onConflictDoUpdate({
+    target: achievements.slug,
+    set: {
+      name: sql`excluded.name`,
+      description: sql`excluded.description`,
+      badgeUrl: sql`excluded.badge_url`,
+      sortOrder: sql`excluded.sort_order`,
+    },
+  });
+
+console.log(`Seeded ${achievementRows.length} achievements.`);
