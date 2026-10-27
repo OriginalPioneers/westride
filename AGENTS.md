@@ -1,3 +1,11 @@
+# Monorepo
+
+This is a Turborepo using Bun workspaces. Apps live in `apps/*`, shared packages in `packages/*`.
+
+- `apps/web` — the WeStride Next.js app. The Next.js and Astryx rules below apply to it; run Astryx CLI commands from `apps/web`.
+- Run tasks from the repo root with `bun run dev|build|lint`, or target one workspace with `bunx turbo run <task> --filter=web`.
+- Add dependencies to the workspace that uses them (`bun add <pkg> --cwd apps/web`), not the root. Root only holds repo tooling like `turbo`.
+
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 

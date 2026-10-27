@@ -1,8 +1,7 @@
 {
-  "name": "nextjs",
+  "name": "web",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "bun@1.4.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

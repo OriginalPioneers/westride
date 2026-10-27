@@ -14,6 +14,25 @@ WeStride.org is a platform for learning AI, mentorship and entrepreneurship.
 | Build Studio | Generate applications, websites, prototypes, and MVPs through AI coding tools |
 | Community | Share progress, collaborate on ideas, form teams, participate in challenges |
 
+## Repository Layout
+
+This repo is a [Turborepo](https://turborepo.com) using Bun workspaces.
+
+| Path | Description |
+| ---- | ----------- |
+| `apps/web` | WeStride Next.js web app |
+| `packages/*` | Shared packages (none yet) |
+
+## Development
+
+```bash
+bun install
+cp apps/web/.env.example apps/web/.env   # then fill in values
+bun run dev                              # runs all apps via turbo
+```
+
+Other root scripts: `bun run build`, `bun run lint`, `bun run start`. To target a single app, use `bunx turbo run dev --filter=web`.
+
 ## Tech Used
 
 - React
