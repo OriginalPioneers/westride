@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@astryxdesign/core/AppShell";
 import type { IconType } from "@astryxdesign/core/Icon";
+import { Layout } from "@astryxdesign/core/Layout";
 import {
   SideNav,
   SideNavHeading,
@@ -17,10 +18,8 @@ import {
   ArrowRightStartOnRectangleIcon,
   ChatBubbleLeftRightIcon,
   Cog6ToothIcon,
-  DocumentTextIcon,
   HomeIcon,
   LightBulbIcon,
-  ShieldCheckIcon,
   SparklesIcon,
   TrophyIcon,
   UserCircleIcon,
@@ -29,14 +28,13 @@ import {
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import { afterAuthPath, signInPath, signUpPath } from "@/lib/auth-paths";
+import { SiteFooter } from "../site-footer";
 import {
   AcademicCapIcon as AcademicCapIconSolid,
   ChatBubbleLeftRightIcon as ChatBubbleLeftRightIconSolid,
   Cog6ToothIcon as Cog6ToothIconSolid,
-  DocumentTextIcon as DocumentTextIconSolid,
   HomeIcon as HomeIconSolid,
   LightBulbIcon as LightBulbIconSolid,
-  ShieldCheckIcon as ShieldCheckIconSolid,
   SparklesIcon as SparklesIconSolid,
   TrophyIcon as TrophyIconSolid,
   UserCircleIcon as UserCircleIconSolid,
@@ -124,21 +122,6 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-const LEGAL_LINKS: NavLink[] = [
-  {
-    label: "Terms of Service",
-    href: "/terms",
-    icon: DocumentTextIcon,
-    selectedIcon: DocumentTextIconSolid,
-  },
-  {
-    label: "Privacy Policy",
-    href: "/privacy",
-    icon: ShieldCheckIcon,
-    selectedIcon: ShieldCheckIconSolid,
-  },
-];
-
 const ACCOUNT_LINKS: NavLink[] = [
   {
     label: "Settings",
@@ -212,37 +195,32 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
             />
           }
           footer={
-            <>
-              <SideNavSection title="Account" isHeaderHidden>
-                <Show when="signed-out">
-                  <SideNavItem
-                    label="Register"
-                    href={signUpPath}
-                    icon={UserPlusIcon}
-                    isSelected={isActive(pathname, signUpPath)}
-                  />
-                  <SideNavItem
-                    label="Sign In"
-                    href={signInPath}
-                    icon={ArrowRightEndOnRectangleIcon}
-                    isSelected={isActive(pathname, signInPath)}
-                  />
-                </Show>
-                <Show when="signed-in">
-                  {ACCOUNT_LINKS.map(renderLink)}
-                  <SideNavItem
-                    label="Sign Out"
-                    icon={ArrowRightStartOnRectangleIcon}
-                    onClick={() => {
-                      void signOut({ redirectUrl: afterAuthPath });
-                    }}
-                  />
-                </Show>
-              </SideNavSection>
-              <SideNavSection title="Legal" isHeaderHidden>
-                {LEGAL_LINKS.map(renderLink)}
-              </SideNavSection>
-            </>
+            <SideNavSection title="Account" isHeaderHidden>
+              <Show when="signed-out">
+                <SideNavItem
+                  label="Register"
+                  href={signUpPath}
+                  icon={UserPlusIcon}
+                  isSelected={isActive(pathname, signUpPath)}
+                />
+                <SideNavItem
+                  label="Sign In"
+                  href={signInPath}
+                  icon={ArrowRightEndOnRectangleIcon}
+                  isSelected={isActive(pathname, signInPath)}
+                />
+              </Show>
+              <Show when="signed-in">
+                {ACCOUNT_LINKS.map(renderLink)}
+                <SideNavItem
+                  label="Sign Out"
+                  icon={ArrowRightStartOnRectangleIcon}
+                  onClick={() => {
+                    void signOut({ redirectUrl: afterAuthPath });
+                  }}
+                />
+              </Show>
+            </SideNavSection>
           }
         >
           {NAV_GROUPS.map((group) => (
@@ -257,7 +235,9 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
         </SideNav>
       }
     >
-      {children}
+      <Layout height="fill" padding={0} footer={<SiteFooter />}>
+        {children}
+      </Layout>
     </AppShell>
   );
 }
