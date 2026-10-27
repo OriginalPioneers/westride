@@ -10,7 +10,8 @@
   "scripts": {
     "lint": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "bun src/seed.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

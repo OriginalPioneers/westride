@@ -27,7 +27,7 @@ export function getDb(): Database {
 
 export async function listTracksWithLessons(): Promise<TrackWithLessons[]> {
   return getDb().query.tracks.findMany({
-    orderBy: (track, { asc }) => [asc(track.name)],
+    orderBy: (track, { asc }) => [asc(track.sortOrder), asc(track.name)],
     with: {
       lessons: {
         orderBy: (lesson, { asc }) => [asc(lesson.name)],
