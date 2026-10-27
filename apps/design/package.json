@@ -1,0 +1,27 @@
+{
+  "name": "design",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "storybook dev -p 6006 --no-open",
+    "build": "storybook build",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@astryxdesign/core": "^0.7.4",
+    "@astryxdesign/theme-stone": "^0.7.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@astryxdesign/cli": "0.7.4",
+    "@storybook/addon-a11y": "^10.6.4",
+    "@storybook/addon-docs": "^10.6.4",
+    "@storybook/react-vite": "^10.6.4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "storybook": "^10.6.4",
+    "typescript": "^5",
+    "vite": "^7"
+  }
+}
