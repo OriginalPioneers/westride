@@ -21,7 +21,7 @@ This repo is a [Turborepo](https://turborepo.com) using Bun workspaces.
 | Path | Description |
 | ---- | ----------- |
 | `apps/web` | WeStride Next.js web app |
-| `packages/*` | Shared packages (none yet) |
+| `packages/db` | Shared Postgres models (Drizzle) and migrations |
 
 ## Development
 
@@ -31,7 +31,7 @@ cp apps/web/.env.example apps/web/.env   # then fill in values
 bun run dev                              # runs all apps via turbo
 ```
 
-Other root scripts: `bun run build`, `bun run lint`, `bun run start`. To target a single app, use `bunx turbo run dev --filter=web`.
+Other root scripts: `bun run build`, `bun run lint`, `bun run start`, `bun run db:generate`, `bun run db:migrate`. To target a single app, use `bunx turbo run dev --filter=web`.
 
 ## Tech Used
 
@@ -47,4 +47,4 @@ Other root scripts: `bun run build`, `bun run lint`, `bun run start`. To target 
 - Vercel
 - Bun
 - TypeScript
-- Prisma
+- Drizzle
