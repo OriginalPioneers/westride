@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { PlaceholderPage } from "../placeholder-page";
 
 export const metadata: Metadata = {
-  title: "Muse AI",
+  title: "Tech Stack",
 };
 
-export default function MuseAIPage() {
-  return <PlaceholderPage title="Muse AI" />;
+export default function TechStackPage() {
+  return <PlaceholderPage title="Tech Stack" />;
 }
