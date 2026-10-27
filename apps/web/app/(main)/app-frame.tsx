@@ -314,6 +314,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
 
   return (
     <AppShell
+      variant="section"
       sideNav={
         <SideNav
           collapsible={{ hasButton: false }}
