@@ -1,5 +1,6 @@
 "use client";
 
+import { Show, UserButton } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@astryxdesign/core/AppShell";
 import { Icon } from "@astryxdesign/core/Icon";
@@ -11,8 +12,10 @@ import {
   SideNavItem,
   SideNavSection,
 } from "@astryxdesign/core/SideNav";
+import { VStack } from "@astryxdesign/core/Stack";
 import {
   AcademicCapIcon,
+  ArrowRightEndOnRectangleIcon,
   ChatBubbleLeftRightIcon,
   Cog6ToothIcon,
   HomeIcon,
@@ -24,6 +27,7 @@ import {
   UserGroupIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
+import { signInPath } from "@/lib/auth-paths";
 import {
   AcademicCapIcon as AcademicCapIconSolid,
   ChatBubbleLeftRightIcon as ChatBubbleLeftRightIconSolid,
@@ -172,9 +176,24 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
             />
           }
           footer={
-            <SideNavSection title="Account" isHeaderHidden>
-              {ACCOUNT_LINKS.map(renderLink)}
-            </SideNavSection>
+            <VStack gap={3}>
+              <Show
+                when="signed-in"
+                fallback={
+                  <SideNavItem
+                    label="Sign in"
+                    href={signInPath}
+                    icon={ArrowRightEndOnRectangleIcon}
+                    isSelected={isActive(pathname, signInPath)}
+                  />
+                }
+              >
+                <UserButton showName />
+              </Show>
+              <SideNavSection title="Account" isHeaderHidden>
+                {ACCOUNT_LINKS.map(renderLink)}
+              </SideNavSection>
+            </VStack>
           }
         >
           {NAV_GROUPS.map((group) => (

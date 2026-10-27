@@ -1,3 +1,4 @@
+import { currentUser } from "@clerk/nextjs/server";
 import { Card } from "@astryxdesign/core/Card";
 import { Grid } from "@astryxdesign/core/Grid";
 import { Heading } from "@astryxdesign/core/Heading";
@@ -20,14 +21,19 @@ function PlaceholderSection({
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const user = await currentUser();
+  const greeting = user?.firstName
+    ? `Welcome, ${user.firstName}`
+    : "Welcome to WeStride";
+
   return (
     <Layout
       contentWidth={960}
       header={
         <LayoutHeader hasDivider>
           <VStack gap={1}>
-            <Heading level={1}>Welcome to WeStride</Heading>
+            <Heading level={1}>{greeting}</Heading>
             <Text type="supporting">
               Learn AI, find mentors, and turn your ideas into something real.
             </Text>
