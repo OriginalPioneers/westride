@@ -8,6 +8,13 @@
       "when": 1793075772696,
       "tag": "0000_tracks_and_lessons",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793139992678,
+      "tag": "0001_academy_track_catalog",
+      "breakpoints": true
     }
   ]
 }

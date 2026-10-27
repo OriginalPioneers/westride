@@ -1,10 +1,44 @@
 import { relations } from "drizzle-orm";
-import { index, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 
-export const tracks = pgTable("tracks", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-});
+export const trackDifficulty = pgEnum("track_difficulty", [
+  "BEGINNER",
+  "INTERMEDIATE",
+  "ADVANCED",
+]);
+
+export const tracks = pgTable(
+  "tracks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull(),
+    difficulty: trackDifficulty("difficulty").notNull(),
+    category: text("category").notNull(),
+    estimatedDurationMinutes: integer("estimated_duration_minutes").notNull(),
+    /** Planned lesson count. Lesson rows are added in a later seed. */
+    lessonCount: integer("lesson_count").notNull(),
+    sortOrder: integer("sort_order").notNull(),
+    icon: text("icon").notNull(),
+    tags: text("tags").array().notNull(),
+    prerequisiteSlugs: text("prerequisite_slugs").array().notNull(),
+    learningObjectives: text("learning_objectives").array().notNull(),
+    achievementTitle: text("achievement_title").notNull(),
+  },
+  (table) => [
+    uniqueIndex("tracks_slug_unique").on(table.slug),
+    index("tracks_sort_order_idx").on(table.sortOrder),
+  ],
+);
 
 export const lessons = pgTable(
   "lessons",

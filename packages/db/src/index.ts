@@ -1,6 +1,7 @@
 export {
   lessons,
   lessonsRelations,
+  trackDifficulty,
   tracks,
   tracksRelations,
 } from "./schema";
