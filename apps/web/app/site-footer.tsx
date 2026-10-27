@@ -11,6 +11,7 @@ const HACKATHON_EVENT_URL =
 // Swap these for the real profile URLs when the pages exist.
 const FACEBOOK_PROFILE_URL = "https://www.facebook.com/westride";
 const INSTAGRAM_PROFILE_URL = "https://www.instagram.com/westride";
+const X_PROFILE_URL = "https://x.com/westride";
 
 const GITHUB_REPOSITORY_URL = "https://github.com/OriginalPioneers/westride";
 
@@ -20,6 +21,7 @@ const FOOTER_LINKS = [
   { label: "GitHub", href: GITHUB_REPOSITORY_URL, isExternal: true },
   { label: "Facebook", href: FACEBOOK_PROFILE_URL, isExternal: true },
   { label: "Instagram", href: INSTAGRAM_PROFILE_URL, isExternal: true },
+  { label: "X", href: X_PROFILE_URL, isExternal: true },
 ] as const;
 
 const BADGE_STYLES = `
