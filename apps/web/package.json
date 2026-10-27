@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@astryxdesign/core": "^0.7.4",
-    "@astryxdesign/theme-neutral": "0.7.4",
+    "@astryxdesign/theme-stone": "^0.7.4",
     "@clerk/nextjs": "^7.9.21",
     "@heroicons/react": "^2.2.0",
     "@stylexjs/stylex": "^0.19.0",
