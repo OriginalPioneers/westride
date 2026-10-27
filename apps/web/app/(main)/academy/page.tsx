@@ -5,8 +5,9 @@ import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
 import { List, ListItem } from "@astryxdesign/core/List";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import type { Track } from "@westride/db";
+import { ACHIEVEMENT_SLUG, type Track } from "@westride/db";
 import { listTracksWithLessons } from "@westride/db/client";
+import { awardIfSignedIn } from "@/lib/achievements";
 
 export const metadata: Metadata = {
   title: "Academy",
@@ -45,6 +46,7 @@ function prerequisiteSummary(
 
 export default async function AcademyPage() {
   await connection();
+  await awardIfSignedIn(ACHIEVEMENT_SLUG.curiousCat);
   const tracks = await listTracksWithLessons();
 
   return (
