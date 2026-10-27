@@ -1,33 +1,32 @@
 "use client";
 
-import { Show, UserButton } from "@clerk/nextjs";
+import { Show, useClerk } from "@clerk/nextjs";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@astryxdesign/core/AppShell";
-import { Icon } from "@astryxdesign/core/Icon";
 import type { IconType } from "@astryxdesign/core/Icon";
-import { NavIcon } from "@astryxdesign/core/NavIcon";
 import {
   SideNav,
   SideNavHeading,
   SideNavItem,
   SideNavSection,
 } from "@astryxdesign/core/SideNav";
-import { VStack } from "@astryxdesign/core/Stack";
 import {
   AcademicCapIcon,
   ArrowRightEndOnRectangleIcon,
+  ArrowRightStartOnRectangleIcon,
   ChatBubbleLeftRightIcon,
   Cog6ToothIcon,
   HomeIcon,
   LightBulbIcon,
-  RocketLaunchIcon,
   SparklesIcon,
   TrophyIcon,
   UserCircleIcon,
   UserGroupIcon,
+  UserPlusIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
-import { signInPath } from "@/lib/auth-paths";
+import { afterAuthPath, signInPath, signUpPath } from "@/lib/auth-paths";
 import {
   AcademicCapIcon as AcademicCapIconSolid,
   ChatBubbleLeftRightIcon as ChatBubbleLeftRightIconSolid,
@@ -145,6 +144,7 @@ function isActive(pathname: string, href: string) {
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { signOut } = useClerk();
 
   const renderLink = (link: NavLink) => (
     <SideNavItem
@@ -172,28 +172,53 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
             <SideNavHeading
               heading="WeStride"
               headingHref="/"
-              icon={<NavIcon icon={<Icon icon={RocketLaunchIcon} size="sm" />} />}
+              icon={
+                <Image
+                  src="/westride-stamp.png"
+                  alt=""
+                  width={1156}
+                  height={778}
+                  preload
+                  // The optimizer fetches this file without a browser user agent,
+                  // and the proxy refuses that request.
+                  unoptimized
+                  style={{
+                    // Wide enough to read beside the wordmark, narrow enough
+                    // to sit inside the collapsed rail (spacing-12).
+                    width: "var(--spacing-10)",
+                    height: "auto",
+                  }}
+                />
+              }
             />
           }
           footer={
-            <VStack gap={3}>
-              <Show
-                when="signed-in"
-                fallback={
-                  <SideNavItem
-                    label="Sign in"
-                    href={signInPath}
-                    icon={ArrowRightEndOnRectangleIcon}
-                    isSelected={isActive(pathname, signInPath)}
-                  />
-                }
-              >
-                <UserButton showName />
+            <SideNavSection title="Account" isHeaderHidden>
+              <Show when="signed-out">
+                <SideNavItem
+                  label="Register"
+                  href={signUpPath}
+                  icon={UserPlusIcon}
+                  isSelected={isActive(pathname, signUpPath)}
+                />
+                <SideNavItem
+                  label="Sign In"
+                  href={signInPath}
+                  icon={ArrowRightEndOnRectangleIcon}
+                  isSelected={isActive(pathname, signInPath)}
+                />
               </Show>
-              <SideNavSection title="Account" isHeaderHidden>
+              <Show when="signed-in">
                 {ACCOUNT_LINKS.map(renderLink)}
-              </SideNavSection>
-            </VStack>
+                <SideNavItem
+                  label="Sign Out"
+                  icon={ArrowRightStartOnRectangleIcon}
+                  onClick={() => {
+                    void signOut({ redirectUrl: afterAuthPath });
+                  }}
+                />
+              </Show>
+            </SideNavSection>
           }
         >
           {NAV_GROUPS.map((group) => (
