@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
+import { afterAuthPath, signInPath, signUpPath } from "@/lib/auth-paths";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -22,7 +24,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <ClerkProvider
+          signInUrl={signInPath}
+          signUpUrl={signUpPath}
+          signInFallbackRedirectUrl={afterAuthPath}
+          signUpFallbackRedirectUrl={afterAuthPath}
+        >
+          <Providers>{children}</Providers>
+        </ClerkProvider>
       </body>
     </html>
   );

@@ -1,5 +1,7 @@
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextFetchEvent, NextRequest } from "next/server";
+import { signInPath, signUpPath } from "@/lib/auth-paths";
 
 const ROBOTS_TAG =
   "noindex, nofollow, nocache, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai";
@@ -79,22 +81,36 @@ function isBlockedClient(userAgent: string | null): boolean {
   return GENERIC_AGENT.test(userAgent);
 }
 
-export function proxy(request: NextRequest) {
+const clerk = clerkMiddleware({
+  signInUrl: signInPath,
+  signUpUrl: signUpPath,
+});
+
+const STATIC_FILE =
+  /\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)$/i;
+
+export function proxy(request: NextRequest, event: NextFetchEvent) {
+  const { pathname } = request.nextUrl;
+
   // Crawlers need to read the disallow policy. Everything else is refused.
-  if (request.nextUrl.pathname === "/robots.txt") {
+  if (pathname === "/robots.txt") {
     return NextResponse.next();
   }
 
-  if (!isBlockedClient(request.headers.get("user-agent"))) {
+  if (isBlockedClient(request.headers.get("user-agent"))) {
+    return new NextResponse("This site is not open to crawlers.", {
+      status: 403,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": ROBOTS_TAG,
+      },
+    });
+  }
+
+  if (pathname.startsWith("/_next") || STATIC_FILE.test(pathname)) {
     return NextResponse.next();
   }
 
-  return new NextResponse("This site is not open to crawlers.", {
-    status: 403,
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "private, no-store",
-      "X-Robots-Tag": ROBOTS_TAG,
-    },
-  });
+  return clerk(request, event);
 }
