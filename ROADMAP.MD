@@ -4,28 +4,6 @@
 
 This is a very important task.  We need a 3 minute demo video of the platform.  Let's use things like "Playwright" to actually make the video from real browser use of the platform.
 
-## Authentication - via Clerk
-
-We'd like to add authentication for the platform via Clerk.  We want to support email login, Facebook login, Google login and Apple login.  Users should not have to register an account, but it would be helpful if the did, and would keep track of their progress, achievements, and unlock features like mentorship, and saving studio projects.
-
-## Database
-
-We need a database that our data can be stored in.  We would like to use a serverless Postgres database with Neon to keep costs down and scale as needed.
-
-## Blob Storage - via Vercel
-
-We need a place to store files for public and private use.  We would like to use Vercel's Blob Storage to keep costs down and scale as needed.
-
-## Build Out AI Agent Coding Instructions/Markdown
-
-We need to build out some files in this repo to help the AI agents write code for this project.
-
-## Enable Cloudflare/Vercel Protections
-
-### TurboRepo
-
-This will allow us to create shared packages, data models, etc across web and mobile apps.
-
 ### Mobile App via React Native & Expo
 
 We should add a dedicated mobile app via React Native & Expo.
