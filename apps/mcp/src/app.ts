@@ -6,6 +6,7 @@ import {
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { home } from "./home";
 import { createMcpServer } from "./server";
 
 const api = createWestrideApi({
@@ -30,6 +31,8 @@ app.use(
     exposeHeaders: ["mcp-session-id", "mcp-protocol-version"],
   }),
 );
+
+app.route("/", home);
 
 app.get("/health", (c) => c.json({ ok: true }));
 

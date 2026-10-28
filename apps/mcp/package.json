@@ -4,19 +4,28 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/index.ts",
-    "build": "bun build src/app.ts --target=node --format=esm --outdir=dist --external hono --external 'hono/*'",
-    "start": "bun src/index.ts",
+    "dev": "bun scripts/dev.ts",
+    "build:home": "bun scripts/build-home.ts",
+    "build": "bun run build:home && bun build src/app.ts --target=node --format=esm --outdir=dist --external hono --external 'hono/*'",
+    "start": "bun run build:home && bun src/index.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@astryxdesign/core": "^0.7.4",
+    "@astryxdesign/theme-stone": "^0.7.4",
     "@modelcontextprotocol/sdk": "^1.32.2",
+    "@stylexjs/stylex": "^0.19.0",
     "@westride/api-client": "workspace:*",
     "hono": "^4.13.14",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@astryxdesign/cli": "0.7.4",
     "@types/bun": "^1.4.4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "typescript": "^5"
   }
 }
