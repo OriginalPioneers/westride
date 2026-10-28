@@ -5,6 +5,7 @@
 - Enable Cloudflare/Vercel Protections
 - Enable rate limiting for API and MCP.
 - Ensure apps are GDPR compliant.
+- Add voice to text.
 
 ## Completed Tasks
 
