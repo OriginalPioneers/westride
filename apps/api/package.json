@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
+    "build": "bun build src/app.ts --target=node --format=esm --outdir=dist --external hono --external 'hono/*'",
     "start": "bun src/index.ts",
     "lint": "tsc --noEmit"
   },
