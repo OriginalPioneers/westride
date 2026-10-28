@@ -9,6 +9,7 @@
     "./mentorship": "./src/mentorship.ts",
     "./ideas": "./src/ideas.ts",
     "./idea-factory": "./src/idea-factory.ts",
+    "./feedback": "./src/feedback.ts",
     "./countries": "./src/country-catalog.ts"
   },
   "scripts": {

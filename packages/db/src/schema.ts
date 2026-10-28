@@ -681,6 +681,103 @@ export const ideaFactoryFindingsRelations = relations(
   }),
 );
 
+// ---------------------------------------------------------------------------
+// Feedback
+//
+// Anyone can read feedback. Signed-in users can post it, +1 it once each,
+// and comment on it.
+// ---------------------------------------------------------------------------
+
+export const feedback = pgTable(
+  "feedback",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Clerk user id of the author. */
+    clerkUserId: text("clerk_user_id").notNull(),
+    title: text("title").notNull(),
+    /** Markdown. */
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("feedback_clerk_user_id_idx").on(table.clerkUserId),
+    index("feedback_created_at_idx").on(table.createdAt),
+  ],
+);
+
+/** A +1. One per user per feedback. */
+export const feedbackVotes = pgTable(
+  "feedback_votes",
+  {
+    feedbackId: uuid("feedback_id")
+      .notNull()
+      .references(() => feedback.id, { onDelete: "cascade" }),
+    /** Clerk user id. */
+    clerkUserId: text("clerk_user_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.feedbackId, table.clerkUserId] }),
+    index("feedback_votes_clerk_user_id_idx").on(table.clerkUserId),
+  ],
+);
+
+export const feedbackComments = pgTable(
+  "feedback_comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    feedbackId: uuid("feedback_id")
+      .notNull()
+      .references(() => feedback.id, { onDelete: "cascade" }),
+    /** Clerk user id of the author. */
+    clerkUserId: text("clerk_user_id").notNull(),
+    /** Markdown. */
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("feedback_comments_feedback_id_created_at_idx").on(
+      table.feedbackId,
+      table.createdAt,
+    ),
+    index("feedback_comments_clerk_user_id_idx").on(table.clerkUserId),
+  ],
+);
+
+export const feedbackRelations = relations(feedback, ({ many }) => ({
+  votes: many(feedbackVotes),
+  comments: many(feedbackComments),
+}));
+
+export const feedbackVotesRelations = relations(feedbackVotes, ({ one }) => ({
+  feedback: one(feedback, {
+    fields: [feedbackVotes.feedbackId],
+    references: [feedback.id],
+  }),
+}));
+
+export const feedbackCommentsRelations = relations(
+  feedbackComments,
+  ({ one }) => ({
+    feedback: one(feedback, {
+      fields: [feedbackComments.feedbackId],
+      references: [feedback.id],
+    }),
+  }),
+);
+
 export type Track = typeof tracks.$inferSelect;
 export type NewTrack = typeof tracks.$inferInsert;
 export type Lesson = typeof lessons.$inferSelect;
@@ -720,3 +817,9 @@ export type IdeaFactoryMessage = typeof ideaFactoryMessages.$inferSelect;
 export type NewIdeaFactoryMessage = typeof ideaFactoryMessages.$inferInsert;
 export type IdeaFactoryEvaluation = typeof ideaFactoryEvaluations.$inferSelect;
 export type IdeaFactoryFinding = typeof ideaFactoryFindings.$inferSelect;
+export type Feedback = typeof feedback.$inferSelect;
+export type NewFeedback = typeof feedback.$inferInsert;
+export type FeedbackVote = typeof feedbackVotes.$inferSelect;
+export type NewFeedbackVote = typeof feedbackVotes.$inferInsert;
+export type FeedbackComment = typeof feedbackComments.$inferSelect;
+export type NewFeedbackComment = typeof feedbackComments.$inferInsert;
