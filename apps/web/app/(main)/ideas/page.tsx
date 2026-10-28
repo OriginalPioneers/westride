@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { Button } from "@astryxdesign/core/Button";
 import { Divider } from "@astryxdesign/core/Divider";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
@@ -16,6 +16,7 @@ import {
   readIdeaFilterValues,
   toIdeaFilters,
 } from "@/lib/ideas/filters";
+import { CreateIdeaButton, CreateIdeaProvider } from "./create-idea-button";
 import { IdeaCard } from "./idea-card";
 import { IdeaFilters } from "./idea-filters";
 
@@ -34,10 +35,17 @@ export default async function IdeaStudioPage({
   const viewer = { clerkUserId: userId };
   const values = readIdeaFilterValues(params);
 
-  const [ideas, options] = await Promise.all([
+  const [ideas, options, account] = await Promise.all([
     listIdeas(toIdeaFilters(values), viewer),
     listIdeaFilterOptions(viewer),
+    userId ? currentUser() : Promise.resolve(null),
   ]);
+  const founder = userId
+    ? {
+        name: account?.fullName || account?.username || "You",
+        imageUrl: account?.hasImage ? account.imageUrl : null,
+      }
+    : null;
 
   const featured = ideas.filter((idea) => idea.isFeatured);
   const rest = ideas.filter((idea) => !idea.isFeatured);
@@ -45,6 +53,7 @@ export default async function IdeaStudioPage({
   const countLabel = ideas.length === 1 ? "1 idea" : `${ideas.length} ideas`;
 
   return (
+    <CreateIdeaProvider founder={founder}>
     <Layout
       contentWidth={1120}
       header={
@@ -55,13 +64,16 @@ export default async function IdeaStudioPage({
                 <Heading level={1}>Idea Studio</Heading>
                 <Text type="supporting">
                   Businesses and non-profits the community is dreaming up.
-                  Find one to join, or get inspired to start your own.
+                  Start one, or find one to join.
                 </Text>
               </VStack>
             </StackItem>
-            {ideas.length > 0 ? (
-              <Text type="supporting">{countLabel}</Text>
-            ) : null}
+            <HStack gap={3} vAlign="center">
+              {ideas.length > 0 ? (
+                <Text type="supporting">{countLabel}</Text>
+              ) : null}
+              <CreateIdeaButton />
+            </HStack>
           </HStack>
         </LayoutHeader>
       }
@@ -94,7 +106,10 @@ export default async function IdeaStudioPage({
               ) : (
                 <EmptyState
                   title="No ideas yet"
-                  description="Ideas shared with the community will show up here."
+                  description="Start one and you will be the founder. You can invite other people onto the team."
+                  actions={
+                    <CreateIdeaButton variant="secondary" />
+                  }
                 />
               )
             ) : (
@@ -135,5 +150,6 @@ export default async function IdeaStudioPage({
         </LayoutContent>
       }
     />
+    </CreateIdeaProvider>
   );
 }
