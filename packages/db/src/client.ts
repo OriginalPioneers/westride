@@ -1,10 +1,11 @@
 import { neon } from "@neondatabase/serverless";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
 import type { AchievementSlug } from "./achievement-catalog";
 import * as schema from "./schema";
 import {
   achievements,
+  tracks,
   userAchievements,
   type Achievement,
   type Lesson,
@@ -41,6 +42,39 @@ export async function listTracksWithLessons(): Promise<TrackWithLessons[]> {
         orderBy: (lesson, { asc }) => [asc(lesson.name)],
       },
     },
+  });
+}
+
+export async function listTracks(): Promise<Track[]> {
+  return getDb().query.tracks.findMany({
+    orderBy: (track, { asc }) => [asc(track.sortOrder), asc(track.name)],
+  });
+}
+
+export async function getTrackWithLessons(
+  slug: string,
+): Promise<TrackWithLessons | null> {
+  const track = await getDb().query.tracks.findFirst({
+    where: eq(tracks.slug, slug),
+    with: {
+      lessons: {
+        orderBy: (lesson, { asc }) => [asc(lesson.name)],
+      },
+    },
+  });
+  return track ?? null;
+}
+
+export async function listTrackNamesBySlug(
+  slugs: string[],
+): Promise<Pick<Track, "slug" | "name">[]> {
+  if (slugs.length === 0) {
+    return [];
+  }
+
+  return getDb().query.tracks.findMany({
+    where: inArray(tracks.slug, slugs),
+    columns: { slug: true, name: true },
   });
 }
 

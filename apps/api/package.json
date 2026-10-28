@@ -1,0 +1,20 @@
+{
+  "name": "api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@westride/api-client": "workspace:*",
+    "@westride/db": "workspace:*",
+    "hono": "^4.13.14"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "typescript": "^5"
+  }
+}
