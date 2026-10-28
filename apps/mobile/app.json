@@ -32,6 +32,12 @@
         "projectId": "7d612213-eb2b-4a73-afd5-b3791ad6c8e6"
       }
     },
-    "owner": "originalpioneers"
+    "owner": "originalpioneers",
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

@@ -8,17 +8,15 @@ const HACKATHON_EVENT_NAME = "2026 Meta Global AI Developer Hackathon";
 const HACKATHON_EVENT_URL =
   "https://cerebralvalley.ai/e/meta-ai-developer-hackathon";
 
-// Swap these for the real profile URLs when the pages exist.
-const FACEBOOK_PROFILE_URL = "https://www.facebook.com/westride";
-const INSTAGRAM_PROFILE_URL = "https://www.instagram.com/westride";
-const X_PROFILE_URL = "https://x.com/westride";
-
-const GITHUB_REPOSITORY_URL = "https://github.com/OriginalPioneers/westride";
+const FACEBOOK_PROFILE_URL = "https://www.facebook.com/WeStrideOrg";
+const INSTAGRAM_PROFILE_URL = "https://www.instagram.com/WeStrideOrg";
+const X_PROFILE_URL = "https://x.com/WeStrideOrg";
+const GITHUB_PROFILE_URL = "https://github.com/WeStrideOrg";
 
 const FOOTER_LINKS = [
   { label: "Terms of Service", href: "/terms" },
   { label: "Privacy Policy", href: "/privacy" },
-  { label: "GitHub", href: GITHUB_REPOSITORY_URL, isExternal: true },
+  { label: "GitHub", href: GITHUB_PROFILE_URL, isExternal: true },
   { label: "Facebook", href: FACEBOOK_PROFILE_URL, isExternal: true },
   { label: "Instagram", href: INSTAGRAM_PROFILE_URL, isExternal: true },
   { label: "X", href: X_PROFILE_URL, isExternal: true },
