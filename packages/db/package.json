@@ -15,7 +15,11 @@
     "lint": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "bun src/seed.ts"
+    "db:migrate:production": "bun src/drizzle-cli.ts migrate --target production",
+    "db:seed": "bun src/seed.ts",
+    "db:seed:production": "bun src/seed.ts --target production",
+    "db:reset": "bun src/reset.ts",
+    "db:reset:production": "bun src/reset.ts --target production"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

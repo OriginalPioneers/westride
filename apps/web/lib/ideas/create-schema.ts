@@ -13,38 +13,69 @@ const inviteSchema = z.object({
   role: z.enum(ideaRoles, { error: "Choose a role." }),
 });
 
+const ideaNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Give the idea a name.")
+  .max(MAX_IDEA_NAME, `Keep the name under ${MAX_IDEA_NAME} characters.`);
+
+const ideaDescriptionSchema = z
+  .string()
+  .trim()
+  .min(1, "Describe the idea.")
+  .max(
+    MAX_IDEA_DESCRIPTION,
+    `Keep the description under ${MAX_IDEA_DESCRIPTION} characters.`,
+  );
+
+/** One founder, plus the people they can invite while creating an idea. */
+export const MAX_IDEA_MEMBERS = MAX_IDEA_INVITES + 1;
+
+function memberListSchema(max: number, maxMessage: string) {
+  return z
+    .array(inviteSchema)
+    .max(max, maxMessage)
+    .transform((members) => {
+      const byUser = new Map<string, z.output<typeof inviteSchema>>();
+      for (const member of members) {
+        byUser.set(member.clerkUserId, member);
+      }
+      return [...byUser.values()];
+    });
+}
+
 export const createIdeaSchema = z.object({
   type: z.enum(ideaTypes, { error: "Choose Business or Non-profit." }),
-  name: z
-    .string()
-    .trim()
-    .min(1, "Give the idea a name.")
-    .max(MAX_IDEA_NAME, `Keep the name under ${MAX_IDEA_NAME} characters.`),
-  description: z
-    .string()
-    .trim()
-    .min(1, "Describe the idea.")
-    .max(
-      MAX_IDEA_DESCRIPTION,
-      `Keep the description under ${MAX_IDEA_DESCRIPTION} characters.`,
-    ),
+  name: ideaNameSchema,
+  description: ideaDescriptionSchema,
   isPublic: z
     .boolean({ error: "Choose who can see this idea." })
     .nullable()
     .refine((value): value is boolean => value !== null, {
       error: "Choose who can see this idea.",
     }),
-  invites: z
-    .array(inviteSchema)
-    .max(MAX_IDEA_INVITES, `Invite up to ${MAX_IDEA_INVITES} people.`)
-    .transform((invites) => {
-      const byUser = new Map<string, z.output<typeof inviteSchema>>();
-      for (const invite of invites) {
-        byUser.set(invite.clerkUserId, invite);
-      }
-      return [...byUser.values()];
-    }),
+  invites: memberListSchema(
+    MAX_IDEA_INVITES,
+    `Invite up to ${MAX_IDEA_INVITES} people.`,
+  ),
 });
+
+export const updateIdeaSchema = z
+  .object({
+    name: ideaNameSchema,
+    description: ideaDescriptionSchema,
+    members: memberListSchema(
+      MAX_IDEA_MEMBERS,
+      `An idea can have up to ${MAX_IDEA_MEMBERS} people.`,
+    ),
+  })
+  .refine(
+    (value) => value.members.some((member) => member.role === "FOUNDER"),
+    {
+      error: "Keep at least one founder.",
+      path: ["members"],
+    },
+  );
 
 export type CreateIdeaInput = z.output<typeof createIdeaSchema>;
 
@@ -83,6 +114,29 @@ export type IdeaDraft = {
 
 export function validateIdeaDraft(draft: IdeaDraft): CreateIdeaFieldErrors {
   const parsed = createIdeaSchema.safeParse(draft);
+  if (parsed.success) {
+    return {};
+  }
+  return fieldErrorsFrom(parsed.error);
+}
+
+/** Draft a founder edits. Membership is the full team after the save. */
+export type IdeaEditDraft = {
+  name: string;
+  description: string;
+  members: { clerkUserId: string; role: IdeaMemberRole }[];
+};
+
+export type UpdateIdeaSuccess = {
+  status: "saved";
+  /** False when the editor left a private idea and can no longer open it. */
+  canStillView: boolean;
+};
+
+export type UpdateIdeaResult = CreateIdeaFailure | UpdateIdeaSuccess;
+
+export function validateIdeaEdit(draft: IdeaEditDraft): CreateIdeaFieldErrors {
+  const parsed = updateIdeaSchema.safeParse(draft);
   if (parsed.success) {
     return {};
   }
