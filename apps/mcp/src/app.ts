@@ -59,3 +59,5 @@ app.on(["GET", "DELETE"], "/mcp", (c) =>
     { Allow: "POST" },
   ),
 );
+
+export default app;
