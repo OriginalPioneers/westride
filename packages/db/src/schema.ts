@@ -1,8 +1,10 @@
 import { relations } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -401,6 +403,284 @@ export const ideaTagsRelations = relations(ideaTags, ({ one }) => ({
   }),
 }));
 
+// ---------------------------------------------------------------------------
+// Idea Factory
+//
+// Each idea gets an advisory team of specialised Muse agents. Conversations
+// are shared by the whole team (one thread per agent per idea). Every call
+// to Meta Model API is logged in `muse_requests` so members can see what was
+// sent, what came back, and what it cost. API keys are never stored: they
+// live in the member's browser and travel with each request.
+// ---------------------------------------------------------------------------
+
+/** How sure an agent is about a claim, and where that confidence comes from. */
+export const evidenceClass = pgEnum("evidence_class", [
+  "VERIFIED",
+  "ESTIMATE",
+  "ASSUMPTION",
+  "HYPOTHESIS",
+]);
+
+export const factoryMessageRole = pgEnum("factory_message_role", [
+  "USER",
+  "AGENT",
+]);
+
+export const evaluationStatus = pgEnum("evaluation_status", [
+  "RUNNING",
+  "COMPLETED",
+  "FAILED",
+]);
+
+export const findingStatus = pgEnum("finding_status", [
+  "PENDING",
+  "RUNNING",
+  "COMPLETED",
+  "FAILED",
+]);
+
+export type MuseSource = {
+  url: string;
+  title: string | null;
+  /** ISO date the source was published or retrieved, when known. */
+  date: string | null;
+};
+
+export type MuseFinding = {
+  claim: string;
+  detail: string;
+  evidenceClass: (typeof evidenceClass.enumValues)[number];
+  sources: MuseSource[];
+};
+
+export type MuseFindingVerdict = "PROMISING" | "CAUTION" | "BLOCKER";
+
+export type MuseSynthesis = {
+  overview: string;
+  agreements: string[];
+  disagreements: { topic: string; positions: string; resolution: string }[];
+  risks: string[];
+  recommendation: string;
+  questionsForYou: string[];
+};
+
+export const museRequests = pgTable(
+  "muse_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    /** Clerk user id of the member whose Meta account paid for the call. */
+    clerkUserId: text("clerk_user_id").notNull(),
+    /** Agent slug from the catalog, or null for the synthesis step. */
+    agentSlug: text("agent_slug"),
+    /** "chat" | "evaluation" | "synthesis" | "verify" */
+    purpose: text("purpose").notNull(),
+    model: text("model").notNull(),
+    endpoint: text("endpoint").notNull(),
+    /** Exactly what was sent, minus the Authorization header. */
+    requestBody: jsonb("request_body").$type<unknown>().notNull(),
+    responseBody: jsonb("response_body").$type<unknown>(),
+    statusCode: integer("status_code"),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    cachedTokens: integer("cached_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    reasoningTokens: integer("reasoning_tokens").notNull().default(0),
+    totalTokens: integer("total_tokens").notNull().default(0),
+    webSearchCalls: integer("web_search_calls").notNull().default(0),
+    /** USD in millionths, from the published price list. An estimate. */
+    estimatedCostMicros: bigint("estimated_cost_micros", { mode: "number" })
+      .notNull()
+      .default(0),
+    durationMs: integer("duration_ms").notNull().default(0),
+    rateLimitRemainingTokens: integer("rate_limit_remaining_tokens"),
+    rateLimitRemainingRequests: integer("rate_limit_remaining_requests"),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("muse_requests_idea_id_created_at_idx").on(
+      table.ideaId,
+      table.createdAt,
+    ),
+    index("muse_requests_clerk_user_id_idx").on(table.clerkUserId),
+  ],
+);
+
+export const ideaFactoryThreads = pgTable(
+  "idea_factory_threads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    agentSlug: text("agent_slug").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idea_factory_threads_idea_agent_unique").on(
+      table.ideaId,
+      table.agentSlug,
+    ),
+  ],
+);
+
+export const ideaFactoryMessages = pgTable(
+  "idea_factory_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => ideaFactoryThreads.id, { onDelete: "cascade" }),
+    role: factoryMessageRole("role").notNull(),
+    /** Who wrote a USER message. Null for AGENT messages. */
+    clerkUserId: text("clerk_user_id"),
+    /** Markdown. */
+    content: text("content").notNull(),
+    sources: jsonb("sources").$type<MuseSource[]>().notNull().default([]),
+    requestId: uuid("request_id").references(() => museRequests.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("idea_factory_messages_thread_id_created_at_idx").on(
+      table.threadId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const ideaFactoryEvaluations = pgTable(
+  "idea_factory_evaluations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    /** Member who clicked Evaluate. */
+    clerkUserId: text("clerk_user_id").notNull(),
+    status: evaluationStatus("status").notNull().default("RUNNING"),
+    model: text("model").notNull(),
+    synthesis: jsonb("synthesis").$type<MuseSynthesis>(),
+    synthesisRequestId: uuid("synthesis_request_id").references(
+      () => museRequests.id,
+      { onDelete: "set null" },
+    ),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    completedAt: timestamp("completed_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+  },
+  (table) => [
+    index("idea_factory_evaluations_idea_id_created_at_idx").on(
+      table.ideaId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const ideaFactoryFindings = pgTable(
+  "idea_factory_findings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    evaluationId: uuid("evaluation_id")
+      .notNull()
+      .references(() => ideaFactoryEvaluations.id, { onDelete: "cascade" }),
+    agentSlug: text("agent_slug").notNull(),
+    status: findingStatus("status").notNull().default("PENDING"),
+    verdict: text("verdict").$type<MuseFindingVerdict>(),
+    /** One-paragraph headline from the agent. Markdown. */
+    summary: text("summary"),
+    findings: jsonb("findings").$type<MuseFinding[]>().notNull().default([]),
+    nextSteps: jsonb("next_steps").$type<string[]>().notNull().default([]),
+    requestId: uuid("request_id").references(() => museRequests.id, {
+      onDelete: "set null",
+    }),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    completedAt: timestamp("completed_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+  },
+  (table) => [
+    uniqueIndex("idea_factory_findings_evaluation_agent_unique").on(
+      table.evaluationId,
+      table.agentSlug,
+    ),
+  ],
+);
+
+export const museRequestsRelations = relations(museRequests, ({ one }) => ({
+  idea: one(ideas, {
+    fields: [museRequests.ideaId],
+    references: [ideas.id],
+  }),
+}));
+
+export const ideaFactoryThreadsRelations = relations(
+  ideaFactoryThreads,
+  ({ one, many }) => ({
+    idea: one(ideas, {
+      fields: [ideaFactoryThreads.ideaId],
+      references: [ideas.id],
+    }),
+    messages: many(ideaFactoryMessages),
+  }),
+);
+
+export const ideaFactoryMessagesRelations = relations(
+  ideaFactoryMessages,
+  ({ one }) => ({
+    thread: one(ideaFactoryThreads, {
+      fields: [ideaFactoryMessages.threadId],
+      references: [ideaFactoryThreads.id],
+    }),
+    request: one(museRequests, {
+      fields: [ideaFactoryMessages.requestId],
+      references: [museRequests.id],
+    }),
+  }),
+);
+
+export const ideaFactoryEvaluationsRelations = relations(
+  ideaFactoryEvaluations,
+  ({ one, many }) => ({
+    idea: one(ideas, {
+      fields: [ideaFactoryEvaluations.ideaId],
+      references: [ideas.id],
+    }),
+    findings: many(ideaFactoryFindings),
+  }),
+);
+
+export const ideaFactoryFindingsRelations = relations(
+  ideaFactoryFindings,
+  ({ one }) => ({
+    evaluation: one(ideaFactoryEvaluations, {
+      fields: [ideaFactoryFindings.evaluationId],
+      references: [ideaFactoryEvaluations.id],
+    }),
+  }),
+);
+
 export type Track = typeof tracks.$inferSelect;
 export type NewTrack = typeof tracks.$inferInsert;
 export type Lesson = typeof lessons.$inferSelect;
@@ -429,3 +709,14 @@ export type Tag = typeof tags.$inferSelect;
 export type NewTag = typeof tags.$inferInsert;
 export type IdeaTag = typeof ideaTags.$inferSelect;
 export type NewIdeaTag = typeof ideaTags.$inferInsert;
+export type EvidenceClass = (typeof evidenceClass.enumValues)[number];
+export type FactoryMessageRole = (typeof factoryMessageRole.enumValues)[number];
+export type EvaluationStatus = (typeof evaluationStatus.enumValues)[number];
+export type FindingStatus = (typeof findingStatus.enumValues)[number];
+export type MuseRequest = typeof museRequests.$inferSelect;
+export type NewMuseRequest = typeof museRequests.$inferInsert;
+export type IdeaFactoryThread = typeof ideaFactoryThreads.$inferSelect;
+export type IdeaFactoryMessage = typeof ideaFactoryMessages.$inferSelect;
+export type NewIdeaFactoryMessage = typeof ideaFactoryMessages.$inferInsert;
+export type IdeaFactoryEvaluation = typeof ideaFactoryEvaluations.$inferSelect;
+export type IdeaFactoryFinding = typeof ideaFactoryFindings.$inferSelect;
