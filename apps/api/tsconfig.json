@@ -9,8 +9,9 @@
     "skipLibCheck": true,
     "noEmit": true,
     "esModuleInterop": true,
+    "resolveJsonModule": false,
     "isolatedModules": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "scripts/**/*.ts"]
 }

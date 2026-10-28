@@ -5,8 +5,10 @@ import { fileURLToPath } from "node:url";
 import { achievementCatalog } from "./achievement-catalog";
 import { academyTracks } from "./academy-tracks";
 import { getDb } from "./client";
-import { achievements, skills, tracks } from "./schema";
+import { countryCatalog } from "./country-catalog";
+import { achievements, countries, skills, tags, tracks } from "./schema";
 import { skillCatalog, skillSlug } from "./skill-catalog";
+import { tagCatalog, tagSlug } from "./tag-catalog";
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -90,3 +92,32 @@ await db
   });
 
 console.log(`Seeded ${skillRows.length} skills.`);
+
+const countryRows = Object.entries(countryCatalog).map(([code, name]) => ({
+  code,
+  name,
+}));
+
+await db
+  .insert(countries)
+  .values(countryRows)
+  .onConflictDoUpdate({
+    target: countries.code,
+    set: { name: sql`excluded.name` },
+  });
+
+console.log(`Seeded ${countryRows.length} countries.`);
+
+const tagRows = tagCatalog.map((name) => ({ slug: tagSlug(name), name }));
+
+// Someone may have tagged an idea with a catalog tag first under another
+// spelling. The catalog spelling wins.
+await db
+  .insert(tags)
+  .values(tagRows)
+  .onConflictDoUpdate({
+    target: tags.slug,
+    set: { name: sql`excluded.name` },
+  });
+
+console.log(`Seeded ${tagRows.length} tags.`);

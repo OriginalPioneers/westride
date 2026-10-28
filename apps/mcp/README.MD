@@ -5,6 +5,12 @@
 MCP server for the WeStride platform. It speaks stateless Streamable HTTP at
 `/mcp` and reads data through the WeStride API (`apps/api`).
 
+The root `/` serves a home page, built with Astryx, explaining how to connect
+the server to ChatGPT and Claude. The page lives in `src/home/`: the server
+renders it with React, and `scripts/build-home.ts` bundles the same components
+for the browser to hydrate. The bundle is inlined into the server build, so
+`build`, `start`, and `dev` all run that script first.
+
 ## Tools
 
 | Tool                  | Description                                          |

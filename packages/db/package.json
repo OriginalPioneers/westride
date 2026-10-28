@@ -6,7 +6,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
-    "./mentorship": "./src/mentorship.ts"
+    "./mentorship": "./src/mentorship.ts",
+    "./ideas": "./src/ideas.ts",
+    "./countries": "./src/country-catalog.ts"
   },
   "scripts": {
     "lint": "tsc --noEmit",

@@ -1,0 +1,20 @@
+@layer reset, astryx-base, astryx-theme;
+
+@import '@astryxdesign/theme-stone/fonts.css';
+@import '@astryxdesign/core/reset.css';
+@import '@astryxdesign/core/astryx.css';
+@import '@astryxdesign/theme-stone/theme.css';
+
+body {
+  font-family: var(--font-family-body);
+}
+
+/* Matches westride.org: on Stone the section shell's rail divider sits too
+   close to the page surface, so paint it in the emphasized border. */
+.astryx-app-shell-sidenav[data-variant="section"] {
+  position: relative;
+  z-index: 1;
+  border-inline-end-color: var(--color-border-emphasized);
+  box-shadow: var(--spacing-1) 0 var(--spacing-6) calc(-1 * var(--spacing-1))
+    var(--color-shadow);
+}

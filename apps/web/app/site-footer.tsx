@@ -10,6 +10,7 @@ const HACKATHON_EVENT_URL =
 
 const FACEBOOK_PROFILE_URL = "https://www.facebook.com/WeStrideOrg";
 const INSTAGRAM_PROFILE_URL = "https://www.instagram.com/WeStrideOrg";
+const THREADS_PROFILE_URL = "https://www.threads.com/@westrideorg";
 const X_PROFILE_URL = "https://x.com/WeStrideOrg";
 const GITHUB_PROFILE_URL = "https://github.com/WeStrideOrg";
 
@@ -19,6 +20,7 @@ const FOOTER_LINKS = [
   { label: "GitHub", href: GITHUB_PROFILE_URL, isExternal: true },
   { label: "Facebook", href: FACEBOOK_PROFILE_URL, isExternal: true },
   { label: "Instagram", href: INSTAGRAM_PROFILE_URL, isExternal: true },
+  { label: "Threads", href: THREADS_PROFILE_URL, isExternal: true },
   { label: "X", href: X_PROFILE_URL, isExternal: true },
 ] as const;
 

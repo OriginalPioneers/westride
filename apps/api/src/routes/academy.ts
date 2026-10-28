@@ -1,3 +1,4 @@
+import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type {
   AcademyTrack,
   AcademyTrackDetail,
@@ -12,7 +13,14 @@ import {
   listTracks,
   type TrackWithLessons,
 } from "@westride/db/client";
-import { Hono } from "hono";
+import {
+  ApiErrorSchema,
+  GetAcademyTrackResponseSchema,
+  ListAcademyTracksResponseSchema,
+  catalogCacheHeaders,
+  internalErrorResponse,
+  jsonContent,
+} from "../schemas";
 
 const CATALOG_CACHE_CONTROL = "public, max-age=60, s-maxage=300";
 
@@ -54,18 +62,63 @@ function toAcademyTrackDetail(
   };
 }
 
-export const academy = new Hono();
-
-academy.get("/tracks", async (c) => {
-  const tracks = await listTracks();
-  c.header("Cache-Control", CATALOG_CACHE_CONTROL);
-  return c.json({
-    data: tracks.map(toAcademyTrack),
-  } satisfies ListAcademyTracksResponse);
+const listTracksRoute = createRoute({
+  method: "get",
+  path: "/tracks",
+  operationId: "listAcademyTracks",
+  tags: ["Academy"],
+  summary: "List academy tracks",
+  description:
+    "Returns every WeStride Academy learning track in recommended order, from AI fundamentals to launching a product. Each track includes its difficulty, estimated duration, prerequisites, learning objectives, and the badge earned on completion.",
+  responses: {
+    200: {
+      ...jsonContent(ListAcademyTracksResponseSchema, "The track catalog."),
+      headers: catalogCacheHeaders,
+    },
+    500: internalErrorResponse,
+  },
 });
 
-academy.get("/tracks/:slug", async (c) => {
-  const slug = c.req.param("slug");
+const getTrackRoute = createRoute({
+  method: "get",
+  path: "/tracks/{slug}",
+  operationId: "getAcademyTrack",
+  tags: ["Academy"],
+  summary: "Get an academy track",
+  description:
+    "Returns one track by slug, with its published lessons and the names of its prerequisite tracks.",
+  request: {
+    params: z.object({
+      slug: z.string().openapi({
+        param: { name: "slug", in: "path" },
+        description: "Track slug, as returned by List academy tracks.",
+        example: "ai-foundations",
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      ...jsonContent(GetAcademyTrackResponseSchema, "The requested track."),
+      headers: catalogCacheHeaders,
+    },
+    404: jsonContent(ApiErrorSchema, "No track has this slug."),
+    500: internalErrorResponse,
+  },
+});
+
+export const academy = new OpenAPIHono();
+
+academy.openapi(listTracksRoute, async (c) => {
+  const tracks = await listTracks();
+  c.header("Cache-Control", CATALOG_CACHE_CONTROL);
+  return c.json(
+    { data: tracks.map(toAcademyTrack) } satisfies ListAcademyTracksResponse,
+    200,
+  );
+});
+
+academy.openapi(getTrackRoute, async (c) => {
+  const { slug } = c.req.valid("param");
   const track = await getTrackWithLessons(slug);
 
   if (!track) {
@@ -80,7 +133,10 @@ academy.get("/tracks/:slug", async (c) => {
   const prerequisites = await listTrackNamesBySlug(track.prerequisiteSlugs);
 
   c.header("Cache-Control", CATALOG_CACHE_CONTROL);
-  return c.json({
-    data: toAcademyTrackDetail(track, prerequisites),
-  } satisfies GetAcademyTrackResponse);
+  return c.json(
+    {
+      data: toAcademyTrackDetail(track, prerequisites),
+    } satisfies GetAcademyTrackResponse,
+    200,
+  );
 });

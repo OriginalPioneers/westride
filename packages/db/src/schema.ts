@@ -252,6 +252,155 @@ export const mentorLanguagesRelations = relations(
   }),
 );
 
+export const ideaType = pgEnum("idea_type", ["BUSINESS", "NON_PROFIT"]);
+
+export const ideaMemberRole = pgEnum("idea_member_role", ["FOUNDER", "MEMBER"]);
+
+/** ISO 3166-1 countries. Seeded from `country-catalog.ts`. */
+export const countries = pgTable(
+  "countries",
+  {
+    /** ISO 3166-1 alpha-2, e.g. "US". */
+    code: text("code").primaryKey(),
+    name: text("name").notNull(),
+  },
+  (table) => [index("countries_name_idx").on(table.name)],
+);
+
+export const ideas = pgTable(
+  "ideas",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    /** Markdown. */
+    description: text("description").notNull(),
+    type: ideaType("type").notNull(),
+    isFeatured: boolean("is_featured").notNull().default(false),
+    isPublic: boolean("is_public").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("ideas_name_idx").on(table.name),
+    index("ideas_type_idx").on(table.type),
+    index("ideas_visibility_idx").on(table.isPublic, table.isFeatured),
+    index("ideas_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const ideaMembers = pgTable(
+  "idea_members",
+  {
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    /** Clerk user id. */
+    clerkUserId: text("clerk_user_id").notNull(),
+    role: ideaMemberRole("role").notNull().default("MEMBER"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.ideaId, table.clerkUserId] }),
+    index("idea_members_clerk_user_id_idx").on(table.clerkUserId),
+  ],
+);
+
+export const ideaGeographies = pgTable(
+  "idea_geographies",
+  {
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    countryCode: text("country_code")
+      .notNull()
+      .references(() => countries.code),
+  },
+  (table) => [
+    primaryKey({ columns: [table.ideaId, table.countryCode] }),
+    index("idea_geographies_country_code_idx").on(table.countryCode),
+  ],
+);
+
+export const tags = pgTable(
+  "tags",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Lowercased, hyphenated name. Two spellings of one tag share a slug. */
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+  },
+  (table) => [uniqueIndex("tags_slug_unique").on(table.slug)],
+);
+
+export const ideaTags = pgTable(
+  "idea_tags",
+  {
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.ideaId, table.tagId] }),
+    index("idea_tags_tag_id_idx").on(table.tagId),
+  ],
+);
+
+export const countriesRelations = relations(countries, ({ many }) => ({
+  ideaGeographies: many(ideaGeographies),
+}));
+
+export const ideasRelations = relations(ideas, ({ many }) => ({
+  members: many(ideaMembers),
+  geographies: many(ideaGeographies),
+  tags: many(ideaTags),
+}));
+
+export const ideaMembersRelations = relations(ideaMembers, ({ one }) => ({
+  idea: one(ideas, {
+    fields: [ideaMembers.ideaId],
+    references: [ideas.id],
+  }),
+}));
+
+export const ideaGeographiesRelations = relations(
+  ideaGeographies,
+  ({ one }) => ({
+    idea: one(ideas, {
+      fields: [ideaGeographies.ideaId],
+      references: [ideas.id],
+    }),
+    country: one(countries, {
+      fields: [ideaGeographies.countryCode],
+      references: [countries.code],
+    }),
+  }),
+);
+
+export const tagsRelations = relations(tags, ({ many }) => ({
+  ideaTags: many(ideaTags),
+}));
+
+export const ideaTagsRelations = relations(ideaTags, ({ one }) => ({
+  idea: one(ideas, {
+    fields: [ideaTags.ideaId],
+    references: [ideas.id],
+  }),
+  tag: one(tags, {
+    fields: [ideaTags.tagId],
+    references: [tags.id],
+  }),
+}));
+
 export type Track = typeof tracks.$inferSelect;
 export type NewTrack = typeof tracks.$inferInsert;
 export type Lesson = typeof lessons.$inferSelect;
@@ -266,3 +415,17 @@ export type Skill = typeof skills.$inferSelect;
 export type NewSkill = typeof skills.$inferInsert;
 export type MentorLocation = typeof mentorLocations.$inferSelect;
 export type NewMentorLocation = typeof mentorLocations.$inferInsert;
+export type IdeaType = (typeof ideaType.enumValues)[number];
+export type IdeaMemberRole = (typeof ideaMemberRole.enumValues)[number];
+export type Country = typeof countries.$inferSelect;
+export type NewCountry = typeof countries.$inferInsert;
+export type Idea = typeof ideas.$inferSelect;
+export type NewIdea = typeof ideas.$inferInsert;
+export type IdeaMember = typeof ideaMembers.$inferSelect;
+export type NewIdeaMember = typeof ideaMembers.$inferInsert;
+export type IdeaGeography = typeof ideaGeographies.$inferSelect;
+export type NewIdeaGeography = typeof ideaGeographies.$inferInsert;
+export type Tag = typeof tags.$inferSelect;
+export type NewTag = typeof tags.$inferInsert;
+export type IdeaTag = typeof ideaTags.$inferSelect;
+export type NewIdeaTag = typeof ideaTags.$inferInsert;
