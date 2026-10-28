@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 import { achievementCatalog } from "./achievement-catalog";
 import { academyTracks } from "./academy-tracks";
 import { getDb } from "./client";
-import { achievements, tracks } from "./schema";
+import { achievements, skills, tracks } from "./schema";
+import { skillCatalog, skillSlug } from "./skill-catalog";
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -75,3 +76,17 @@ await db
   });
 
 console.log(`Seeded ${achievementRows.length} achievements.`);
+
+const skillRows = skillCatalog.map((name) => ({ slug: skillSlug(name), name }));
+
+// A mentor may have added a catalog skill first under another spelling.
+// The catalog spelling wins.
+await db
+  .insert(skills)
+  .values(skillRows)
+  .onConflictDoUpdate({
+    target: skills.slug,
+    set: { name: sql`excluded.name` },
+  });
+
+console.log(`Seeded ${skillRows.length} skills.`);
