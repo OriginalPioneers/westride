@@ -1,10 +1,12 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { Grid } from "@astryxdesign/core/Grid";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
-import { VStack } from "@astryxdesign/core/Stack";
+import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
+import { STORE_LINKS } from "../store-links";
 
 function PlaceholderSection({
   title,
@@ -43,6 +45,25 @@ export default async function Home() {
       content={
         <LayoutContent>
           <VStack gap={8}>
+            <VStack gap={3}>
+              <Heading level={2}>Mobile app</Heading>
+              <Text type="supporting">
+                WeStride is available for iPhone and Android.
+              </Text>
+              <HStack gap={2} wrap="wrap">
+                {STORE_LINKS.map((link) => (
+                  <Button
+                    key={link.href}
+                    label={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${link.label} (opens in a new tab)`}
+                  />
+                ))}
+              </HStack>
+            </VStack>
+
             <PlaceholderSection title="Continue learning" height={160} />
 
             <VStack gap={3}>

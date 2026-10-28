@@ -3,6 +3,7 @@ import { LayoutFooter } from "@astryxdesign/core/Layout";
 import { Link } from "@astryxdesign/core/Link";
 import { HStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
+import { STORE_LINKS } from "./store-links";
 
 const HACKATHON_EVENT_NAME = "2026 Meta Global AI Developer Hackathon";
 const HACKATHON_EVENT_URL =
@@ -17,6 +18,7 @@ const GITHUB_PROFILE_URL = "https://github.com/WeStrideOrg";
 const FOOTER_LINKS = [
   { label: "Terms of Service", href: "/terms" },
   { label: "Privacy Policy", href: "/privacy" },
+  ...STORE_LINKS.map((link) => ({ ...link, isExternal: true as const })),
   { label: "GitHub", href: GITHUB_PROFILE_URL, isExternal: true },
   { label: "Facebook", href: FACEBOOK_PROFILE_URL, isExternal: true },
   { label: "Instagram", href: INSTAGRAM_PROFILE_URL, isExternal: true },
