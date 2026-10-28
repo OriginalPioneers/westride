@@ -8,6 +8,7 @@
     "./client": "./src/client.ts",
     "./mentorship": "./src/mentorship.ts",
     "./ideas": "./src/ideas.ts",
+    "./idea-factory": "./src/idea-factory.ts",
     "./countries": "./src/country-catalog.ts"
   },
   "scripts": {

@@ -14,8 +14,13 @@ import { getIdea } from "@westride/db/ideas";
 import { IDEA_ROLE_LABELS, ideasPath } from "@/lib/ideas/filters";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
 import { FeaturedBadge, IdeaTypeBadge } from "../idea-badges";
+import { IdeaFactoryButton } from "./factory/idea-factory-button";
 
 type Params = Promise<{ id: string }>;
+
+// Idea Factory server actions wait on Meta's Responses API (web search +
+// reasoning can take a couple of minutes per advisor).
+export const maxDuration = 180;
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -39,7 +44,7 @@ export async function generateMetadata({
 
 export default async function IdeaPage({ params }: { params: Params }) {
   const { id } = await params;
-  const idea = await loadIdea(id);
+  const [idea, { userId }] = await Promise.all([loadIdea(id), auth()]);
   if (!idea) {
     notFound();
   }
@@ -47,6 +52,9 @@ export default async function IdeaPage({ params }: { params: Params }) {
   const profiles = await resolveMemberProfiles(
     idea.members.map((member) => member.clerkUserId),
   );
+  const isMember =
+    userId !== null &&
+    idea.members.some((member) => member.clerkUserId === userId);
 
   return (
     <Layout
@@ -67,6 +75,17 @@ export default async function IdeaPage({ params }: { params: Params }) {
               </HStack>
               <Heading level={1}>{idea.name}</Heading>
             </VStack>
+            {isMember && userId ? (
+              <HStack gap={3} vAlign="center" wrap="wrap">
+                <IdeaFactoryButton
+                  idea={{ id: idea.id, name: idea.name, type: idea.type }}
+                  viewerId={userId}
+                />
+                <Text type="supporting">
+                  Work through this idea with your AI advisory team.
+                </Text>
+              </HStack>
+            ) : null}
           </VStack>
         </LayoutHeader>
       }
