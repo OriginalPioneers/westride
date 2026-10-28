@@ -1,13 +1,16 @@
 "use server";
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { createIdea } from "@westride/db/ideas";
+import { createIdea, getIdea, updateIdeaDetails } from "@westride/db/ideas";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import {
   createIdeaSchema,
   fieldErrorsFrom,
+  updateIdeaSchema,
   type CreateIdeaFailure,
   type CreateIdeaResult,
+  type UpdateIdeaResult,
 } from "@/lib/ideas/create-schema";
 
 export type IdeaPersonHit = {
@@ -72,8 +75,15 @@ function toHit(user: ClerkPerson): IdeaPersonHit {
   };
 }
 
-/** Members the founder can add. Requires a signed-in searcher. */
-export async function searchIdeaPeople(query: string): Promise<IdeaPersonHit[]> {
+/**
+ * Members someone can add to an idea. Requires a signed-in searcher.
+ * Creation hides the searcher, who is already the founder. Editing can
+ * include them so a founder who removes themself can add themself back.
+ */
+export async function searchIdeaPeople(
+  query: string,
+  options?: { includeSelf?: boolean },
+): Promise<IdeaPersonHit[]> {
   const { userId } = await auth();
   const trimmed = query.trim();
   if (!userId || trimmed.length < MIN_QUERY) {
@@ -86,7 +96,9 @@ export async function searchIdeaPeople(query: string): Promise<IdeaPersonHit[]> 
       query: trimmed,
       limit: SEARCH_LIMIT,
     });
-    return data.filter((user) => user.id !== userId).map(toHit);
+    return data
+      .filter((user) => options?.includeSelf || user.id !== userId)
+      .map(toHit);
   } catch (error) {
     console.error("Idea member search failed", error);
     return [];
@@ -147,4 +159,85 @@ export async function createIdeaFromStudio(
     console.error("Idea create failed", error);
     return failure("The idea could not be saved. Try again.");
   }
+}
+
+const ideaIdSchema = z.string().uuid();
+
+const EDIT_ERRORS = new Set([
+  "Keep at least one founder.",
+  "Only a founder can edit this idea.",
+]);
+
+/** A founder updates the name, description, and team. Other fields stay put. */
+export async function updateIdeaFromStudio(
+  ideaId: string,
+  draft: unknown,
+): Promise<UpdateIdeaResult> {
+  const { userId } = await auth();
+  if (!userId) {
+    return failure("Sign in to edit this idea.");
+  }
+  if (!ideaIdSchema.safeParse(ideaId).success) {
+    return failure("That idea does not exist.");
+  }
+
+  const parsed = updateIdeaSchema.safeParse(draft);
+  if (!parsed.success) {
+    return failure("Fix the highlighted fields.", fieldErrorsFrom(parsed.error));
+  }
+
+  const idea = await getIdea(ideaId, { clerkUserId: userId });
+  if (!idea) {
+    return failure("That idea does not exist.");
+  }
+  const editor = idea.members.find((member) => member.clerkUserId === userId);
+  if (editor?.role !== "FOUNDER") {
+    return failure("Only a founder can edit this idea.");
+  }
+
+  const currentIds = new Set(idea.members.map((member) => member.clerkUserId));
+  const additions = parsed.data.members.filter(
+    (member) => !currentIds.has(member.clerkUserId),
+  );
+
+  if (additions.length > 0) {
+    try {
+      const client = await clerkClient();
+      const { data } = await client.users.getUserList({
+        userId: additions.map((member) => member.clerkUserId),
+        limit: additions.length,
+      });
+      const known = new Set(data.map((user) => user.id));
+      if (additions.some((member) => !known.has(member.clerkUserId))) {
+        return failure("Someone you added does not have a WeStride account.", {
+          members: "Remove anyone who is not on WeStride, then try again.",
+        });
+      }
+    } catch (error) {
+      console.error("Idea member lookup failed", error);
+      return failure("Those people could not be checked. Try again.");
+    }
+  }
+
+  try {
+    await updateIdeaDetails(ideaId, userId, {
+      name: parsed.data.name,
+      description: parsed.data.description,
+      members: parsed.data.members,
+    });
+  } catch (error) {
+    console.error("Idea update failed", error);
+    const message = error instanceof Error ? error.message : "";
+    if (EDIT_ERRORS.has(message)) {
+      return failure(message, { members: message });
+    }
+    return failure("The idea could not be saved. Try again.");
+  }
+
+  revalidatePath("/ideas");
+  revalidatePath(`/ideas/${ideaId}`);
+  const stillMember = parsed.data.members.some(
+    (member) => member.clerkUserId === userId,
+  );
+  return { status: "saved", canStillView: idea.isPublic || stillMember };
 }

@@ -16,7 +16,11 @@
     "lint": "turbo run lint",
     "db:generate": "bun --cwd packages/db run db:generate",
     "db:migrate": "bun --cwd packages/db run db:migrate",
-    "db:seed": "bun packages/db/src/seed.ts"
+    "db:migrate:production": "bun --cwd packages/db run db:migrate:production",
+    "db:seed": "bun packages/db/src/seed.ts",
+    "db:seed:production": "bun packages/db/src/seed.ts --target production",
+    "db:reset": "bun packages/db/src/reset.ts",
+    "db:reset:production": "bun packages/db/src/reset.ts --target production"
   },
   "devDependencies": {
     "turbo": "^2.11.10"

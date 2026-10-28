@@ -5,6 +5,7 @@ import {
   eq,
   ilike,
   inArray,
+  notInArray,
   or,
   sql,
   type SQL,
@@ -419,6 +420,86 @@ export async function updateIdea(id: string, input: IdeaInput): Promise<void> {
   }
 
   await writeIdeaAssociations(id, input);
+}
+
+export type IdeaDetailsPatch = {
+  name: string;
+  description: string;
+  /** The full team after the edit. At least one founder is required. */
+  members: IdeaMemberInput[];
+};
+
+const FOUNDER_REQUIRED = "Keep at least one founder.";
+const FOUNDER_ONLY = "Only a founder can edit this idea.";
+
+/**
+ * Updates the name, description, and membership of an idea.
+ * Type, visibility, tags, and geographies stay as they are.
+ * `editorClerkUserId` must already be a founder. The saved team can omit
+ * that person when another founder remains.
+ */
+export async function updateIdeaDetails(
+  id: string,
+  editorClerkUserId: string,
+  input: IdeaDetailsPatch,
+): Promise<void> {
+  const members = dedupeMembers(input.members);
+  if (!members.some((member) => member.role === "FOUNDER")) {
+    throw new Error(FOUNDER_REQUIRED);
+  }
+
+  const db = getDb();
+  const [idea, editor] = await Promise.all([
+    db.query.ideas.findFirst({
+      where: eq(ideas.id, id),
+      columns: { id: true },
+    }),
+    db.query.ideaMembers.findFirst({
+      where: and(
+        eq(ideaMembers.ideaId, id),
+        eq(ideaMembers.clerkUserId, editorClerkUserId),
+        eq(ideaMembers.role, "FOUNDER"),
+      ),
+      columns: { ideaId: true },
+    }),
+  ]);
+
+  if (!idea) {
+    throw new Error(`Unknown idea: ${id}`);
+  }
+  if (!editor) {
+    throw new Error(FOUNDER_ONLY);
+  }
+
+  const statements: BatchItem<"pg">[] = [
+    db
+      .update(ideas)
+      .set({
+        name: input.name,
+        description: input.description,
+        updatedAt: new Date(),
+      })
+      .where(eq(ideas.id, id)),
+    db.delete(ideaMembers).where(
+      and(
+        eq(ideaMembers.ideaId, id),
+        notInArray(
+          ideaMembers.clerkUserId,
+          members.map((member) => member.clerkUserId),
+        ),
+      ),
+    ),
+    db
+      .insert(ideaMembers)
+      .values(members.map((member) => ({ ideaId: id, ...member })))
+      .onConflictDoUpdate({
+        target: [ideaMembers.ideaId, ideaMembers.clerkUserId],
+        set: { role: sql`excluded.role` },
+      }),
+  ];
+
+  const [first, ...rest] = statements;
+  await db.batch([first!, ...rest]);
 }
 
 export async function deleteIdea(id: string): Promise<boolean> {

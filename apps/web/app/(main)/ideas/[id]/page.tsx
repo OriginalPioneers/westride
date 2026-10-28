@@ -14,6 +14,7 @@ import { getIdea } from "@westride/db/ideas";
 import { IDEA_ROLE_LABELS, ideasPath } from "@/lib/ideas/filters";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
 import { FeaturedBadge, IdeaTypeBadge } from "../idea-badges";
+import { EditIdeaButton } from "./edit-idea-button";
 import { IdeaFactoryButton } from "./factory/idea-factory-button";
 
 type Params = Promise<{ id: string }>;
@@ -55,6 +56,25 @@ export default async function IdeaPage({ params }: { params: Params }) {
   const isMember =
     userId !== null &&
     idea.members.some((member) => member.clerkUserId === userId);
+  const isFounder =
+    userId !== null &&
+    idea.members.some(
+      (member) => member.clerkUserId === userId && member.role === "FOUNDER",
+    );
+  const editableIdea = {
+    id: idea.id,
+    name: idea.name,
+    description: idea.description,
+    members: idea.members.map((member) => {
+      const profile = profiles.get(member.clerkUserId);
+      return {
+        clerkUserId: member.clerkUserId,
+        role: member.role,
+        name: profile?.name ?? "WeStride member",
+        imageUrl: profile?.imageUrl ?? null,
+      };
+    }),
+  };
 
   return (
     <Layout
@@ -81,6 +101,9 @@ export default async function IdeaPage({ params }: { params: Params }) {
                   idea={{ id: idea.id, name: idea.name, type: idea.type }}
                   viewerId={userId}
                 />
+                {isFounder ? (
+                  <EditIdeaButton idea={editableIdea} viewerId={userId} />
+                ) : null}
                 <Text type="supporting">
                   Work through this idea with your AI advisory team.
                 </Text>

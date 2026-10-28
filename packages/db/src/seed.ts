@@ -1,19 +1,31 @@
 import { sql } from "drizzle-orm";
-import { config } from "dotenv";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { achievementCatalog } from "./achievement-catalog";
 import { academyTracks } from "./academy-tracks";
 import { getDb } from "./client";
 import { countryCatalog } from "./country-catalog";
+import {
+  databaseLabel,
+  databaseUrl,
+  dbTargetFromArgv,
+  loadDbEnv,
+} from "./load-env";
+import { fail } from "./run";
 import { achievements, countries, skills, tags, tracks } from "./schema";
 import { skillCatalog, skillSlug } from "./skill-catalog";
 import { tagCatalog, tagSlug } from "./tag-catalog";
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const target = dbTargetFromArgv(process.argv);
 
-config({ path: resolve(packageDir, ".env") });
-config({ path: resolve(packageDir, "../../apps/web/.env") });
+try {
+  loadDbEnv(packageDir, target);
+} catch (error) {
+  fail(error);
+}
+
+console.log(`Seeding the ${target} database at ${databaseLabel(databaseUrl())}.`);
 
 const rows = academyTracks.map((track) => ({
   slug: track.slug,
