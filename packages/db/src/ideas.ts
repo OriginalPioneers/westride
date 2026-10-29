@@ -16,6 +16,7 @@ import {
   countries,
   ideaGeographies,
   ideaMembers,
+  ideaBuilderEvents,
   ideas,
   ideaTags,
   tags,
@@ -26,6 +27,7 @@ import {
   type IdeaType,
   type Tag,
 } from "./schema";
+import { changedPitch, prototypeUrl } from "./builder-progress";
 import { tagSlug } from "./tag-catalog";
 
 export type IdeaWithDetails = Idea & {
@@ -145,7 +147,10 @@ async function findIdeas(
     // the callback's table rather than the imported one.
     with: {
       members: {
-        orderBy: (member, { asc: by }) => [by(member.role), by(member.createdAt)],
+        orderBy: (member, { asc: by }) => [
+          by(member.role),
+          by(member.createdAt),
+        ],
       },
       geographies: {
         with: { country: true },
@@ -381,7 +386,10 @@ async function writeIdeaAssociations(
   await db.batch([first!, ...rest]);
 }
 
-export async function createIdea(input: IdeaInput): Promise<{ id: string }> {
+export async function createIdea(
+  input: IdeaInput,
+  actorId?: string,
+): Promise<{ id: string }> {
   const [created] = await getDb()
     .insert(ideas)
     .values({
@@ -398,6 +406,22 @@ export async function createIdea(input: IdeaInput): Promise<{ id: string }> {
   }
 
   await writeIdeaAssociations(created.id, input);
+  if (
+    actorId &&
+    input.members.some(
+      (m) => m.clerkUserId === actorId && m.role === "FOUNDER",
+    ) &&
+    input.members.some((m) => m.clerkUserId !== actorId)
+  ) {
+    await getDb()
+      .insert(ideaBuilderEvents)
+      .values({
+        ideaId: created.id,
+        clerkUserId: actorId,
+        achievementSlug: "team-builder",
+      })
+      .onConflictDoNothing();
+  }
   return created;
 }
 
@@ -423,6 +447,9 @@ export async function updateIdea(id: string, input: IdeaInput): Promise<void> {
 }
 
 export type IdeaDetailsPatch = {
+  prototypeUrl: string;
+  prototypeInstructions: string;
+  prototypeTested: boolean;
   name: string;
   description: string;
   /** The full team after the edit. At least one founder is required. */
@@ -452,7 +479,6 @@ export async function updateIdeaDetails(
   const [idea, editor] = await Promise.all([
     db.query.ideas.findFirst({
       where: eq(ideas.id, id),
-      columns: { id: true },
     }),
     db.query.ideaMembers.findFirst({
       where: and(
@@ -471,12 +497,48 @@ export async function updateIdeaDetails(
     throw new Error(FOUNDER_ONLY);
   }
 
+  const currentTeam = await db
+    .select({ user: ideaMembers.clerkUserId })
+    .from(ideaMembers)
+    .where(eq(ideaMembers.ideaId, id));
+  const url = input.prototypeUrl.trim()
+    ? prototypeUrl(input.prototypeUrl)
+    : null;
+  if (
+    input.prototypeUrl.trim() &&
+    (!url ||
+      input.prototypeUrl.length > 2048 ||
+      !input.prototypeInstructions.trim() ||
+      input.prototypeInstructions.length > 600)
+  )
+    throw new Error("Add a valid HTTPS prototype link and something to try.");
+  const changedPrototype = Boolean(
+    url &&
+    (url !== idea.prototypeUrl ||
+      input.prototypeInstructions.trim() !== idea.prototypeInstructions),
+  );
+  if (changedPrototype && !input.prototypeTested)
+    throw new Error("Test your prototype and confirm it works before sharing.");
+  const earned: string[] = [];
+  if (changedPitch(idea.description, input.description))
+    earned.push("idea-refiner");
+  if (
+    members.some(
+      (m) =>
+        m.clerkUserId !== editorClerkUserId &&
+        !currentTeam.some((old) => old.user === m.clerkUserId),
+    )
+  )
+    earned.push("team-builder");
+  if (changedPrototype) earned.push("prototype-shared");
   const statements: BatchItem<"pg">[] = [
     db
       .update(ideas)
       .set({
         name: input.name,
         description: input.description,
+        prototypeUrl: url,
+        prototypeInstructions: url ? input.prototypeInstructions.trim() : null,
         updatedAt: new Date(),
       })
       .where(eq(ideas.id, id)),
@@ -498,6 +560,19 @@ export async function updateIdeaDetails(
       }),
   ];
 
+  if (earned.length)
+    statements.push(
+      db
+        .insert(ideaBuilderEvents)
+        .values(
+          earned.map((achievementSlug) => ({
+            ideaId: id,
+            clerkUserId: editorClerkUserId,
+            achievementSlug,
+          })),
+        )
+        .onConflictDoNothing(),
+    );
   const [first, ...rest] = statements;
   await db.batch([first!, ...rest]);
 }

@@ -1,4 +1,8 @@
-export { achievementCatalog, achievementGroups } from "./achievement-catalog";
+export {
+  achievementCatalog,
+  mainAchievementCatalog,
+  achievementGroups,
+} from "./achievement-catalog";
 export { ACHIEVEMENT_SLUG } from "./achievement-catalog";
 export type { AchievementSlug } from "./achievement-catalog";
 export { skillCatalog, skillSlug } from "./skill-catalog";

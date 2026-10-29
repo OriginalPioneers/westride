@@ -25,11 +25,14 @@ const attempt = (
     ? { observation: "A goal", suggestion: "Add detail" }
     : null,
 });
-test("24 unique achievements, four families of six, all twelve challenges represented", () => {
-  assert.equal(achievementCatalog.length, 24);
-  assert.equal(new Set(achievementCatalog.map((a) => a.slug)).size, 24);
+test("33 unique achievements, learning and builder families, all twelve challenges represented", () => {
+  assert.equal(achievementCatalog.length, 33);
+  assert.equal(new Set(achievementCatalog.map((a) => a.slug)).size, 33);
   for (const group of achievementGroups)
-    assert.equal(achievementCatalog.filter((a) => a.group === group).length, 6);
+    assert.equal(
+      achievementCatalog.filter((a) => a.group === group).length,
+      group === "Build something real" ? 3 : 6,
+    );
   for (const challenge of challengeCatalog)
     assert.ok(achievementCatalog.some((a) => a.slug === challenge.slug));
   assert.equal(

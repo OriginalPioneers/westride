@@ -1,3 +1,5 @@
+import { socialProgress } from "./social-progress";
+import { socialPosts } from "./social-schema";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { getDb } from "./client";
@@ -17,7 +19,12 @@ import {
   learningMuseBudgets as budgets,
   type LearningFeedback,
 } from "./learning-schema";
-import { achievements, userAchievements, ideaMembers } from "./schema";
+import {
+  achievements,
+  userAchievements,
+  ideaMembers,
+  ideaBuilderEvents,
+} from "./schema";
 export type { LearningAttempt, LearningFeedback } from "./learning-schema";
 const owned = (user: string, id: string) =>
   and(eq(attempts.clerkUserId, user), eq(attempts.id, id));
@@ -167,6 +174,18 @@ export async function syncLearningAwards(user: string) {
     )
     .limit(1);
   if (idea.length) eligible.push("first-spark");
+  const builder = await getDb()
+    .select({ slug: ideaBuilderEvents.achievementSlug })
+    .from(ideaBuilderEvents)
+    .where(eq(ideaBuilderEvents.clerkUserId, user));
+  eligible.push(...builder.map((event) => event.slug));
+  const social = await getDb()
+    .select()
+    .from(socialPosts)
+    .where(eq(socialPosts.clerkUserId, user));
+  eligible.push(
+    ...socialProgress(social, new Date().toISOString().slice(0, 10)).slugs,
+  );
   const valid = new Set(achievementCatalog.map((a) => a.slug));
   const slugs = eligible.filter((slug) => valid.has(slug as AchievementSlug));
   if (!slugs.length) return;

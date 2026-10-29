@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { achievementCatalog } from "@westride/db";
+import { achievementCatalog, mainAchievementCatalog } from "@westride/db";
 import {
   challengeCatalog,
   learningAwards,
@@ -115,5 +115,55 @@ test("fully earned tracks offer an idea action without promising more badges", (
   );
   assert.equal(progress.next.href, "/ideas");
   assert.deepEqual(progress.next.unlocks, []);
-  assert.ok(progress.next.description.includes("All 24 earned"));
+  assert.ok(
+    progress.next.description.includes(
+      `All ${mainAchievementCatalog.length} earned`,
+    ),
+  );
+});
+
+test("builder badges require an idea, then suggest the next unearned builder action", () => {
+  assert.equal(
+    trackProgress([], new Set(["newbie"]), true).state("idea-refiner"),
+    "Needs an idea",
+  );
+  const attempts = challengeCatalog.map((c, i) => ({
+    ...attempt(c.slug, (["games", "everyday", "helping"] as const)[i % 3]),
+    completedAt: new Date(1),
+    feedback: { observation: "Clear", suggestion: "Add detail" },
+    revision: "A more specific answer",
+  }));
+  const earned = new Set([
+    ...learningAwards(attempts),
+    "newbie",
+    "curious-cat",
+    "first-spark",
+  ]);
+  assert.deepEqual(trackProgress(attempts, earned, true).next.unlocks, [
+    "Better by Design",
+  ]);
+  earned.add("idea-refiner");
+  assert.deepEqual(trackProgress(attempts, earned, true).next.unlocks, [
+    "Team Up",
+  ]);
+  earned.add("team-builder");
+  assert.deepEqual(trackProgress(attempts, earned, true).next.unlocks, [
+    "Made Real",
+  ]);
+});
+
+test("bonus badges are never required to finish the main journey", () => {
+  const attempts = challengeCatalog.map((c, i) => ({
+    ...attempt(c.slug, (["games", "everyday", "helping"] as const)[i % 3]),
+    completedAt: new Date(1),
+    feedback: { observation: "Clear", suggestion: "Add detail" },
+    revision: "An improved answer",
+  }));
+  const progress = trackProgress(
+    attempts,
+    new Set(mainAchievementCatalog.map((a) => a.slug)),
+    true,
+  );
+  assert.ok(progress.next.description.includes("All 27 earned"));
+  assert.deepEqual(progress.next.unlocks, []);
 });

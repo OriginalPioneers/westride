@@ -1,12 +1,19 @@
 import type { IdeaMemberRole, IdeaType } from "@westride/db";
 import { z } from "zod";
+import { prototypeUrl } from "@westride/db/builder";
 
 export const MAX_IDEA_NAME = 120;
 export const MAX_IDEA_DESCRIPTION = 8000;
 export const MAX_IDEA_INVITES = 20;
 
-const ideaTypes = ["BUSINESS", "NON_PROFIT"] as const satisfies readonly IdeaType[];
-const ideaRoles = ["FOUNDER", "MEMBER"] as const satisfies readonly IdeaMemberRole[];
+const ideaTypes = [
+  "BUSINESS",
+  "NON_PROFIT",
+] as const satisfies readonly IdeaType[];
+const ideaRoles = [
+  "FOUNDER",
+  "MEMBER",
+] as const satisfies readonly IdeaMemberRole[];
 
 const inviteSchema = z.object({
   clerkUserId: z.string().trim().min(1).max(128),
@@ -62,6 +69,17 @@ export const createIdeaSchema = z.object({
 
 export const updateIdeaSchema = z
   .object({
+    prototypeUrl: z
+      .string()
+      .trim()
+      .max(2048)
+      .refine(
+        (url) => !url || prototypeUrl(url) !== null,
+        "Use a full HTTPS link without a username or password.",
+      )
+      .default(""),
+    prototypeInstructions: z.string().trim().max(600).default(""),
+    prototypeTested: z.boolean().default(false),
     name: ideaNameSchema,
     description: ideaDescriptionSchema,
     members: memberListSchema(
@@ -69,6 +87,13 @@ export const updateIdeaSchema = z
       `An idea can have up to ${MAX_IDEA_MEMBERS} people.`,
     ),
   })
+  .refine(
+    (value) => !value.prototypeUrl || Boolean(value.prototypeInstructions),
+    {
+      error: "Describe one thing people can try.",
+      path: ["prototypeInstructions"],
+    },
+  )
   .refine(
     (value) => value.members.some((member) => member.role === "FOUNDER"),
     {
@@ -122,6 +147,9 @@ export function validateIdeaDraft(draft: IdeaDraft): CreateIdeaFieldErrors {
 
 /** Draft a founder edits. Membership is the full team after the save. */
 export type IdeaEditDraft = {
+  prototypeUrl: string;
+  prototypeInstructions: string;
+  prototypeTested: boolean;
   name: string;
   description: string;
   members: { clerkUserId: string; role: IdeaMemberRole }[];

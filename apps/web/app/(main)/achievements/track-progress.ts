@@ -1,4 +1,5 @@
-import { achievementCatalog } from "@westride/db";
+import { builderSteps } from "@westride/db/builder";
+import { achievementCatalog, mainAchievementCatalog } from "@westride/db";
 import {
   challengeCatalog,
   interests,
@@ -158,15 +159,20 @@ export function trackProgress(
       href: "/academy",
       unlocks: ["Curious Cat"],
     };
+  } else if (
+    earned.has("first-spark") &&
+    builderSteps.some((step) => !earned.has(step.slug))
+  ) {
+    const step = builderSteps.find((item) => !earned.has(item.slug))!;
+    next = { ...step, href: "/ideas", unlocks: names([step.slug]) };
   } else {
     next = {
       title: earned.has("first-spark")
         ? "Put your learning into an idea"
         : "Turn a spark into an idea",
-      description:
-        earned.size === achievementCatalog.length
-          ? "All 24 earned. Take what you practiced into your next idea."
-          : "Capture an idea in Idea Studio. A private idea counts too.",
+      description: mainAchievementCatalog.every((a) => earned.has(a.slug))
+        ? `All ${mainAchievementCatalog.length} earned. Take what you practiced into your next idea.`
+        : "Capture an idea in Idea Studio. A private idea counts too.",
       label: "Open Idea Studio",
       href: "/ideas",
       unlocks: names(["first-spark"]),
@@ -176,6 +182,11 @@ export function trackProgress(
   function state(slug: string) {
     if (earned.has(slug)) return "Earned";
     if (!signedIn) return "Sign in";
+    if (
+      builderSteps.some((step) => step.slug === slug) &&
+      !earned.has("first-spark")
+    )
+      return "Needs an idea";
     const milestone = [...challengeMilestones, ...revisionMilestones].find(
       (m) => m.slug === slug,
     );
@@ -200,6 +211,8 @@ export function trackProgress(
     return "Ready";
   }
   function detail(slug: string) {
+    if (state(slug) === "Needs an idea")
+      return "Save your first idea in Idea Studio to get started.";
     const milestone = [...challengeMilestones, ...revisionMilestones].find(
       (m) => m.slug === slug,
     );

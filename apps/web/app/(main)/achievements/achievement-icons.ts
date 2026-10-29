@@ -25,6 +25,15 @@ import {
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 export const achievementIcons = {
+  "post-maker": PencilSquareIcon,
+  "hello-world": PaperAirplaneIcon,
+  "triple-feature": BoltIcon,
+  "seven-day-signal": FlagIcon,
+  "across-the-feed": ArrowsRightLeftIcon,
+  "audience-engaged": ChatBubbleLeftRightIcon,
+  "idea-refiner": PencilSquareIcon,
+  "team-builder": UserGroupIcon,
+  "prototype-shared": RocketLaunchIcon,
   newbie: ArrowRightStartOnRectangleIcon,
   "curious-cat": AcademicCapIcon,
   "first-spark": LightBulbIcon,

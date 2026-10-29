@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Banner } from "@astryxdesign/core/Banner";
+import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
 import { Button } from "@astryxdesign/core/Button";
 import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
 import { Divider } from "@astryxdesign/core/Divider";
@@ -12,11 +13,7 @@ import { FormLayout } from "@astryxdesign/core/FormLayout";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
-import {
-  Layout,
-  LayoutContent,
-  LayoutFooter,
-} from "@astryxdesign/core/Layout";
+import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import {
   SegmentedControl,
   SegmentedControlItem,
@@ -54,6 +51,9 @@ export type EditableIdeaMember = {
 };
 
 export type EditableIdea = {
+  prototypeUrl: string | null;
+  prototypeInstructions: string | null;
+  isPublic: boolean;
   id: string;
   name: string;
   description: string;
@@ -114,6 +114,13 @@ export function EditIdeaDialog({
   const [submitted, setSubmitted] = useState(false);
   const [name, setName] = useState(idea.name);
   const [description, setDescription] = useState(idea.description);
+  const [prototypeUrl, setPrototypeUrl] = useState(idea.prototypeUrl ?? "");
+  const [prototypeInstructions, setPrototypeInstructions] = useState(
+    idea.prototypeInstructions ?? "",
+  );
+  const [prototypeTested, setPrototypeTested] = useState(
+    Boolean(idea.prototypeUrl),
+  );
   const [members, setMembers] = useState<TeamMember[]>(() =>
     idea.members.map((member) => ({ ...member, detail: null })),
   );
@@ -122,6 +129,9 @@ export function EditIdeaDialog({
   const [formMessage, setFormMessage] = useState<string | null>(null);
 
   const draft: IdeaEditDraft = {
+    prototypeUrl,
+    prototypeInstructions,
+    prototypeTested,
     name,
     description,
     members: members.map((member) => ({
@@ -135,7 +145,9 @@ export function EditIdeaDialog({
     ...serverErrors,
   };
   const membersError = messageFor(errors, "members");
-  const founderCount = members.filter((member) => member.role === "FOUNDER").length;
+  const founderCount = members.filter(
+    (member) => member.role === "FOUNDER",
+  ).length;
 
   const memberSource = useMemo<SearchSource<IdeaPersonHit>>(
     () => ({
@@ -200,7 +212,9 @@ export function EditIdeaDialog({
       return;
     }
     setMembers((current) => {
-      const founders = current.filter((member) => member.role === "FOUNDER").length;
+      const founders = current.filter(
+        (member) => member.role === "FOUNDER",
+      ).length;
       return current.map((member) => {
         if (member.clerkUserId !== clerkUserId) {
           return member;
@@ -216,8 +230,12 @@ export function EditIdeaDialog({
 
   function removeMember(clerkUserId: string) {
     setMembers((current) => {
-      const target = current.find((member) => member.clerkUserId === clerkUserId);
-      const founders = current.filter((member) => member.role === "FOUNDER").length;
+      const target = current.find(
+        (member) => member.clerkUserId === clerkUserId,
+      );
+      const founders = current.filter(
+        (member) => member.role === "FOUNDER",
+      ).length;
       if (target?.role === "FOUNDER" && founders <= 1) {
         return current;
       }
@@ -243,6 +261,7 @@ export function EditIdeaDialog({
           setFormMessage(result.message);
           return;
         }
+        window.dispatchEvent(new Event("westride:achievements"));
         if (!result.canStillView) {
           router.push("/ideas");
           return;
@@ -315,14 +334,64 @@ export function EditIdeaDialog({
 
               <Divider />
 
+              <VStack gap={4}>
+                <Heading level={2} accessibilityLevel={3}>
+                  Prototype
+                </Heading>
+                <Text type="supporting">
+                  {idea.isPublic
+                    ? "Your link will be visible to everyone who views this public idea."
+                    : "Your link will be visible to members of this private idea."}{" "}
+                  The prototype’s own access settings still apply.
+                </Text>
+                <TextInput
+                  label="Prototype link"
+                  value={prototypeUrl}
+                  isOptional
+                  placeholder="https://your-prototype.example.com"
+                  description="Share something people can use. Clear the link to remove it."
+                  status={fieldStatus(errors.prototypeUrl)}
+                  onChange={(value) => {
+                    setPrototypeUrl(value);
+                    setPrototypeTested(false);
+                    clearServer("prototypeUrl");
+                  }}
+                />
+                {prototypeUrl.trim() ? (
+                  <>
+                    <TextArea
+                      label="What should people try?"
+                      value={prototypeInstructions}
+                      rows={3}
+                      maxLength={600}
+                      isRequired
+                      description="Give one short task, such as adding a sample item and checking the result."
+                      status={fieldStatus(errors.prototypeInstructions)}
+                      onChange={(value) => {
+                        setPrototypeInstructions(value);
+                        setPrototypeTested(false);
+                        clearServer("prototypeInstructions");
+                      }}
+                    />
+                    <CheckboxInput
+                      label="I tested this link and the task works."
+                      value={prototypeTested}
+                      isRequired
+                      onChange={setPrototypeTested}
+                      description="Check that the people viewing your idea can access the prototype."
+                    />
+                  </>
+                ) : null}
+              </VStack>
+              <Divider />
               <VStack gap={5}>
                 <VStack gap={2}>
                   <Heading level={2} accessibilityLevel={3}>
                     Team
                   </Heading>
                   <Text type="supporting">
-                    Add WeStride members, or remove people who should no
-                    longer be on the idea. {KEEP_FOUNDER}
+                    Add WeStride members, or remove people who should no longer
+                    be on the idea. {KEEP_FOUNDER}
                   </Text>
                 </VStack>
                 <Typeahead
@@ -362,9 +431,7 @@ export function EditIdeaDialog({
                     const isLastFounder =
                       member.role === "FOUNDER" && founderCount === 1;
                     const detail =
-                      member.clerkUserId === viewerId
-                        ? "You"
-                        : member.detail;
+                      member.clerkUserId === viewerId ? "You" : member.detail;
                     return (
                       <HStack
                         key={member.clerkUserId}
