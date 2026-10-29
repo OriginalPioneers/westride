@@ -1,6 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="28" fill="#a8a29e"/>
-  <circle cx="64" cy="52" r="22" fill="#fafaf9"/>
-  <text x="64" y="58" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#57534e">New</text>
-  <text x="64" y="104" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#fafaf9">Placeholder</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" width="48" height="48" color="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"></path></svg>

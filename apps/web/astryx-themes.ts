@@ -9,6 +9,7 @@ import "@astryxdesign/theme-stone/fonts.css";
 
 export const themes = {
   "stone": _astryxTheme0,
-};
+} as const;
+export type ThemeSlug = keyof typeof themes;
 
-export const defaultThemeSlug = "stone";
+export const defaultThemeSlug: keyof typeof themes = "stone";

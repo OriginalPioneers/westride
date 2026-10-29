@@ -1,35 +1,127 @@
+import { socialMilestones } from "./social-progress";
+import { challengeCatalog } from "./challenge-catalog";
 export const ACHIEVEMENT_SLUG = {
   curiousCat: "curious-cat",
   newbie: "newbie",
+  firstSpark: "first-spark",
 } as const;
-
+export const achievementGroups = [
+  "Getting started",
+  "Communicate clearly",
+  "Think like a builder",
+  "Keep exploring",
+  "Build something real",
+  "Get social",
+] as const;
+const milestones = [
+  ...socialMilestones.map(
+    ([slug, name, description]) =>
+      [slug, name, description, "Get social"] as const,
+  ),
+  [
+    "idea-refiner",
+    "Better by Design",
+    "Save a changed description on an idea you founded.",
+    "Build something real",
+  ],
+  [
+    "team-builder",
+    "Team Up",
+    "Add another WeStride member to an idea you founded.",
+    "Build something real",
+  ],
+  [
+    "prototype-shared",
+    "Made Real",
+    "Share a tested prototype link and something to try on your idea.",
+    "Build something real",
+  ],
+  ["newbie", "First Step", "Sign in to start your journey.", "Getting started"],
+  ["curious-cat", "Curious Cat", "Visit the Academy.", "Getting started"],
+  [
+    "first-spark",
+    "First Spark",
+    "Save your first idea, public or private.",
+    "Getting started",
+  ],
+  [
+    "prompt-pilot",
+    "Prompt Pilot",
+    "Complete your first challenge.",
+    "Getting started",
+  ],
+  [
+    "second-draft",
+    "Second Draft",
+    "Save a changed answer after Muse gives feedback.",
+    "Getting started",
+  ],
+  [
+    "three-for-three",
+    "Three for Three",
+    "Complete three different challenges.",
+    "Getting started",
+  ],
+  [
+    "game-thinker",
+    "Game Thinker",
+    "Complete a challenge about games.",
+    "Keep exploring",
+  ],
+  [
+    "everyday-inventor",
+    "Everyday Inventor",
+    "Complete a challenge about everyday life.",
+    "Keep exploring",
+  ],
+  [
+    "helping-hand",
+    "Helping Hand",
+    "Complete a challenge about helping people.",
+    "Keep exploring",
+  ],
+  [
+    "on-a-roll",
+    "On a Roll",
+    "Complete six different challenges.",
+    "Keep exploring",
+  ],
+  [
+    "full-circle",
+    "Full Circle",
+    "Complete all twelve challenges.",
+    "Keep exploring",
+  ],
+  [
+    "thoughtful-revisions",
+    "Thoughtful Revisions",
+    "Revise answers in three different challenges after Muse feedback.",
+    "Keep exploring",
+  ],
+] as const;
 export type AchievementSlug =
-  (typeof ACHIEVEMENT_SLUG)[keyof typeof ACHIEVEMENT_SLUG];
+  (typeof milestones)[number][0] | (typeof challengeCatalog)[number]["slug"];
+export const achievementCatalog = achievementGroups
+  .flatMap((group) => [
+    ...milestones
+      .filter((m) => m[3] === group)
+      .map(([slug, name, description]) => ({ slug, name, description, group })),
+    ...challengeCatalog
+      .filter((c) => c.group === group)
+      .map((c) => ({
+        slug: c.slug,
+        name: c.name,
+        description: `Complete the ${c.name} challenge.`,
+        group,
+      })),
+  ])
+  .map((item, sortOrder) => ({
+    ...item,
+    sortOrder,
+    badgeUrl: `/achievements/${item.slug}.svg`,
+  }));
+export type AchievementSeed = (typeof achievementCatalog)[number];
 
-export type AchievementSeed = {
-  slug: AchievementSlug;
-  name: string;
-  description: string;
-  badgeUrl: string;
-  sortOrder: number;
-};
-
-/**
- * Stand-in badge art. Replace each `badgeUrl` when the real graphic is ready.
- */
-export const achievementCatalog = [
-  {
-    slug: ACHIEVEMENT_SLUG.curiousCat,
-    name: "Curious Cat",
-    description: "Entered the halls of the Academy.",
-    badgeUrl: "/achievements/curious-cat.svg",
-    sortOrder: 1,
-  },
-  {
-    slug: ACHIEVEMENT_SLUG.newbie,
-    name: "Newbie",
-    description: "Created a WeStride account.",
-    badgeUrl: "/achievements/newbie.svg",
-    sortOrder: 2,
-  },
-] satisfies AchievementSeed[];
+export const mainAchievementCatalog = achievementCatalog.filter(
+  (item) => item.group !== "Get social",
+);
