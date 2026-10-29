@@ -229,6 +229,26 @@ export async function listIdeas(
   return findIdeas(and(...conditions), orderFor(filters.sort ?? "newest"));
 }
 
+/** Ideas this member belongs to, including private ones. Recently updated first. */
+export async function listIdeasForMember(
+  clerkUserId: string,
+): Promise<IdeaWithDetails[]> {
+  if (!clerkUserId) {
+    return [];
+  }
+
+  return findIdeas(
+    inArray(
+      ideas.id,
+      getDb()
+        .select({ id: ideaMembers.ideaId })
+        .from(ideaMembers)
+        .where(eq(ideaMembers.clerkUserId, clerkUserId)),
+    ),
+    orderFor("updated"),
+  );
+}
+
 export async function getIdea(
   id: string,
   viewer: IdeaViewer = ANYONE,
