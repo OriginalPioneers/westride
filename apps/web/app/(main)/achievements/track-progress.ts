@@ -196,11 +196,13 @@ export function trackProgress(
       if ((isRevision ? revised.size : completed.size) > 0)
         return "In progress";
     }
-    const interest = {
-      "game-thinker": "games",
-      "everyday-inventor": "everyday",
-      "helping-hand": "helping",
-    }[slug];
+    const interest = (
+      {
+        "game-thinker": "games",
+        "everyday-inventor": "everyday",
+        "helping-hand": "helping",
+      } as Partial<Record<string, string>>
+    )[slug];
     if (
       unfinished.some(
         (a) => a.challengeSlug === slug || a.interest === interest,

@@ -6,8 +6,13 @@ import { collectAchievementCelebrations } from "./actions";
 export function AchievementCelebration() {
   const pathname = usePathname();
   const [names, setNames] = useState<string[]>([]);
+  // Dismiss independently of navigation so a route change can't strand the banner.
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (!names.length) return;
+    const timer = setTimeout(() => setNames([]), 10_000);
+    return () => clearTimeout(timer);
+  }, [names]);
+  useEffect(() => {
     async function collect() {
       try {
         const earned = await collectAchievementCelebrations();
@@ -23,17 +28,13 @@ export function AchievementCelebration() {
             disableForReducedMotion: true,
           });
         }
-        timer = setTimeout(() => setNames([]), 10_000);
       } catch {
         /* A celebration must never interrupt the learner. */
       }
     }
     void collect();
     window.addEventListener("westride:achievements", collect);
-    return () => {
-      if (timer) clearTimeout(timer);
-      window.removeEventListener("westride:achievements", collect);
-    };
+    return () => window.removeEventListener("westride:achievements", collect);
   }, [pathname]);
   return names.length ? (
     <Banner

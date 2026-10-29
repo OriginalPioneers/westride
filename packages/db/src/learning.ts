@@ -86,7 +86,12 @@ export async function saveLearningDraft(
         idle(),
       ),
     );
-  return getLearningAttempt(user, id);
+  // Zero rows update while feedback is pending or the answer is protected;
+  // only an identical stored answer counts as saved.
+  const current = await getLearningAttempt(user, id);
+  if (current && current.answer !== answer)
+    throw new Error("Answer not saved; the attempt is busy or locked.");
+  return current;
 }
 export async function claimLearningFeedback(
   user: string,
@@ -151,8 +156,11 @@ export async function reviseLearningAnswer(
     .update(attempts)
     .set({ revision })
     .where(and(owned(user, id), idle()));
+  const current = await getLearningAttempt(user, id);
+  if (current && current.revision !== revision)
+    throw new Error("Revision not saved; the attempt is busy.");
   await syncLearningAwards(user);
-  return getLearningAttempt(user, id);
+  return current;
 }
 export async function finishLearningAttempt(user: string, id: string) {
   const attempt = await getLearningAttempt(user, id);
@@ -161,8 +169,11 @@ export async function finishLearningAttempt(user: string, id: string) {
     .update(attempts)
     .set({ completedAt: new Date() })
     .where(and(owned(user, id), isNull(attempts.completedAt), idle()));
+  const current = await getLearningAttempt(user, id);
+  if (current && !current.completedAt)
+    throw new Error("Attempt not finished; the attempt is busy.");
   await syncLearningAwards(user);
-  return getLearningAttempt(user, id);
+  return current;
 }
 export async function syncLearningAwards(user: string) {
   const eligible = learningAwards(await listLearningAttempts(user));

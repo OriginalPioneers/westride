@@ -92,6 +92,7 @@ test("revisions require feedback and count distinct challenges", () => {
 test("whitespace, casing, and punctuation-only revisions do not earn revision badges", () => {
   assert.equal(isChangedAnswer("Help a friend", "  help  a friend "), false);
   assert.equal(isChangedAnswer("Help a friend", "..."), false);
+  assert.equal(isChangedAnswer("Help a friend", "Help a friend!"), false);
   assert.equal(
     isChangedAnswer("Help a friend", "Help a friend learn a game"),
     true,
