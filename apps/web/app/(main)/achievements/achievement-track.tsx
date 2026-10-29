@@ -104,371 +104,382 @@ export function AchievementTrack({
     });
   }
   return (
-    <Theme theme={achievementTheme}>
-      <VStack gap={6}>
-        <HStack gap={4} vAlign="center">
-          <VStack
-            data-muse-top
-            gap={1}
-            hAlign="center"
-            style={{ width: "calc(var(--spacing-12) * 2)", flexShrink: 0 }}
-          >
-            <ClickableCard
-              label="Ask Muse"
-              padding={0}
-              elevation="none"
-              width="100%"
-              style={{ backgroundColor: "transparent", border: 0 }}
-              onClick={() =>
-                window.dispatchEvent(new Event("westride:open-muse"))
-              }
+    <>
+      <Theme theme={achievementTheme}>
+        <VStack gap={6}>
+          <HStack gap={4} vAlign="center">
+            <VStack
+              data-muse-top
+              gap={1}
+              hAlign="center"
+              style={{ width: "calc(var(--spacing-12) * 2)", flexShrink: 0 }}
             >
-              <MuseCompanion />
-            </ClickableCard>
-            <Text type="supporting" size="xsm" style={{ textAlign: "center" }}>
-              Need a nudge?
-              <br />
-              Ask Muse.
-            </Text>
-          </VStack>
-          <StackItem size="fill">
-            <VStack gap={2} hAlign="start">
+              <ClickableCard
+                label="Ask Muse"
+                padding={0}
+                elevation="none"
+                width="100%"
+                style={{ backgroundColor: "transparent", border: 0 }}
+                onClick={() =>
+                  window.dispatchEvent(new Event("westride:open-muse"))
+                }
+              >
+                <MuseCompanion />
+              </ClickableCard>
               <Text
-                type="label"
-                color="accent"
-                style={{ color: "var(--color-journey-purple)" }}
+                type="supporting"
+                size="xsm"
+                style={{ textAlign: "center" }}
               >
-                Next up
+                Need a nudge?
+                <br />
+                Ask Muse.
               </Text>
-              <Heading level={2}>{next.title}</Heading>
-              <Text>{next.description}</Text>
-              {next.unlocks.length ? (
-                <Text type="supporting">
-                  {next.href
-                    ? "Unlocks"
-                    : next.label === "Revisit answer"
-                      ? "Revise to unlock"
-                      : "Finish to unlock"}
-                  : {next.unlocks.join(" · ")}
+            </VStack>
+            <StackItem size="fill">
+              <VStack gap={2} hAlign="start">
+                <Text
+                  type="label"
+                  color="accent"
+                  style={{ color: "var(--color-journey-purple)" }}
+                >
+                  Next up
                 </Text>
-              ) : null}
-              <Button
-                label={next.label}
-                variant="primary"
-                href={!viewerId ? signInPath : next.href}
-                onClick={
-                  next.challenge
-                    ? () => setSelected(next.challenge!)
-                    : undefined
-                }
-              />
-            </VStack>
-          </StackItem>
-        </HStack>
-
-        <VStack gap={4}>
-          <ProgressBar
-            label="Your achievements"
-            value={mainEarned}
-            max={mainAchievementCatalog.length}
-            hasValueLabel
-            variant={
-              mainEarned === mainAchievementCatalog.length
-                ? "success"
-                : "accent"
-            }
-            formatValueLabel={(value, max) => `${value} of ${max} earned`}
-          />
-          <Grid columns={{ minWidth: 280, max: 2 }} gap={4}>
-            <VStack gap={2}>
-              <ProgressBar
-                label="Challenge milestones"
-                value={progress.completed.size}
-                max={12}
-                marks={challengeMilestones}
-                hasValueLabel
-                variant={progress.completed.size === 12 ? "success" : "accent"}
-                formatValueLabel={(value, max) => `${value} / ${max}`}
-              />
-              <Text type="supporting">
-                {milestoneHint(
-                  progress.completed.size,
-                  challengeMilestones,
-                  "challenge",
-                )}
-              </Text>
-            </VStack>
-            <VStack gap={2}>
-              <ProgressBar
-                label="Revision milestones"
-                value={Math.min(progress.revised.size, 3)}
-                max={3}
-                marks={revisionMilestones}
-                hasValueLabel
-                variant={progress.revised.size >= 3 ? "success" : "accent"}
-                formatValueLabel={(value, max) => `${value} / ${max}`}
-              />
-              <Text type="supporting">
-                {milestoneHint(
-                  progress.revised.size,
-                  revisionMilestones,
-                  "revision",
-                )}
-              </Text>
-            </VStack>
-          </Grid>
-        </VStack>
-
-        <Stepper
-          orientation="vertical"
-          indicatorPosition="on-track"
-          density="compact"
-          activeStep={firstIncomplete < 0 ? groups.length : firstIncomplete}
-          label="Your learning track"
-        >
-          {groups.map(({ group, items }, index) => {
-            const count = items.filter((a) => earned.has(a.slug)).length;
-            return (
-              <Step
-                key={group}
-                step={index}
-                style={
-                  {
-                    "--journey-section-color": sectionColors[index],
-                  } as React.CSSProperties
-                }
-                label={group}
-                description={
-                  count === items.length
-                    ? `All ${items.length} earned`
-                    : `${count} of ${items.length} earned${count === items.length - 1 ? " · One away from completing this group" : ""}`
-                }
-              >
-                <List edge="flush" density="compact" hasDividers>
-                  {items.map((item) => {
-                    const state = progress.state(item.slug);
-                    const challenge = challengeCatalog.find(
-                      (c) => c.slug === item.slug,
-                    );
-                    const color =
-                      state === "Earned"
-                        ? "success"
-                        : state === "In progress"
-                          ? "accent"
-                          : "secondary";
-                    const locked =
-                      state === "Needs feedback" ||
-                      state === "Sign in" ||
-                      state === "Needs an idea";
-                    return (
-                      <ListItem
-                        key={item.slug}
-                        align="first-line"
-                        label={
-                          <HStack gap={2} vAlign="center" wrap="wrap">
-                            <Text type="label" weight="semibold">
-                              {item.name}
-                            </Text>
-                            <HStack gap={1} vAlign="center">
-                              <Icon
-                                icon={
-                                  state === "Earned"
-                                    ? "check"
-                                    : state === "In progress"
-                                      ? "clock"
-                                      : locked
-                                        ? LockClosedIcon
-                                        : "chevronRight"
-                                }
-                                color={color}
-                                style={
-                                  state === "Earned"
-                                    ? { color: sectionColors[index] }
-                                    : state === "In progress"
-                                      ? { color: sectionColors[index] }
-                                      : undefined
-                                }
-                                size="xsm"
-                              />
-                              <Text
-                                type="supporting"
-                                style={
-                                  state === "Earned"
-                                    ? { color: sectionColors[index] }
-                                    : state === "In progress"
-                                      ? { color: sectionColors[index] }
-                                      : undefined
-                                }
-                                color={
-                                  state === "In progress"
-                                    ? "accent"
-                                    : "secondary"
-                                }
-                              >
-                                {state === "Sign in" ? null : state}
-                              </Text>
-                            </HStack>
-                          </HStack>
-                        }
-                        startContent={
-                          <Icon
-                            icon={achievementIcons[item.slug]}
-                            size="lg"
-                            color={color}
-                            style={{ color: sectionColors[index] }}
-                          />
-                        }
-                        description={
-                          <Text type="supporting">
-                            {progress.detail(item.slug) ??
-                              challengeDescriptions[item.slug] ??
-                              item.description}
-                          </Text>
-                        }
-                        endContent={
-                          viewerId ? (
-                            challenge ? (
-                              <Button
-                                label={
-                                  state === "Earned"
-                                    ? "Revisit"
-                                    : state === "In progress"
-                                      ? "Continue"
-                                      : "Try"
-                                }
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openChallenge(challenge.slug)}
-                              />
-                            ) : item.slug === "curious-cat" ? (
-                              <Button
-                                label="Academy"
-                                href="/academy"
-                                variant="ghost"
-                                size="sm"
-                              />
-                            ) : item.slug === "first-spark" ||
-                              item.group === "Build something real" ? (
-                              <Button
-                                label="Ideas"
-                                href="/ideas"
-                                variant="ghost"
-                                size="sm"
-                              />
-                            ) : null
-                          ) : undefined
-                        }
-                      />
-                    );
-                  })}
-                </List>
-              </Step>
-            );
-          })}
-          <Step
-            step={groups.length}
-            label="Continue the journey!"
-            style={
-              {
-                "--journey-section-color": "var(--color-journey-red)",
-              } as React.CSSProperties
-            }
-          />
-        </Stepper>
-        <Divider />
-        <VStack gap={4}>
-          <HStack gap={2} vAlign="center">
-            <Heading
-              level={2}
-              style={{
-                backgroundImage: journeyGradient,
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                color: "transparent",
-              }}
-            >
-              Get social
-            </Heading>
-            <Badge label="BONUS" variant="purple" style={bonusBadgeStyle} />
+                <Heading level={2}>{next.title}</Heading>
+                <Text>{next.description}</Text>
+                {next.unlocks.length ? (
+                  <Text type="supporting">
+                    {next.href
+                      ? "Unlocks"
+                      : next.label === "Revisit answer"
+                        ? "Revise to unlock"
+                        : "Finish to unlock"}
+                    : {next.unlocks.join(" · ")}
+                  </Text>
+                ) : null}
+                <Button
+                  label={next.label}
+                  variant="primary"
+                  href={!viewerId ? signInPath : next.href}
+                  onClick={
+                    next.challenge
+                      ? () => setSelected(next.challenge!)
+                      : undefined
+                  }
+                />
+              </VStack>
+            </StackItem>
           </HStack>
-          <Text type="supporting">
-            Share what you’re making, find your voice, and learn from feedback.
-            This optional track doesn’t count toward your main journey.
-            Published posts and audience feedback are confirmed by you.
-          </Text>
-          <ProgressBar
-            label="Bonus achievements"
-            value={bonusEarned}
-            max={bonus.length}
-            hasValueLabel
-            formatValueLabel={(v, max) => `${v} of ${max} earned`}
-          />
-          <List edge="flush" density="compact" hasDividers>
-            {bonus.map((item) => (
-              <ListItem
-                key={item.slug}
-                startContent={
-                  <Icon
-                    icon={achievementIcons[item.slug]}
-                    size="lg"
-                    color={earned.has(item.slug) ? "success" : "secondary"}
-                    style={{ color: "var(--color-journey-blue)" }}
-                  />
-                }
-                label={
-                  <HStack gap={2} vAlign="center" wrap="wrap">
-                    <Text type="label" weight="semibold">
-                      {item.name}
-                    </Text>
-                    <Text
-                      type="supporting"
-                      style={
-                        earned.has(item.slug)
-                          ? { color: "var(--color-journey-teal)" }
-                          : undefined
-                      }
-                    >
-                      {earned.has(item.slug) ? "Earned" : "Optional"}
-                    </Text>
-                  </HStack>
-                }
-                description={<Text type="supporting">{item.description}</Text>}
-              />
-            ))}
-          </List>
-          <Button
-            label="Make a post with Muse"
-            variant="secondary"
-            href={!viewerId ? signInPath : undefined}
-            onClick={viewerId ? () => setSocialOpen(true) : undefined}
-          />
+
+          <VStack gap={4}>
+            <ProgressBar
+              label="Your achievements"
+              value={mainEarned}
+              max={mainAchievementCatalog.length}
+              hasValueLabel
+              variant={
+                mainEarned === mainAchievementCatalog.length
+                  ? "success"
+                  : "accent"
+              }
+              formatValueLabel={(value, max) => `${value} of ${max} earned`}
+            />
+            <Grid columns={{ minWidth: 280, max: 2 }} gap={4}>
+              <VStack gap={2}>
+                <ProgressBar
+                  label="Challenge milestones"
+                  value={progress.completed.size}
+                  max={12}
+                  marks={challengeMilestones}
+                  hasValueLabel
+                  variant={
+                    progress.completed.size === 12 ? "success" : "accent"
+                  }
+                  formatValueLabel={(value, max) => `${value} / ${max}`}
+                />
+                <Text type="supporting">
+                  {milestoneHint(
+                    progress.completed.size,
+                    challengeMilestones,
+                    "challenge",
+                  )}
+                </Text>
+              </VStack>
+              <VStack gap={2}>
+                <ProgressBar
+                  label="Revision milestones"
+                  value={Math.min(progress.revised.size, 3)}
+                  max={3}
+                  marks={revisionMilestones}
+                  hasValueLabel
+                  variant={progress.revised.size >= 3 ? "success" : "accent"}
+                  formatValueLabel={(value, max) => `${value} / ${max}`}
+                />
+                <Text type="supporting">
+                  {milestoneHint(
+                    progress.revised.size,
+                    revisionMilestones,
+                    "revision",
+                  )}
+                </Text>
+              </VStack>
+            </Grid>
+          </VStack>
+
+          <Stepper
+            orientation="vertical"
+            indicatorPosition="on-track"
+            density="compact"
+            activeStep={firstIncomplete < 0 ? groups.length : firstIncomplete}
+            label="Your learning track"
+          >
+            {groups.map(({ group, items }, index) => {
+              const count = items.filter((a) => earned.has(a.slug)).length;
+              return (
+                <Step
+                  key={group}
+                  step={index}
+                  style={
+                    {
+                      "--journey-section-color": sectionColors[index],
+                    } as React.CSSProperties
+                  }
+                  label={group}
+                  description={
+                    count === items.length
+                      ? `All ${items.length} earned`
+                      : `${count} of ${items.length} earned${count === items.length - 1 ? " · One away from completing this group" : ""}`
+                  }
+                >
+                  <List edge="flush" density="compact" hasDividers>
+                    {items.map((item) => {
+                      const state = progress.state(item.slug);
+                      const challenge = challengeCatalog.find(
+                        (c) => c.slug === item.slug,
+                      );
+                      const color =
+                        state === "Earned"
+                          ? "success"
+                          : state === "In progress"
+                            ? "accent"
+                            : "secondary";
+                      const locked =
+                        state === "Needs feedback" ||
+                        state === "Sign in" ||
+                        state === "Needs an idea";
+                      return (
+                        <ListItem
+                          key={item.slug}
+                          align="first-line"
+                          label={
+                            <HStack gap={2} vAlign="center" wrap="wrap">
+                              <Text type="label" weight="medium">
+                                {item.name}
+                              </Text>
+                              <HStack gap={1} vAlign="center">
+                                <Icon
+                                  icon={
+                                    state === "Earned"
+                                      ? "check"
+                                      : state === "In progress"
+                                        ? "clock"
+                                        : locked
+                                          ? LockClosedIcon
+                                          : "chevronRight"
+                                  }
+                                  color={color}
+                                  style={
+                                    state === "Earned"
+                                      ? { color: sectionColors[index] }
+                                      : state === "In progress"
+                                        ? { color: sectionColors[index] }
+                                        : undefined
+                                  }
+                                  size="xsm"
+                                />
+                                <Text
+                                  type="supporting"
+                                  style={
+                                    state === "Earned"
+                                      ? { color: sectionColors[index] }
+                                      : state === "In progress"
+                                        ? { color: sectionColors[index] }
+                                        : undefined
+                                  }
+                                  color={
+                                    state === "In progress"
+                                      ? "accent"
+                                      : "secondary"
+                                  }
+                                >
+                                  {state === "Sign in" ? null : state}
+                                </Text>
+                              </HStack>
+                            </HStack>
+                          }
+                          startContent={
+                            <Icon
+                              icon={achievementIcons[item.slug]}
+                              size="lg"
+                              color={color}
+                              style={{ color: sectionColors[index] }}
+                            />
+                          }
+                          description={
+                            <Text type="supporting">
+                              {progress.detail(item.slug) ??
+                                challengeDescriptions[item.slug] ??
+                                item.description}
+                            </Text>
+                          }
+                          endContent={
+                            viewerId ? (
+                              challenge ? (
+                                <Button
+                                  label={
+                                    state === "Earned"
+                                      ? "Revisit"
+                                      : state === "In progress"
+                                        ? "Continue"
+                                        : "Try"
+                                  }
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openChallenge(challenge.slug)}
+                                />
+                              ) : item.slug === "curious-cat" ? (
+                                <Button
+                                  label="Academy"
+                                  href="/academy"
+                                  variant="ghost"
+                                  size="sm"
+                                />
+                              ) : item.slug === "first-spark" ||
+                                item.group === "Build something real" ? (
+                                <Button
+                                  label="Ideas"
+                                  href="/ideas"
+                                  variant="ghost"
+                                  size="sm"
+                                />
+                              ) : null
+                            ) : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </List>
+                </Step>
+              );
+            })}
+            <Step
+              step={groups.length}
+              label="Continue the journey!"
+              style={
+                {
+                  "--journey-section-color": "var(--color-journey-red)",
+                } as React.CSSProperties
+              }
+            />
+          </Stepper>
+          <Divider />
+          <VStack gap={4}>
+            <HStack gap={2} vAlign="center">
+              <Heading
+                level={2}
+                style={{
+                  backgroundImage: journeyGradient,
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  color: "transparent",
+                }}
+              >
+                Get social
+              </Heading>
+              <Badge label="BONUS" variant="purple" style={bonusBadgeStyle} />
+            </HStack>
+            <Text type="supporting">
+              Share what you’re making, find your voice, and learn from
+              feedback. This optional track doesn’t count toward your main
+              journey. Published posts and audience feedback are confirmed by
+              you.
+            </Text>
+            <ProgressBar
+              label="Bonus achievements"
+              value={bonusEarned}
+              max={bonus.length}
+              hasValueLabel
+              formatValueLabel={(v, max) => `${v} of ${max} earned`}
+            />
+            <List edge="flush" density="compact" hasDividers>
+              {bonus.map((item) => (
+                <ListItem
+                  key={item.slug}
+                  startContent={
+                    <Icon
+                      icon={achievementIcons[item.slug]}
+                      size="lg"
+                      color={earned.has(item.slug) ? "success" : "secondary"}
+                      style={{ color: "var(--color-journey-blue)" }}
+                    />
+                  }
+                  label={
+                    <HStack gap={2} vAlign="center" wrap="wrap">
+                      <Text type="label" weight="semibold">
+                        {item.name}
+                      </Text>
+                      <Text
+                        type="supporting"
+                        style={
+                          earned.has(item.slug)
+                            ? { color: "var(--color-journey-teal)" }
+                            : undefined
+                        }
+                      >
+                        {earned.has(item.slug) ? "Earned" : "Optional"}
+                      </Text>
+                    </HStack>
+                  }
+                  description={
+                    <Text type="supporting">{item.description}</Text>
+                  }
+                />
+              ))}
+            </List>
+            <Button
+              label="Make a post with Muse"
+              variant="secondary"
+              href={!viewerId ? signInPath : undefined}
+              onClick={viewerId ? () => setSocialOpen(true) : undefined}
+            />
+          </VStack>
         </VStack>
-        {socialOpen && viewerId ? (
-          <SocialDialog
-            onClose={() => {
-              setSocialOpen(false);
-              window.dispatchEvent(new Event("westride:achievements"));
-            }}
-          />
-        ) : null}
-        {selected && viewerId ? (
-          <ChallengeDialog
-            slug={selected.slug}
-            viewerId={viewerId}
-            initialInterest={selected.interest}
-            initialDepth={selected.depth}
-            initialAttempt={attempts.find(
-              (a) =>
-                a.challengeSlug === selected.slug &&
-                a.interest === selected.interest,
-            )}
-            onClose={() => {
-              setSelected(null);
-              window.dispatchEvent(new Event("westride:achievements"));
-            }}
-          />
-        ) : null}
-      </VStack>
-    </Theme>
+      </Theme>
+      {socialOpen && viewerId ? (
+        <SocialDialog
+          onClose={() => {
+            setSocialOpen(false);
+            window.dispatchEvent(new Event("westride:achievements"));
+          }}
+        />
+      ) : null}
+      {selected && viewerId ? (
+        <ChallengeDialog
+          slug={selected.slug}
+          viewerId={viewerId}
+          initialInterest={selected.interest}
+          initialDepth={selected.depth}
+          initialAttempt={attempts.find(
+            (a) =>
+              a.challengeSlug === selected.slug &&
+              a.interest === selected.interest,
+          )}
+          onClose={() => {
+            setSelected(null);
+            window.dispatchEvent(new Event("westride:achievements"));
+          }}
+        />
+      ) : null}
+    </>
   );
 }

@@ -38,6 +38,15 @@ export const achievementTheme = defineTheme({
         "--color-accent": "var(--journey-section-color)",
       },
     },
+    // Track groups aren't sequential, so every title gets the same weight and
+    // sits a size above the achievement rows beneath it.
+    "step-label": {
+      base: {
+        fontSize: "var(--font-size-lg)",
+        fontWeight: "var(--font-weight-bold)",
+        color: "var(--color-text-primary)",
+      },
+    },
     "step-indicator": {
       "progress:not-started": {
         "--color-background-muted": "var(--journey-section-color)",
