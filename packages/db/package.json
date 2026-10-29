@@ -10,7 +10,9 @@
     "./ideas": "./src/ideas.ts",
     "./idea-factory": "./src/idea-factory.ts",
     "./feedback": "./src/feedback.ts",
-    "./countries": "./src/country-catalog.ts"
+    "./countries": "./src/country-catalog.ts",
+    "./learning": "./src/learning.ts",
+    "./challenges": "./src/challenge-catalog.ts"
   },
   "scripts": {
     "lint": "tsc --noEmit",

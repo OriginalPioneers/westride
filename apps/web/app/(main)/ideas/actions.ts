@@ -2,6 +2,7 @@
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { createIdea, getIdea, updateIdeaDetails } from "@westride/db/ideas";
+import { awardAchievement } from "@westride/db/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
@@ -153,6 +154,8 @@ export async function createIdeaFromStudio(
       // Founder is last so a repeated id cannot replace that role.
       members: [...invites, { clerkUserId: userId, role: "FOUNDER" }],
     });
+    await awardAchievement(userId, "first-spark").catch(() => undefined);
+    revalidatePath("/achievements");
     revalidatePath("/ideas");
     return { status: "created", id: created.id };
   } catch (error) {
