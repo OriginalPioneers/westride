@@ -23,8 +23,7 @@ type Params = Promise<{ id: string }>;
 // reasoning can take a couple of minutes per advisor).
 export const maxDuration = 180;
 
-const UUID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function loadIdea(id: string) {
   if (!UUID.test(id)) {
@@ -63,6 +62,9 @@ export default async function IdeaPage({ params }: { params: Params }) {
     );
   const editableIdea = {
     id: idea.id,
+    prototypeUrl: idea.prototypeUrl,
+    prototypeInstructions: idea.prototypeInstructions,
+    isPublic: idea.isPublic,
     name: idea.name,
     description: idea.description,
     members: idea.members.map((member) => {
@@ -90,7 +92,9 @@ export default async function IdeaPage({ params }: { params: Params }) {
                 <IdeaTypeBadge type={idea.type} />
                 {idea.isFeatured ? <FeaturedBadge /> : null}
                 {!idea.isPublic ? (
-                  <Text type="supporting">Private · visible to members only</Text>
+                  <Text type="supporting">
+                    Private · visible to members only
+                  </Text>
                 ) : null}
               </HStack>
               <Heading level={1}>{idea.name}</Heading>
@@ -118,6 +122,16 @@ export default async function IdeaPage({ params }: { params: Params }) {
             <Markdown headingLevelStart={2} contentWidth="100%">
               {idea.description}
             </Markdown>
+
+            {idea.prototypeUrl ? (
+              <VStack gap={3}>
+                <Heading level={2}>Try the prototype</Heading>
+                <Text>{idea.prototypeInstructions}</Text>
+                <Link href={idea.prototypeUrl} isExternalLink isStandalone>
+                  Open prototype
+                </Link>
+              </VStack>
+            ) : null}
 
             {idea.tags.length > 0 ? (
               <VStack gap={3}>
@@ -159,7 +173,11 @@ export default async function IdeaPage({ params }: { params: Params }) {
                       const profile = profiles.get(member.clerkUserId);
                       const name = profile?.name ?? "WeStride member";
                       return (
-                        <HStack key={member.clerkUserId} gap={3} vAlign="center">
+                        <HStack
+                          key={member.clerkUserId}
+                          gap={3}
+                          vAlign="center"
+                        >
                           <Avatar
                             src={profile?.imageUrl ?? undefined}
                             name={name}

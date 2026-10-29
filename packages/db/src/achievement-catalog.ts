@@ -1,3 +1,4 @@
+import { socialMilestones } from "./social-progress";
 import { challengeCatalog } from "./challenge-catalog";
 export const ACHIEVEMENT_SLUG = {
   curiousCat: "curious-cat",
@@ -9,8 +10,32 @@ export const achievementGroups = [
   "Communicate clearly",
   "Think like a builder",
   "Keep exploring",
+  "Build something real",
+  "Get social",
 ] as const;
 const milestones = [
+  ...socialMilestones.map(
+    ([slug, name, description]) =>
+      [slug, name, description, "Get social"] as const,
+  ),
+  [
+    "idea-refiner",
+    "Better by Design",
+    "Save a changed description on an idea you founded.",
+    "Build something real",
+  ],
+  [
+    "team-builder",
+    "Team Up",
+    "Add another WeStride member to an idea you founded.",
+    "Build something real",
+  ],
+  [
+    "prototype-shared",
+    "Made Real",
+    "Share a tested prototype link and something to try on your idea.",
+    "Build something real",
+  ],
   ["newbie", "First Step", "Sign in to start your journey.", "Getting started"],
   ["curious-cat", "Curious Cat", "Visit the Academy.", "Getting started"],
   [
@@ -96,3 +121,7 @@ export const achievementCatalog = achievementGroups
     badgeUrl: `/achievements/${item.slug}.svg`,
   }));
 export type AchievementSeed = (typeof achievementCatalog)[number];
+
+export const mainAchievementCatalog = achievementCatalog.filter(
+  (item) => item.group !== "Get social",
+);

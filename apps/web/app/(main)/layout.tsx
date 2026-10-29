@@ -12,7 +12,7 @@ export default async function MainLayout({
   const userId = await awardIfSignedIn();
 
   return (
-    <AppFrame>
+    <AppFrame viewerId={userId}>
       {userId ? <AchievementCelebration /> : null}
       {children}
     </AppFrame>

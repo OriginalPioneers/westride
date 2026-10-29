@@ -2,6 +2,7 @@
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { createIdea, getIdea, updateIdeaDetails } from "@westride/db/ideas";
+import { syncLearningAwards } from "@westride/db/learning";
 import { awardAchievement } from "@westride/db/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -116,7 +117,10 @@ export async function createIdeaFromStudio(
 
   const parsed = createIdeaSchema.safeParse(draft);
   if (!parsed.success) {
-    return failure("Fix the highlighted fields.", fieldErrorsFrom(parsed.error));
+    return failure(
+      "Fix the highlighted fields.",
+      fieldErrorsFrom(parsed.error),
+    );
   }
 
   const invites = parsed.data.invites.filter(
@@ -132,9 +136,12 @@ export async function createIdeaFromStudio(
       });
       const known = new Set(data.map((user) => user.id));
       if (invites.some((invite) => !known.has(invite.clerkUserId))) {
-        return failure("Someone you invited does not have a WeStride account.", {
-          invites: "Remove anyone who is not on WeStride, then try again.",
-        });
+        return failure(
+          "Someone you invited does not have a WeStride account.",
+          {
+            invites: "Remove anyone who is not on WeStride, then try again.",
+          },
+        );
       }
     } catch (error) {
       console.error("Idea invite lookup failed", error);
@@ -143,17 +150,21 @@ export async function createIdeaFromStudio(
   }
 
   try {
-    const created = await createIdea({
-      name: parsed.data.name,
-      description: parsed.data.description,
-      type: parsed.data.type,
-      isFeatured: false,
-      isPublic: parsed.data.isPublic,
-      countryCodes: [],
-      tagNames: [],
-      // Founder is last so a repeated id cannot replace that role.
-      members: [...invites, { clerkUserId: userId, role: "FOUNDER" }],
-    });
+    const created = await createIdea(
+      {
+        name: parsed.data.name,
+        description: parsed.data.description,
+        type: parsed.data.type,
+        isFeatured: false,
+        isPublic: parsed.data.isPublic,
+        countryCodes: [],
+        tagNames: [],
+        // Founder is last so a repeated id cannot replace that role.
+        members: [...invites, { clerkUserId: userId, role: "FOUNDER" }],
+      },
+      userId,
+    );
+    await syncLearningAwards(userId).catch(() => undefined);
     await awardAchievement(userId, "first-spark").catch(() => undefined);
     revalidatePath("/achievements");
     revalidatePath("/ideas");
@@ -169,6 +180,8 @@ const ideaIdSchema = z.string().uuid();
 const EDIT_ERRORS = new Set([
   "Keep at least one founder.",
   "Only a founder can edit this idea.",
+  "Add a valid HTTPS prototype link and something to try.",
+  "Test your prototype and confirm it works before sharing.",
 ]);
 
 /** A founder updates the name, description, and team. Other fields stay put. */
@@ -186,7 +199,10 @@ export async function updateIdeaFromStudio(
 
   const parsed = updateIdeaSchema.safeParse(draft);
   if (!parsed.success) {
-    return failure("Fix the highlighted fields.", fieldErrorsFrom(parsed.error));
+    return failure(
+      "Fix the highlighted fields.",
+      fieldErrorsFrom(parsed.error),
+    );
   }
 
   const idea = await getIdea(ideaId, { clerkUserId: userId });
@@ -227,6 +243,9 @@ export async function updateIdeaFromStudio(
       name: parsed.data.name,
       description: parsed.data.description,
       members: parsed.data.members,
+      prototypeUrl: parsed.data.prototypeUrl,
+      prototypeInstructions: parsed.data.prototypeInstructions,
+      prototypeTested: parsed.data.prototypeTested,
     });
   } catch (error) {
     console.error("Idea update failed", error);
@@ -239,6 +258,8 @@ export async function updateIdeaFromStudio(
 
   revalidatePath("/ideas");
   revalidatePath(`/ideas/${ideaId}`);
+  await syncLearningAwards(userId).catch(() => undefined);
+  revalidatePath("/achievements");
   const stillMember = parsed.data.members.some(
     (member) => member.clerkUserId === userId,
   );
