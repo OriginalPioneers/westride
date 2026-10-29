@@ -388,15 +388,49 @@ export const ideaTags = pgTable(
   ],
 );
 
+/** The GitHub repository an idea was imported from or is built in. */
+export const ideaGithubRepos = pgTable(
+  "idea_github_repos",
+  {
+    ideaId: uuid("idea_id")
+      .primaryKey()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    /** GitHub's numeric id. It survives renames and transfers. */
+    repoId: bigint("repo_id", { mode: "number" }).notNull(),
+    owner: text("owner").notNull(),
+    name: text("name").notNull(),
+    htmlUrl: text("html_url").notNull(),
+    defaultBranch: text("default_branch").notNull(),
+    isPrivate: boolean("is_private").notNull(),
+    /** Clerk user id of the member who linked the repository. */
+    linkedByClerkUserId: text("linked_by_clerk_user_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("idea_github_repos_repo_id_idx").on(table.repoId)],
+);
+
 export const countriesRelations = relations(countries, ({ many }) => ({
   ideaGeographies: many(ideaGeographies),
 }));
 
-export const ideasRelations = relations(ideas, ({ many }) => ({
+export const ideasRelations = relations(ideas, ({ many, one }) => ({
   members: many(ideaMembers),
   geographies: many(ideaGeographies),
   tags: many(ideaTags),
+  githubRepo: one(ideaGithubRepos),
 }));
+
+export const ideaGithubReposRelations = relations(
+  ideaGithubRepos,
+  ({ one }) => ({
+    idea: one(ideas, {
+      fields: [ideaGithubRepos.ideaId],
+      references: [ideas.id],
+    }),
+  }),
+);
 
 export const ideaMembersRelations = relations(ideaMembers, ({ one }) => ({
   idea: one(ideas, {
@@ -809,6 +843,47 @@ export const feedbackCommentsRelations = relations(
   }),
 );
 
+// ---------------------------------------------------------------------------
+// GitHub
+//
+// Members connect GitHub through the WeStride GitHub App. Which repositories
+// WeStride can reach is chosen on GitHub, per installation, and read live
+// from GitHub rather than copied here. Tokens arrive already encrypted by the
+// web app; this package never sees them in plain text.
+// ---------------------------------------------------------------------------
+
+export const githubConnections = pgTable(
+  "github_connections",
+  {
+    /** Clerk user id. One GitHub account per WeStride account. */
+    clerkUserId: text("clerk_user_id").primaryKey(),
+    githubUserId: bigint("github_user_id", { mode: "number" }).notNull(),
+    login: text("login").notNull(),
+    avatarUrl: text("avatar_url"),
+    /** Encrypted user access token. */
+    accessToken: text("access_token").notNull(),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    /** Encrypted refresh token. Null when the app issues non-expiring tokens. */
+    refreshToken: text("refresh_token"),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("github_connections_github_user_id_idx").on(table.githubUserId),
+  ],
+);
+
 export type Track = typeof tracks.$inferSelect;
 export type NewTrack = typeof tracks.$inferInsert;
 export type Lesson = typeof lessons.$inferSelect;
@@ -837,6 +912,10 @@ export type Tag = typeof tags.$inferSelect;
 export type NewTag = typeof tags.$inferInsert;
 export type IdeaTag = typeof ideaTags.$inferSelect;
 export type NewIdeaTag = typeof ideaTags.$inferInsert;
+export type IdeaGithubRepo = typeof ideaGithubRepos.$inferSelect;
+export type NewIdeaGithubRepo = typeof ideaGithubRepos.$inferInsert;
+export type GithubConnection = typeof githubConnections.$inferSelect;
+export type NewGithubConnection = typeof githubConnections.$inferInsert;
 export type EvidenceClass = (typeof evidenceClass.enumValues)[number];
 export type FactoryMessageRole = (typeof factoryMessageRole.enumValues)[number];
 export type EvaluationStatus = (typeof evaluationStatus.enumValues)[number];

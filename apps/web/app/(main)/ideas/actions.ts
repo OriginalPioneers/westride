@@ -1,11 +1,24 @@
 "use server";
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { linkIdeaGithubRepo } from "@westride/db/github";
 import { createIdea, getIdea, updateIdeaDetails } from "@westride/db/ideas";
 import { syncLearningAwards } from "@westride/db/learning";
 import { awardAchievement } from "@westride/db/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { isGithubAppConfigured } from "@/lib/github/config";
+import { GithubApiError } from "@/lib/github/http";
+import {
+  ideaDescriptionFromRepo,
+  ideaNameFromRepo,
+} from "@/lib/github/idea-draft";
+import { parseGithubRepoRef } from "@/lib/github/repo-ref";
+import {
+  findReadableRepo,
+  readRepoReadme,
+  type GithubRepo,
+} from "@/lib/github/repos";
 import {
   createIdeaSchema,
   fieldErrorsFrom,
@@ -107,6 +120,96 @@ export async function searchIdeaPeople(
   }
 }
 
+export type GithubRepoPreview = {
+  fullName: string;
+  htmlUrl: string;
+  isPrivate: boolean;
+};
+
+export type GithubImportResult =
+  | {
+      status: "imported";
+      repo: GithubRepoPreview;
+      name: string;
+      description: string;
+    }
+  | {
+      /** Not connected, and the repo is private or missing. */
+      status: "needs-connection";
+      message: string;
+    }
+  | {
+      /** Connected, but this repo is not one they granted to WeStride. */
+      status: "needs-access";
+      message: string;
+    }
+  | { status: "error"; message: string };
+
+function githubFailureMessage(error: unknown): string {
+  if (error instanceof GithubApiError && error.isRateLimited) {
+    return "GitHub is limiting requests right now. Try again in a few minutes.";
+  }
+  return "GitHub could not be reached. Try again.";
+}
+
+/**
+ * Reads a repository so the create dialog can fill in the name and the
+ * description from its README. Private repositories need the member's own
+ * GitHub connection and a grant for that repository.
+ */
+export async function importIdeaFromGithub(
+  url: string,
+): Promise<GithubImportResult> {
+  const { userId } = await auth();
+  if (!userId) {
+    return { status: "error", message: "Sign in to import from GitHub." };
+  }
+  const ref = parseGithubRepoRef(url);
+  if (!ref) {
+    return {
+      status: "error",
+      message: "Paste a GitHub repository link, like https://github.com/owner/repo.",
+    };
+  }
+
+  try {
+    const access = await findReadableRepo(ref, userId);
+    if (access.status === "unavailable") {
+      const fullName = `${ref.owner}/${ref.repo}`;
+      if (!isGithubAppConfigured()) {
+        return {
+          status: "error",
+          message: `${fullName} is private or does not exist. Only public repositories can be imported right now.`,
+        };
+      }
+      return access.reason === "needs-connection"
+        ? {
+            status: "needs-connection",
+            message: `${fullName} is private, or the link is wrong.`,
+          }
+        : {
+            status: "needs-access",
+            message: `WeStride cannot see ${fullName}.`,
+          };
+    }
+
+    const readme = await readRepoReadme(ref, access.token);
+    return {
+      status: "imported",
+      repo: {
+        fullName: access.repo.fullName,
+        htmlUrl: access.repo.htmlUrl,
+        isPrivate: access.repo.isPrivate,
+      },
+      name: ideaNameFromRepo(access.repo.name),
+      description: ideaDescriptionFromRepo(access.repo.description, readme),
+    };
+  } catch (error) {
+    console.error("GitHub import failed", error);
+    return { status: "error", message: githubFailureMessage(error) };
+  }
+}
+
 export async function createIdeaFromStudio(
   draft: unknown,
 ): Promise<CreateIdeaResult> {
@@ -149,6 +252,26 @@ export async function createIdeaFromStudio(
     }
   }
 
+  // Checked again here: the browser only sends a link, never repo details.
+  let repo: GithubRepo | null = null;
+  const repoRef = parseGithubRepoRef(parsed.data.githubRepoUrl);
+  if (repoRef) {
+    try {
+      const access = await findReadableRepo(repoRef, userId);
+      if (access.status !== "found") {
+        return failure("WeStride can no longer see that GitHub repository.", {
+          githubRepoUrl: "Import it again, or remove the link.",
+        });
+      }
+      repo = access.repo;
+    } catch (error) {
+      console.error("GitHub repo check failed", error);
+      return failure(githubFailureMessage(error), {
+        githubRepoUrl: "The repository could not be checked.",
+      });
+    }
+  }
+
   try {
     const created = await createIdea(
       {
@@ -164,6 +287,19 @@ export async function createIdeaFromStudio(
       },
       userId,
     );
+    if (repo) {
+      await linkIdeaGithubRepo(created.id, {
+        repoId: repo.id,
+        owner: repo.owner,
+        name: repo.name,
+        htmlUrl: repo.htmlUrl,
+        defaultBranch: repo.defaultBranch,
+        isPrivate: repo.isPrivate,
+        linkedByClerkUserId: userId,
+      }).catch((error: unknown) => {
+        console.error("Idea GitHub link failed", error);
+      });
+    }
     await syncLearningAwards(userId).catch(() => undefined);
     await awardAchievement(userId, "first-spark").catch(() => undefined);
     revalidatePath("/achievements");

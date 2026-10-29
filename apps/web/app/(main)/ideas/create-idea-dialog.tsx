@@ -34,13 +34,16 @@ import {
   type SearchSource,
 } from "@astryxdesign/core/Typeahead";
 import {
+  ArrowTopRightOnSquareIcon,
   BuildingOffice2Icon,
+  CodeBracketIcon,
   GlobeAltIcon,
   HeartIcon,
   LockClosedIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import type { IdeaMemberRole, IdeaType } from "@westride/db";
+import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 import {
   MAX_IDEA_DESCRIPTION,
   MAX_IDEA_NAME,
@@ -51,7 +54,10 @@ import {
 import { IDEA_ROLE_LABELS, IDEA_TYPE_LABELS, ideaPath } from "@/lib/ideas/filters";
 import {
   createIdeaFromStudio,
+  importIdeaFromGithub,
   searchIdeaPeople,
+  type GithubImportResult,
+  type GithubRepoPreview,
   type IdeaPersonHit,
 } from "./actions";
 
@@ -71,10 +77,43 @@ const STEPS = [
 
 const STEP_FIELDS = [
   ["type"],
-  ["name", "description"],
+  ["name", "description", "githubRepoUrl"],
   ["isPublic"],
   ["invites"],
 ] as const;
+
+// Opened in a new tab so the half-finished idea survives the trip to GitHub.
+const CONNECT_GITHUB_HREF = "/integrations/github/connect?returnTo=/settings";
+const CHOOSE_REPOS_HREF =
+  "/integrations/github/connect?intent=install&returnTo=/settings";
+
+type ImportNotice = Exclude<GithubImportResult, { status: "imported" }>;
+
+function ImportNoticeBanner({ notice }: { notice: ImportNotice }) {
+  if (notice.status === "error") {
+    return <Banner status="error" title={notice.message} />;
+  }
+  const isConnect = notice.status === "needs-connection";
+  return (
+    <Banner
+      status="info"
+      title={notice.message}
+      description={
+        isConnect
+          ? "Connect GitHub and choose which repositories WeStride can read, then import again."
+          : "Add it to the repositories WeStride can read on GitHub, then import again."
+      }
+      endContent={
+        <Button
+          label={isConnect ? "Connect GitHub" : "Choose repositories"}
+          href={isConnect ? CONNECT_GITHUB_HREF : CHOOSE_REPOS_HREF}
+          target="_blank"
+          icon={<Icon icon={ArrowTopRightOnSquareIcon} />}
+        />
+      }
+    />
+  );
+}
 
 /**
  * Nearly the whole viewport. Dialog clamps a standard surface to the same
@@ -208,6 +247,10 @@ export function CreateIdeaDialog({
   const [picker, setPicker] = useState<IdeaPersonHit | null>(null);
   const [serverErrors, setServerErrors] = useState<CreateIdeaFieldErrors>({});
   const [formMessage, setFormMessage] = useState<string | null>(null);
+  const [repoUrl, setRepoUrl] = useState("");
+  const [linkedRepo, setLinkedRepo] = useState<GithubRepoPreview | null>(null);
+  const [importNotice, setImportNotice] = useState<ImportNotice | null>(null);
+  const [isImporting, startImporting] = useTransition();
 
   const draft: IdeaDraft = {
     type,
@@ -218,6 +261,7 @@ export function CreateIdeaDialog({
       clerkUserId: person.id,
       role: person.role,
     })),
+    githubRepoUrl: linkedRepo?.htmlUrl ?? "",
   };
 
   const clientErrors = validateIdeaDraft(draft);
@@ -289,6 +333,32 @@ export function CreateIdeaDialog({
         return;
       }
       router.push(ideaPath(result.id));
+    });
+  }
+
+  function importRepo() {
+    const url = repoUrl.trim();
+    if (!parseGithubRepoRef(url)) {
+      setImportNotice({
+        status: "error",
+        message: "Paste a GitHub repository link, like https://github.com/owner/repo.",
+      });
+      return;
+    }
+    setImportNotice(null);
+    startImporting(async () => {
+      const result = await importIdeaFromGithub(url);
+      if (result.status !== "imported") {
+        setImportNotice(result);
+        return;
+      }
+      setLinkedRepo(result.repo);
+      setName(result.name);
+      setDescription(result.description);
+      setRepoUrl("");
+      clearServer("githubRepoUrl");
+      clearServer("name");
+      clearServer("description");
     });
   }
 
@@ -375,34 +445,82 @@ export function CreateIdeaDialog({
                 ) : null}
 
                 {step === 1 ? (
-                  <FormLayout defaultOptionality="required">
-                    <TextInput
-                      label="Name"
-                      value={name}
-                      onChange={(value) => {
-                        setName(value);
-                        clearServer("name");
-                      }}
-                      placeholder="Neighborhood tool library"
-                      description={`Up to ${MAX_IDEA_NAME} characters.`}
-                      isRequired
-                      status={fieldStatus(stepErrors.name)}
-                    />
-                    <TextArea
-                      label="Description"
-                      description="A short pitch. Markdown is fine."
-                      value={description}
-                      onChange={(value) => {
-                        setDescription(value);
-                        clearServer("description");
-                      }}
-                      placeholder="What it is, who it is for, and why it should exist."
-                      rows={8}
-                      maxLength={MAX_IDEA_DESCRIPTION}
-                      isRequired
-                      status={fieldStatus(stepErrors.description)}
-                    />
-                  </FormLayout>
+                  <VStack gap={6}>
+                    <VStack gap={3}>
+                      <HStack gap={2} vAlign="end" wrap="wrap">
+                        <StackItem size="fill">
+                          <TextInput
+                            label="Import from GitHub"
+                            description="Paste a repository link to fill in the name and description from its README."
+                            value={repoUrl}
+                            onChange={(value) => {
+                              setRepoUrl(value);
+                              setImportNotice(null);
+                            }}
+                            onEnter={importRepo}
+                            placeholder="https://github.com/owner/repo"
+                            startIcon={CodeBracketIcon}
+                            isOptional
+                            status={fieldStatus(stepErrors.githubRepoUrl)}
+                          />
+                        </StackItem>
+                        <Button
+                          label="Import"
+                          isLoading={isImporting}
+                          onClick={importRepo}
+                        />
+                      </HStack>
+                      {importNotice ? (
+                        <ImportNoticeBanner notice={importNotice} />
+                      ) : null}
+                      {linkedRepo ? (
+                        <Banner
+                          status="success"
+                          title={`Filled in from ${linkedRepo.fullName}`}
+                          description="The idea will link to this repository. Edit anything below before you continue."
+                          endContent={
+                            <Button
+                              label="Unlink"
+                              variant="ghost"
+                              onClick={() => {
+                                setLinkedRepo(null);
+                                clearServer("githubRepoUrl");
+                              }}
+                            />
+                          }
+                        />
+                      ) : null}
+                    </VStack>
+                    <Divider />
+                    <FormLayout defaultOptionality="required">
+                      <TextInput
+                        label="Name"
+                        value={name}
+                        onChange={(value) => {
+                          setName(value);
+                          clearServer("name");
+                        }}
+                        placeholder="Neighborhood tool library"
+                        description={`Up to ${MAX_IDEA_NAME} characters.`}
+                        isRequired
+                        status={fieldStatus(stepErrors.name)}
+                      />
+                      <TextArea
+                        label="Description"
+                        description="A short pitch. Markdown is fine."
+                        value={description}
+                        onChange={(value) => {
+                          setDescription(value);
+                          clearServer("description");
+                        }}
+                        placeholder="What it is, who it is for, and why it should exist."
+                        rows={8}
+                        maxLength={MAX_IDEA_DESCRIPTION}
+                        isRequired
+                        status={fieldStatus(stepErrors.description)}
+                      />
+                    </FormLayout>
+                  </VStack>
                 ) : null}
 
                 {step === 2 ? (
@@ -427,6 +545,13 @@ export function CreateIdeaDialog({
                         type="error"
                         variant="detached"
                         message={stepErrors.isPublic}
+                      />
+                    ) : null}
+                    {linkedRepo?.isPrivate && isPublic ? (
+                      <Banner
+                        status="warning"
+                        title="The imported description will be public"
+                        description={`${linkedRepo.fullName} is private on GitHub. Anyone on WeStride can read a Community idea, including what was imported from its README. The repository itself stays private.`}
                       />
                     ) : null}
                   </VStack>

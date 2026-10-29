@@ -71,6 +71,13 @@
       "when": 1793253714096,
       "tag": "0009_social_bonus",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793290542373,
+      "tag": "0010_github_integration",
+      "breakpoints": true
     }
   ]
 }

@@ -133,6 +133,22 @@ export default async function IdeaPage({ params }: { params: Params }) {
               </VStack>
             ) : null}
 
+            {idea.githubRepo ? (
+              <VStack gap={3}>
+                <Heading level={2}>Code</Heading>
+                <HStack gap={2} vAlign="center" wrap="wrap">
+                  <Link href={idea.githubRepo.htmlUrl} isExternalLink isStandalone>
+                    {`${idea.githubRepo.owner}/${idea.githubRepo.name}`}
+                  </Link>
+                  {idea.githubRepo.isPrivate ? (
+                    <Text type="supporting">
+                      Private on GitHub · only people with access can open it
+                    </Text>
+                  ) : null}
+                </HStack>
+              </VStack>
+            ) : null}
+
             {idea.tags.length > 0 ? (
               <VStack gap={3}>
                 <Heading level={2}>Tags</Heading>
