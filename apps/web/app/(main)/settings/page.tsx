@@ -9,12 +9,14 @@ import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { getGithubConnection } from "@westride/db/github";
+import type { ChatFlowOutcome } from "@/lib/chat/oauth-routes";
 import { isGithubAppConfigured } from "@/lib/github/config";
 import type { GithubFlowOutcome } from "@/lib/github/flow";
 import {
   getGithubAccountAccess,
   type GithubAccountAccess,
 } from "@/lib/github/repos";
+import { ChatSection, MetaSection } from "./connection-sections";
 import { DisconnectGithubButton } from "./disconnect-github-button";
 import { GithubAccess } from "./github-access";
 
@@ -64,6 +66,33 @@ const OUTCOMES: Record<
 
 function isOutcome(value: unknown): value is GithubFlowOutcome {
   return typeof value === "string" && value in OUTCOMES;
+}
+
+type Outcome = (typeof OUTCOMES)[GithubFlowOutcome];
+
+function chatOutcome(name: string, value: unknown): Outcome | null {
+  const outcomes: Record<ChatFlowOutcome, Outcome> = {
+    connected: { status: "success", title: `${name} is connected` },
+    denied: {
+      status: "warning",
+      title: `${name} was not connected`,
+      description: `The request was cancelled on ${name}.`,
+    },
+    expired: {
+      status: "warning",
+      title: `That ${name} sign-in expired`,
+      description: "Start again from this page.",
+    },
+    failed: {
+      status: "error",
+      title: `${name} could not be connected`,
+      description: "Try again in a moment.",
+    },
+    unavailable: { status: "error", title: `${name} is not set up on WeStride yet` },
+  };
+  return typeof value === "string" && value in outcomes
+    ? outcomes[value as ChatFlowOutcome]
+    : null;
 }
 
 async function GithubSection({ userId }: { userId: string }) {
@@ -148,14 +177,21 @@ async function GithubSection({ userId }: { userId: string }) {
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ github?: string | string[] }>;
+  searchParams: Promise<{
+    github?: string | string[];
+    slack?: string | string[];
+    discord?: string | string[];
+  }>;
 }) {
   const { userId, redirectToSignIn } = await auth();
   if (!userId) {
     return redirectToSignIn({ returnBackUrl: "/settings" });
   }
-  const { github } = await searchParams;
-  const outcome = isOutcome(github) ? OUTCOMES[github] : null;
+  const { github, slack, discord } = await searchParams;
+  const outcome =
+    (isOutcome(github) ? OUTCOMES[github] : null) ??
+    chatOutcome("Slack", slack) ??
+    chatOutcome("Discord", discord);
 
   return (
     <Layout
@@ -187,6 +223,31 @@ export default async function SettingsPage({
                 </Text>
               </VStack>
               <GithubSection userId={userId} />
+            </VStack>
+            <Divider />
+            <VStack gap={6}>
+              <VStack gap={2}>
+                <Heading level={2}>Meta</Heading>
+                <Text type="supporting">
+                  Connect Meta to run WeStride&apos;s Muse advisors, like the
+                  Idea Factory, on your own Meta Model API account. You pay
+                  Meta directly. WeStride keeps the key encrypted and only uses
+                  it for requests you make.
+                </Text>
+              </VStack>
+              <MetaSection userId={userId} />
+            </VStack>
+            <Divider />
+            <VStack gap={6}>
+              <VStack gap={2}>
+                <Heading level={2}>Chat with WeStride</Heading>
+                <Text type="supporting">
+                  Link your chat accounts to talk to WeStride from Slack,
+                  Discord, or WhatsApp. For now you can browse the academy
+                  tracks; more is on the way.
+                </Text>
+              </VStack>
+              <ChatSection userId={userId} />
             </VStack>
           </VStack>
         </LayoutContent>

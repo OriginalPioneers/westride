@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "discord:register": "bun scripts/register-discord-commands.ts"
   },
   "dependencies": {
     "@astryxdesign/core": "^0.7.4",
@@ -15,6 +16,7 @@
     "@heroicons/react": "^2.2.0",
     "@stylexjs/stylex": "^0.19.0",
     "@vercel/blob": "^2.8.2",
+    "@westride/api-client": "workspace:*",
     "@westride/db": "workspace:*",
     "canvas-confetti": "^1.9.4",
     "next": "16.2.4",

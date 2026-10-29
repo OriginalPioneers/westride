@@ -11,6 +11,8 @@
     "./idea-factory": "./src/idea-factory.ts",
     "./feedback": "./src/feedback.ts",
     "./github": "./src/github.ts",
+    "./meta": "./src/meta.ts",
+    "./chat": "./src/chat.ts",
     "./countries": "./src/country-catalog.ts",
     "./learning": "./src/learning.ts",
     "./challenges": "./src/challenge-catalog.ts",

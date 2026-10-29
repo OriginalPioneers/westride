@@ -23,16 +23,14 @@ import type {
   MuseUsageTotals,
 } from "@westride/db/idea-factory";
 import { getAgent } from "@/lib/idea-factory/agents";
-import type {
-  FactoryPreferences,
-  MuseCredential,
-} from "@/lib/idea-factory/credentials";
+import type { FactoryPreferences } from "@/lib/idea-factory/credentials";
 import {
   formatMicrosAsUsd,
   formatTokens,
   getMuseModel,
   MUSE_MODELS,
 } from "@/lib/idea-factory/pricing";
+import type { MetaConnectionSummary } from "@/lib/meta/connection";
 import { getMuseRequestDetail } from "./actions";
 
 const META_DASHBOARD_URL = "https://dev.meta.ai/";
@@ -82,7 +80,7 @@ export function ActivityPanel({
   ideaId,
   requests,
   usage,
-  credential,
+  meta,
   preferences,
   onPreferencesChange,
   onDisconnect,
@@ -90,7 +88,7 @@ export function ActivityPanel({
   ideaId: string;
   requests: MuseRequestSummary[];
   usage: MuseUsageTotals;
-  credential: MuseCredential | null;
+  meta: MetaConnectionSummary | null;
   preferences: FactoryPreferences;
   onPreferencesChange: (next: FactoryPreferences) => void;
   onDisconnect: () => void;
@@ -134,25 +132,24 @@ export function ActivityPanel({
             <Heading level={2}>Your Meta connection</Heading>
             <Text type="supporting">
               Requests are billed to your own Meta Model API account. The key is
-              kept in this browser only.
+              kept encrypted on your WeStride account.
             </Text>
           </VStack>
           <HStack gap={3} vAlign="center" wrap="wrap">
             <StackItem size="fill">
-              {credential ? (
+              {meta ? (
                 <HStack gap={2} vAlign="center" wrap="wrap">
                   <Badge variant="success" label="Connected" />
-                  <Text>{credential.label}</Text>
+                  <Text>{meta.label}</Text>
                   <Text type="supporting">
-                    since{" "}
-                    <Timestamp value={new Date(credential.connectedAt).toISOString()} format="date" />
+                    since <Timestamp value={meta.connectedAt} format="date" />
                   </Text>
                 </HStack>
               ) : (
-                <Text type="supporting">Not connected on this browser.</Text>
+                <Text type="supporting">Not connected.</Text>
               )}
             </StackItem>
-            {credential ? (
+            {meta ? (
               <Button label="Disconnect" variant="secondary" onClick={onDisconnect} />
             ) : null}
           </HStack>

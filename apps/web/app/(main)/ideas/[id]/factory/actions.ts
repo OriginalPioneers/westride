@@ -41,20 +41,19 @@ import {
   IDEA_COACH_SLUG,
   type AgentDefinition,
 } from "@/lib/idea-factory/agents";
-import type { MuseCredential } from "@/lib/idea-factory/credentials";
 import {
   callMuse,
   deviceClientId,
-  listMuseModels,
-  mintApiKey,
-  MINTED_KEY_LIFETIME_MS,
-  MuseError,
   parseJsonOutput,
-  pollDeviceAuthorization,
-  startDeviceAuthorization,
   type MuseAttempt,
 } from "@/lib/idea-factory/muse";
 import { isMuseModelId } from "@/lib/idea-factory/pricing";
+import {
+  getMetaConnectionSummary,
+  getMuseApiKey,
+  isMetaConnectionConfigured,
+  type MetaConnectionSummary,
+} from "@/lib/meta/connection";
 import {
   buildAgentInstructions,
   buildChatInput,
@@ -73,16 +72,33 @@ import { resolveMemberProfiles, type MemberProfile } from "@/lib/ideas/members";
 const MAX_MESSAGE = 6000;
 
 const uuid = z.string().uuid();
-const apiKeySchema = z.string().trim().min(8).max(512);
-const accessSchema = z.object({ apiKey: apiKeySchema });
 const modelSchema = z
   .string()
   .refine(isMuseModelId, "Choose a supported Muse model.");
 
-type Failure = { status: "error"; message: string };
+/** `needsConnection` tells the dialog to send the member back to connect Meta. */
+type Failure = { status: "error"; message: string; needsConnection?: boolean };
 
 function failure(message: string): Failure {
   return { status: "error", message };
+}
+
+/** The member's own Meta key, from their WeStride account. */
+async function museKeyFor(userId: string): Promise<string | Failure> {
+  try {
+    const apiKey = await getMuseApiKey(userId);
+    if (apiKey) {
+      return apiKey;
+    }
+  } catch (error) {
+    console.error("Meta key lookup failed", error);
+    return failure("Your Meta key could not be refreshed. Try again in a moment.");
+  }
+  return {
+    status: "error",
+    message: "Connect your Meta account to use the Idea Factory.",
+    needsConnection: true,
+  };
 }
 
 type MemberContext = { userId: string; idea: IdeaWithDetails };
@@ -173,6 +189,10 @@ export type FactoryData = {
   requests: MuseRequestSummary[];
   usage: MuseUsageTotals;
   members: MemberProfile[];
+  /** The viewer's Meta connection, if they have one. */
+  meta: MetaConnectionSummary | null;
+  /** Whether Meta credentials can be kept on this deployment at all. */
+  canConnectMeta: boolean;
   /** Whether "Connect Meta account" is configured on this deployment. */
   canConnectMetaAccount: boolean;
 };
@@ -186,12 +206,13 @@ export async function loadFactory(
   }
   const { idea, userId } = context;
 
-  const [threads, evaluations, requests, usage, profiles] = await Promise.all([
+  const [threads, evaluations, requests, usage, profiles, meta] = await Promise.all([
     listThreads(ideaId),
     listEvaluations(ideaId),
     listMuseRequests(ideaId),
     sumMuseUsage(ideaId, userId),
     resolveMemberProfiles(idea.members.map((member) => member.clerkUserId)),
+    getMetaConnectionSummary(userId),
   ]);
 
   return {
@@ -202,6 +223,8 @@ export async function loadFactory(
       requests,
       usage,
       members: [...profiles.values()],
+      meta,
+      canConnectMeta: isMetaConnectionConfigured(),
       canConnectMetaAccount: deviceClientId() !== null,
     },
   };
@@ -223,117 +246,6 @@ export async function getMuseRequestDetail(
 }
 
 // ---------------------------------------------------------------------------
-// Connecting a Meta account
-// ---------------------------------------------------------------------------
-
-export type ConnectStart = {
-  deviceCode: string;
-  userCode: string;
-  verificationUri: string;
-  intervalSeconds: number;
-  expiresInSeconds: number;
-};
-
-export async function startMetaConnect(): Promise<
-  { status: "ok"; start: ConnectStart } | Failure
-> {
-  const { userId } = await auth();
-  if (!userId) {
-    return failure("Sign in first.");
-  }
-  const clientId = deviceClientId();
-  if (!clientId) {
-    return failure("Connecting a Meta account is not configured. Paste an API key instead.");
-  }
-  try {
-    const start = await startDeviceAuthorization(clientId);
-    return { status: "ok", start };
-  } catch (error) {
-    console.error("Meta device authorization failed", error);
-    return failure(
-      error instanceof MuseError ? error.message : "Meta sign-in could not be started.",
-    );
-  }
-}
-
-export type ConnectPoll =
-  | { status: "pending" }
-  | { status: "slow_down"; intervalSeconds: number }
-  | { status: "authorized"; credential: MuseCredential }
-  | { status: "denied" }
-  | { status: "expired" }
-  | Failure;
-
-export async function pollMetaConnect(deviceCode: string): Promise<ConnectPoll> {
-  const { userId } = await auth();
-  if (!userId) {
-    return failure("Sign in first.");
-  }
-  const clientId = deviceClientId();
-  if (!clientId || typeof deviceCode !== "string" || !deviceCode) {
-    return failure("Meta sign-in is not available.");
-  }
-  try {
-    const poll = await pollDeviceAuthorization(clientId, deviceCode);
-    if (poll.status !== "authorized") {
-      return poll;
-    }
-    const apiKey = await mintApiKey(poll.identityToken);
-    return {
-      status: "authorized",
-      credential: {
-        kind: "meta-account",
-        apiKey,
-        identityToken: poll.identityToken,
-        expiresAt: Date.now() + MINTED_KEY_LIFETIME_MS,
-        label: "Meta account",
-        connectedAt: Date.now(),
-      },
-    };
-  } catch (error) {
-    console.error("Meta device poll failed", error);
-    return failure(error instanceof MuseError ? error.message : "Meta sign-in failed.");
-  }
-}
-
-/** Re-mints the daily key from a stored identity token. */
-export async function refreshMetaKey(
-  identityToken: string,
-): Promise<{ status: "ok"; apiKey: string; expiresAt: number } | Failure> {
-  const { userId } = await auth();
-  if (!userId) {
-    return failure("Sign in first.");
-  }
-  if (typeof identityToken !== "string" || !identityToken) {
-    return failure("Connect your Meta account again.");
-  }
-  try {
-    const apiKey = await mintApiKey(identityToken);
-    return { status: "ok", apiKey, expiresAt: Date.now() + MINTED_KEY_LIFETIME_MS };
-  } catch (error) {
-    return failure(
-      error instanceof MuseError ? error.message : "Your Meta key could not be refreshed.",
-    );
-  }
-}
-
-/** Confirms a pasted key works before it is kept in the browser. */
-export async function verifyMuseKey(
-  apiKey: string,
-): Promise<{ status: "ok"; models: string[] } | Failure> {
-  const { userId } = await auth();
-  if (!userId) {
-    return failure("Sign in first.");
-  }
-  const parsed = apiKeySchema.safeParse(apiKey);
-  if (!parsed.success) {
-    return failure("That does not look like a Meta Model API key.");
-  }
-  const result = await listMuseModels(parsed.data);
-  return result.ok ? { status: "ok", models: result.models } : failure(result.error);
-}
-
-// ---------------------------------------------------------------------------
 // Conversations
 // ---------------------------------------------------------------------------
 
@@ -341,7 +253,6 @@ const sendSchema = z.object({
   ideaId: uuid,
   agentSlug: z.string().min(1),
   content: z.string().trim().min(1, "Write a message.").max(MAX_MESSAGE),
-  access: accessSchema,
   model: modelSchema,
   webSearch: z.boolean(),
 });
@@ -357,6 +268,7 @@ export type SendResult =
   | {
       status: "error";
       message: string;
+      needsConnection?: boolean;
       threadId?: string;
       userMessage?: IdeaFactoryMessage;
       request?: MuseRequestSummary | null;
@@ -378,7 +290,7 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
   if (!parsed.success) {
     return failure(parsed.error.issues[0]?.message ?? "Check the message and try again.");
   }
-  const { ideaId, agentSlug, content, access, model, webSearch } = parsed.data;
+  const { ideaId, agentSlug, content, model, webSearch } = parsed.data;
 
   const context = await requireMember(ideaId);
   if (isFailure(context)) {
@@ -389,6 +301,10 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
   if (!agent) {
     return failure("That advisor is not on this idea's team.");
   }
+  const apiKey = await museKeyFor(userId);
+  if (isFailure(apiKey)) {
+    return apiKey;
+  }
 
   const [thread, latestEvaluation] = await Promise.all([
     getOrCreateThread(ideaId, agentSlug),
@@ -397,7 +313,7 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
   const userMessage = await addUserMessage(thread.id, userId, content);
 
   const result = await callMuse({
-    apiKey: access.apiKey,
+    apiKey,
     model,
     instructions: buildAgentInstructions({
       agent,
@@ -469,6 +385,11 @@ export async function startEvaluation(
   if (slugs.length === 0) {
     return failure("Pick at least one advisor from this idea's team.");
   }
+  // Re-mints a lapsing key once here, before every advisor runs at once.
+  const apiKey = await museKeyFor(userId);
+  if (isFailure(apiKey)) {
+    return apiKey;
+  }
 
   const evaluation = await createEvaluation({
     ideaId: idea.id,
@@ -482,7 +403,6 @@ export async function startEvaluation(
 const runAgentSchema = z.object({
   evaluationId: uuid,
   agentSlug: z.string().min(1),
-  access: accessSchema,
   webSearch: z.boolean(),
 });
 
@@ -558,14 +478,20 @@ function cleanAnswer(raw: unknown): EvaluationAnswer | null {
 
 export type RunAgentResult =
   | { status: "ok"; finding: IdeaFactoryFinding; request: MuseRequestSummary | null }
-  | { status: "error"; message: string; finding?: IdeaFactoryFinding; request?: MuseRequestSummary | null };
+  | {
+      status: "error";
+      message: string;
+      needsConnection?: boolean;
+      finding?: IdeaFactoryFinding;
+      request?: MuseRequestSummary | null;
+    };
 
 export async function runEvaluationAgent(input: unknown): Promise<RunAgentResult> {
   const parsed = runAgentSchema.safeParse(input);
   if (!parsed.success) {
     return failure("Check the request and try again.");
   }
-  const { evaluationId, agentSlug, access, webSearch } = parsed.data;
+  const { evaluationId, agentSlug, webSearch } = parsed.data;
 
   const evaluation = await getEvaluation(evaluationId);
   if (!evaluation) {
@@ -584,12 +510,16 @@ export async function runEvaluationAgent(input: unknown): Promise<RunAgentResult
   if (slot.status === "COMPLETED") {
     return { status: "ok", finding: slot, request: null };
   }
+  const apiKey = await museKeyFor(userId);
+  if (isFailure(apiKey)) {
+    return apiKey;
+  }
 
   await markFindingRunning(evaluationId, agentSlug);
   const previous = await getLatestCompletedEvaluation(idea.id);
 
   const result = await callMuse({
-    apiKey: access.apiKey,
+    apiKey,
     model: evaluation.model,
     instructions: buildAgentInstructions({
       agent,
@@ -640,7 +570,6 @@ export async function runEvaluationAgent(input: unknown): Promise<RunAgentResult
 
 const synthesizeSchema = z.object({
   evaluationId: uuid,
-  access: accessSchema,
 });
 
 function cleanSynthesis(raw: unknown): MuseSynthesis | null {
@@ -679,14 +608,20 @@ function cleanSynthesis(raw: unknown): MuseSynthesis | null {
 
 export type SynthesizeResult =
   | { status: "ok"; evaluation: EvaluationWithFindings; request: MuseRequestSummary | null }
-  | { status: "error"; message: string; evaluation?: EvaluationWithFindings; request?: MuseRequestSummary | null };
+  | {
+      status: "error";
+      message: string;
+      needsConnection?: boolean;
+      evaluation?: EvaluationWithFindings;
+      request?: MuseRequestSummary | null;
+    };
 
 export async function synthesizeEvaluation(input: unknown): Promise<SynthesizeResult> {
   const parsed = synthesizeSchema.safeParse(input);
   if (!parsed.success) {
     return failure("Check the request and try again.");
   }
-  const { evaluationId, access } = parsed.data;
+  const { evaluationId } = parsed.data;
 
   const evaluation = await getEvaluation(evaluationId);
   if (!evaluation) {
@@ -708,9 +643,13 @@ export async function synthesizeEvaluation(input: unknown): Promise<SynthesizeRe
     const failed = await getEvaluation(evaluationId);
     return { status: "error", message, evaluation: failed ?? evaluation, request: null };
   }
+  const apiKey = await museKeyFor(userId);
+  if (isFailure(apiKey)) {
+    return apiKey;
+  }
 
   const result = await callMuse({
-    apiKey: access.apiKey,
+    apiKey,
     model: evaluation.model,
     instructions: `${SYNTHESIS_INSTRUCTIONS}\n\nThe idea: "${idea.name}" (${idea.type === "BUSINESS" ? "business" : "non-profit"}).\n${idea.description.trim().slice(0, 3000)}`,
     input: buildSynthesisInput(evaluation),

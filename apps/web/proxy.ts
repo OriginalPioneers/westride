@@ -89,11 +89,19 @@ const clerk = clerkMiddleware({
 const STATIC_FILE =
   /\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)$/i;
 
+// Chat platforms call these from servers with bot user agents (Slack sends
+// "Slackbot"). Each handler checks the platform's request signature instead.
+const SIGNED_WEBHOOKS = new Set([
+  "/integrations/slack/commands",
+  "/integrations/discord/interactions",
+  "/integrations/whatsapp/webhook",
+]);
+
 export function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl;
 
   // Crawlers need to read the disallow policy. Everything else is refused.
-  if (pathname === "/robots.txt") {
+  if (pathname === "/robots.txt" || SIGNED_WEBHOOKS.has(pathname)) {
     return NextResponse.next();
   }
 
