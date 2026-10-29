@@ -36,12 +36,7 @@ export default async function FindMentorPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { userId, redirectToSignIn } = await auth();
-  if (!userId) {
-    return redirectToSignIn({ returnBackUrl: "/mentorship/mentors" });
-  }
-
-  const params = await searchParams;
+  const [{ userId }, params] = await Promise.all([auth(), searchParams]);
   const values = {
     skill: firstParam(params, "skill"),
     location: firstParam(params, "location"),
@@ -55,7 +50,7 @@ export default async function FindMentorPage({
       location: decodeLocationFilter(values.location),
     }),
     listMentorFilterOptions(),
-    getMentorProfileForUser(userId),
+    userId ? getMentorProfileForUser(userId) : Promise.resolve(null),
   ]);
 
   const hasFilters = Boolean(values.skill || values.location || values.language);
