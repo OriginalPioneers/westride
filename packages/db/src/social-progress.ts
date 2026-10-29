@@ -84,28 +84,46 @@ export function sharedPostUrl(value: string, platform: SocialPlatform) {
       !hosts.includes(host)
     )
       return null;
-    url.hostname = hosts[0];
-    url.hash = "";
-    // Keep only Facebook's post identity parameters; discard tracking variants.
-    const identity = new URLSearchParams();
-    if (platform === "facebook")
-      for (const key of ["story_fbid", "id", "fbid", "v"]) {
-        const value = url.searchParams.get(key);
-        if (value) identity.set(key, value);
-      }
-    url.search = identity.toString();
-    url.pathname = url.pathname.replace(/\/+$/, "") || "/";
-    const postPath =
-      platform === "threads"
-        ? /\/@[^/]+\/post\/[^/]+/
-        : platform === "instagram"
-          ? /^\/(p|reel|tv)\/[^/]+/
-          : /\/(posts|videos|reel|share)\/[^/]+|^\/(permalink|story|photo)\.php$/;
-    if (!postPath.test(url.pathname)) return null;
-    return url.href;
+    const identity = postIdentity(
+      platform,
+      url.pathname.replace(/\/+$/, ""),
+      url.searchParams,
+    );
+    return identity ? `https://${hosts[0]}${identity}` : null;
   } catch {
     return null;
   }
+}
+// Reduce each supported route to the post's identity so every variant of one
+// post (tracking params, legacy routes, extra query keys) shares a single key.
+function postIdentity(
+  platform: SocialPlatform,
+  path: string,
+  query: URLSearchParams,
+) {
+  let m: RegExpMatchArray | null;
+  if (platform === "threads")
+    return (m = path.match(/^\/@([^/]+)\/post\/([^/]+)$/))
+      ? `/@${m[1].toLowerCase()}/post/${m[2]}`
+      : null;
+  if (platform === "instagram")
+    return (m = path.match(/^\/(?:p|reels?|tv)\/([^/]+)$/))
+      ? `/p/${m[1]}`
+      : null;
+  if ((m = path.match(/^\/groups\/([^/]+)\/(?:posts|permalink)\/([^/]+)$/)))
+    return `/groups/${m[1]}/posts/${m[2]}`;
+  if ((m = path.match(/^\/([^/]+)\/(posts|videos)\/([^/]+)$/)))
+    return `/${m[1].toLowerCase()}/${m[2]}/${m[3]}`;
+  if ((m = path.match(/^\/(reel|share\/[a-z])\/([^/]+)$/)))
+    return `/${m[1]}/${m[2]}`;
+  const story = query.get("story_fbid");
+  const owner = query.get("id");
+  if (/^\/(permalink|story)\.php$/.test(path) && story && owner)
+    return `/permalink.php?${new URLSearchParams({ story_fbid: story, id: owner })}`;
+  const photo = query.get("fbid");
+  if (path === "/photo.php" && photo)
+    return `/photo.php?${new URLSearchParams({ fbid: photo })}`;
+  return null;
 }
 export function socialProgress(
   posts: readonly SocialProgressPost[],

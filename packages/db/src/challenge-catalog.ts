@@ -1,3 +1,4 @@
+import { changedPitch } from "./builder-progress";
 export const interests = {
   games: "Games",
   everyday: "Everyday life",
@@ -130,10 +131,7 @@ export function learningAwards(attempts: ChallengeProgress[]): string[] {
   }
   return earned;
 }
+// Same rule as Idea Studio: casing, spacing, and punctuation edits aren't revisions.
 export function isChangedAnswer(answer: string, revision: string): boolean {
-  const normalize = (value: string) =>
-    value.trim().replace(/\s+/g, " ").toLocaleLowerCase();
-  return (
-    normalize(answer) !== normalize(revision) && /[\p{L}\p{N}]/u.test(revision)
-  );
+  return changedPitch(answer, revision);
 }

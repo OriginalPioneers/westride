@@ -1,10 +1,16 @@
 # Achievements and Muse challenges
 
-The Achievements page has 24 permanent achievements in four families. Twelve curated activities share one dialog. Interest and explanation level adapt the task without an API call; Muse provides one brief observation and one improvement after submission. These are participation achievements, not skill certifications.
+The Achievements page has 27 permanent achievements in five families, plus six Get social bonus achievements. Twelve curated activities share one dialog. Interest and explanation level adapt the task without an API call; Muse provides one brief observation and one improvement after submission. These are participation achievements, not skill certifications.
 
 ## Setup
 
-Apply migration `0007_learning_achievements.sql` with the repository's normal migration workflow before running this branch. It adds challenge attempts and request budgets, adds celebration timestamps, and upserts all 24 badges while preserving existing earned records. Existing badges are marked celebrated to avoid replaying old unlocks. No production migration is performed by this change.
+Apply all three migrations with the repository's normal migration workflow before running this branch; award syncing and idea reads fail without them:
+
+- `0007_learning_achievements.sql` adds challenge attempts and request budgets, adds celebration timestamps, and upserts the challenge badges while preserving existing earned records. Existing badges are marked celebrated to avoid replaying old unlocks.
+- `0008_builder_achievements.sql` adds `idea_builder_events` and the idea prototype columns (`prototype_url`, `prototype_instructions`).
+- `0009_social_bonus.sql` adds `social_posts` for the social bonus achievements.
+
+No production migration is performed by this change.
 
 Set `MODEL_API_KEY` in `apps/web/.env` for the server-side Muse integration. No public key variable is used. This key funds challenge feedback. The Idea Factory keeps its existing member-key flow. No env file needs to be committed.
 
