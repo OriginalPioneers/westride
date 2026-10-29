@@ -13,7 +13,7 @@ import { Token } from "@astryxdesign/core/Token";
 import { getMentorProfile } from "@westride/db/mentorship";
 import { languageName } from "@/lib/mentorship/languages";
 import { formatLocation } from "@/lib/mentorship/locations";
-import { mentorPath, skillFilterPath } from "../mentor-card";
+import { skillFilterPath } from "../mentor-card";
 
 type Params = Promise<{ id: string }>;
 
@@ -29,20 +29,12 @@ export async function generateMetadata({
 }: {
   params: Params;
 }): Promise<Metadata> {
-  const { userId } = await auth();
-  if (!userId) {
-    return { title: "Mentor" };
-  }
   const mentor = await loadMentor((await params).id);
   return { title: mentor?.displayName ?? "Mentor" };
 }
 
 export default async function MentorPage({ params }: { params: Params }) {
-  const { id } = await params;
-  const { userId, redirectToSignIn } = await auth();
-  if (!userId) {
-    return redirectToSignIn({ returnBackUrl: mentorPath(id) });
-  }
+  const [{ id }, { userId }] = await Promise.all([params, auth()]);
 
   const mentor = await loadMentor(id);
   if (!mentor) {

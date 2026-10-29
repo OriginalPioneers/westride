@@ -8,7 +8,6 @@ import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { getMentorProfileForUser } from "@westride/db/mentorship";
-import { signInPath, signUpPath } from "@/lib/auth-paths";
 import { BecomeMentorIcon, FindMentorIcon } from "./mentorship-icons";
 import { mentorPath } from "./mentors/mentor-card";
 
@@ -36,74 +35,57 @@ export default async function MentorshipPage() {
       }
       content={
         <LayoutContent>
-          {userId ? (
-            <Grid columns={{ minWidth: 280, max: 2 }} gap={4}>
-              <Card>
-                <VStack gap={4}>
-                  <BecomeMentorIcon />
-                  <VStack gap={1}>
-                    <Heading level={2}>
-                      {profile ? "You are a mentor" : "Become a Mentor"}
-                    </Heading>
-                    <Text type="supporting">
-                      {profile
-                        ? "Keep your skills, locations, and languages current so the right mentees find you."
-                        : "Share what you know. List your skills, where you are, and the languages you speak."}
-                    </Text>
-                  </VStack>
-                  <HStack gap={2} wrap="wrap">
-                    <Button
-                      label={profile ? "Edit your profile" : "Become a Mentor"}
-                      variant="primary"
-                      href="/mentorship/become"
-                    />
-                    {profile ? (
-                      <Button
-                        label="View your profile"
-                        href={mentorPath(profile.id)}
-                      />
-                    ) : null}
-                  </HStack>
+          <Grid columns={{ minWidth: 280, max: 2 }} gap={4}>
+            <Card>
+              <VStack gap={4}>
+                <BecomeMentorIcon />
+                <VStack gap={1}>
+                  <Heading level={2}>
+                    {profile ? "You are a mentor" : "Become a Mentor"}
+                  </Heading>
+                  <Text type="supporting">
+                    {profile
+                      ? "Keep your skills, locations, and languages current so the right mentees find you."
+                      : userId
+                        ? "Share what you know. List your skills, where you are, and the languages you speak."
+                        : "Share what you know. An account is required to list your skills, where you are, and the languages you speak."}
+                  </Text>
                 </VStack>
-              </Card>
-              <Card>
-                <VStack gap={4}>
-                  <FindMentorIcon />
-                  <VStack gap={1}>
-                    <Heading level={2}>Find a Mentor</Heading>
-                    <Text type="supporting">
-                      Browse mentors and narrow them down by skill, location,
-                      and language.
-                    </Text>
-                  </VStack>
-                  <HStack>
+                <HStack gap={2} wrap="wrap">
+                  <Button
+                    label={profile ? "Edit your profile" : "Become a Mentor"}
+                    variant="primary"
+                    href="/mentorship/become"
+                  />
+                  {profile ? (
                     <Button
-                      label="Find a Mentor"
-                      variant={profile ? "primary" : "secondary"}
-                      href="/mentorship/mentors"
+                      label="View your profile"
+                      href={mentorPath(profile.id)}
                     />
-                  </HStack>
+                  ) : null}
+                </HStack>
+              </VStack>
+            </Card>
+            <Card>
+              <VStack gap={4}>
+                <FindMentorIcon />
+                <VStack gap={1}>
+                  <Heading level={2}>Find a Mentor</Heading>
+                  <Text type="supporting">
+                    Browse mentors and narrow them down by skill, location, and
+                    language.
+                  </Text>
                 </VStack>
-              </Card>
-            </Grid>
-          ) : (
-            <VStack gap={4}>
-              <Text>
-                Sign in to find a mentor or to offer your experience as one.
-              </Text>
-              <HStack gap={2} wrap="wrap">
-                <Button
-                  label="Sign in"
-                  variant="primary"
-                  href={`${signInPath}?redirect_url=/mentorship`}
-                />
-                <Button
-                  label="Create an account"
-                  href={`${signUpPath}?redirect_url=/mentorship`}
-                />
-              </HStack>
-            </VStack>
-          )}
+                <HStack>
+                  <Button
+                    label="Find a Mentor"
+                    variant={profile ? "primary" : "secondary"}
+                    href="/mentorship/mentors"
+                  />
+                </HStack>
+              </VStack>
+            </Card>
+          </Grid>
         </LayoutContent>
       }
     />
