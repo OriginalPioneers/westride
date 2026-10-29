@@ -22,6 +22,7 @@ import {
   tags,
   type Country,
   type Idea,
+  type IdeaGithubRepo,
   type IdeaMember,
   type IdeaMemberRole,
   type IdeaType,
@@ -34,6 +35,7 @@ export type IdeaWithDetails = Idea & {
   members: IdeaMember[];
   countries: Country[];
   tags: Tag[];
+  githubRepo: IdeaGithubRepo | null;
 };
 
 export type IdeaMemberInput = {
@@ -159,6 +161,7 @@ async function findIdeas(
         orderBy: (entry, { asc: by }) => [by(entry.sortOrder)],
         with: { tag: true },
       },
+      githubRepo: true,
     },
   });
 

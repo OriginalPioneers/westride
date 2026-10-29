@@ -1,6 +1,7 @@
 import type { IdeaMemberRole, IdeaType } from "@westride/db";
 import { z } from "zod";
 import { prototypeUrl } from "@westride/db/builder";
+import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 
 export const MAX_IDEA_NAME = 120;
 export const MAX_IDEA_DESCRIPTION = 8000;
@@ -65,6 +66,16 @@ export const createIdeaSchema = z.object({
     MAX_IDEA_INVITES,
     `Invite up to ${MAX_IDEA_INVITES} people.`,
   ),
+  /** The repository the idea was imported from. Empty when started fresh. */
+  githubRepoUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .refine(
+      (url) => !url || parseGithubRepoRef(url) !== null,
+      "Use a GitHub repository link, like https://github.com/owner/repo.",
+    )
+    .default(""),
 });
 
 export const updateIdeaSchema = z
@@ -135,6 +146,7 @@ export type IdeaDraft = {
   description: string;
   isPublic: boolean | null;
   invites: { clerkUserId: string; role: IdeaMemberRole }[];
+  githubRepoUrl: string;
 };
 
 export function validateIdeaDraft(draft: IdeaDraft): CreateIdeaFieldErrors {
