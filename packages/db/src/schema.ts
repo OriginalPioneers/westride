@@ -884,6 +884,100 @@ export const githubConnections = pgTable(
   ],
 );
 
+// ---------------------------------------------------------------------------
+// Meta
+//
+// A member's Meta Model API access, used for the Muse calls they make. Either
+// a key minted through Meta's device sign-in, which lasts about a day and is
+// re-minted from the identity token, or a key the member pasted. Secrets
+// arrive already encrypted by the web app.
+// ---------------------------------------------------------------------------
+
+export const metaCredentialKind = pgEnum("meta_credential_kind", [
+  "META_ACCOUNT",
+  "API_KEY",
+]);
+
+export const metaConnections = pgTable("meta_connections", {
+  /** Clerk user id. One Meta credential per WeStride account. */
+  clerkUserId: text("clerk_user_id").primaryKey(),
+  kind: metaCredentialKind("kind").notNull(),
+  /** Encrypted Model API key, `LLM_...`. */
+  apiKey: text("api_key").notNull(),
+  /** When a minted key lapses. Null for a pasted key. */
+  apiKeyExpiresAt: timestamp("api_key_expires_at", {
+    withTimezone: true,
+    mode: "date",
+  }),
+  /** Encrypted device sign-in token that re-mints the key. Null for a pasted key. */
+  identityToken: text("identity_token"),
+  /** Safe to show, e.g. "Meta account" or "Key …LJY". */
+  label: text("label").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// Chat platforms
+//
+// Slack, Discord, and WhatsApp accounts a member has linked, so messages that
+// arrive from them can be tied to the member. Nothing secret is kept: the
+// platforms sign each request, and linking only records who the sender is.
+// ---------------------------------------------------------------------------
+
+export const chatPlatform = pgEnum("chat_platform", [
+  "SLACK",
+  "DISCORD",
+  "WHATSAPP",
+]);
+
+export const chatConnections = pgTable(
+  "chat_connections",
+  {
+    clerkUserId: text("clerk_user_id").notNull(),
+    platform: chatPlatform("platform").notNull(),
+    /**
+     * Who messages arrive from. Slack: `<team id>:<user id>`. Discord: the
+     * user id. WhatsApp: the phone number, digits only.
+     */
+    externalId: text("external_id").notNull(),
+    displayName: text("display_name").notNull(),
+    /** Slack workspace name. */
+    workspaceName: text("workspace_name"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.clerkUserId, table.platform] }),
+    uniqueIndex("chat_connections_platform_external_id_unique").on(
+      table.platform,
+      table.externalId,
+    ),
+  ],
+);
+
+/** One-time codes a member sends from a platform that has no sign-in, like WhatsApp. */
+export const chatLinkCodes = pgTable(
+  "chat_link_codes",
+  {
+    code: text("code").primaryKey(),
+    clerkUserId: text("clerk_user_id").notNull(),
+    platform: chatPlatform("platform").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("chat_link_codes_clerk_user_id_idx").on(table.clerkUserId, table.platform),
+  ],
+);
+
 export type Track = typeof tracks.$inferSelect;
 export type NewTrack = typeof tracks.$inferInsert;
 export type Lesson = typeof lessons.$inferSelect;
@@ -916,6 +1010,13 @@ export type IdeaGithubRepo = typeof ideaGithubRepos.$inferSelect;
 export type NewIdeaGithubRepo = typeof ideaGithubRepos.$inferInsert;
 export type GithubConnection = typeof githubConnections.$inferSelect;
 export type NewGithubConnection = typeof githubConnections.$inferInsert;
+export type MetaCredentialKind = (typeof metaCredentialKind.enumValues)[number];
+export type MetaConnection = typeof metaConnections.$inferSelect;
+export type NewMetaConnection = typeof metaConnections.$inferInsert;
+export type ChatPlatform = (typeof chatPlatform.enumValues)[number];
+export type ChatConnection = typeof chatConnections.$inferSelect;
+export type NewChatConnection = typeof chatConnections.$inferInsert;
+export type ChatLinkCode = typeof chatLinkCodes.$inferSelect;
 export type EvidenceClass = (typeof evidenceClass.enumValues)[number];
 export type FactoryMessageRole = (typeof factoryMessageRole.enumValues)[number];
 export type EvaluationStatus = (typeof evaluationStatus.enumValues)[number];

@@ -28,12 +28,14 @@ import {
   IDEA_COACH_SLUG,
 } from "@/lib/idea-factory/agents";
 import {
+  forgetBrowserMuseCredential,
   readFactoryPreferences,
   writeFactoryPreferences,
   type FactoryPreferences,
-  type MuseCredential,
 } from "@/lib/idea-factory/credentials";
 import { DEFAULT_MUSE_MODEL, getMuseModel } from "@/lib/idea-factory/pricing";
+import type { MetaConnectionSummary } from "@/lib/meta/connection";
+import { disconnectMeta } from "../../../meta-actions";
 import {
   loadFactory,
   runEvaluationAgent,
@@ -47,7 +49,6 @@ import { AgentRail, viewKey, type FactoryView } from "./agent-rail";
 import { AgentThread } from "./agent-thread";
 import { ConnectPanel } from "./connect-panel";
 import { EvaluationPanel } from "./evaluation-panel";
-import { CredentialError, useMuseCredential } from "./use-muse-credential";
 
 export type FactoryIdea = {
   id: string;
@@ -102,10 +103,9 @@ export function IdeaFactoryDialog({
   idea: FactoryIdea;
   viewerId: string;
 }) {
-  const { credential, isLoaded: isCredentialLoaded, save, clear, getAccess } =
-    useMuseCredential(viewerId);
   const [preferences, setPreferences] = useState<FactoryPreferences>(DEFAULT_PREFERENCES);
   const [data, setData] = useState<FactoryData | null>(null);
+  const [meta, setMeta] = useState<MetaConnectionSummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [view, setView] = useState<View>({ kind: "agent", slug: IDEA_COACH_SLUG });
   const [hasChosenView, setHasChosenView] = useState(false);
@@ -116,6 +116,7 @@ export function IdeaFactoryDialog({
 
   useEffect(() => {
     setPreferences(readFactoryPreferences(viewerId, DEFAULT_PREFERENCES));
+    forgetBrowserMuseCredential(viewerId);
   }, [viewerId]);
 
   useEffect(() => {
@@ -126,6 +127,7 @@ export function IdeaFactoryDialog({
       }
       if (result.status === "ok") {
         setData(result.data);
+        setMeta(result.data.meta);
       } else {
         setLoadError(result.message);
       }
@@ -135,14 +137,14 @@ export function IdeaFactoryDialog({
     };
   }, [idea.id]);
 
-  // First visit without a credential lands on the connect screen.
+  // First visit without a Meta connection lands on the connect screen.
   useEffect(() => {
-    if (isCredentialLoaded && !credential && !hasChosenView) {
+    if (data && !data.meta && !hasChosenView) {
       setView({ kind: "connect" });
     }
-  }, [isCredentialLoaded, credential, hasChosenView]);
+  }, [data, hasChosenView]);
 
-  const isConnected = credential !== null;
+  const isConnected = meta !== null;
   const modelLabel = getMuseModel(preferences.model)?.label ?? preferences.model;
 
   const updatePreferences = useCallback(
@@ -158,9 +160,15 @@ export function IdeaFactoryDialog({
     setView(next);
   }
 
-  function handleConnected(next: MuseCredential) {
-    save(next);
+  function handleConnected(next: MetaConnectionSummary) {
+    setMeta(next);
     chooseView({ kind: "agent", slug: IDEA_COACH_SLUG });
+  }
+
+  /** The server found no usable Meta key, so the member connects again. */
+  function handleNeedsConnection() {
+    setMeta(null);
+    chooseView({ kind: "connect" });
   }
 
   function patchData(update: (current: FactoryData) => FactoryData) {
@@ -275,12 +283,10 @@ export function IdeaFactoryDialog({
     );
 
     try {
-      const access = await getAccess();
       const result = await sendAgentMessage({
         ideaId: idea.id,
         agentSlug,
         content,
-        access,
         model: preferences.model,
         webSearch: preferences.webSearch,
       });
@@ -297,16 +303,13 @@ export function IdeaFactoryDialog({
         }
         recordRequest(result.request);
         setThreadError(agentSlug, result.message);
+        if (result.needsConnection) {
+          handleNeedsConnection();
+        }
       }
-    } catch (error) {
+    } catch {
       removeMessage(agentSlug, optimisticId);
-      setThreadError(
-        agentSlug,
-        error instanceof CredentialError ? error.message : "Something went wrong. Try again.",
-      );
-      if (error instanceof CredentialError) {
-        chooseView({ kind: "connect" });
-      }
+      setThreadError(agentSlug, "Something went wrong. Try again.");
     } finally {
       setSendingSlugs((current) => {
         const next = new Set(current);
@@ -351,7 +354,6 @@ export function IdeaFactoryDialog({
     setEvaluationError(null);
     setIsEvaluating(true);
     try {
-      const access = await getAccess();
       const started = await startEvaluation({
         ideaId: idea.id,
         agentSlugs,
@@ -359,6 +361,9 @@ export function IdeaFactoryDialog({
       });
       if (started.status !== "ok") {
         setEvaluationError(started.message);
+        if (started.needsConnection) {
+          handleNeedsConnection();
+        }
         return;
       }
       const evaluation = started.evaluation;
@@ -371,7 +376,6 @@ export function IdeaFactoryDialog({
           const result = await runEvaluationAgent({
             evaluationId: evaluation.id,
             agentSlug: slot.agentSlug,
-            access,
             webSearch: preferences.webSearch,
           });
           if (result.status === "ok") {
@@ -393,21 +397,19 @@ export function IdeaFactoryDialog({
         }),
       );
 
-      const synthesized = await synthesizeEvaluation({ evaluationId: evaluation.id, access });
+      const synthesized = await synthesizeEvaluation({ evaluationId: evaluation.id });
       if (synthesized.evaluation) {
         upsertEvaluation(synthesized.evaluation);
       }
       recordRequest(synthesized.request);
       if (synthesized.status !== "ok") {
         setEvaluationError(synthesized.message);
+        if (synthesized.needsConnection) {
+          handleNeedsConnection();
+        }
       }
-    } catch (error) {
-      setEvaluationError(
-        error instanceof CredentialError ? error.message : "The evaluation could not run. Try again.",
-      );
-      if (error instanceof CredentialError) {
-        chooseView({ kind: "connect" });
-      }
+    } catch {
+      setEvaluationError("The evaluation could not run. Try again.");
     } finally {
       setIsEvaluating(false);
     }
@@ -431,7 +433,7 @@ export function IdeaFactoryDialog({
         </VStack>
       );
     }
-    if (!data || !isCredentialLoaded) {
+    if (!data) {
       return (
         <VStack height="100%" vAlign="center" hAlign="center">
           <Spinner size="lg" label="Opening the Idea Factory…" />
@@ -443,6 +445,7 @@ export function IdeaFactoryDialog({
       return (
         <VStack padding={6} hAlign="center">
           <ConnectPanel
+            canConnectMeta={data.canConnectMeta}
             canConnectMetaAccount={data.canConnectMetaAccount}
             onConnected={handleConnected}
           />
@@ -477,12 +480,12 @@ export function IdeaFactoryDialog({
               ideaId={idea.id}
               requests={data.requests}
               usage={data.usage}
-              credential={credential}
+              meta={meta}
               preferences={preferences}
               onPreferencesChange={updatePreferences}
               onDisconnect={() => {
-                clear();
-                chooseView({ kind: "connect" });
+                void disconnectMeta();
+                handleNeedsConnection();
               }}
             />
           </VStack>
