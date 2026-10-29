@@ -1,3 +1,4 @@
+export { learningAttempts, learningMuseBudgets } from "./learning-schema";
 import { relations } from "drizzle-orm";
 import {
   bigint,
@@ -93,6 +94,10 @@ export const userAchievements = pgTable(
     achievementId: uuid("achievement_id")
       .notNull()
       .references(() => achievements.id, { onDelete: "cascade" }),
+    celebratedAt: timestamp("celebrated_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
     earnedAt: timestamp("earned_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
