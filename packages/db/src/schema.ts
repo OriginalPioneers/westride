@@ -1,3 +1,5 @@
+export { socialPosts } from "./social-schema";
+export { learningAttempts, learningMuseBudgets } from "./learning-schema";
 import { relations } from "drizzle-orm";
 import {
   bigint,
@@ -93,6 +95,10 @@ export const userAchievements = pgTable(
     achievementId: uuid("achievement_id")
       .notNull()
       .references(() => achievements.id, { onDelete: "cascade" }),
+    celebratedAt: timestamp("celebrated_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
     earnedAt: timestamp("earned_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -277,6 +283,8 @@ export const ideas = pgTable(
     /** Markdown. */
     description: text("description").notNull(),
     type: ideaType("type").notNull(),
+    prototypeUrl: text("prototype_url"),
+    prototypeInstructions: text("prototype_instructions"),
     isFeatured: boolean("is_featured").notNull().default(false),
     isPublic: boolean("is_public").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
@@ -291,6 +299,29 @@ export const ideas = pgTable(
     index("ideas_type_idx").on(table.type),
     index("ideas_visibility_idx").on(table.isPublic, table.isFeatured),
     index("ideas_created_at_idx").on(table.createdAt),
+  ],
+);
+
+/** Durable evidence of a saved builder action, credited only to its actor. */
+export const ideaBuilderEvents = pgTable(
+  "idea_builder_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    clerkUserId: text("clerk_user_id").notNull(),
+    achievementSlug: text("achievement_slug").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idea_builder_events_actor_idea_slug_unique").on(
+      table.clerkUserId,
+      table.ideaId,
+      table.achievementSlug,
+    ),
   ],
 );
 

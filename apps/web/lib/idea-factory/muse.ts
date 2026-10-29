@@ -43,6 +43,7 @@ export type MuseCallOptions = {
   jsonFormat?: MuseJsonFormat;
   reasoningEffort?: "low" | "medium" | "high";
   maxOutputTokens?: number;
+  timeoutMs?: number;
 };
 
 export type MuseUsage = {
@@ -244,7 +245,7 @@ export async function callMuse(options: MuseCallOptions): Promise<MuseResult> {
   const requestBody = payload as unknown as Record<string, unknown>;
   const started = Date.now();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? REQUEST_TIMEOUT_MS);
 
   try {
     const response = await fetch(`${MUSE_API_BASE}${RESPONSES_ENDPOINT}`, {

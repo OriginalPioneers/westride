@@ -37,6 +37,7 @@ import {
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import { afterAuthPath, signInPath, signUpPath } from "@/lib/auth-paths";
+import { MuseDock } from "./muse-dock";
 import { SiteFooter } from "../site-footer";
 import {
   AcademicCapIcon as AcademicCapIconSolid,
@@ -231,11 +232,7 @@ function NavBrand() {
   const mode = useSideNavRenderMode();
   const { isCollapsed } = useSideNavCollapse();
   const heading = (
-    <SideNavHeading
-      heading="WeStride"
-      headingHref="/"
-      icon={<BrandMark />}
-    />
+    <SideNavHeading heading="WeStride" headingHref="/" icon={<BrandMark />} />
   );
 
   // Mobile top bar and drawer already frame the wordmark. The band and
@@ -290,14 +287,18 @@ function NavAccount({ children }: { children: React.ReactNode }) {
       dividers={["top"]}
       style={footerBandStyle(isCollapsed)}
     >
-      <VStack align={isCollapsed ? "center" : "stretch"}>
-        {links}
-      </VStack>
+      <VStack align={isCollapsed ? "center" : "stretch"}>{links}</VStack>
     </Section>
   );
 }
 
-export function AppFrame({ children }: { children: React.ReactNode }) {
+export function AppFrame({
+  children,
+  viewerId = null,
+}: {
+  children: React.ReactNode;
+  viewerId?: string | null;
+}) {
   const pathname = usePathname();
   const { signOut } = useClerk();
 
@@ -366,7 +367,16 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
         </SideNav>
       }
     >
-      <Layout height="fill" padding={0} footer={<SiteFooter />}>
+      <Layout
+        height="fill"
+        padding={0}
+        footer={
+          <VStack gap={0} style={{ position: "relative" }}>
+            <MuseDock key={viewerId ?? "guest"} viewerId={viewerId} />
+            <SiteFooter />
+          </VStack>
+        }
+      >
         {children}
       </Layout>
     </AppShell>

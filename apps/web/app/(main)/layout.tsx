@@ -1,4 +1,5 @@
 import { awardIfSignedIn } from "@/lib/achievements";
+import { AchievementCelebration } from "./achievements/achievement-celebration";
 import { AppFrame } from "./app-frame";
 
 export default async function MainLayout({
@@ -6,9 +7,14 @@ export default async function MainLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // An account exists once Clerk has a session. Record Newbie on the first
+  // An account exists once Clerk has a session. Record First Step on the first
   // signed-in request; later requests leave the existing row in place.
-  await awardIfSignedIn();
+  const userId = await awardIfSignedIn();
 
-  return <AppFrame>{children}</AppFrame>;
+  return (
+    <AppFrame viewerId={userId}>
+      {userId ? <AchievementCelebration /> : null}
+      {children}
+    </AppFrame>
+  );
 }
