@@ -36,21 +36,55 @@ export function ChallengeDialog({
   viewerId,
   initialInterest = "games",
   initialDepth = "simple",
+  initialAttempt,
   onClose,
 }: {
   slug: string;
   viewerId: string;
   initialInterest?: Interest;
   initialDepth?: Depth;
+  initialAttempt?: LearningAttempt;
   onClose: () => void;
 }) {
   const router = useRouter();
   const [slug, setSlug] = useState(initialSlug);
   const [interest, setInterest] = useState<Interest>(initialInterest);
   const [depth, setDepth] = useState<Depth>(initialDepth);
-  const [attempt, setAttempt] = useState<LearningAttempt | null>(null);
-  const [answer, setAnswer] = useState("");
-  const [revision, setRevision] = useState("");
+  const [attempt, setAttempt] = useState<LearningAttempt | null>(
+    initialAttempt ?? null,
+  );
+  const [draft] = useState(() => {
+    const saved = {
+      answer: initialAttempt?.answer ?? "",
+      revision: initialAttempt?.revision ?? "",
+    };
+    if (!initialAttempt || typeof window === "undefined") return saved;
+    try {
+      const local = JSON.parse(
+        sessionStorage.getItem(
+          `westride.challenge.${viewerId}.${initialAttempt.id}`,
+        ) ?? "null",
+      );
+      if (
+        local &&
+        typeof local.answer === "string" &&
+        typeof local.revision === "string"
+      )
+        return {
+          answer: local.answer as string,
+          revision: local.revision as string,
+        };
+    } catch {
+      /* Use the saved server answer when local storage is unavailable. */
+    }
+    return saved;
+  });
+  const [answer, setAnswer] = useState(
+    initialAttempt?.feedback || initialAttempt?.completedAt
+      ? initialAttempt.answer
+      : draft.answer,
+  );
+  const [revision, setRevision] = useState(draft.revision);
   const [message, setMessage] = useState("");
   const [pending, start] = useTransition();
   const draftKey = (id: string) => `westride.challenge.${viewerId}.${id}`;
@@ -99,7 +133,9 @@ export function ChallengeDialog({
           }
         }
         setAnswer(
-          result.attempt.feedback ? result.attempt.answer : saved.answer,
+          result.attempt.feedback || result.attempt.completedAt
+            ? result.attempt.answer
+            : saved.answer,
         );
         setRevision(saved.revision);
         if (!restore)

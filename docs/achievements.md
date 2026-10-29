@@ -10,6 +10,10 @@ Set `MODEL_API_KEY` in `apps/web/.env` for the server-side Muse integration. No 
 
 Feedback uses `muse-spark-1.3`, low reasoning, a 512-token output cap, a 25-second timeout, and no web search. Each user gets at most 12 attempted calls per UTC day; all users share a 64-call daily cap. Retries count. Feedback is cached per learner/challenge/interest and revisions cost no calls. Request leases prevent overlapping calls for the same attempt. Missing keys, exhausted budgets, and provider failures preserve answers and permit finishing without feedback; revision badges still require actual feedback.
 
+## Track guidance
+
+Next up opens the saved answer for the most recently started unfinished challenge, then suggests an uncompleted challenge. It preserves the resumed interest and explanation level and previews only badges that completion can earn. After all twelve challenge types, it suggests missing interests, useful revisions, Academy exploration, or an idea. Compact rows show Earned, In progress, Ready, and Needs feedback states; signed-out learners see Sign in. Challenge and revision progress bars mark the actual award thresholds and show how far away the next milestone is. Recommendations are local and use no Muse calls.
+
 ## Persistence and awards
 
 All actions authenticate with Clerk and scope database operations to that user. One attempt is stored per learner, challenge, and interest. Choosing the same combination resumes it; a different interest permits another attempt. Completion totals and revision totals count distinct challenge types. Answers are bounded to 1,200 characters. Drafts typed in the dialog also stay in that browser tab's session storage, scoped by account and attempt. Use Save answer to persist across devices.
@@ -18,7 +22,7 @@ First Spark is awarded on successful idea creation, and the Achievements page re
 
 ## Checks
 
-From the repository root: `node --import tsx --test packages/db/tests/challenges.test.ts` and `bun run lint`. Build with `bun run build --filter=web`. Use `astryx doctor --built .next` from `apps/web` after a web build.
+From the repository root: `node --import tsx --test packages/db/tests/challenges.test.ts apps/web/tests/track-progress.test.ts` and `bun run lint`. Build with `bun run build --filter=web`. Use `astryx doctor --built .next` from `apps/web` after a web build.
 
 The implementation was validated without reading user env files or spending live Muse tokens. Live Clerk/Neon/Muse acceptance requires a configured development environment and the migration.
 
