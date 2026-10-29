@@ -531,7 +531,9 @@ export async function runEvaluationAgent(input: unknown): Promise<RunAgentResult
     webSearch: webSearch && agent.usesWebSearch,
     jsonFormat: { name: "idea_evaluation", schema: EVALUATION_SCHEMA },
     reasoningEffort: "medium",
-    maxOutputTokens: 6000,
+    // Reasoning tokens count toward this cap. Web search plus a structured
+    // report can pass 6,000 and truncate the JSON, which fails the advisor.
+    maxOutputTokens: 16_000,
   });
 
   const request = await record({
@@ -656,7 +658,7 @@ export async function synthesizeEvaluation(input: unknown): Promise<SynthesizeRe
     webSearch: false,
     jsonFormat: { name: "idea_synthesis", schema: SYNTHESIS_SCHEMA },
     reasoningEffort: "high",
-    maxOutputTokens: 5000,
+    maxOutputTokens: 12_000,
   });
 
   const request = await record({

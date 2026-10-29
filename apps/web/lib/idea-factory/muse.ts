@@ -145,38 +145,63 @@ const EMPTY_USAGE: MuseUsage = {
   estimatedCostMicros: 0,
 };
 
-/** Pulls the answer and its citations out of a Responses API body. */
+type OutputMessage = {
+  phase: unknown;
+  texts: string[];
+  sources: MuseSource[];
+};
+
+function readMessage(item: unknown): OutputMessage | null {
+  const message = asRecord(item);
+  if (message?.type !== "message" || !Array.isArray(message.content)) {
+    return null;
+  }
+  const texts: string[] = [];
+  const sources: MuseSource[] = [];
+  for (const block of message.content) {
+    const part = asRecord(block);
+    if (part?.type !== "output_text" || typeof part.text !== "string") {
+      continue;
+    }
+    texts.push(part.text);
+    const annotations = Array.isArray(part.annotations) ? part.annotations : [];
+    for (const annotation of annotations) {
+      const citation = asRecord(annotation);
+      if (citation?.type === "url_citation" && typeof citation.url === "string") {
+        sources.push({
+          url: citation.url,
+          title: typeof citation.title === "string" ? citation.title : null,
+          date: null,
+        });
+      }
+    }
+  }
+  return { phase: message.phase, texts, sources };
+}
+
+/**
+ * Pulls the answer and its citations out of a Responses API body.
+ * Muse Spark writes progress notes (`phase: "commentary"`) while it searches,
+ * then a separate message with the real answer. Those notes are not part of
+ * the answer; joining them onto structured JSON makes the answer unreadable.
+ */
 function readOutput(body: unknown): { text: string; sources: MuseSource[] } {
   const record = asRecord(body);
   const output = Array.isArray(record?.output) ? record.output : [];
+  const messages = output.flatMap((item) => {
+    const message = readMessage(item);
+    return message ? [message] : [];
+  });
+  const answers = messages.filter((message) => message.phase !== "commentary");
+  const chosen = answers.length > 0 ? answers : messages;
+
   const texts: string[] = [];
   const sources = new Map<string, MuseSource>();
-
-  for (const item of output) {
-    const message = asRecord(item);
-    if (message?.type !== "message" || !Array.isArray(message.content)) {
-      continue;
-    }
-    for (const block of message.content) {
-      const part = asRecord(block);
-      if (part?.type !== "output_text" || typeof part.text !== "string") {
-        continue;
-      }
-      texts.push(part.text);
-      const annotations = Array.isArray(part.annotations) ? part.annotations : [];
-      for (const annotation of annotations) {
-        const citation = asRecord(annotation);
-        if (
-          citation?.type === "url_citation" &&
-          typeof citation.url === "string" &&
-          !sources.has(citation.url)
-        ) {
-          sources.set(citation.url, {
-            url: citation.url,
-            title: typeof citation.title === "string" ? citation.title : null,
-            date: null,
-          });
-        }
+  for (const message of chosen) {
+    texts.push(...message.texts);
+    for (const source of message.sources) {
+      if (!sources.has(source.url)) {
+        sources.set(source.url, source);
       }
     }
   }
@@ -329,14 +354,36 @@ export async function callMuse(options: MuseCallOptions): Promise<MuseResult> {
   }
 }
 
-/** Parses a structured-output answer, tolerating a stray code fence. */
+function parseJsonValue(text: string): unknown | undefined {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Parses a structured-output answer. Tolerates a stray code fence, and a
+ * plain-language preamble in front of the JSON object.
+ */
 export function parseJsonOutput<T>(text: string): T | null {
   const trimmed = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-  try {
-    return JSON.parse(trimmed) as T;
-  } catch {
-    return null;
+  const direct = parseJsonValue(trimmed);
+  if (direct !== undefined) {
+    return direct as T;
   }
+
+  let last: unknown;
+  for (let index = 0; index < trimmed.length; index += 1) {
+    if (trimmed[index] !== "{") {
+      continue;
+    }
+    const candidate = parseJsonValue(trimmed.slice(index));
+    if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) {
+      last = candidate;
+    }
+  }
+  return (last as T) ?? null;
 }
 
 /** `GET /v1/models`: the cheapest way to confirm a key works. */
