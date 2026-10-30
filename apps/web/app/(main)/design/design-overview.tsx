@@ -176,7 +176,7 @@ function Swatch({ name, token }: { name: string; token: string }) {
 export function DesignOverview() {
   return (
     <DocPage
-      title="Design"
+      title="WeStride Design"
       lede="How WeStride looks and why: the brand, the design system every screen is built from, and the few rules that keep it consistent."
       actions={
         <Button

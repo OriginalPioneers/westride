@@ -1,6 +1,7 @@
 import {
   and,
   asc,
+  desc,
   eq,
   inArray,
   or,
@@ -13,10 +14,12 @@ import {
   mentorLanguages,
   mentorLocations,
   mentorProfiles,
+  mentorRequests,
   mentorSkills,
   skills,
   type MentorLocation,
   type MentorProfile,
+  type MentorRequest,
   type Skill,
 } from "./schema";
 import { skillSlug } from "./skill-catalog";
@@ -374,4 +377,84 @@ export async function deleteMentorProfile(
     .where(eq(mentorProfiles.clerkUserId, clerkUserId))
     .returning({ headshotUrl: mentorProfiles.headshotUrl });
   return removed ?? null;
+}
+
+export type MentorRequestInput = {
+  mentorProfileId: string;
+  requesterClerkUserId: string;
+  fullName: string;
+  email: string;
+  company: string | null;
+  jobTitle: string | null;
+  phone: string | null;
+  inquiryReason: string | null;
+  timing: string | null;
+  details: string;
+};
+
+/** Newest first. Only the mentor who owns the profile can load these. */
+export async function listMentorRequestsForOwner(
+  clerkUserId: string,
+): Promise<MentorRequest[]> {
+  const profile = await getMentorProfileForUser(clerkUserId);
+  if (!profile) {
+    return [];
+  }
+
+  return getDb().query.mentorRequests.findMany({
+    where: eq(mentorRequests.mentorProfileId, profile.id),
+    orderBy: [desc(mentorRequests.createdAt)],
+    limit: 100,
+  });
+}
+
+export async function createMentorRequest(
+  input: MentorRequestInput,
+): Promise<{ id: string }> {
+  const [created] = await getDb()
+    .insert(mentorRequests)
+    .values(input)
+    .returning({ id: mentorRequests.id });
+
+  if (!created) {
+    throw new Error("The mentorship request could not be saved.");
+  }
+
+  return created;
+}
+
+/**
+ * Marks one new request reviewed. Returns false when the request is not
+ * on the signed-in mentor's profile.
+ */
+export async function reviewMentorRequest(
+  clerkUserId: string,
+  requestId: string,
+): Promise<boolean> {
+  const profile = await getMentorProfileForUser(clerkUserId);
+  if (!profile) {
+    return false;
+  }
+
+  const existing = await getDb().query.mentorRequests.findFirst({
+    where: and(
+      eq(mentorRequests.id, requestId),
+      eq(mentorRequests.mentorProfileId, profile.id),
+    ),
+    columns: { id: true, status: true },
+  });
+  if (!existing) {
+    return false;
+  }
+  if (existing.status === "REVIEWED") {
+    return true;
+  }
+
+  const [updated] = await getDb()
+    .update(mentorRequests)
+    .set({ status: "REVIEWED", reviewedAt: new Date() })
+    .where(eq(mentorRequests.id, existing.id))
+    .returning({ id: mentorRequests.id });
+
+  return Boolean(updated);
 }

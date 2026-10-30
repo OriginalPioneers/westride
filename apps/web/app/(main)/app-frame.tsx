@@ -80,6 +80,29 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "Create",
+    links: [
+      {
+        label: "Idea Studio",
+        href: "/ideas",
+        icon: LightBulbIcon,
+        selectedIcon: LightBulbIconSolid,
+      },
+      {
+        label: "Build Studio",
+        href: "/build",
+        icon: WrenchScrewdriverIcon,
+        selectedIcon: WrenchScrewdriverIconSolid,
+      },
+      {
+        label: "Agent Studio",
+        href: "/agents",
+        icon: CpuChipIcon,
+        selectedIcon: CpuChipIconSolid,
+      },
+    ],
+  },
+  {
     title: "Learn",
     links: [
       {
@@ -104,29 +127,6 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/achievements",
         icon: TrophyIcon,
         selectedIcon: TrophyIconSolid,
-      },
-    ],
-  },
-  {
-    title: "Create",
-    links: [
-      {
-        label: "Idea Studio",
-        href: "/ideas",
-        icon: LightBulbIcon,
-        selectedIcon: LightBulbIconSolid,
-      },
-      {
-        label: "Build Studio",
-        href: "/build",
-        icon: WrenchScrewdriverIcon,
-        selectedIcon: WrenchScrewdriverIconSolid,
-      },
-      {
-        label: "Agent Studio",
-        href: "/agents",
-        icon: CpuChipIcon,
-        selectedIcon: CpuChipIconSolid,
       },
     ],
   },
