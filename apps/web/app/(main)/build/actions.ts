@@ -8,10 +8,9 @@ import {
   createTicket,
   deleteMilestone,
   deleteTicket,
-  getProject,
-  getProjectRole,
   linkProjectRepo,
   moveTicket,
+  reorderTicket,
   setPrimaryProjectRepo,
   unlinkProjectRepo,
   updateMilestone,
@@ -23,79 +22,35 @@ import {
 import { getIdea } from "@westride/db/ideas";
 import { revalidatePath } from "next/cache";
 import {
+  failure,
+  isFailure,
+  requireProjectMember,
+  requireProjectOwner,
+  revalidateProject,
+  type Failure,
+} from "@/lib/build/access";
+import {
   createProjectSchema,
   fieldErrorsFrom,
   milestoneSchema,
   moveTicketSchema,
+  reorderTicketSchema,
   ticketSchema,
   updateProjectSchema,
   uuidSchema,
-  type FieldErrors,
 } from "@/lib/build/schema";
-import { projectPath, ticketPath, ticketsPath } from "@/lib/build/labels";
+import { ticketPath, ticketsPath } from "@/lib/build/labels";
 import { isGithubAppConfigured } from "@/lib/github/config";
 import { GithubApiError } from "@/lib/github/http";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 import { findReadableRepo, type GithubRepo } from "@/lib/github/repos";
 import { resolveMemberProfiles, type MemberProfile } from "@/lib/ideas/members";
 
+export type { Failure } from "@/lib/build/access";
+
 // ---------------------------------------------------------------------------
 // Shared
 // ---------------------------------------------------------------------------
-
-export type Failure = {
-  status: "error";
-  message: string;
-  fieldErrors: FieldErrors;
-};
-
-function failure(message: string, fieldErrors: FieldErrors = {}): Failure {
-  return { status: "error", message, fieldErrors };
-}
-
-function isFailure(value: unknown): value is Failure {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "status" in value &&
-    (value as Failure).status === "error"
-  );
-}
-
-type MemberContext = {
-  userId: string;
-  project: ProjectWithDetails;
-  role: ProjectMemberRole;
-};
-
-async function requireProjectMember(projectId: string): Promise<MemberContext | Failure> {
-  const { userId } = await auth();
-  if (!userId) {
-    return failure("Sign in to work on this project.");
-  }
-  if (!uuidSchema.safeParse(projectId).success) {
-    return failure("That project does not exist.");
-  }
-  const [project, role] = await Promise.all([
-    getProject(projectId, { clerkUserId: userId }),
-    getProjectRole(projectId, userId),
-  ]);
-  if (!project || !role) {
-    return failure("Only members of this project can change it.");
-  }
-  return { userId, project, role };
-}
-
-async function requireProjectOwner(projectId: string): Promise<MemberContext | Failure> {
-  const context = await requireProjectMember(projectId);
-  if (isFailure(context)) {
-    return context;
-  }
-  if (context.role !== "OWNER") {
-    return failure("Only an owner can do that.");
-  }
-  return context;
-}
 
 /** Confirms every invited account exists. */
 async function checkAccounts(
@@ -179,11 +134,6 @@ function toRepoInput(repo: GithubRepo, userId: string) {
     isPrivate: repo.isPrivate,
     linkedByClerkUserId: userId,
   };
-}
-
-function revalidateProject(projectId: string) {
-  revalidatePath("/build");
-  revalidatePath(projectPath(projectId), "layout");
 }
 
 // ---------------------------------------------------------------------------
@@ -606,6 +556,47 @@ export async function moveTicketAction(
     if (message.startsWith("Say what is blocking")) {
       return failure(message, { blockedReason: message });
     }
+    return failure("The ticket could not be moved. Try again.");
+  }
+}
+
+/** Board moves: a status column and a position within it. */
+export async function reorderTicketAction(
+  projectId: string,
+  ticketId: string,
+  draft: unknown,
+): Promise<TicketResult> {
+  const context = await requireProjectMember(projectId);
+  if (isFailure(context)) {
+    return context;
+  }
+  if (!uuidSchema.safeParse(ticketId).success) {
+    return failure("That ticket does not exist.");
+  }
+  const parsed = reorderTicketSchema.safeParse(draft);
+  if (!parsed.success) {
+    return failure("Check the move and try again.", fieldErrorsFrom(parsed.error));
+  }
+  if (parsed.data.status === "BLOCKED" && !parsed.data.blockedReason) {
+    return failure("Say what is blocking this ticket.", {
+      blockedReason: "Say what is blocking this ticket.",
+    });
+  }
+  try {
+    const ticket = await reorderTicket(
+      projectId,
+      ticketId,
+      parsed.data.status,
+      parsed.data.index,
+      parsed.data.blockedReason || null,
+    );
+    if (!ticket) {
+      return failure("That ticket does not exist.");
+    }
+    revalidateProject(projectId);
+    return { status: "ok", ticket };
+  } catch (error) {
+    console.error("Ticket reorder failed", error);
     return failure("The ticket could not be moved. Try again.");
   }
 }

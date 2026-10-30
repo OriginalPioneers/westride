@@ -182,6 +182,77 @@ export const milestoneSchema = z.object({
 
 export type MilestoneInputValues = z.output<typeof milestoneSchema>;
 
+// ---------------------------------------------------------------------------
+// Muse planning, comments, agent runs
+// ---------------------------------------------------------------------------
+
+export const MAX_PLAN_NOTES = 1500;
+export const MAX_COMMENT = 4000;
+export const MIN_AGENT_STEPS = 10;
+export const MAX_AGENT_STEPS = 400;
+export const DEFAULT_AGENT_STEPS = 120;
+
+export const planRequestSchema = z.object({
+  mode: z.enum(["backlog", "prioritize"], { error: "Choose what to plan." }),
+  notes: z.string().trim().max(MAX_PLAN_NOTES, `Keep notes under ${MAX_PLAN_NOTES} characters.`).default(""),
+  model: z.string().trim().min(1),
+});
+
+const draftMilestoneSchema = z.object({
+  title: z.string().trim().min(1).max(MAX_MILESTONE_TITLE),
+  description: z.string().trim().max(MAX_MILESTONE_DESCRIPTION).default(""),
+  targetDate: z
+    .union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.null()])
+    .default(null),
+});
+
+const draftTicketSchema = z.object({
+  title: z.string().trim().min(1).max(MAX_TICKET_TITLE),
+  description: z.string().trim().max(MAX_TICKET_DESCRIPTION).default(""),
+  priority: z.enum(ticketPriorities),
+  milestone: z.union([z.string().trim().max(MAX_MILESTONE_TITLE), z.null()]).default(null),
+});
+
+export const acceptBacklogSchema = z.object({
+  museRequestId: z.union([uuidSchema, z.null()]).default(null),
+  milestones: z.array(draftMilestoneSchema).max(20),
+  tickets: z.array(draftTicketSchema).max(60),
+});
+
+export const acceptRankingSchema = z.object({
+  ranking: z
+    .array(
+      z.object({
+        ticketId: uuidSchema,
+        priority: z.enum(ticketPriorities),
+      }),
+    )
+    .min(1)
+    .max(200),
+});
+
+export const commentSchema = z.object({
+  body: z
+    .string()
+    .trim()
+    .min(1, "Write a comment.")
+    .max(MAX_COMMENT, `Keep comments under ${MAX_COMMENT} characters.`),
+});
+
+export const startRunSchema = z.object({
+  repoId: optionalUuid.default(null),
+  model: z.string().trim().min(1),
+  maxSteps: z.number().int().min(MIN_AGENT_STEPS).max(MAX_AGENT_STEPS).default(DEFAULT_AGENT_STEPS),
+  /** Extra guidance the member adds on top of the ticket brief. */
+  instructions: z.string().trim().max(MAX_PLAN_NOTES).default(""),
+});
+
+export const reorderTicketSchema = z.object({
+  status: z.enum(ticketStatuses),
+  index: z.number().int().min(0).max(10_000),
+  blockedReason: z.string().trim().max(MAX_BLOCKED_REASON).default(""),
+});
+
 export type FieldErrors = Partial<Record<string, string>>;
 
 export function fieldErrorsFrom(error: z.ZodError): FieldErrors {

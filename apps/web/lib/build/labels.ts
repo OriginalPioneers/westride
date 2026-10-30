@@ -1,4 +1,5 @@
 import type {
+  AgentRunStatus,
   MilestoneStatus,
   ProjectMemberRole,
   ProjectStatus,
@@ -82,6 +83,26 @@ export function ticketPath(projectId: string, number: number): string {
 export function projectSettingsPath(projectId: string): string {
   return `/build/${projectId}/settings`;
 }
+
+export function boardPath(projectId: string): string {
+  return `/build/${projectId}/board`;
+}
+
+export function activityPath(projectId: string): string {
+  return `/build/${projectId}/activity`;
+}
+
+export function runsPath(projectId: string): string {
+  return `/build/${projectId}/runs`;
+}
+
+export const AGENT_RUN_STATUS_LABELS: Record<AgentRunStatus, string> = {
+  QUEUED: "Starting",
+  RUNNING: "Working",
+  SUCCEEDED: "Finished",
+  FAILED: "Failed",
+  CANCELLED: "Cancelled",
+};
 
 /** `in_progress` or `in-progress` in a URL reads as IN_PROGRESS. */
 export function parseTicketStatusParam(value: string | undefined): TicketStatus | null {

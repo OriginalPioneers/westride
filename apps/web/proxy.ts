@@ -91,10 +91,12 @@ const STATIC_FILE =
 
 // Chat platforms call these from servers with bot user agents (Slack sends
 // "Slackbot"). Each handler checks the platform's request signature instead.
+// Build Studio's sandbox runner posts its work log with a per-run token.
 const SIGNED_WEBHOOKS = new Set([
   "/integrations/slack/commands",
   "/integrations/discord/interactions",
   "/integrations/whatsapp/webhook",
+  "/integrations/muse-code/events",
 ]);
 
 export function proxy(request: NextRequest, event: NextFetchEvent) {

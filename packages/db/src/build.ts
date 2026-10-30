@@ -555,6 +555,7 @@ export async function createTicket(
   projectId: string,
   createdByClerkUserId: string,
   input: NewTicketInput,
+  sortOrderOverride?: number,
 ): Promise<TicketWithDetails> {
   const status = input.status ?? "BACKLOG";
   const change = ticketStatusChange(
@@ -564,7 +565,9 @@ export async function createTicket(
   );
   const [number, sortOrder] = await Promise.all([
     nextTicketNumber(projectId),
-    topSortOrder(projectId, status),
+    sortOrderOverride === undefined
+      ? topSortOrder(projectId, status)
+      : Promise.resolve(sortOrderOverride),
   ]);
   const [created] = await getDb()
     .insert(tickets)
@@ -594,15 +597,27 @@ export async function createTicket(
   return ticket;
 }
 
-/** Creates several tickets at once, in the order given. Used by Muse planning. */
+/**
+ * Creates several tickets at once. The batch keeps the order given: the first
+ * input gets the lowest number and sits on top of its column, the rest follow
+ * beneath it, all above whatever was already there. Used by Muse planning.
+ */
 export async function createTickets(
   projectId: string,
   createdByClerkUserId: string,
   inputs: NewTicketInput[],
 ): Promise<TicketWithDetails[]> {
+  const tops = new Map<TicketStatus, number>();
+  const slots: number[] = [];
+  for (const input of inputs.slice().reverse()) {
+    const status = input.status ?? "BACKLOG";
+    const top = tops.get(status) ?? (await topSortOrder(projectId, status));
+    slots.unshift(top);
+    tops.set(status, top - 1);
+  }
   const created: TicketWithDetails[] = [];
-  for (const input of inputs) {
-    created.push(await createTicket(projectId, createdByClerkUserId, input));
+  for (const [index, input] of inputs.entries()) {
+    created.push(await createTicket(projectId, createdByClerkUserId, input, slots[index]));
   }
   return created;
 }
@@ -649,6 +664,91 @@ export async function moveTicket(
     .update(tickets)
     .set({ ...change, sortOrder, updatedAt: new Date() })
     .where(eq(tickets.id, ticketId));
+  await touchProject(projectId);
+  return getTicketById(ticketId);
+}
+
+export type TicketRankInput = {
+  ticketId: string;
+  priority: TicketPriority;
+  /** Position in the backlog, 0 first. */
+  rank: number;
+};
+
+/**
+ * Applies a prioritised ordering to a set of open tickets. Tickets not in
+ * the list keep their current priority and sort after the ranked ones.
+ */
+export async function applyTicketRanking(
+  projectId: string,
+  ranking: TicketRankInput[],
+): Promise<number> {
+  if (ranking.length === 0) {
+    return 0;
+  }
+  const db = getDb();
+  const owned = await db.query.tickets.findMany({
+    where: and(
+      eq(tickets.projectId, projectId),
+      inArray(
+        tickets.id,
+        ranking.map((entry) => entry.ticketId),
+      ),
+    ),
+    columns: { id: true },
+  });
+  const known = new Set(owned.map((row) => row.id));
+  const statements = ranking
+    .filter((entry) => known.has(entry.ticketId))
+    .map((entry) =>
+      db
+        .update(tickets)
+        .set({ priority: entry.priority, sortOrder: entry.rank, updatedAt: new Date() })
+        .where(eq(tickets.id, entry.ticketId)),
+    );
+  if (statements.length === 0) {
+    return 0;
+  }
+  const [first, ...rest] = statements;
+  await db.batch([first!, ...rest]);
+  await touchProject(projectId);
+  return statements.length;
+}
+
+/** Places a ticket at a position among its status column (0 = top). */
+export async function reorderTicket(
+  projectId: string,
+  ticketId: string,
+  status: TicketStatus,
+  index: number,
+  blockedReason?: string | null,
+): Promise<TicketWithDetails | null> {
+  const db = getDb();
+  const current = await db.query.tickets.findFirst({
+    where: and(eq(tickets.id, ticketId), eq(tickets.projectId, projectId)),
+    columns: { id: true, status: true, completedAt: true },
+  });
+  if (!current) {
+    return null;
+  }
+  const change = ticketStatusChange(current, status, blockedReason);
+  const column = await db.query.tickets.findMany({
+    where: and(eq(tickets.projectId, projectId), eq(tickets.status, status)),
+    orderBy: [asc(tickets.sortOrder), desc(tickets.createdAt)],
+    columns: { id: true },
+  });
+  const ids = column.map((row) => row.id).filter((id) => id !== ticketId);
+  ids.splice(Math.max(0, Math.min(index, ids.length)), 0, ticketId);
+  const statements = ids.map((id, position) =>
+    id === ticketId
+      ? db
+          .update(tickets)
+          .set({ ...change, sortOrder: position, updatedAt: new Date() })
+          .where(eq(tickets.id, id))
+      : db.update(tickets).set({ sortOrder: position }).where(eq(tickets.id, id)),
+  );
+  const [first, ...rest] = statements;
+  await db.batch([first!, ...rest]);
   await touchProject(projectId);
   return getTicketById(ticketId);
 }

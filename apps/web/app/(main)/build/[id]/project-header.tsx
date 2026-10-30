@@ -2,7 +2,6 @@ import { Heading } from "@astryxdesign/core/Heading";
 import { Link } from "@astryxdesign/core/Link";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { OPEN_TICKET_STATUSES } from "@westride/db/build";
 import type { ReactNode } from "react";
 import { ProjectStatusBadge } from "../project-badges";
 import type { ProjectPageContext } from "./load-project";
@@ -19,10 +18,6 @@ export function ProjectHeader({
   actions?: ReactNode;
 }) {
   const { project } = context;
-  const openCount = OPEN_TICKET_STATUSES.reduce(
-    (sum, status) => sum + project.ticketCounts[status],
-    0,
-  );
   return (
     <VStack gap={4}>
       <Link href="/build" isStandalone>
@@ -49,7 +44,7 @@ export function ProjectHeader({
       <ProjectNav
         projectId={project.id}
         selected={section}
-        openTicketCount={openCount}
+        openTicketCount={context.openTicketCount}
         canEdit={context.isMember}
       />
     </VStack>

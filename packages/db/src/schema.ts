@@ -633,14 +633,18 @@ export const museRequests = pgTable(
   "muse_requests",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    ideaId: uuid("idea_id")
-      .notNull()
-      .references(() => ideas.id, { onDelete: "cascade" }),
+    /** The idea this call was for. Null for Build Studio planning calls. */
+    ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }),
+    /**
+     * The Build Studio project this call was for, when it was planning work.
+     * Not a foreign key: the log outlives the project for cost accounting.
+     */
+    projectId: uuid("project_id"),
     /** Clerk user id of the member whose Meta account paid for the call. */
     clerkUserId: text("clerk_user_id").notNull(),
     /** Agent slug from the catalog, or null for the synthesis step. */
     agentSlug: text("agent_slug"),
-    /** "chat" | "evaluation" | "synthesis" | "verify" */
+    /** "chat" | "evaluation" | "synthesis" | "verify" | "plan" */
     purpose: text("purpose").notNull(),
     model: text("model").notNull(),
     endpoint: text("endpoint").notNull(),
@@ -672,6 +676,7 @@ export const museRequests = pgTable(
       table.createdAt,
     ),
     index("muse_requests_clerk_user_id_idx").on(table.clerkUserId),
+    index("muse_requests_project_id_idx").on(table.projectId),
   ],
 );
 
@@ -1143,6 +1148,11 @@ export type NewFeedbackComment = typeof feedbackComments.$inferInsert;
 // Build Studio tables reference `ideas` above, so they live in their own file
 // and are re-exported here for drizzle-kit and the relational query API.
 export {
+  agentRunEvents,
+  agentRunEventsRelations,
+  agentRuns,
+  agentRunsRelations,
+  agentRunStatus,
   milestoneStatus,
   projectMemberRole,
   projectMembers,
@@ -1154,6 +1164,8 @@ export {
   projects,
   projectsRelations,
   projectStatus,
+  ticketComments,
+  ticketCommentsRelations,
   ticketPriority,
   tickets,
   ticketsRelations,
@@ -1161,12 +1173,18 @@ export {
   ticketStatus,
 } from "./build-schema";
 export type {
+  AgentRun,
+  AgentRunEvent,
+  AgentRunStatus,
   MilestoneStatus,
+  NewAgentRun,
+  NewAgentRunEvent,
   NewProject,
   NewProjectMember,
   NewProjectMilestone,
   NewProjectRepo,
   NewTicket,
+  NewTicketComment,
   Project,
   ProjectMember,
   ProjectMemberRole,
@@ -1174,6 +1192,7 @@ export type {
   ProjectRepo,
   ProjectStatus,
   Ticket,
+  TicketComment,
   TicketPriority,
   TicketSource,
   TicketStatus,

@@ -21,16 +21,21 @@ import {
   MILESTONE_STATUS_LABELS,
   PROJECT_ROLE_LABELS,
   TICKET_STATUS_LABELS,
+  activityPath,
   projectSettingsPath,
   ticketsPath,
 } from "@/lib/build/labels";
 import { ideaPath } from "@/lib/ideas/filters";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
 import { loadProjectPage } from "./load-project";
+import { PlanWithMuseButton } from "./plan-button";
 import { ProjectHeader } from "./project-header";
 import { NewTicketButton } from "./tickets/new-ticket-button";
 
 type Params = Promise<{ id: string }>;
+
+/** Muse planning actions called from this page can take a few minutes. */
+export const maxDuration = 300;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const context = await loadProjectPage((await params).id);
@@ -62,6 +67,11 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
             actions={
               context.isMember ? (
                 <>
+                  <PlanWithMuseButton
+                    projectId={project.id}
+                    hasMetaConnection={context.hasMetaConnection}
+                    openTicketCount={context.openTicketCount}
+                  />
                   <NewTicketButton
                     projectId={project.id}
                     milestones={project.milestones}
@@ -109,8 +119,8 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
               </HStack>
               {total === 0 ? (
                 <Text type="supporting">
-                  No tickets yet. Add the first one, or wait for Muse planning to
-                  draft a backlog from the description above.
+                  No tickets yet. Add the first one, or ask Muse to draft a backlog
+                  from the description above.
                 </Text>
               ) : (
                 <VStack gap={3}>
@@ -164,7 +174,16 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
             ) : null}
 
             <VStack gap={3}>
-              <Heading level={2}>Code</Heading>
+              <HStack gap={3} vAlign="center" wrap="wrap">
+                <StackItem size="fill">
+                  <Heading level={2}>Code</Heading>
+                </StackItem>
+                {project.repos.length > 0 ? (
+                  <Link href={activityPath(project.id)} isStandalone>
+                    Commits, pull requests, and deployments
+                  </Link>
+                ) : null}
+              </HStack>
               {project.repos.length === 0 ? (
                 <Text type="supporting">
                   No repositories linked yet.

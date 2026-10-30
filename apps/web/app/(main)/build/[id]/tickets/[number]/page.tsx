@@ -12,9 +12,20 @@ import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { getTicket, ticketKey } from "@westride/db/build";
 import {
+  isRunActive,
+  listAgentRunEvents,
+  listAgentRunsForTicket,
+  listTicketComments,
+} from "@westride/db/build-agents";
+import { isAgentRunnerConfigured } from "@/lib/build/agent/config";
+import { reconcileStaleRun } from "@/lib/build/agent/finish";
+import { toRunSnapshot } from "@/lib/build/agent/snapshot";
+import { FIRST_EVENT_SEQUENCE } from "@/lib/build/agent/start";
+import {
   TICKET_PRIORITY_LABELS,
   TICKET_STATUS_LABELS,
   projectPath,
+  runsPath,
   ticketsPath,
 } from "@/lib/build/labels";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
@@ -24,9 +35,15 @@ import {
   TicketStatusBadge,
 } from "../../../project-badges";
 import { loadProjectPage } from "../../load-project";
+import { TicketComments, type CommentView } from "./comments";
+import { RunAgentButton } from "./run-agent-button";
+import { RunLog } from "./run-log";
 import { DeleteTicketButton, EditTicketButton, TicketStatusControl } from "./ticket-controls";
 
 type Params = Promise<{ id: string; number: string }>;
+
+/** Starting an agent run (sandbox + clone) can take a while. */
+export const maxDuration = 300;
 
 async function loadTicketPage(params: Params) {
   const { id, number } = await params;
@@ -59,14 +76,39 @@ export default async function TicketPage({ params }: { params: Params }) {
   }
   const { context, ticket } = loaded;
   const { project } = context;
+  const [storedRuns, comments] = await Promise.all([
+    listAgentRunsForTicket(ticket.id),
+    listTicketComments(ticket.id),
+  ]);
+  const runs = await Promise.all(storedRuns.map((run) => reconcileStaleRun(run)));
+  const latestRun = runs[0] ?? null;
+  const latestEvents = latestRun
+    ? await listAgentRunEvents(latestRun.id, FIRST_EVENT_SEQUENCE)
+    : [];
+  const activeRun = runs.find((run) => isRunActive(run.status)) ?? null;
+
   const profiles = await resolveMemberProfiles([
     ...project.members.map((member) => member.clerkUserId),
     ticket.createdByClerkUserId,
     ...(ticket.assigneeClerkUserId ? [ticket.assigneeClerkUserId] : []),
+    ...comments.flatMap((comment) => (comment.authorClerkUserId ? [comment.authorClerkUserId] : [])),
   ]);
   const nameOf = (clerkUserId: string | null) =>
     clerkUserId ? (profiles.get(clerkUserId)?.name ?? "WeStride member") : null;
   const key = ticketKey(project.name, ticket.number);
+  const commentViews: CommentView[] = comments.map((comment) => ({
+    id: comment.id,
+    body: comment.body,
+    createdAt: comment.createdAt.toISOString(),
+    author: comment.authorClerkUserId
+      ? {
+          clerkUserId: comment.authorClerkUserId,
+          name: nameOf(comment.authorClerkUserId) ?? "WeStride member",
+          imageUrl: profiles.get(comment.authorClerkUserId)?.imageUrl ?? null,
+        }
+      : null,
+    isOwn: comment.authorClerkUserId !== null && comment.authorClerkUserId === context.userId,
+  }));
   const dialogOptions = {
     projectId: project.id,
     milestones: project.milestones,
@@ -109,6 +151,22 @@ export default async function TicketPage({ params }: { params: Params }) {
               </StackItem>
               {context.isMember ? (
                 <HStack gap={2} vAlign="center" wrap="wrap">
+                  <RunAgentButton
+                    projectId={project.id}
+                    ticketId={ticket.id}
+                    ticketRepoId={ticket.repoId}
+                    repos={project.repos}
+                    hasMetaConnection={context.hasMetaConnection}
+                    isConfigured={isAgentRunnerConfigured()}
+                    isDisabled={activeRun !== null || ticket.status === "DONE"}
+                    disabledReason={
+                      activeRun
+                        ? "An agent is already on this ticket."
+                        : ticket.status === "DONE"
+                          ? "This ticket is done."
+                          : undefined
+                    }
+                  />
                   <TicketStatusControl ticket={ticket} />
                   <EditTicketButton ticket={ticket} options={dialogOptions} />
                   <DeleteTicketButton ticket={ticket} />
@@ -135,6 +193,44 @@ export default async function TicketPage({ params }: { params: Params }) {
                 teammate, or a Muse Code agent, can pick it up.
               </Text>
             )}
+
+            {latestRun ? (
+              <>
+                <Divider />
+                <VStack gap={4}>
+                  <HStack gap={3} vAlign="center" wrap="wrap">
+                    <StackItem size="fill">
+                      <Heading level={2}>Muse Code</Heading>
+                    </StackItem>
+                    {runs.length > 1 ? (
+                      <Link href={runsPath(project.id)} isStandalone>
+                        {`All ${runs.length} runs`}
+                      </Link>
+                    ) : null}
+                  </HStack>
+                  <RunLog
+                    key={latestRun.id}
+                    projectId={project.id}
+                    initial={toRunSnapshot(latestRun, latestEvents)}
+                    canCancel={context.isMember}
+                    defaultOpen={isRunActive(latestRun.status)}
+                  />
+                </VStack>
+              </>
+            ) : null}
+
+            <Divider />
+
+            <VStack gap={4}>
+              <Heading level={2}>Comments</Heading>
+              <TicketComments
+                projectId={project.id}
+                ticketId={ticket.id}
+                ticketNumber={ticket.number}
+                comments={commentViews}
+                canComment={context.isMember}
+              />
+            </VStack>
 
             <Divider />
 
