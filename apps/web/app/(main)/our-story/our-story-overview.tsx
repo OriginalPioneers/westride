@@ -319,8 +319,8 @@ export function OurStoryOverview() {
           That path would be our project, and our contribution.
         </Text>
         <Text>
-          WeStride.org is a non-profit, open-source platform that walks the
-          whole path with you, powered by Meta&apos;s models.
+          WeStride.org is an open-source platform that walks the whole path
+          with you, powered by Meta&apos;s models.
         </Text>
         <Table
           data={PATH}
@@ -382,9 +382,8 @@ export function OurStoryOverview() {
 
       <DocSection id="stride-with-us" title="Stride with us">
         <Text>
-          WeStride is a non-profit, and all of it is open source. Learn
-          something, share what you know, or bring an idea and build it with
-          us.
+          WeStride is open source. Learn something, share what you know, or
+          bring an idea and build it with us.
         </Text>
         <HStack gap={2} wrap="wrap">
           <Button label="Start an idea" variant="primary" href="/ideas" />

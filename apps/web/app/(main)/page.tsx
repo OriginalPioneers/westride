@@ -7,7 +7,7 @@ import { Landing } from "./home/landing";
 export const metadata: Metadata = {
   title: "WeStride · Learn AI, find a mentor, build what's next",
   description:
-    "A non-profit, open-source platform for learning AI, mentorship, and entrepreneurship, built at the 2026 Meta Global AI Developer Hackathon and powered by Meta's models.",
+    "An open-source platform for learning AI, mentorship, and entrepreneurship, built at the 2026 Meta Global AI Developer Hackathon and powered by Meta's models.",
 };
 
 // The Academy ships ten seeded tracks (packages/db/src/academy-tracks).

@@ -342,7 +342,7 @@ export function SiteFooter() {
           vAlign="center"
         >
           <Text type="supporting" size="sm" textWrap="nowrap">
-            WeStride is an open-source nonprofit.
+            WeStride is an open-source project.
           </Text>
           <HStack gap={3} wrap="nowrap" vAlign="center">
             {FOOTER_LINKS.map((link) => (
