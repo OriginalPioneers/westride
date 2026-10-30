@@ -65,7 +65,7 @@ export const PATH: PathStep[] = [
     step: "Validate",
     where: "Idea Studio",
     href: "/ideas",
-    how: "An advisory team of Muse specialists pressure-tests a business or non-profit idea with live research.",
+    how: "An advisory team of Muse specialists pressure-tests a business, non-profit, or game idea with live research.",
     icon: LightBulbIcon,
     tints: ["blue", "teal"],
   },

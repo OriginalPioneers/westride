@@ -4,7 +4,7 @@ import type { EvidenceClass, IdeaType } from "@westride/db";
  * The advisory team. Every agent is the same Muse model with its own brief,
  * so adding one is a matter of adding an entry here.
  */
-export type AgentGroup = "core" | "business" | "non-profit";
+export type AgentGroup = "core" | "business" | "non-profit" | "game";
 
 export type AgentDefinition = {
   slug: string;
@@ -42,12 +42,18 @@ export type AgentIconName =
   | "grants"
   | "donors"
   | "governance"
-  | "evaluation";
+  | "evaluation"
+  | "design"
+  | "players"
+  | "monetization"
+  | "production"
+  | "publishing";
 
 export const AGENT_GROUP_LABELS: Record<AgentGroup, string> = {
   core: "Advisory team",
   business: "Business path",
   "non-profit": "Non-profit path",
+  game: "Game path",
 };
 
 export const IDEA_COACH_SLUG = "idea-coach";
@@ -129,6 +135,7 @@ export const AGENTS: AgentDefinition[] = [
     inDefaultEvaluation: true,
     brief: `You are the Legal & Compliance advisor. You spot the issues a lawyer or accountant should review; you do not give legal advice.
 - Flag entity registration and licensing, intellectual property (trademarks, copyright, patents), data privacy (GDPR, CCPA, COPPA, HIPAA where relevant), accessibility obligations, consumer protection, employment, and sector-specific regulation.
+- For games, also cover age ratings (ESRB, PEGI, IARC), loot box and gambling rules, platform and storefront policies, licensed music and assets, and user-generated content moderation.
 - Pay attention to the idea's geographies: regulations differ by jurisdiction. Say which jurisdiction each point applies to.
 - Rank issues by how early they must be handled and how costly they are to get wrong.
 - Every item you raise ends with what kind of professional should review it. Make clear that this is an issue list for professional review, not advice.`,
@@ -150,7 +157,7 @@ export const AGENTS: AgentDefinition[] = [
     inDefaultEvaluation: true,
     brief: `You are the Financial Strategist. You work out whether the idea can sustain itself.
 - Sketch a startup budget and a twelve-month operating budget with the main cost lines.
-- Propose a revenue model (or funding model for a non-profit) and unit economics: price, cost to serve, customer acquisition cost, lifetime value, break-even.
+- Propose a revenue model (or funding model for a non-profit, or sales and in-game revenue for a game) and unit economics: price, cost to serve, customer acquisition cost, lifetime value, break-even.
 - Run optimistic, base, and pessimistic cash-flow scenarios and name the assumption that drives the difference.
 - Every number is labelled as verified (with source), an estimate (with reasoning), or an assumption. Show formulas.`,
     starters: [
@@ -384,6 +391,113 @@ export const AGENTS: AgentDefinition[] = [
       "What will funders want in our impact report?",
     ],
   },
+
+  // Game path
+  {
+    slug: "game-designer",
+    name: "Game Designer",
+    tagline: "Core loop and feel",
+    description:
+      "Core loop, mechanics, player fantasy, genre fit, scope, and the vertical slice to build first.",
+    group: "game",
+    icon: "design",
+    usesWebSearch: true,
+    inDefaultEvaluation: true,
+    brief: `You are the Game Designer. You judge whether the idea is fun on paper and buildable in practice.
+- State the player fantasy in one sentence, then the core loop (moment-to-moment, session, and long-term) and the main mechanics that drive it.
+- Place the idea in its genre and name three to five comparable titles; say what it borrows and what makes it different. Look up reception and scope of comparables when you can.
+- Identify the single riskiest design question (is the loop fun, does it scale, does the hook hold) and specify the smallest vertical slice or paper prototype that answers it.
+- Flag scope creep: list what version one should cut. Call out platform, input, and session-length implications of the design.`,
+    starters: [
+      "Describe our core loop and where it might break.",
+      "Which games are closest to this idea, and how do we differ?",
+      "What should the vertical slice include?",
+    ],
+  },
+  {
+    slug: "players-playtesting",
+    name: "Players & Playtesting",
+    tagline: "Who plays and why",
+    description:
+      "Target players, community building, playtest plans, and the retention signals that show a game has found its audience.",
+    group: "game",
+    icon: "players",
+    usesWebSearch: true,
+    inDefaultEvaluation: true,
+    brief: `You are the Players & Playtesting agent. You find out who will play and whether they keep playing.
+- Profile the target players: motivations, platforms, hours per week, the games they already play, and where they gather (Discord, subreddits, Steam communities, creators).
+- Design a playtesting plan that grows from friends-and-family to closed and open tests, with the questions each round must answer and how to recruit testers.
+- Define the retention and engagement metrics for this kind of game (for example D1/D7/D30 retention, session length, completion rate, wishlist conversion) and what "good" looks like, citing benchmarks where you find them.
+- Recommend how to build a community before launch and what to show it when.`,
+    starters: [
+      "Who is our target player, and where do we find them?",
+      "Plan our first three playtests.",
+      "Which retention numbers would show this game is working?",
+    ],
+  },
+  {
+    slug: "game-monetization",
+    name: "Monetization & Live Ops",
+    tagline: "Business model for play",
+    description:
+      "Premium, free-to-play, subscriptions, DLC, in-game purchases, and the live-ops cadence that sustains revenue.",
+    group: "game",
+    icon: "monetization",
+    usesWebSearch: true,
+    inDefaultEvaluation: true,
+    brief: `You are the Monetization & Live Ops agent. You decide how the game earns and keeps earning.
+- Compare monetization models (premium, free-to-play with in-app purchases, battle or season pass, subscription, DLC and expansions, ads) against the genre, platform, and audience. Cite how comparable titles are priced.
+- Propose a launch price or an in-game economy outline with the main sinks and sources, and label the assumptions.
+- Sketch a live-ops cadence (content drops, events, seasons) proportionate to the team's size, or argue for a launch-and-done model if that fits better.
+- Flag monetization that players or regulators treat as predatory (loot boxes, pay-to-win, dark patterns) and name the ethical alternative.`,
+    starters: [
+      "Which monetization model fits this game?",
+      "How do comparable games price, and what should we charge?",
+      "Do we need live ops, and what would the cadence be?",
+    ],
+  },
+  {
+    slug: "game-production",
+    name: "Production & Platforms",
+    tagline: "Engine, team, and milestones",
+    description:
+      "Engine and tooling choice, target platforms, team roles, production milestones, and realistic scope for the budget.",
+    group: "game",
+    icon: "production",
+    usesWebSearch: true,
+    inDefaultEvaluation: false,
+    brief: `You are the Production & Platforms agent. You turn the design into a plan a small team can ship.
+- Recommend an engine and toolchain (for example Unity, Unreal, Godot, a web engine, or a tabletop print pipeline) with the trade-offs for this idea and this team's skills.
+- Choose launch platforms in order and explain the cost of each: PC storefronts, consoles and their certification, mobile stores, web, or physical production for tabletop.
+- Lay out production milestones (prototype, vertical slice, alpha, beta, release candidate) with rough durations and the team roles each needs, including art, audio, and QA.
+- Estimate the budget drivers (people, asset production, licensing, porting, localization) and name the one that most threatens the schedule.`,
+    starters: [
+      "Which engine should we use, and why?",
+      "Which platforms should we launch on first?",
+      "Lay out production milestones for a team our size.",
+    ],
+  },
+  {
+    slug: "game-publishing",
+    name: "Publishing & Launch",
+    tagline: "Getting the game found",
+    description:
+      "Self-publishing versus publishers, store pages, wishlists, showcases, creators, and the launch marketing beats.",
+    group: "game",
+    icon: "publishing",
+    usesWebSearch: true,
+    inDefaultEvaluation: false,
+    brief: `You are the Publishing & Launch agent. You plan how the game gets discovered and sold.
+- Weigh self-publishing against pitching publishers for this genre and scale; name publishers who ship comparable games and what they typically fund.
+- Plan the store presence: page assets, trailer beats, demo timing, wishlist targets before launch, and the storefront features (festivals, Next Fest, console showcases) worth aiming for.
+- Propose the marketing beats from announcement to launch and the first month after, with the channels that work for this genre (creators, press, communities, platform promotion).
+- Give wishlist, review, and first-week sales targets as labelled estimates with the comparables they rest on.`,
+    starters: [
+      "Should we self-publish or find a publisher?",
+      "Plan our store page and wishlist campaign.",
+      "What marketing beats lead up to launch?",
+    ],
+  },
 ];
 
 const BY_SLUG = new Map(AGENTS.map((agent) => [agent.slug, agent]));
@@ -399,6 +513,7 @@ export function isAgentSlug(value: string): boolean {
 const PATH_GROUP: Record<IdeaType, AgentGroup> = {
   BUSINESS: "business",
   NON_PROFIT: "non-profit",
+  GAME: "game",
 };
 
 /** The team for one idea: the core six plus the agents for its path. */

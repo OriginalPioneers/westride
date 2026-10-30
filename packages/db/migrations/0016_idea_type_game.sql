@@ -1,0 +1,1 @@
+ALTER TYPE "public"."idea_type" ADD VALUE 'GAME';

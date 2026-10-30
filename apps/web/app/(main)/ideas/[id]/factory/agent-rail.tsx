@@ -24,7 +24,7 @@ export function viewKey(view: FactoryView): string {
   return view.kind === "agent" ? `agent:${view.slug}` : view.kind;
 }
 
-const GROUP_ORDER: AgentGroup[] = ["core", "business", "non-profit"];
+const GROUP_ORDER: AgentGroup[] = ["core", "business", "non-profit", "game"];
 
 export function AgentRail({
   ideaType,

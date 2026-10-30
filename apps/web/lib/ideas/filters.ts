@@ -4,6 +4,7 @@ import { isIdeaSort, type IdeaFilters, type IdeaSort } from "@westride/db/ideas"
 export const IDEA_TYPE_LABELS: Record<IdeaType, string> = {
   BUSINESS: "Business",
   NON_PROFIT: "Non-Profit",
+  GAME: "Game",
 };
 
 export const IDEA_ROLE_LABELS: Record<IdeaMemberRole, string> = {
@@ -15,6 +16,7 @@ export const IDEA_ROLE_LABELS: Record<IdeaMemberRole, string> = {
 const TYPE_PARAMS: Record<IdeaType, string> = {
   BUSINESS: "business",
   NON_PROFIT: "non-profit",
+  GAME: "game",
 };
 
 export function ideaTypeParam(type: IdeaType): string {
