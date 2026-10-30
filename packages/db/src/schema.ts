@@ -322,6 +322,7 @@ export const mentorProfilesRelations = relations(
     skills: many(mentorSkills),
     locations: many(mentorLocations),
     languages: many(mentorLanguages),
+    requests: many(mentorRequests),
   }),
 );
 
@@ -359,6 +360,55 @@ export const mentorLanguagesRelations = relations(
     }),
   }),
 );
+
+/** A mentee's request to a mentor, sent from the profile contact form. */
+export const mentorRequestStatus = pgEnum("mentor_request_status", [
+  "NEW",
+  "REVIEWED",
+]);
+
+export const mentorRequests = pgTable(
+  "mentor_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    mentorProfileId: uuid("mentor_profile_id")
+      .notNull()
+      .references(() => mentorProfiles.id, { onDelete: "cascade" }),
+    /** Clerk user id of the signed-in person who sent the request. */
+    requesterClerkUserId: text("requester_clerk_user_id").notNull(),
+    fullName: text("full_name").notNull(),
+    email: text("email").notNull(),
+    company: text("company"),
+    jobTitle: text("job_title"),
+    phone: text("phone"),
+    /** One of the contact form's help topics, when they picked one. */
+    inquiryReason: text("inquiry_reason"),
+    /** One of the contact form's start-time options, when they picked one. */
+    timing: text("timing"),
+    details: text("details").notNull(),
+    status: mentorRequestStatus("status").notNull().default("NEW"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: "date" }),
+  },
+  (table) => [
+    index("mentor_requests_mentor_profile_created_idx").on(
+      table.mentorProfileId,
+      table.createdAt,
+    ),
+    index("mentor_requests_requester_clerk_user_id_idx").on(
+      table.requesterClerkUserId,
+    ),
+  ],
+);
+
+export const mentorRequestsRelations = relations(mentorRequests, ({ one }) => ({
+  mentorProfile: one(mentorProfiles, {
+    fields: [mentorRequests.mentorProfileId],
+    references: [mentorProfiles.id],
+  }),
+}));
 
 export const ideaType = pgEnum("idea_type", ["BUSINESS", "NON_PROFIT"]);
 
@@ -1102,6 +1152,9 @@ export type Skill = typeof skills.$inferSelect;
 export type NewSkill = typeof skills.$inferInsert;
 export type MentorLocation = typeof mentorLocations.$inferSelect;
 export type NewMentorLocation = typeof mentorLocations.$inferInsert;
+export type MentorRequestStatus = (typeof mentorRequestStatus.enumValues)[number];
+export type MentorRequest = typeof mentorRequests.$inferSelect;
+export type NewMentorRequest = typeof mentorRequests.$inferInsert;
 export type IdeaType = (typeof ideaType.enumValues)[number];
 export type IdeaMemberRole = (typeof ideaMemberRole.enumValues)[number];
 export type Country = typeof countries.$inferSelect;

@@ -2,8 +2,11 @@
 
 import { auth } from "@clerk/nextjs/server";
 import {
+  createMentorRequest,
   deleteMentorProfile,
+  getMentorProfile,
   getMentorProfileForUser,
+  reviewMentorRequest,
   upsertMentorProfile,
 } from "@westride/db/mentorship";
 import { revalidatePath } from "next/cache";
@@ -19,6 +22,12 @@ import {
   type MentorProfileFieldErrors,
   type SaveMentorProfileState,
 } from "@/lib/mentorship/profile-schema";
+import {
+  fieldErrorsFrom as requestFieldErrorsFrom,
+  requestFromForm,
+  type MentorRequestFieldErrors,
+  type SubmitMentorRequestState,
+} from "@/lib/mentorship/request-schema";
 
 function failure(
   message: string,
@@ -118,4 +127,76 @@ export async function removeMentorProfile(): Promise<void> {
   await deleteHeadshot(removed?.headshotUrl ?? null);
   revalidatePath("/mentorship", "layout");
   redirect("/mentorship");
+}
+
+const MENTOR_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function requestFailure(
+  message: string,
+  fieldErrors: MentorRequestFieldErrors = {},
+): SubmitMentorRequestState {
+  return { status: "error", message, fieldErrors };
+}
+
+export async function submitMentorRequest(
+  mentorId: string,
+  _previous: SubmitMentorRequestState,
+  formData: FormData,
+): Promise<SubmitMentorRequestState> {
+  const { userId } = await auth();
+  if (!userId) {
+    return requestFailure("Sign in to send a request.");
+  }
+  if (!MENTOR_ID.test(mentorId)) {
+    return requestFailure("That mentor is no longer available.");
+  }
+
+  const parsed = requestFromForm(formData);
+  if (!parsed.success) {
+    return requestFailure(
+      "Fix the highlighted fields.",
+      requestFieldErrorsFrom(parsed.error),
+    );
+  }
+
+  const mentor = await getMentorProfile(mentorId);
+  if (!mentor) {
+    return requestFailure("That mentor is no longer available.");
+  }
+  if (mentor.clerkUserId === userId) {
+    return requestFailure("You can't request mentorship from yourself.");
+  }
+
+  try {
+    await createMentorRequest({
+      mentorProfileId: mentor.id,
+      requesterClerkUserId: userId,
+      ...parsed.data,
+    });
+  } catch (error) {
+    console.error("Mentor request save failed", error);
+    return requestFailure("Your request could not be sent. Try again.");
+  }
+
+  revalidatePath(`/mentorship/mentors/${mentor.id}`);
+  return { status: "success" };
+}
+
+export async function markMentorRequestReviewed(
+  requestId: string,
+): Promise<boolean> {
+  const { userId } = await auth();
+  if (!userId || !MENTOR_ID.test(requestId)) {
+    return false;
+  }
+
+  const saved = await reviewMentorRequest(userId, requestId);
+  if (saved) {
+    const profile = await getMentorProfileForUser(userId);
+    if (profile) {
+      revalidatePath(`/mentorship/mentors/${profile.id}`);
+    }
+  }
+  return saved;
 }
