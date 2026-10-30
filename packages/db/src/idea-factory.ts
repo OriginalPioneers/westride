@@ -363,6 +363,7 @@ export async function logMuseRequest(
 const summaryColumns = {
   id: true,
   ideaId: true,
+  projectId: true,
   clerkUserId: true,
   agentSlug: true,
   purpose: true,

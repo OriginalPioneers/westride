@@ -16,6 +16,7 @@
     "@heroicons/react": "^2.2.0",
     "@stylexjs/stylex": "^0.19.0",
     "@vercel/blob": "^2.8.2",
+    "@vercel/sandbox": "^3.9.1",
     "@westride/api-client": "workspace:*",
     "@westride/db": "workspace:*",
     "canvas-confetti": "^1.9.4",

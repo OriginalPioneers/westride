@@ -14,6 +14,7 @@ import {
 } from "@/lib/build/labels";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
 import { loadProjectPage } from "../load-project";
+import { PlanWithMuseButton } from "../plan-button";
 import { ProjectHeader } from "../project-header";
 import { NewTicketButton } from "./new-ticket-button";
 import { TicketStatusFilter } from "./status-filter";
@@ -21,6 +22,9 @@ import { TicketRow } from "./ticket-row";
 
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+/** Muse planning actions called from this page can take a few minutes. */
+export const maxDuration = 300;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const context = await loadProjectPage((await params).id);
@@ -72,12 +76,19 @@ export default async function TicketsPage({
             section="tickets"
             actions={
               context.isMember ? (
-                <NewTicketButton
-                  projectId={project.id}
-                  milestones={project.milestones}
-                  repos={project.repos}
-                  members={members}
-                />
+                <>
+                  <PlanWithMuseButton
+                    projectId={project.id}
+                    hasMetaConnection={context.hasMetaConnection}
+                    openTicketCount={context.openTicketCount}
+                  />
+                  <NewTicketButton
+                    projectId={project.id}
+                    milestones={project.milestones}
+                    repos={project.repos}
+                    members={members}
+                  />
+                </>
               ) : null
             }
           />
@@ -98,13 +109,21 @@ export default async function TicketsPage({
                 description="Break the build into tickets small enough to finish in a sitting. Each one can later be handed to a Muse Code agent."
                 actions={
                   context.isMember ? (
-                    <NewTicketButton
-                      variant="secondary"
-                      projectId={project.id}
-                      milestones={project.milestones}
-                      repos={project.repos}
-                      members={members}
-                    />
+                    <HStack gap={2} wrap="wrap">
+                      <PlanWithMuseButton
+                        variant="primary"
+                        projectId={project.id}
+                        hasMetaConnection={context.hasMetaConnection}
+                        openTicketCount={context.openTicketCount}
+                      />
+                      <NewTicketButton
+                        variant="secondary"
+                        projectId={project.id}
+                        milestones={project.milestones}
+                        repos={project.repos}
+                        members={members}
+                      />
+                    </HStack>
                   ) : undefined
                 }
               />
