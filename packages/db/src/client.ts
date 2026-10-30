@@ -39,7 +39,7 @@ export async function listTracksWithLessons(): Promise<TrackWithLessons[]> {
     orderBy: (track, { asc }) => [asc(track.sortOrder), asc(track.name)],
     with: {
       lessons: {
-        orderBy: (lesson, { asc }) => [asc(lesson.name)],
+        orderBy: (lesson, { asc }) => [asc(lesson.sortOrder)],
       },
     },
   });
@@ -58,7 +58,7 @@ export async function getTrackWithLessons(
     where: eq(tracks.slug, slug),
     with: {
       lessons: {
-        orderBy: (lesson, { asc }) => [asc(lesson.name)],
+        orderBy: (lesson, { asc }) => [asc(lesson.sortOrder)],
       },
     },
   });
