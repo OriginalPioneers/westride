@@ -18,6 +18,8 @@
     "./learning": "./src/learning.ts",
     "./challenges": "./src/challenge-catalog.ts",
     "./builder": "./src/builder-progress.ts",
+    "./build": "./src/build.ts",
+    "./build-rules": "./src/build-rules.ts",
     "./social": "./src/social.ts",
     "./social-progress": "./src/social-progress.ts"
   },
