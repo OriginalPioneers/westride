@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Divider } from "@astryxdesign/core/Divider";
 import { Heading } from "@astryxdesign/core/Heading";
@@ -10,10 +10,13 @@ import { Markdown } from "@astryxdesign/core/Markdown";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
+import { listProjectsForIdea } from "@westride/db/build";
 import { getIdea } from "@westride/db/ideas";
+import { PROJECT_STATUS_LABELS, projectPath } from "@/lib/build/labels";
 import { IDEA_ROLE_LABELS, ideasPath } from "@/lib/ideas/filters";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
 import { FeaturedBadge, IdeaTypeBadge } from "../idea-badges";
+import { BuildProjectButton } from "./build-project-button";
 import { EditIdeaButton } from "./edit-idea-button";
 import { IdeaFactoryButton } from "./factory/idea-factory-button";
 
@@ -49,12 +52,20 @@ export default async function IdeaPage({ params }: { params: Params }) {
     notFound();
   }
 
-  const profiles = await resolveMemberProfiles(
-    idea.members.map((member) => member.clerkUserId),
-  );
   const isMember =
     userId !== null &&
     idea.members.some((member) => member.clerkUserId === userId);
+  const [profiles, projects, account] = await Promise.all([
+    resolveMemberProfiles(idea.members.map((member) => member.clerkUserId)),
+    listProjectsForIdea(idea.id, { clerkUserId: userId }),
+    isMember ? currentUser() : Promise.resolve(null),
+  ]);
+  const creator = account
+    ? {
+        name: account.fullName || account.username || "You",
+        imageUrl: account.hasImage ? account.imageUrl : null,
+      }
+    : null;
   const isFounder =
     userId !== null &&
     idea.members.some(
@@ -105,11 +116,15 @@ export default async function IdeaPage({ params }: { params: Params }) {
                   idea={{ id: idea.id, name: idea.name, type: idea.type }}
                   viewerId={userId}
                 />
+                {creator ? (
+                  <BuildProjectButton ideaId={idea.id} creator={creator} />
+                ) : null}
                 {isFounder ? (
                   <EditIdeaButton idea={editableIdea} viewerId={userId} />
                 ) : null}
                 <Text type="supporting">
-                  Work through this idea with your AI advisory team.
+                  Work through this idea with your AI advisory team, then build
+                  it.
                 </Text>
               </HStack>
             ) : null}
@@ -130,6 +145,28 @@ export default async function IdeaPage({ params }: { params: Params }) {
                 <Link href={idea.prototypeUrl} isExternalLink isStandalone>
                   Open prototype
                 </Link>
+              </VStack>
+            ) : null}
+
+            {projects.length > 0 ? (
+              <VStack gap={3}>
+                <Heading level={2}>Build Studio</Heading>
+                <VStack gap={2}>
+                  {projects.map((project) => (
+                    <HStack key={project.id} gap={2} vAlign="center" wrap="wrap">
+                      <Link href={projectPath(project.id)} isStandalone>
+                        {project.name}
+                      </Link>
+                      <Text type="supporting">
+                        {PROJECT_STATUS_LABELS[project.status]}
+                        {" · "}
+                        {project.ticketCounts.DONE} of{" "}
+                        {Object.values(project.ticketCounts).reduce((a, b) => a + b, 0)}{" "}
+                        tickets done
+                      </Text>
+                    </HStack>
+                  ))}
+                </VStack>
               </VStack>
             ) : null}
 

@@ -1139,3 +1139,42 @@ export type FeedbackVote = typeof feedbackVotes.$inferSelect;
 export type NewFeedbackVote = typeof feedbackVotes.$inferInsert;
 export type FeedbackComment = typeof feedbackComments.$inferSelect;
 export type NewFeedbackComment = typeof feedbackComments.$inferInsert;
+
+// Build Studio tables reference `ideas` above, so they live in their own file
+// and are re-exported here for drizzle-kit and the relational query API.
+export {
+  milestoneStatus,
+  projectMemberRole,
+  projectMembers,
+  projectMembersRelations,
+  projectMilestones,
+  projectMilestonesRelations,
+  projectRepos,
+  projectReposRelations,
+  projects,
+  projectsRelations,
+  projectStatus,
+  ticketPriority,
+  tickets,
+  ticketsRelations,
+  ticketSource,
+  ticketStatus,
+} from "./build-schema";
+export type {
+  MilestoneStatus,
+  NewProject,
+  NewProjectMember,
+  NewProjectMilestone,
+  NewProjectRepo,
+  NewTicket,
+  Project,
+  ProjectMember,
+  ProjectMemberRole,
+  ProjectMilestone,
+  ProjectRepo,
+  ProjectStatus,
+  Ticket,
+  TicketPriority,
+  TicketSource,
+  TicketStatus,
+} from "./build-schema";
