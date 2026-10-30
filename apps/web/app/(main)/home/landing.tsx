@@ -396,9 +396,9 @@ function Hero({ firstName, isSignedIn, stats }: LandingProps) {
             maxLines={0}
             style={{ maxWidth: "calc(var(--spacing-12) * 14)" }}
           >
-            WeStride is a non-profit, open-source platform that walks the whole
-            path with you, from your first prompt to a shipped product, powered
-            by Meta&apos;s models.
+            WeStride is an open-source platform that walks the whole path
+            with you, from your first prompt to a shipped product, powered by
+            Meta&apos;s models.
           </Text>
 
           <HStack gap={3} wrap="wrap" hAlign="center">
@@ -620,8 +620,8 @@ function HackathonSection() {
               <Text textWrap="pretty">
                 Every line of WeStride was written during the hackathon,
                 starting at kickoff. The rules asked for a public repository.
-                We would have opened it anyway: a non-profit that teaches
-                people to build with AI should let them read how it was built.
+                We would have opened it anyway: a project that teaches people
+                to build with AI should let them read how it was built.
               </Text>
               <HStack gap={2} wrap="wrap">
                 <Button
@@ -916,7 +916,7 @@ function ClosingSection({ isSignedIn }: { isSignedIn: boolean }) {
                 </Text>
               </>
             }
-            lede="WeStride is a non-profit, and all of it is open source. It is free to learn on, and the path is the same whether you are writing your first prompt or your thousandth pull request."
+            lede="WeStride is open source. It is free to learn on, and the path is the same whether you are writing your first prompt or your thousandth pull request."
           />
           <HStack gap={3} wrap="wrap" hAlign="center" className="wl-reveal" style={revealDelay(1)}>
             {isSignedIn ? (

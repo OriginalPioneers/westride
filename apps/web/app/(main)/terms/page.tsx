@@ -16,7 +16,7 @@ export default function TermsPage() {
     <LegalDocument title="Terms of Service">
       <LegalSection title="Who we are">
         <LegalParagraph>
-          WeStride is an open-source nonprofit. The platform at WeStride.org
+          WeStride is an open-source project. The platform at WeStride.org
           helps people learn AI, find mentors, and work on ideas. Using
           WeStride is free. We do not charge for an account, for lessons, for
           mentorship, or for any other part of the service. We do not sell
@@ -81,8 +81,8 @@ export default function TermsPage() {
       <LegalSection title="The service can change">
         <LegalParagraph>
           WeStride is offered as it is, at no charge. Features can change, and
-          the site can be unavailable. Because the service is free and run by
-          a nonprofit, we are not taking on liability for losses that come
+          the site can be unavailable. Because the service is free and open
+          source, we are not taking on liability for losses that come
           from using it, to the extent the law allows.
         </LegalParagraph>
       </LegalSection>

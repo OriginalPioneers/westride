@@ -18,7 +18,7 @@ export default function PrivacyPage() {
     <LegalDocument title="Privacy Policy">
       <LegalSection title="Who we are">
         <LegalParagraph>
-          WeStride is an open-source nonprofit, and the platform is free. We
+          WeStride is an open-source project, and the platform is free. We
           do not charge you, we do not run ads, and we do not make money by
           selling personal information. This policy says what the service
           keeps and who helps us run it. Our{" "}
