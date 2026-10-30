@@ -97,7 +97,7 @@ const PATH: PathStep[] = [
     step: "Validate",
     where: "Idea Studio",
     href: "/ideas",
-    how: `An advisory team of ${AGENTS.length} Muse specialists, from market analyst to grants advisor, pressure-tests a business or non-profit idea with live web research.`,
+    how: `An advisory team of ${AGENTS.length} Muse specialists, from market analyst to grants advisor, pressure-tests a business, non-profit, or game idea with live web research.`,
   },
   {
     step: "Build",

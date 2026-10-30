@@ -40,6 +40,7 @@ import {
   GlobeAltIcon,
   HeartIcon,
   LockClosedIcon,
+  PuzzlePieceIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import type { IdeaMemberRole, IdeaType } from "@westride/db";
@@ -139,6 +140,12 @@ const KIND_OPTIONS: {
     description:
       "A cause, charity, or community organization built to serve people.",
     icon: HeartIcon,
+  },
+  {
+    type: "GAME",
+    description:
+      "A video game, tabletop game, or playable experience you want to design and ship.",
+    icon: PuzzlePieceIcon,
   },
 ];
 
@@ -419,7 +426,7 @@ export function CreateIdeaDialog({
 
                 {step === 0 ? (
                   <VStack gap={4}>
-                    <Grid columns={{ minWidth: 280, max: 2 }} gap={4}>
+                    <Grid columns={{ minWidth: 280, max: 3 }} gap={4}>
                       {KIND_OPTIONS.map((option) => (
                         <ChoiceTile
                           key={option.type}

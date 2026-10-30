@@ -17,7 +17,11 @@ import {
   PaintBrushIcon,
   PresentationChartLineIcon,
   PuzzlePieceIcon,
+  RocketLaunchIcon,
   ScaleIcon,
+  ShoppingBagIcon,
+  UserGroupIcon,
+  WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import type { AgentIconName } from "@/lib/idea-factory/agents";
 
@@ -38,6 +42,11 @@ export const AGENT_ICONS: Record<AgentIconName, IconType> = {
   donors: HeartIcon,
   governance: BuildingLibraryIcon,
   evaluation: ClipboardDocumentCheckIcon,
+  design: PuzzlePieceIcon,
+  players: UserGroupIcon,
+  monetization: ShoppingBagIcon,
+  production: WrenchScrewdriverIcon,
+  publishing: RocketLaunchIcon,
 };
 
 export { ChartPieIcon as EvaluateIcon };

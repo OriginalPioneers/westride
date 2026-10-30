@@ -103,6 +103,23 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "Connect",
+    links: [
+      {
+        label: "Mentorship",
+        href: "/mentorship",
+        icon: UserGroupIcon,
+        selectedIcon: UserGroupIconSolid,
+      },
+      {
+        label: "Community",
+        href: "/community",
+        icon: ChatBubbleLeftRightIcon,
+        selectedIcon: ChatBubbleLeftRightIconSolid,
+      },
+    ],
+  },
+  {
     title: "Learn",
     links: [
       {
@@ -110,12 +127,6 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/academy",
         icon: AcademicCapIcon,
         selectedIcon: AcademicCapIconSolid,
-      },
-      {
-        label: "Mentorship",
-        href: "/mentorship",
-        icon: UserGroupIcon,
-        selectedIcon: UserGroupIconSolid,
       },
     ],
   },
@@ -127,17 +138,6 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/achievements",
         icon: TrophyIcon,
         selectedIcon: TrophyIconSolid,
-      },
-    ],
-  },
-  {
-    title: "Connect",
-    links: [
-      {
-        label: "Community",
-        href: "/community",
-        icon: ChatBubbleLeftRightIcon,
-        selectedIcon: ChatBubbleLeftRightIconSolid,
       },
     ],
   },

@@ -10,6 +10,7 @@ export const MAX_IDEA_INVITES = 20;
 const ideaTypes = [
   "BUSINESS",
   "NON_PROFIT",
+  "GAME",
 ] as const satisfies readonly IdeaType[];
 const ideaRoles = [
   "FOUNDER",
@@ -53,7 +54,7 @@ function memberListSchema(max: number, maxMessage: string) {
 }
 
 export const createIdeaSchema = z.object({
-  type: z.enum(ideaTypes, { error: "Choose Business or Non-profit." }),
+  type: z.enum(ideaTypes, { error: "Choose Business, Non-profit, or Game." }),
   name: ideaNameSchema,
   description: ideaDescriptionSchema,
   isPublic: z

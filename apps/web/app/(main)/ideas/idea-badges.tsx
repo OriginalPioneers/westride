@@ -6,9 +6,10 @@ import { StarIcon } from "@heroicons/react/20/solid";
 import type { IdeaType } from "@westride/db";
 import { IDEA_TYPE_LABELS } from "@/lib/ideas/filters";
 
-const TYPE_BADGE_VARIANT: Record<IdeaType, "blue" | "green"> = {
+const TYPE_BADGE_VARIANT: Record<IdeaType, "blue" | "green" | "purple"> = {
   BUSINESS: "blue",
   NON_PROFIT: "green",
+  GAME: "purple",
 };
 
 export function IdeaTypeBadge({ type }: { type: IdeaType }) {

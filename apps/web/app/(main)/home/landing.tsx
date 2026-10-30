@@ -1,7 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
@@ -72,7 +77,10 @@ const heroPadding: CSSProperties = {
   paddingBlockEnd: "calc(var(--spacing-12) * 2)",
 };
 
-const centered: CSSProperties = { marginInline: "auto", boxSizing: "content-box" };
+const centered: CSSProperties = {
+  marginInline: "auto",
+  boxSizing: "content-box",
+};
 
 const eyebrowStyle: CSSProperties = {
   letterSpacing: "0.08em",
@@ -88,7 +96,9 @@ function useScrollReveal(rootRef: React.RefObject<HTMLDivElement | null>) {
     const root = rootRef.current;
     if (root == null) return;
 
-    const targets = Array.from(root.querySelectorAll<HTMLElement>(".wl-reveal"));
+    const targets = Array.from(
+      root.querySelectorAll<HTMLElement>(".wl-reveal")
+    );
     root.dataset.js = "";
 
     // Anything already on screen shows at once, so the first paint never
@@ -120,7 +130,7 @@ function useScrollReveal(rootRef: React.RefObject<HTMLDivElement | null>) {
           }
         }
       },
-      { rootMargin: "0px 0px -8% 0px", threshold: 0.1 },
+      { rootMargin: "0px 0px -8% 0px", threshold: 0.1 }
     );
     pending.forEach((target) => observer.observe(target));
 
@@ -132,7 +142,9 @@ function useScrollReveal(rootRef: React.RefObject<HTMLDivElement | null>) {
 }
 
 function revealDelay(step: number): CSSProperties {
-  return { "--wl-delay": `calc(var(--duration-fast-min) * ${step})` } as CSSProperties;
+  return {
+    "--wl-delay": `calc(var(--duration-fast-min) * ${step})`,
+  } as CSSProperties;
 }
 
 function Container({
@@ -160,7 +172,13 @@ function Container({
 
 function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <Text type="label" size="sm" weight="semibold" className="wl-eyebrow" style={eyebrowStyle}>
+    <Text
+      type="label"
+      size="sm"
+      weight="semibold"
+      className="wl-eyebrow"
+      style={eyebrowStyle}
+    >
       {children}
     </Text>
   );
@@ -242,7 +260,12 @@ function HeroSky() {
       focusable="false"
     >
       <defs>
-        <pattern id="wl-grid" width="48" height="48" patternUnits="userSpaceOnUse">
+        <pattern
+          id="wl-grid"
+          width="48"
+          height="48"
+          patternUnits="userSpaceOnUse"
+        >
           <path
             d="M48 0H0V48"
             fill="none"
@@ -274,7 +297,13 @@ function HeroSky() {
           <stop offset="0.5" stopColor="var(--wl-purple)" />
           <stop offset="1" stopColor="var(--wl-teal)" />
         </linearGradient>
-        <filter id="wl-node-glow" x="-200%" y="-200%" width="500%" height="500%">
+        <filter
+          id="wl-node-glow"
+          x="-200%"
+          y="-200%"
+          width="500%"
+          height="500%"
+        >
           <feGaussianBlur stdDeviation="4" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
@@ -283,11 +312,34 @@ function HeroSky() {
         </filter>
       </defs>
 
-      <rect width="100%" height="100%" fill="url(#wl-grid)" mask="url(#wl-grid-mask)" />
+      <rect
+        width="100%"
+        height="100%"
+        fill="url(#wl-grid)"
+        mask="url(#wl-grid-mask)"
+      />
 
-      <circle className="wl-blob wl-blob-a" cx="300" cy="220" r="320" fill="url(#wl-g-blue)" />
-      <circle className="wl-blob wl-blob-b" cx="1130" cy="240" r="360" fill="url(#wl-g-purple)" />
-      <circle className="wl-blob wl-blob-c" cx="760" cy="680" r="300" fill="url(#wl-g-teal)" />
+      <circle
+        className="wl-blob wl-blob-a"
+        cx="300"
+        cy="220"
+        r="320"
+        fill="url(#wl-g-blue)"
+      />
+      <circle
+        className="wl-blob wl-blob-b"
+        cx="1130"
+        cy="240"
+        r="360"
+        fill="url(#wl-g-purple)"
+      />
+      <circle
+        className="wl-blob wl-blob-c"
+        cx="760"
+        cy="680"
+        r="300"
+        fill="url(#wl-g-teal)"
+      />
 
       <path
         className="wl-stride"
@@ -299,11 +351,41 @@ function HeroSky() {
         opacity="0.45"
       />
       <g filter="url(#wl-node-glow)" opacity="0.7">
-        <circle className="wl-node" cx="156" cy="603" r="6" fill="var(--wl-indigo)" />
-        <circle className="wl-node" cx="366" cy="513" r="6" fill="var(--wl-purple)" />
-        <circle className="wl-node" cx="600" cy="440" r="6" fill="var(--wl-blue)" />
-        <circle className="wl-node" cx="870" cy="356" r="6" fill="var(--wl-teal)" />
-        <circle className="wl-node" cx="1187" cy="220" r="7" fill="var(--wl-orange)" />
+        <circle
+          className="wl-node"
+          cx="156"
+          cy="603"
+          r="6"
+          fill="var(--wl-indigo)"
+        />
+        <circle
+          className="wl-node"
+          cx="366"
+          cy="513"
+          r="6"
+          fill="var(--wl-purple)"
+        />
+        <circle
+          className="wl-node"
+          cx="600"
+          cy="440"
+          r="6"
+          fill="var(--wl-blue)"
+        />
+        <circle
+          className="wl-node"
+          cx="870"
+          cy="356"
+          r="6"
+          fill="var(--wl-teal)"
+        />
+        <circle
+          className="wl-node"
+          cx="1187"
+          cy="220"
+          r="7"
+          fill="var(--wl-orange)"
+        />
       </g>
     </svg>
   );
@@ -377,13 +459,15 @@ function Hero({ firstName, isSignedIn, stats }: LandingProps) {
           />
 
           <VStack gap={3} hAlign="center">
-            {firstName != null && (
-              <Eyebrow>Welcome back, {firstName}</Eyebrow>
-            )}
-            <Heading level={1} type="display-1" justify="center" textWrap="balance">
-              Learn AI. Find a mentor.
-              <Text type="inherit" display="block" className="wl-gradient-text">
-                Build what&apos;s next.
+            <Heading
+              level={1}
+              type="display-1"
+              justify="center"
+              textWrap="balance"
+            >
+              Build what&apos;s 
+              <Text type="inherit" display="inline" className="wl-gradient-text">
+                 &nbsp;next.
               </Text>
             </Heading>
           </VStack>
@@ -396,8 +480,8 @@ function Hero({ firstName, isSignedIn, stats }: LandingProps) {
             maxLines={0}
             style={{ maxWidth: "calc(var(--spacing-12) * 14)" }}
           >
-            WeStride is an open-source platform that walks the whole path
-            with you, from your first prompt to a shipped product, powered by
+            WeStride is an open-source platform that walks the whole path with
+            you, from your first prompt to a shipped product, powered by
             Meta&apos;s models.
           </Text>
 
@@ -417,7 +501,12 @@ function Hero({ firstName, isSignedIn, stats }: LandingProps) {
               rel="noopener noreferrer"
               icon={<Icon icon={StarIcon} color="inherit" />}
             />
-            <Button label="Our story" variant="ghost" size="lg" href="/our-story" />
+            <Button
+              label="Our story"
+              variant="ghost"
+              size="lg"
+              href="/our-story"
+            />
           </HStack>
 
           <Grid columns={{ minWidth: 130, max: 5 }} gap={4} width="100%">
@@ -568,7 +657,9 @@ function MetaAiSection() {
               <VStack gap={4}>
                 <Center
                   className="wl-feature-icon"
-                  style={{ "--wl-tint": `var(--wl-${model.tint})` } as CSSProperties}
+                  style={
+                    { "--wl-tint": `var(--wl-${model.tint})` } as CSSProperties
+                  }
                 >
                   <Icon icon={model.icon} size="md" color="inherit" />
                 </Center>
@@ -619,9 +710,9 @@ function HackathonSection() {
               </Text>
               <Text textWrap="pretty">
                 Every line of WeStride was written during the hackathon,
-                starting at kickoff. The rules asked for a public repository.
-                We would have opened it anyway: a project that teaches people
-                to build with AI should let them read how it was built.
+                starting at kickoff. The rules asked for a public repository. We
+                would have opened it anyway: a project that teaches people to
+                build with AI should let them read how it was built.
               </Text>
               <HStack gap={2} wrap="wrap">
                 <Button
@@ -630,7 +721,9 @@ function HackathonSection() {
                   href={HACKATHON_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  endContent={<Icon icon={ArrowTopRightOnSquareIcon} color="inherit" />}
+                  endContent={
+                    <Icon icon={ArrowTopRightOnSquareIcon} color="inherit" />
+                  }
                 />
                 <Button
                   label="Commit history"
@@ -822,8 +915,8 @@ function StackSection() {
           <VStack gap={4} className="wl-reveal">
             <Heading level={3}>Clone it, run it, change it</Heading>
             <Text type="supporting" textWrap="pretty">
-              WeStride teaches people to build with AI, and it is built that
-              way too. The repository holds the prompts we sent to Muse, the
+              WeStride teaches people to build with AI, and it is built that way
+              too. The repository holds the prompts we sent to Muse, the
               conventions AI coding agents follow here, and the full commit
               history from kickoff onward.
             </Text>
@@ -834,7 +927,9 @@ function StackSection() {
                 href={SOURCE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                endContent={<Icon icon={ArrowTopRightOnSquareIcon} color="inherit" />}
+                endContent={
+                  <Icon icon={ArrowTopRightOnSquareIcon} color="inherit" />
+                }
               />
               <Button label="Tech stack" href="/tech-stack" />
               <Button label="API" variant="ghost" href="/api" />
@@ -918,9 +1013,20 @@ function ClosingSection({ isSignedIn }: { isSignedIn: boolean }) {
             }
             lede="WeStride is open source. It is free to learn on, and the path is the same whether you are writing your first prompt or your thousandth pull request."
           />
-          <HStack gap={3} wrap="wrap" hAlign="center" className="wl-reveal" style={revealDelay(1)}>
+          <HStack
+            gap={3}
+            wrap="wrap"
+            hAlign="center"
+            className="wl-reveal"
+            style={revealDelay(1)}
+          >
             {isSignedIn ? (
-              <Button label="Start an idea" variant="primary" size="lg" href="/ideas" />
+              <Button
+                label="Start an idea"
+                variant="primary"
+                size="lg"
+                href="/ideas"
+              />
             ) : (
               <Button
                 label="Create a free account"
@@ -929,7 +1035,11 @@ function ClosingSection({ isSignedIn }: { isSignedIn: boolean }) {
                 href={signUpPath}
               />
             )}
-            <Button label="Become a mentor" size="lg" href="/mentorship/become" />
+            <Button
+              label="Become a mentor"
+              size="lg"
+              href="/mentorship/become"
+            />
             {STORE_LINKS.map((link) => (
               <Button
                 key={link.href}

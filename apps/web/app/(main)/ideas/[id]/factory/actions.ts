@@ -63,6 +63,7 @@ import {
   SYNTHESIS_INSTRUCTIONS,
   SYNTHESIS_SCHEMA,
 } from "@/lib/idea-factory/prompts";
+import { IDEA_TYPE_LABELS } from "@/lib/ideas/filters";
 import { resolveMemberProfiles, type MemberProfile } from "@/lib/ideas/members";
 
 // ---------------------------------------------------------------------------
@@ -653,7 +654,7 @@ export async function synthesizeEvaluation(input: unknown): Promise<SynthesizeRe
   const result = await callMuse({
     apiKey,
     model: evaluation.model,
-    instructions: `${SYNTHESIS_INSTRUCTIONS}\n\nThe idea: "${idea.name}" (${idea.type === "BUSINESS" ? "business" : "non-profit"}).\n${idea.description.trim().slice(0, 3000)}`,
+    instructions: `${SYNTHESIS_INSTRUCTIONS}\n\nThe idea: "${idea.name}" (${IDEA_TYPE_LABELS[idea.type].toLowerCase()}).\n${idea.description.trim().slice(0, 3000)}`,
     input: buildSynthesisInput(evaluation),
     webSearch: false,
     jsonFormat: { name: "idea_synthesis", schema: SYNTHESIS_SCHEMA },
