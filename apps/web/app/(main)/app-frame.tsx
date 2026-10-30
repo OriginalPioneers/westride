@@ -2,6 +2,7 @@
 
 import { Show, useClerk } from "@clerk/nextjs";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@astryxdesign/core/AppShell";
 import type { IconType } from "@astryxdesign/core/Icon";
@@ -232,10 +233,27 @@ function BrandMark() {
       // and the proxy refuses that request.
       unoptimized
       style={{
-        // Wide enough to read beside the wordmark, narrow enough
-        // to sit inside the collapsed rail (spacing-12).
+        // Narrow enough to sit inside the collapsed rail (spacing-12).
         width: "var(--spacing-10)",
         height: "auto",
+      }}
+    />
+  );
+}
+
+function LandscapeWordmark() {
+  return (
+    <Image
+      src="/logos/westride/WeStride_landscape_navy.png"
+      alt="WeStride"
+      width={2492}
+      height={762}
+      preload
+      unoptimized
+      style={{
+        height: "var(--spacing-12)",
+        width: "auto",
+        maxWidth: "100%",
       }}
     />
   );
@@ -244,8 +262,24 @@ function BrandMark() {
 function NavBrand() {
   const mode = useSideNavRenderMode();
   const { isCollapsed } = useSideNavCollapse();
-  const heading = (
+  // The landscape lockup already includes the wordmark, so it replaces
+  // the stamp-plus-title row whenever the rail is open. Collapsed, only
+  // the stamp fits.
+  const isRailCollapsed = mode === "default" && isCollapsed;
+  const heading = isRailCollapsed ? (
     <SideNavHeading heading="WeStride" headingHref="/" icon={<BrandMark />} />
+  ) : (
+    <Link
+      href="/"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        width: "100%",
+        lineHeight: 0,
+      }}
+    >
+      <LandscapeWordmark />
+    </Link>
   );
 
   // Mobile top bar and drawer already frame the wordmark. The band and

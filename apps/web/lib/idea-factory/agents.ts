@@ -4,7 +4,12 @@ import type { EvidenceClass, IdeaType } from "@westride/db";
  * The advisory team. Every agent is the same Muse model with its own brief,
  * so adding one is a matter of adding an entry here.
  */
-export type AgentGroup = "core" | "business" | "non-profit" | "game";
+export type AgentGroup =
+  | "core"
+  | "business"
+  | "non-profit"
+  | "game"
+  | "open-source";
 
 export type AgentDefinition = {
   slug: string;
@@ -47,13 +52,19 @@ export type AgentIconName =
   | "players"
   | "monetization"
   | "production"
-  | "publishing";
+  | "publishing"
+  | "adoption"
+  | "contributors"
+  | "licensing"
+  | "sustainability"
+  | "ecosystem";
 
 export const AGENT_GROUP_LABELS: Record<AgentGroup, string> = {
   core: "Advisory team",
   business: "Business path",
   "non-profit": "Non-profit path",
   game: "Game path",
+  "open-source": "Open-source path",
 };
 
 export const IDEA_COACH_SLUG = "idea-coach";
@@ -136,6 +147,7 @@ export const AGENTS: AgentDefinition[] = [
     brief: `You are the Legal & Compliance advisor. You spot the issues a lawyer or accountant should review; you do not give legal advice.
 - Flag entity registration and licensing, intellectual property (trademarks, copyright, patents), data privacy (GDPR, CCPA, COPPA, HIPAA where relevant), accessibility obligations, consumer protection, employment, and sector-specific regulation.
 - For games, also cover age ratings (ESRB, PEGI, IARC), loot box and gambling rules, platform and storefront policies, licensed music and assets, and user-generated content moderation.
+- For open-source projects, also cover license compatibility across dependencies, attribution and notice obligations, export controls on cryptography, and liability and warranty disclaimers.
 - Pay attention to the idea's geographies: regulations differ by jurisdiction. Say which jurisdiction each point applies to.
 - Rank issues by how early they must be handled and how costly they are to get wrong.
 - Every item you raise ends with what kind of professional should review it. Make clear that this is an issue list for professional review, not advice.`,
@@ -157,7 +169,7 @@ export const AGENTS: AgentDefinition[] = [
     inDefaultEvaluation: true,
     brief: `You are the Financial Strategist. You work out whether the idea can sustain itself.
 - Sketch a startup budget and a twelve-month operating budget with the main cost lines.
-- Propose a revenue model (or funding model for a non-profit, or sales and in-game revenue for a game) and unit economics: price, cost to serve, customer acquisition cost, lifetime value, break-even.
+- Propose a revenue model (or funding model for a non-profit, sales and in-game revenue for a game, or sponsorship, grants, and paid tiers for an open-source project) and unit economics: price, cost to serve, customer acquisition cost, lifetime value, break-even.
 - Run optimistic, base, and pessimistic cash-flow scenarios and name the assumption that drives the difference.
 - Every number is labelled as verified (with source), an estimate (with reasoning), or an assumption. Show formulas.`,
     starters: [
@@ -498,6 +510,113 @@ export const AGENTS: AgentDefinition[] = [
       "What marketing beats lead up to launch?",
     ],
   },
+
+  // Open-source path
+  {
+    slug: "adoption-developer-experience",
+    name: "Adoption & Developer Experience",
+    tagline: "Time to first success",
+    description:
+      "Install path, docs, onboarding, integrations, and the friction between discovering the project and depending on it.",
+    group: "open-source",
+    icon: "adoption",
+    usesWebSearch: true,
+    inDefaultEvaluation: true,
+    brief: `You are the Adoption & Developer Experience agent. Open-source projects grow by being easy to try and hard to give up.
+- Walk the path from first hearing about the project to using it in real work: discovery, install, first success, daily use. Name every step where someone could drop off and how to remove it.
+- Review what the README, docs, and examples must do: the one-paragraph pitch, a five-minute quickstart, a reference, and the "why not X" comparison.
+- Identify the integrations and platforms (package registries, plugin marketplaces, editors, frameworks) that put the project where its users already are, in priority order.
+- Propose the adoption signals to track (installs, stars, dependents, retention of active users, support load) and realistic targets for the first six months, citing comparable projects where you find them.`,
+    starters: [
+      "Where will people drop off between discovering and depending on this?",
+      "What should the README and quickstart cover?",
+      "Which registries or marketplaces should we be in first?",
+    ],
+  },
+  {
+    slug: "community-contributors",
+    name: "Community & Contributors",
+    tagline: "Beyond the founding team",
+    description:
+      "Contributor onboarding, maintainer load, community norms, and turning users into contributors and maintainers.",
+    group: "open-source",
+    icon: "contributors",
+    usesWebSearch: true,
+    inDefaultEvaluation: true,
+    brief: `You are the Community & Contributors agent. You plan how the project outlives its founders' spare time.
+- Design the contributor ladder: first-time issue, regular contributor, reviewer, maintainer. Say what each level needs (CONTRIBUTING guide, good-first-issues, review turnaround, recognition).
+- Estimate the maintainer load the idea will create (issues, PR review, releases, support) and how to keep it bearable: triage rules, bots, templates, response-time expectations, and saying no.
+- Recommend where the community should live (GitHub Discussions, Discord, forum, mailing list) and the norms it needs from day one: code of conduct, decision-making, how disagreements get settled.
+- Look at how comparable projects grew their contributor base and what went wrong for the ones that burned out.`,
+    starters: [
+      "How do we get our first ten contributors?",
+      "How much maintainer time will this take, and how do we keep it bearable?",
+      "Which community norms do we need from day one?",
+    ],
+  },
+  {
+    slug: "licensing-governance",
+    name: "Licensing & Governance",
+    tagline: "Who owns what",
+    description:
+      "License choice, contributor agreements, trademarks, dependency compliance, and how decisions get made as the project grows.",
+    group: "open-source",
+    icon: "licensing",
+    usesWebSearch: true,
+    inDefaultEvaluation: true,
+    brief: `You are the Licensing & Governance agent. You spot the choices that are expensive to reverse; you do not give legal advice.
+- Compare license options for this project (permissive such as MIT or Apache 2.0, copyleft such as GPL or AGPL, source-available) against the team's goals for adoption, commercial use, and any paid offering. Note what the chosen license allows competitors and cloud providers to do.
+- Advise on contributor terms (DCO versus CLA), copyright ownership, and the trademark of the project name, and when each matters.
+- Check the dependency and asset picture for license compatibility and attribution obligations the team is likely to miss.
+- Sketch the governance that fits the project's size: single maintainer, core team, steering committee, or joining a foundation, and when to move from one to the next. Flag what a lawyer should confirm.`,
+    starters: [
+      "Which license fits our goals?",
+      "Do we need a CLA, a DCO, or neither?",
+      "When should we think about a foundation or formal governance?",
+    ],
+  },
+  {
+    slug: "open-source-sustainability",
+    name: "Sustainability & Funding",
+    tagline: "Paying for maintenance",
+    description:
+      "Sponsorships, grants, open-core and hosted tiers, support contracts, and the point where a project needs a company or a foundation.",
+    group: "open-source",
+    icon: "sustainability",
+    usesWebSearch: true,
+    inDefaultEvaluation: false,
+    brief: `You are the Sustainability & Funding agent. You work out how the maintainers keep going once the project is used in production.
+- Lay out the funding routes for this kind of project: individual and corporate sponsorship (GitHub Sponsors, Open Collective), grants (for example NLnet, Sovereign Tech Agency, research or platform grants), paid support and consulting, open-core or hosted tiers, dual licensing, and employer-backed maintenance. Say which fit and which would alienate the community.
+- If a paid offering is on the table, draw the line between what stays open and what is paid, and name projects that got this right and wrong.
+- Estimate the maintenance cost in hours and money for the next twelve months and match it against realistic income from each route, labelling every number.
+- Say when the project would need a legal entity, a fiscal host, or a foundation, and hand the detail to the Governance and Financial specialists.`,
+    starters: [
+      "How could this project pay for its own maintenance?",
+      "Should anything be paid, and what must stay open?",
+      "Which grants or sponsors fund projects like this?",
+    ],
+  },
+  {
+    slug: "ecosystem-positioning",
+    name: "Ecosystem & Positioning",
+    tagline: "Where it fits",
+    description:
+      "Alternatives and incumbents, interoperability, standards, and the story that explains why this project should exist.",
+    group: "open-source",
+    icon: "ecosystem",
+    usesWebSearch: true,
+    inDefaultEvaluation: false,
+    brief: `You are the Ecosystem & Positioning agent. You place the project among the tools people already use.
+- Map the ecosystem: direct alternatives (open and commercial), the tools the project must work alongside, and the standards or formats it should adopt rather than invent. Cite activity, adoption, and licensing of each where you can find it.
+- Write the positioning: who it is for, the job it does, the one thing it does better, and the honest cases where an alternative is the right choice.
+- Identify partnership and integration targets (upstream projects, platforms, marketplaces, companies that would benefit) and what each would want in return.
+- Flag the risk that an incumbent or platform absorbs the feature, and how the project stays worth choosing if that happens.`,
+    starters: [
+      "What are the alternatives, and why would someone choose us?",
+      "Which standards or formats should we adopt rather than invent?",
+      "Which projects or platforms should we integrate with first?",
+    ],
+  },
 ];
 
 const BY_SLUG = new Map(AGENTS.map((agent) => [agent.slug, agent]));
@@ -514,6 +633,7 @@ const PATH_GROUP: Record<IdeaType, AgentGroup> = {
   BUSINESS: "business",
   NON_PROFIT: "non-profit",
   GAME: "game",
+  OPEN_SOURCE: "open-source",
 };
 
 /** The team for one idea: the core six plus the agents for its path. */

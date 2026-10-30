@@ -120,6 +120,13 @@
       "when": 1793340468525,
       "tag": "0016_idea_type_game",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793341565204,
+      "tag": "0017_idea_type_open_source",
+      "breakpoints": true
     }
   ]
 }

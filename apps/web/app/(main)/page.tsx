@@ -1,30 +1,27 @@
 import type { Metadata } from "next";
 import { currentUser } from "@clerk/nextjs/server";
-import { mainAchievementCatalog } from "@westride/db";
 import { AGENTS } from "@/lib/idea-factory/agents";
+import { getConnectionStatuses } from "./home/connection-status";
 import { Landing } from "./home/landing";
 
 export const metadata: Metadata = {
-  title: "WeStride · Learn AI, find a mentor, build what's next",
+  title: {
+    absolute: "WeStride · Shape an idea, build it for real, give it AI agents",
+  },
   description:
-    "An open-source platform for learning AI, mentorship, and entrepreneurship, built at the 2026 Meta Global AI Developer Hackathon and powered by Meta's models.",
+    "An open-source platform where Meta's models pressure-test your idea, build it with you in a real GitHub repository, and give it AI agents of its own. Built at the 2026 Meta Global AI Developer Hackathon.",
 };
-
-// The Academy ships ten seeded tracks (packages/db/src/academy-tracks).
-const ACADEMY_TRACK_COUNT = 10;
 
 export default async function Home() {
   const user = await currentUser();
+  const connections = await getConnectionStatuses(user?.id ?? null);
 
   return (
     <Landing
       firstName={user?.firstName ?? null}
       isSignedIn={user != null}
-      stats={{
-        advisors: AGENTS.length,
-        achievements: mainAchievementCatalog.length,
-        tracks: ACADEMY_TRACK_COUNT,
-      }}
+      stats={{ advisors: AGENTS.length }}
+      connections={connections}
     />
   );
 }

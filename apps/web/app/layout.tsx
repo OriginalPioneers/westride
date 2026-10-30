@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: "%s · WeStride",
   },
   description:
-    "A platform for learning AI, mentorship and entrepreneurship.",
+    "Shape an idea, build it for real, and give it AI agents, powered by Meta's models.",
   // Pre-launch: do not index, follow, or offer pages to AI training crawlers.
   robots:
     "noindex, nofollow, nocache, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai",

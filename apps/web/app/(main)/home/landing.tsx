@@ -20,6 +20,7 @@ import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { Link } from "@astryxdesign/core/Link";
 import { Section } from "@astryxdesign/core/Section";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
+import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Step, Stepper } from "@astryxdesign/core/Stepper";
 import { Text } from "@astryxdesign/core/Text";
 import { Theme } from "@astryxdesign/core/theme";
@@ -37,28 +38,35 @@ import {
   HACKATHON_LOGO,
   HACKATHON_NAME,
   HACKATHON_URL,
+  HERO_CONNECTIONS,
   INTEGRATIONS,
   META_MODELS,
   MILESTONES,
-  PATH,
+  MOBILE_APPS,
   SOURCE_URL,
   STACK_ROWS,
+  STUDIOS,
+  SUPPORT,
   TEAM,
+  type ConnectionStatus,
+  type ConnectionStatuses,
+  type HeroConnection,
   type Integration,
+  type MobileApp,
   type StackLogo,
 } from "./landing-content";
+import { HeroGlobe } from "./hero-globe";
 import { LANDING_STYLES } from "./landing-styles";
 
 export type LandingStats = {
   advisors: number;
-  achievements: number;
-  tracks: number;
 };
 
 type LandingProps = {
   firstName: string | null;
   isSignedIn: boolean;
   stats: LandingStats;
+  connections: ConnectionStatuses;
 };
 
 const CONTENT_WIDTH = 1120;
@@ -221,18 +229,21 @@ function LogoTile({
   src,
   alt = "",
   wide = false,
+  size = "md",
 }: {
   src: string;
   alt?: string;
   wide?: boolean;
+  size?: "sm" | "md";
 }) {
+  const side = size === "sm" ? "var(--spacing-8)" : "var(--spacing-12)";
   return (
     <Theme theme={themes[defaultThemeSlug]} mode="light">
       <Card
         className="wl-logo-tile"
-        padding={2}
-        width={wide ? "calc(var(--spacing-12) * 2.5)" : "var(--spacing-12)"}
-        height="var(--spacing-12)"
+        padding={size === "sm" ? 1.5 : 2}
+        width={wide ? `calc(${side} * 2.5)` : side}
+        height={side}
       >
         <Image
           src={src}
@@ -249,6 +260,14 @@ function LogoTile({
 }
 
 /* ----------------------------- Hero ----------------------------- */
+
+/** Where each streak starts, in sky units, and how its timing is staggered. */
+const SHOOTING_STARS = [
+  { x: 1240, y: 70, cycle: 7, delay: 1 },
+  { x: 760, y: 40, cycle: 10, delay: 4 },
+  { x: 1400, y: 300, cycle: 12, delay: 7.5 },
+  { x: 420, y: 110, cycle: 9, delay: 11 },
+] as const;
 
 function HeroSky() {
   return (
@@ -296,6 +315,11 @@ function HeroSky() {
           <stop offset="0" stopColor="var(--wl-indigo)" />
           <stop offset="0.5" stopColor="var(--wl-purple)" />
           <stop offset="1" stopColor="var(--wl-teal)" />
+        </linearGradient>
+        <linearGradient id="wl-star-trail" x1="1" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--color-text-primary)" stopOpacity="0" />
+          <stop offset="0.7" stopColor="var(--wl-blue)" stopOpacity="0.5" />
+          <stop offset="1" stopColor="var(--color-text-primary)" />
         </linearGradient>
         <filter
           id="wl-node-glow"
@@ -387,6 +411,29 @@ function HeroSky() {
           fill="var(--wl-orange)"
         />
       </g>
+
+      <g>
+        {SHOOTING_STARS.map((star) => (
+          <g key={`${star.x}-${star.y}`} transform={`translate(${star.x} ${star.y})`}>
+            <line
+              className="wl-shooting-star"
+              x1="150"
+              y1="-60"
+              x2="0"
+              y2="0"
+              stroke="url(#wl-star-trail)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              style={
+                {
+                  "--wl-star-cycle": star.cycle,
+                  "--wl-star-delay": star.delay,
+                } as CSSProperties
+              }
+            />
+          </g>
+        ))}
+      </g>
     </svg>
   );
 }
@@ -420,102 +467,203 @@ function HackathonPill() {
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+const CONNECTION_STATUS: Record<
+  ConnectionStatus,
+  { label: string; variant: "success" | "accent" | "neutral" }
+> = {
+  connected: { label: "Connected", variant: "success" },
+  disconnected: { label: "Not connected", variant: "accent" },
+  available: { label: "Available", variant: "accent" },
+  unavailable: { label: "Coming soon", variant: "neutral" },
+};
+
+function ConnectionTile({
+  connection,
+  status,
+}: {
+  connection: HeroConnection;
+  status: ConnectionStatus;
+}) {
+  const { label, variant } = CONNECTION_STATUS[status];
   return (
-    <VStack gap={0.5} hAlign="center">
-      <Text type="display-3" weight="bold" className="wl-stat-value">
-        {value}
-      </Text>
-      <Text type="supporting" justify="center">
-        {label}
-      </Text>
-    </VStack>
+    <ClickableCard
+      className="wl-connect-tile"
+      href="/settings"
+      label={`${connection.name}: ${label}. Manage in settings.`}
+      padding={3}
+    >
+      <VStack gap={2}>
+        <LogoTile src={connection.logo} size="sm" />
+        <VStack gap={0.5}>
+          <Text size="sm" weight="semibold" textWrap="nowrap">
+            {connection.name}
+          </Text>
+          <HStack gap={1.5} vAlign="center" wrap="nowrap">
+            <StatusDot variant={variant} label={label} />
+            <Text type="supporting" size="xsm" textWrap="nowrap">
+              {label}
+            </Text>
+          </HStack>
+        </VStack>
+      </VStack>
+    </ClickableCard>
   );
 }
 
-function Hero({ firstName, isSignedIn, stats }: LandingProps) {
+function MobileAppTile({ app }: { app: MobileApp }) {
+  return (
+    <ClickableCard
+      className="wl-app-tile"
+      href={app.href}
+      target="_blank"
+      label={`WeStride ${app.name} on ${app.store} (opens in a new tab)`}
+      padding={3}
+      variant="transparent"
+    >
+      <HStack gap={3} vAlign="center" wrap="nowrap">
+        <LogoTile src={app.logo} size="sm" />
+        <VStack gap={0.5}>
+          <Text size="sm" weight="semibold" textWrap="nowrap">
+            {app.name}
+          </Text>
+          <HStack gap={1} vAlign="center" wrap="nowrap">
+            <Text type="supporting" size="xsm" textWrap="nowrap">
+              {app.store}
+            </Text>
+            <Icon icon={ArrowTopRightOnSquareIcon} size="xsm" color="secondary" />
+          </HStack>
+        </VStack>
+      </HStack>
+    </ClickableCard>
+  );
+}
+
+function ConnectionStrip({
+  connections,
+  isSignedIn,
+}: {
+  connections: ConnectionStatuses;
+  isSignedIn: boolean;
+}) {
+  return (
+    <HStack className="wl-hero-connect" gap={4} wrap="wrap">
+      <VStack
+        className="wl-connect-group wl-connect-integrations"
+        gap={3}
+        padding={4}
+      >
+        <HStack gap={2} hAlign="between" vAlign="center" wrap="wrap">
+          <Eyebrow>{isSignedIn ? "Your connections" : "Works with"}</Eyebrow>
+          <Link href="/settings" isStandalone size="sm">
+            {isSignedIn ? "Manage connections" : "Sign in to connect"}
+          </Link>
+        </HStack>
+        <Grid columns={{ minWidth: 120, max: 5 }} gap={2}>
+          {HERO_CONNECTIONS.map((connection) => (
+            <ConnectionTile
+              key={connection.id}
+              connection={connection}
+              status={connections[connection.id]}
+            />
+          ))}
+        </Grid>
+      </VStack>
+
+      <VStack
+        className="wl-connect-group wl-connect-apps wl-glow-border"
+        gap={3}
+        padding={4}
+      >
+        <Eyebrow>Take it with you</Eyebrow>
+        <Grid columns={{ minWidth: 150, max: 2 }} gap={2}>
+          {MOBILE_APPS.map((app) => (
+            <MobileAppTile key={app.href} app={app} />
+          ))}
+        </Grid>
+      </VStack>
+    </HStack>
+  );
+}
+
+function Hero({ isSignedIn, stats, connections }: LandingProps) {
   return (
     <Theme theme={themes[defaultThemeSlug]} mode="dark">
       <Section className="wl-hero" variant="transparent" padding={0}>
         <HeroSky />
         <VStack
           className="wl-hero-content"
-          gap={6}
-          hAlign="center"
-          maxWidth={880}
+          gap={10}
+          maxWidth={CONTENT_WIDTH}
           style={{ ...centered, ...heroPadding }}
         >
-          <HackathonPill />
+          <Grid columns={{ minWidth: 360, max: 2 }} gap={8} align="center">
+            <VStack className="wl-hero-copy" gap={6} hAlign="start">
+              <HackathonPill />
 
-          <Image
-            className="wl-stamp"
-            src="/westride-stamp.png"
-            alt=""
-            width={1156}
-            height={778}
-            preload
-            unoptimized
-            style={{ width: "calc(var(--spacing-12) * 3.5)", height: "auto" }}
-          />
+              <Image
+                className="wl-wordmark"
+                src="/logos/westride/WeStride_landscape_white.png"
+                alt="WeStride"
+                width={2582}
+                height={788}
+                preload
+                unoptimized
+                style={{
+                  width: "min(100%, calc(var(--spacing-12) * 7))",
+                  height: "auto",
+                }}
+              />
 
-          <VStack gap={3} hAlign="center">
-            <Heading
-              level={1}
-              type="display-1"
-              justify="center"
-              textWrap="balance"
-            >
-              Build what&apos;s 
-              <Text type="inherit" display="inline" className="wl-gradient-text">
-                 &nbsp;next.
+              <Heading level={1} type="display-1" textWrap="balance">
+                Build what&apos;s 
+                <Text
+                  type="inherit"
+                  display="inline"
+                  className="wl-gradient-text"
+                >
+                   &nbsp;next.
+                </Text>
+              </Heading>
+
+              <Text
+                type="large"
+                color="secondary"
+                textWrap="pretty"
+                maxLines={0}
+              >
+                {`Bring an idea and WeStride takes it the whole way. A team of ${stats.advisors} Muse advisors pressure-tests it, Muse Code builds it in your GitHub repository, and Agent Studio gives it AI agents of its own. Open source, and powered by Meta's models.`}
               </Text>
-            </Heading>
-          </VStack>
 
-          <Text
-            type="large"
-            color="secondary"
-            justify="center"
-            textWrap="balance"
-            maxLines={0}
-            style={{ maxWidth: "calc(var(--spacing-12) * 14)" }}
-          >
-            WeStride is an open-source platform that walks the whole path with
-            you, from your first prompt to a shipped product, powered by
-            Meta&apos;s models.
-          </Text>
+              <HStack gap={3} wrap="wrap">
+                {STUDIOS.map((studio, index) => (
+                  <Button
+                    key={studio.href}
+                    label={studio.action}
+                    variant={index === 0 ? "primary" : undefined}
+                    size="lg"
+                    href={studio.href}
+                    icon={<Icon icon={studio.icon} color="inherit" />}
+                  />
+                ))}
+              </HStack>
 
-          <HStack gap={3} wrap="wrap" hAlign="center">
-            <Button
-              label={isSignedIn ? "Continue learning" : "Start learning"}
-              variant="primary"
-              size="lg"
-              href="/academy"
-              endContent={<Icon icon={ArrowRightIcon} color="inherit" />}
-            />
-            <Button
-              label="Star on GitHub"
-              size="lg"
-              href={SOURCE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              icon={<Icon icon={StarIcon} color="inherit" />}
-            />
-            <Button
-              label="Our story"
-              variant="ghost"
-              size="lg"
-              href="/our-story"
-            />
-          </HStack>
+              <HStack gap={2} wrap="wrap">
+                <Button
+                  label="Star on GitHub"
+                  variant="ghost"
+                  href={SOURCE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  icon={<Icon icon={StarIcon} color="inherit" />}
+                />
+                <Button label="Our story" variant="ghost" href="/our-story" />
+              </HStack>
+            </VStack>
 
-          <Grid columns={{ minWidth: 130, max: 5 }} gap={4} width="100%">
-            <Stat value="100%" label="open source" />
-            <Stat value="$0" label="to learn" />
-            <Stat value={String(stats.tracks)} label="Academy tracks" />
-            <Stat value={String(stats.achievements)} label="achievements" />
-            <Stat value={String(stats.advisors)} label="Muse advisors" />
+            <HeroGlobe />
           </Grid>
+
+          <ConnectionStrip connections={connections} isSignedIn={isSignedIn} />
         </VStack>
       </Section>
     </Theme>
@@ -584,47 +732,93 @@ function PathTrack() {
   );
 }
 
-function PathSection() {
+function StudiosSection() {
   return (
     <Section variant="transparent" padding={0}>
       <Container>
         <SectionIntro
-          eyebrow="One path, five strides"
-          title="From a first prompt to a shipped product, with help at every step"
-          lede="Every builder walks the same path: learn enough AI to start, find someone who has done it before, check that the idea holds up, build it, and give it agents. WeStride is that path, in one place."
+          eyebrow="Idea, build, agent"
+          title="Take an idea from a hunch to a shipped product with agents of its own"
+          lede="Three studios, one path. Muse pressure-tests the idea, plans the work and writes the code with you, then gives the finished project agents that keep working. Every step runs on Meta's models."
         />
         <VStack gap={4} className="wl-reveal" style={revealDelay(1)}>
           <PathTrack />
-          <Grid columns={{ minWidth: 200, max: 5 }} gap={4}>
-            {PATH.map((step, index) => (
+          <Grid columns={{ minWidth: 280, max: 3 }} gap={4}>
+            {STUDIOS.map((studio, index) => (
               <ClickableCard
-                key={step.step}
+                key={studio.href}
                 className="wl-step"
-                href={step.href}
-                label={`${step.step} in ${step.where}`}
-                padding={4}
+                href={studio.href}
+                label={`${studio.action} in ${studio.where}`}
+                padding={6}
                 elevation="low"
               >
-                <VStack gap={4}>
+                <VStack gap={5}>
                   <Center
                     className="wl-step-icon"
                     style={
                       {
-                        "--wl-tint-a": `var(--wl-${step.tints[0]})`,
-                        "--wl-tint-b": `var(--wl-${step.tints[1]})`,
+                        "--wl-tint-a": `var(--wl-${studio.tints[0]})`,
+                        "--wl-tint-b": `var(--wl-${studio.tints[1]})`,
                       } as CSSProperties
                     }
                   >
-                    <Icon icon={step.icon} size="lg" color="inherit" />
+                    <Icon icon={studio.icon} size="lg" color="inherit" />
                   </Center>
                   <VStack gap={1}>
                     <Text type="supporting" size="xsm" weight="semibold">
-                      {String(index + 1).padStart(2, "0")} · {step.where}
+                      {String(index + 1).padStart(2, "0")} · {studio.where}
                     </Text>
-                    <Heading level={3}>{step.step}</Heading>
+                    <Heading level={3}>{studio.step}</Heading>
                   </VStack>
-                  <Text type="supporting">{step.how}</Text>
+                  <Text type="supporting">{studio.how}</Text>
+                  <HStack gap={1} vAlign="center">
+                    <Text size="sm" weight="semibold" color="accent">
+                      {studio.action}
+                    </Text>
+                    <Icon icon={ArrowRightIcon} size="xsm" color="accent" />
+                  </HStack>
                 </VStack>
+              </ClickableCard>
+            ))}
+          </Grid>
+        </VStack>
+
+        <VStack gap={3} className="wl-reveal" style={revealDelay(2)}>
+          <Text type="supporting" weight="semibold">
+            Want a hand along the way?
+          </Text>
+          <Grid columns={{ minWidth: 280, max: 2 }} gap={4}>
+            {SUPPORT.map((step) => (
+              <ClickableCard
+                key={step.href}
+                className="wl-support"
+                href={step.href}
+                label={`${step.step} in ${step.where}`}
+                padding={4}
+                variant="muted"
+              >
+                <HStack gap={3} vAlign="center">
+                  <Center
+                    className="wl-feature-icon"
+                    style={
+                      { "--wl-tint": `var(--wl-${step.tints[0]})` } as CSSProperties
+                    }
+                  >
+                    <Icon icon={step.icon} size="md" color="inherit" />
+                  </Center>
+                  <StackItem size="fill">
+                    <VStack gap={0.5}>
+                      <Text weight="semibold">
+                        {step.step} · {step.where}
+                      </Text>
+                      <Text type="supporting" size="sm">
+                        {step.how}
+                      </Text>
+                    </VStack>
+                  </StackItem>
+                  <Icon icon={ArrowRightIcon} size="xsm" color="secondary" />
+                </HStack>
               </ClickableCard>
             ))}
           </Grid>
@@ -1005,13 +1199,13 @@ function ClosingSection({ isSignedIn }: { isSignedIn: boolean }) {
             eyebrow="Stride with us"
             title={
               <>
-                Learn something. Share what you know.{" "}
+                Bring an idea. Build it for real.{" "}
                 <Text type="inherit" className="wl-gradient-text">
-                  Build it with us.
+                  Give it agents.
                 </Text>
               </>
             }
-            lede="WeStride is open source. It is free to learn on, and the path is the same whether you are writing your first prompt or your thousandth pull request."
+            lede="WeStride is open source, and the path is the same whether this is your first idea or your fiftieth repository."
           />
           <HStack
             gap={3}
@@ -1072,7 +1266,7 @@ export function Landing(props: LandingProps) {
           <style>{LANDING_STYLES}</style>
           <VStack className="wl-root" gap={0} ref={rootRef}>
             <Hero {...props} />
-            <PathSection />
+            <StudiosSection />
             <MetaAiSection />
             <HackathonSection />
             <IntegrationsSection />

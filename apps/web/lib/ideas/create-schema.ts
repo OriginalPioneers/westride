@@ -11,6 +11,7 @@ const ideaTypes = [
   "BUSINESS",
   "NON_PROFIT",
   "GAME",
+  "OPEN_SOURCE",
 ] as const satisfies readonly IdeaType[];
 const ideaRoles = [
   "FOUNDER",
@@ -54,7 +55,7 @@ function memberListSchema(max: number, maxMessage: string) {
 }
 
 export const createIdeaSchema = z.object({
-  type: z.enum(ideaTypes, { error: "Choose Business, Non-profit, or Game." }),
+  type: z.enum(ideaTypes, { error: "Choose a kind of idea." }),
   name: ideaNameSchema,
   description: ideaDescriptionSchema,
   isPublic: z

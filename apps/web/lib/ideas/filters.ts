@@ -5,6 +5,7 @@ export const IDEA_TYPE_LABELS: Record<IdeaType, string> = {
   BUSINESS: "Business",
   NON_PROFIT: "Non-Profit",
   GAME: "Game",
+  OPEN_SOURCE: "Open Source",
 };
 
 export const IDEA_ROLE_LABELS: Record<IdeaMemberRole, string> = {
@@ -17,6 +18,7 @@ const TYPE_PARAMS: Record<IdeaType, string> = {
   BUSINESS: "business",
   NON_PROFIT: "non-profit",
   GAME: "game",
+  OPEN_SOURCE: "open-source",
 };
 
 export function ideaTypeParam(type: IdeaType): string {
