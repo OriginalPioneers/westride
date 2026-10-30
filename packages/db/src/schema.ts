@@ -55,20 +55,120 @@ export const lessons = pgTable(
     trackId: uuid("track_id")
       .notNull()
       .references(() => tracks.id),
+    /** URL-safe identifier, unique within the track. */
+    slug: text("slug").notNull(),
+    /** One or two sentences shown in lesson lists. */
+    summary: text("summary").notNull(),
+    /** Position within the track, starting at 1. */
+    sortOrder: integer("sort_order").notNull(),
+    estimatedDurationMinutes: integer("estimated_duration_minutes").notNull(),
+    /**
+     * Markdown. A line of the form `[artifact:<key>]` places the lesson
+     * artifact with that key at that point in the text.
+     */
+    content: text("content").notNull(),
+    keyTakeaways: text("key_takeaways").array().notNull(),
   },
-  (table) => [index("lessons_track_id_idx").on(table.trackId)],
+  (table) => [
+    index("lessons_track_id_idx").on(table.trackId),
+    uniqueIndex("lessons_track_slug_unique").on(table.trackId, table.slug),
+    index("lessons_track_sort_order_idx").on(table.trackId, table.sortOrder),
+  ],
+);
+
+export const lessonArtifactKind = pgEnum("lesson_artifact_kind", [
+  "IMAGE",
+  "VIDEO",
+  "AUDIO",
+  "DIAGRAM",
+]);
+
+/**
+ * Media a lesson embeds. Generated separately from the text: a row exists as
+ * a placeholder, with the brief used to produce it, until `url` is filled in.
+ */
+export const lessonArtifacts = pgTable(
+  "lesson_artifacts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    lessonId: uuid("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    /** Referenced from lesson content as `[artifact:<key>]`. */
+    key: text("key").notNull(),
+    kind: lessonArtifactKind("kind").notNull(),
+    title: text("title").notNull(),
+    /** What to generate: scene, style, narration, and so on. */
+    brief: text("brief").notNull(),
+    /** Null until the asset has been generated and uploaded. */
+    url: text("url"),
+    /** Runtime for video and audio, when known. */
+    durationSeconds: integer("duration_seconds"),
+    sortOrder: integer("sort_order").notNull(),
+  },
+  (table) => [
+    uniqueIndex("lesson_artifacts_lesson_key_unique").on(
+      table.lessonId,
+      table.key,
+    ),
+  ],
+);
+
+/** A member finished a lesson. One row per member per lesson. */
+export const lessonCompletions = pgTable(
+  "lesson_completions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Clerk user id. Guests are never written here. */
+    clerkUserId: text("clerk_user_id").notNull(),
+    lessonId: uuid("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    completedAt: timestamp("completed_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("lesson_completions_user_lesson_unique").on(
+      table.clerkUserId,
+      table.lessonId,
+    ),
+    index("lesson_completions_clerk_user_id_idx").on(table.clerkUserId),
+  ],
 );
 
 export const tracksRelations = relations(tracks, ({ many }) => ({
   lessons: many(lessons),
 }));
 
-export const lessonsRelations = relations(lessons, ({ one }) => ({
+export const lessonsRelations = relations(lessons, ({ one, many }) => ({
   track: one(tracks, {
     fields: [lessons.trackId],
     references: [tracks.id],
   }),
+  artifacts: many(lessonArtifacts),
+  completions: many(lessonCompletions),
 }));
+
+export const lessonArtifactsRelations = relations(
+  lessonArtifacts,
+  ({ one }) => ({
+    lesson: one(lessons, {
+      fields: [lessonArtifacts.lessonId],
+      references: [lessons.id],
+    }),
+  }),
+);
+
+export const lessonCompletionsRelations = relations(
+  lessonCompletions,
+  ({ one }) => ({
+    lesson: one(lessons, {
+      fields: [lessonCompletions.lessonId],
+      references: [lessons.id],
+    }),
+  }),
+);
 
 export const achievements = pgTable(
   "achievements",
@@ -982,6 +1082,11 @@ export type Track = typeof tracks.$inferSelect;
 export type NewTrack = typeof tracks.$inferInsert;
 export type Lesson = typeof lessons.$inferSelect;
 export type NewLesson = typeof lessons.$inferInsert;
+export type LessonArtifactKind = (typeof lessonArtifactKind.enumValues)[number];
+export type LessonArtifact = typeof lessonArtifacts.$inferSelect;
+export type NewLessonArtifact = typeof lessonArtifacts.$inferInsert;
+export type LessonCompletion = typeof lessonCompletions.$inferSelect;
+export type NewLessonCompletion = typeof lessonCompletions.$inferInsert;
 export type Achievement = typeof achievements.$inferSelect;
 export type NewAchievement = typeof achievements.$inferInsert;
 export type UserAchievement = typeof userAchievements.$inferSelect;

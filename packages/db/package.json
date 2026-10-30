@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
+    "./academy": "./src/academy.ts",
     "./mentorship": "./src/mentorship.ts",
     "./ideas": "./src/ideas.ts",
     "./idea-factory": "./src/idea-factory.ts",
