@@ -410,7 +410,12 @@ export const mentorRequestsRelations = relations(mentorRequests, ({ one }) => ({
   }),
 }));
 
-export const ideaType = pgEnum("idea_type", ["BUSINESS", "NON_PROFIT", "GAME"]);
+export const ideaType = pgEnum("idea_type", [
+  "BUSINESS",
+  "NON_PROFIT",
+  "GAME",
+  "OPEN_SOURCE",
+]);
 
 export const ideaMemberRole = pgEnum("idea_member_role", ["FOUNDER", "MEMBER"]);
 

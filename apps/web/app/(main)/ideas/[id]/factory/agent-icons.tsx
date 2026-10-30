@@ -2,9 +2,13 @@
 
 import type { IconType } from "@astryxdesign/core/Icon";
 import {
+  ArrowDownTrayIcon,
   BanknotesIcon,
   BuildingLibraryIcon,
   ChartBarIcon,
+  CodeBracketIcon,
+  DocumentCheckIcon,
+  GlobeAltIcon,
   ChartPieIcon,
   ClipboardDocumentCheckIcon,
   CurrencyDollarIcon,
@@ -20,6 +24,7 @@ import {
   RocketLaunchIcon,
   ScaleIcon,
   ShoppingBagIcon,
+  SparklesIcon,
   UserGroupIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
@@ -47,6 +52,11 @@ export const AGENT_ICONS: Record<AgentIconName, IconType> = {
   monetization: ShoppingBagIcon,
   production: WrenchScrewdriverIcon,
   publishing: RocketLaunchIcon,
+  adoption: ArrowDownTrayIcon,
+  contributors: CodeBracketIcon,
+  licensing: DocumentCheckIcon,
+  sustainability: SparklesIcon,
+  ecosystem: GlobeAltIcon,
 };
 
 export { ChartPieIcon as EvaluateIcon };

@@ -147,6 +147,12 @@ const KIND_OPTIONS: {
       "A video game, tabletop game, or playable experience you want to design and ship.",
     icon: PuzzlePieceIcon,
   },
+  {
+    type: "OPEN_SOURCE",
+    description:
+      "A library, tool, or project released under an open license and grown with contributors.",
+    icon: CodeBracketIcon,
+  },
 ];
 
 const SHARING_OPTIONS: {
@@ -426,7 +432,7 @@ export function CreateIdeaDialog({
 
                 {step === 0 ? (
                   <VStack gap={4}>
-                    <Grid columns={{ minWidth: 280, max: 3 }} gap={4}>
+                    <Grid columns={{ minWidth: 280, max: 2 }} gap={4}>
                       {KIND_OPTIONS.map((option) => (
                         <ChoiceTile
                           key={option.type}

@@ -11,7 +11,7 @@ import {
   UserGroupIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
-import { STORE_LINKS } from "../../store-links";
+import { APP_STORE_URL, PLAY_STORE_URL, STORE_LINKS } from "../../store-links";
 import { PROJECT_REPOSITORY } from "../legal-document";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
@@ -43,47 +43,101 @@ export type PathStep = {
   tints: [Tint, Tint];
 };
 
-/** The five strides every builder takes, and the studio that covers each one. */
-export const PATH: PathStep[] = [
+export type Studio = PathStep & {
+  /** The hero call to action that opens this studio. */
+  action: string;
+};
+
+/** The three studios an idea moves through on its way to a shipped product. */
+export const STUDIOS: Studio[] = [
   {
-    step: "Learn",
+    step: "Shape the idea",
+    where: "Idea Studio",
+    action: "Work on an idea",
+    href: "/ideas",
+    how: "Bring a business, non-profit, game, or open-source idea. A team of Muse advisors pressure-tests it with live research and cited sources, so you know what holds up before you build.",
+    icon: LightBulbIcon,
+    tints: ["indigo", "purple"],
+  },
+  {
+    step: "Build it for real",
+    where: "Build Studio",
+    action: "Build a real project",
+    href: "/build",
+    how: "Projects, tickets, and a linked GitHub repository. Muse drafts the backlog and roadmap, and Muse Code agents work the tickets and open pull requests.",
+    icon: WrenchScrewdriverIcon,
+    tints: ["blue", "teal"],
+  },
+  {
+    step: "Give it agents",
+    where: "Agent Studio",
+    action: "Create an AI agent",
+    href: "/agents",
+    how: "Design the Muse agents a project needs, give each one a job, and add them to it, so the product keeps working after you ship it.",
+    icon: CpuChipIcon,
+    tints: ["orange", "pink"],
+  },
+];
+
+/** Help along the way, for anyone who wants to learn or find a guide first. */
+export const SUPPORT: PathStep[] = [
+  {
+    step: "Learn the basics",
     where: "Academy",
     href: "/academy",
-    how: "Short tracks on AI fundamentals, prompting, and agents, with hands-on challenges Muse gives feedback on.",
+    how: "Short tracks on AI fundamentals, prompting, and agents, with challenges Muse gives feedback on.",
     icon: AcademicCapIcon,
-    tints: ["indigo", "purple"],
+    tints: ["purple", "blue"],
   },
   {
     step: "Find a mentor",
     where: "Mentorship",
     href: "/mentorship",
-    how: "Free, one-to-one guidance from builders who list their skills, languages, and locations.",
+    how: "Free, one-to-one guidance from builders who have shipped before.",
     icon: UserGroupIcon,
-    tints: ["purple", "blue"],
-  },
-  {
-    step: "Validate",
-    where: "Idea Studio",
-    href: "/ideas",
-    how: "An advisory team of Muse specialists pressure-tests a business, non-profit, or game idea with live research.",
-    icon: LightBulbIcon,
-    tints: ["blue", "teal"],
-  },
-  {
-    step: "Build",
-    where: "Build Studio",
-    href: "/build",
-    how: "Projects, tickets, and linked GitHub repos. Muse drafts the backlog and Muse Code opens pull requests.",
-    icon: WrenchScrewdriverIcon,
     tints: ["teal", "green"],
   },
+];
+
+export type ConnectionId = "meta" | "github" | "whatsapp" | "slack" | "discord";
+
+/**
+ * `available` is for signed-out visitors, `disconnected` for members who have
+ * not linked it yet, and `unavailable` when this server has it turned off.
+ */
+export type ConnectionStatus =
+  | "connected"
+  | "disconnected"
+  | "available"
+  | "unavailable";
+
+export type ConnectionStatuses = Record<ConnectionId, ConnectionStatus>;
+
+export type HeroConnection = { id: ConnectionId; name: string; logo: string };
+
+/** The primary integrations, in the order the hero strip shows them. */
+export const HERO_CONNECTIONS: HeroConnection[] = [
+  { id: "meta", name: "Meta AI", logo: "/logos/meta.svg" },
+  { id: "github", name: "GitHub", logo: "/logos/github.svg" },
+  { id: "whatsapp", name: "WhatsApp", logo: "/logos/whatsapp.svg" },
+  { id: "slack", name: "Slack", logo: "/logos/slack-mark.svg" },
+  { id: "discord", name: "Discord", logo: "/logos/discord.svg" },
+];
+
+export type MobileApp = {
+  name: string;
+  store: string;
+  href: string;
+  logo: string;
+};
+
+export const MOBILE_APPS: MobileApp[] = [
+  { name: "iOS app", store: "App Store", href: APP_STORE_URL, logo: "/logos/apple.svg" },
   {
-    step: "Add agents",
-    where: "Agent Studio",
-    href: "/agents",
-    how: "Design the Muse agents a project needs and add them to it. This is what we are building next.",
-    icon: CpuChipIcon,
-    tints: ["orange", "pink"],
+    name: "Android app",
+    store: "Google Play",
+    href: PLAY_STORE_URL,
+    logo: "/logos/android.svg",
   },
 ];
 

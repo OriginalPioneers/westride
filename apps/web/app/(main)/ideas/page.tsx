@@ -63,7 +63,7 @@ export default async function IdeaStudioPage({
               <VStack gap={1}>
                 <Heading level={1}>Idea Studio</Heading>
                 <Text type="supporting">
-                  Businesses, non-profits, and games the community is dreaming up.
+                  Businesses, non-profits, games, and open-source projects the community is dreaming up.
                   Start one, or find one to join.
                 </Text>
               </VStack>

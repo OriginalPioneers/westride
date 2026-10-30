@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
-import { Grid } from "@astryxdesign/core/Grid";
+import { Grid, GridSpan } from "@astryxdesign/core/Grid";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Link } from "@astryxdesign/core/Link";
 import { List, ListItem } from "@astryxdesign/core/List";
@@ -21,32 +21,49 @@ type TeamMember = {
   name: string;
   role: string;
   bio: string;
-  /** Square photo under public/team, e.g. "/team/garrett-hampton.jpg". */
-  headshot: string | null;
   linkedinUrl: string | null;
 };
 
-const TEAM: TeamMember[] = [
+/** People who appear together share one photo. A solo member can have their own. */
+type TeamGroup = {
+  id: string;
+  photo: string | null;
+  photoAlt: string | null;
+  members: TeamMember[];
+};
+
+const TEAM: TeamGroup[] = [
   {
-    name: "Garrett Hampton",
-    role: "Technology, code, and AI",
-    bio: "Garrett architects and writes WeStride's code, and works out how each part of the platform puts Meta's models to work.",
-    headshot: null,
-    linkedinUrl: null,
+    id: "hampton",
+    photo: "/team/garrett-lauren-hampton.jpg",
+    photoAlt: "Garrett and Lauren Hampton",
+    members: [
+      {
+        name: "Garrett Hampton",
+        role: "Technology, code, and AI",
+        bio: "Garrett architects and writes WeStride's code, and works out how each part of the platform puts Meta's models to work.",
+        linkedinUrl: "https://www.linkedin.com/in/garretthampton/",
+      },
+      {
+        name: "Lauren Hampton",
+        role: "Brand, marketing, and design",
+        bio: "Lauren shapes how WeStride looks, sounds, and reaches people, from the brand and the digital design to the marketing that brings new members in.",
+        linkedinUrl: "https://www.linkedin.com/in/pnw-lauren-hampton/",
+      },
+    ],
   },
   {
-    name: "Lauren Hampton",
-    role: "Brand, marketing, and design",
-    bio: "Lauren shapes how WeStride looks, sounds, and reaches people, from the brand and the digital design to the marketing that brings new members in.",
-    headshot: null,
-    linkedinUrl: null,
-  },
-  {
-    name: "Jace Whitten",
-    role: "Front end, achievements, and artifacts",
-    bio: "Jace makes WeStride fun. He builds the front end, the achievements members earn, and the artifacts they collect along the way.",
-    headshot: null,
-    linkedinUrl: null,
+    id: "jace",
+    photo: "/team/jace-whitten.jpg",
+    photoAlt: "Jace Whitten",
+    members: [
+      {
+        name: "Jace Whitten",
+        role: "Front end, achievements, and artifacts",
+        bio: "Jace makes WeStride fun. He builds the front end, the achievements members earn, and the artifacts they collect along the way.",
+        linkedinUrl: "https://www.linkedin.com/in/jacewhitten/",
+      },
+    ],
   },
 ];
 
@@ -97,7 +114,7 @@ const PATH: PathStep[] = [
     step: "Validate",
     where: "Idea Studio",
     href: "/ideas",
-    how: `An advisory team of ${AGENTS.length} Muse specialists, from market analyst to grants advisor, pressure-tests a business, non-profit, or game idea with live web research.`,
+    how: `An advisory team of ${AGENTS.length} Muse specialists, from market analyst to grants advisor, pressure-tests a business, non-profit, game, or open-source idea with live web research.`,
   },
   {
     step: "Build",
@@ -200,6 +217,12 @@ const hackathonLogo = {
   borderRadius: "var(--radius-element)",
 };
 
+const sharedPhoto = {
+  width: "100%",
+  height: "auto",
+  borderRadius: "var(--radius-element)",
+};
+
 function NamedList({
   items,
 }: {
@@ -218,26 +241,64 @@ function NamedList({
   );
 }
 
-function TeamCard({ member }: { member: TeamMember }) {
+function MemberDetails({ member }: { member: TeamMember }) {
+  return (
+    <VStack gap={1}>
+      <Heading level={3}>{member.name}</Heading>
+      <Text type="supporting">{member.role}</Text>
+      <Text>{member.bio}</Text>
+      {member.linkedinUrl ? (
+        <Link href={member.linkedinUrl} isExternalLink isStandalone>
+          LinkedIn
+        </Link>
+      ) : null}
+    </VStack>
+  );
+}
+
+function TeamGroupCard({ group }: { group: TeamGroup }) {
+  const photo = group.photo;
+  const sharesPhoto = photo != null && group.members.length > 1;
+
+  if (sharesPhoto && photo) {
+    return (
+      <Card>
+        <Grid columns={{ minWidth: 200, max: 2 }} gap={4} align="center">
+          <Image
+            src={photo}
+            alt={group.photoAlt ?? ""}
+            width={500}
+            height={500}
+            // The optimizer fetches local files without a browser user agent,
+            // and this dev server refuses that request.
+            unoptimized
+            style={sharedPhoto}
+          />
+          <VStack gap={5}>
+            {group.members.map((person) => (
+              <MemberDetails key={person.name} member={person} />
+            ))}
+          </VStack>
+        </Grid>
+      </Card>
+    );
+  }
+
+  const member = group.members[0];
+  if (!member) return null;
+
   return (
     <Card>
       <VStack gap={4}>
         <Avatar
-          src={member.headshot ?? undefined}
+          src={photo ?? undefined}
           name={member.name}
-          size={96}
+          alt={group.photoAlt ?? member.name}
+          size={128}
+          shape={photo ? "rounded" : "circle"}
           tooltip={false}
         />
-        <VStack gap={1}>
-          <Heading level={3}>{member.name}</Heading>
-          <Text type="supporting">{member.role}</Text>
-        </VStack>
-        <Text>{member.bio}</Text>
-        {member.linkedinUrl ? (
-          <Link href={member.linkedinUrl} isExternalLink isStandalone>
-            LinkedIn
-          </Link>
-        ) : null}
+        <MemberDetails member={member} />
       </VStack>
     </Card>
   );
@@ -261,9 +322,15 @@ export function OurStoryOverview() {
           wife team, and Jace Whitten, Garrett&apos;s friend of many years.
         </Text>
         <Grid columns={{ minWidth: 240, max: 3 }} gap={4}>
-          {TEAM.map((member) => (
-            <TeamCard key={member.name} member={member} />
-          ))}
+          {TEAM.map((group) =>
+            group.members.length > 1 ? (
+              <GridSpan key={group.id} columns="full">
+                <TeamGroupCard group={group} />
+              </GridSpan>
+            ) : (
+              <TeamGroupCard key={group.id} group={group} />
+            ),
+          )}
         </Grid>
       </DocSection>
 
