@@ -364,6 +364,7 @@ const summaryColumns = {
   id: true,
   ideaId: true,
   projectId: true,
+  agentId: true,
   clerkUserId: true,
   agentSlug: true,
   purpose: true,

@@ -16,6 +16,7 @@ import {
   ticketProgressPercent,
   totalTickets,
 } from "@westride/db/build";
+import { listAgentsForProject } from "@westride/db/agents";
 import { getIdea } from "@westride/db/ideas";
 import {
   MILESTONE_STATUS_LABELS,
@@ -27,6 +28,7 @@ import {
 } from "@/lib/build/labels";
 import { ideaPath } from "@/lib/ideas/filters";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
+import { LinkedAgents } from "../../agents/linked-agents";
 import { loadProjectPage } from "./load-project";
 import { PlanWithMuseButton } from "./plan-button";
 import { ProjectHeader } from "./project-header";
@@ -49,9 +51,10 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
     notFound();
   }
   const { project, userId } = context;
-  const [profiles, idea] = await Promise.all([
+  const [profiles, idea, agents] = await Promise.all([
     resolveMemberProfiles(project.members.map((member) => member.clerkUserId)),
     project.ideaId ? getIdea(project.ideaId, { clerkUserId: userId }) : Promise.resolve(null),
+    listAgentsForProject(project.id, { clerkUserId: userId }),
   ]);
   const total = totalTickets(project.ticketCounts);
   const percent = ticketProgressPercent(project.ticketCounts);
@@ -215,6 +218,8 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
                 </List>
               )}
             </VStack>
+
+            <LinkedAgents agents={agents} />
 
             <Divider />
 

@@ -10,11 +10,13 @@ import { Markdown } from "@astryxdesign/core/Markdown";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
+import { listAgentsForIdea } from "@westride/db/agents";
 import { listProjectsForIdea } from "@westride/db/build";
 import { getIdea } from "@westride/db/ideas";
 import { PROJECT_STATUS_LABELS, projectPath } from "@/lib/build/labels";
 import { IDEA_ROLE_LABELS, ideasPath } from "@/lib/ideas/filters";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
+import { LinkedAgents } from "../../agents/linked-agents";
 import { FeaturedBadge, IdeaTypeBadge } from "../idea-badges";
 import { BuildProjectButton } from "./build-project-button";
 import { EditIdeaButton } from "./edit-idea-button";
@@ -55,9 +57,10 @@ export default async function IdeaPage({ params }: { params: Params }) {
   const isMember =
     userId !== null &&
     idea.members.some((member) => member.clerkUserId === userId);
-  const [profiles, projects, account] = await Promise.all([
+  const [profiles, projects, agents, account] = await Promise.all([
     resolveMemberProfiles(idea.members.map((member) => member.clerkUserId)),
     listProjectsForIdea(idea.id, { clerkUserId: userId }),
+    listAgentsForIdea(idea.id, { clerkUserId: userId }),
     isMember ? currentUser() : Promise.resolve(null),
   ]);
   const creator = account
@@ -169,6 +172,8 @@ export default async function IdeaPage({ params }: { params: Params }) {
                 </VStack>
               </VStack>
             ) : null}
+
+            <LinkedAgents agents={agents} />
 
             {idea.githubRepo ? (
               <VStack gap={3}>

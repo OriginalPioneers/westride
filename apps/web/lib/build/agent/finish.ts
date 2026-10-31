@@ -10,6 +10,24 @@ import { githubJson } from "@/lib/github/http";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 import { getAgentRunnerConfig } from "./config";
 
+/** Token usage for one model inside a Muse Code run (`run.usage` record). */
+export type MuseModelUsage = {
+  model: string;
+  calls: number;
+  inputTokens: number;
+  cachedTokens: number;
+  outputTokens: number;
+  reasoningTokens: number;
+};
+
+/** Cumulative usage Muse Code reported for the run. */
+export type MuseRunUsage = {
+  calls: number;
+  completedCalls: number;
+  failedCalls: number;
+  models: MuseModelUsage[];
+};
+
 /** What the runner sends as its last event. */
 export type FinishedPayload = {
   exitCode: number;
@@ -18,8 +36,50 @@ export type FinishedPayload = {
   headSha?: string | null;
   pushed?: boolean;
   commits?: number;
+  usage?: MuseRunUsage | null;
   error?: string | null;
 };
+
+const int = (value: unknown) =>
+  typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
+
+/** Normalises Muse Code's `run.usage` payload; null when it is not one. */
+export function readMuseRunUsage(value: unknown): MuseRunUsage | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  const raw = value as Record<string, unknown>;
+  const models = Array.isArray(raw.models)
+    ? raw.models
+        .map((entry): MuseModelUsage | null => {
+          if (!entry || typeof entry !== "object") {
+            return null;
+          }
+          const row = entry as Record<string, unknown>;
+          if (typeof row.model !== "string") {
+            return null;
+          }
+          return {
+            model: row.model,
+            calls: int(row.calls),
+            inputTokens: int(row.input_tokens ?? row.inputTokens),
+            cachedTokens: int(row.cached_tokens ?? row.cachedTokens),
+            outputTokens: int(row.output_tokens ?? row.outputTokens),
+            reasoningTokens: int(row.reasoning_tokens ?? row.reasoningTokens),
+          };
+        })
+        .filter((row): row is MuseModelUsage => row !== null)
+    : [];
+  if (models.length === 0 && raw.calls === undefined) {
+    return null;
+  }
+  return {
+    calls: int(raw.calls),
+    completedCalls: int(raw.completed_calls ?? raw.completedCalls),
+    failedCalls: int(raw.failed_calls ?? raw.failedCalls),
+    models,
+  };
+}
 
 export function readFinishedPayload(value: unknown): FinishedPayload | null {
   if (!value || typeof value !== "object") {
@@ -38,6 +98,7 @@ export function readFinishedPayload(value: unknown): FinishedPayload | null {
     headSha: str("headSha"),
     pushed: raw.pushed === true,
     commits: typeof raw.commits === "number" ? raw.commits : 0,
+    usage: readMuseRunUsage(raw.usage),
     error: str("error"),
   };
 }

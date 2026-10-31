@@ -185,8 +185,10 @@ function runMuse() {
     });
 
     let lastText = null;
+    let outputText = "";
     let sessionId = null;
     let eventCount = 0;
+    let usage = null;
 
     const out = createInterface({ input: child.stdout });
     out.on("line", (line) => {
@@ -205,8 +207,19 @@ function runMuse() {
         sessionId = found;
         emit("setup", { step: "muse", message: "Session " + sessionId, sessionId });
       }
-      const text = findAssistantText(event);
-      if (text) lastText = text;
+      const payloadType = typeof event.payload_type === "string" ? event.payload_type : "";
+      const payload = event.payload && typeof event.payload === "object" ? event.payload : null;
+      if (payloadType === "run.usage" && payload) {
+        // Cumulative for the run; the last one wins.
+        usage = payload;
+      } else if (payloadType === "run.output.delta" && payload && typeof payload.text === "string") {
+        outputText += payload.text;
+      } else if (payloadType.indexOf("run.terminal.") === 0 && payload) {
+        if (typeof payload.text === "string" && payload.text.trim()) lastText = payload.text;
+      } else {
+        const text = findAssistantText(event);
+        if (text) lastText = text;
+      }
       emit("muse", event);
     });
 
@@ -216,19 +229,31 @@ function runMuse() {
       if (trimmed) emit("log", { stream: "stderr", text: trimmed });
     });
 
+    const done = (code) => {
+      const summary = lastText || (outputText.trim() ? outputText.trim() : null);
+      resolve({ code, lastText: summary, sessionId, eventCount, usage });
+    };
     child.on("error", (error) => {
       emit("log", { stream: "runner", text: "Muse Code could not start: " + String(error) });
-      resolve({ code: -1, lastText, sessionId, eventCount });
+      done(-1);
     });
     child.on("close", (code, signal) => {
-      resolve({ code: code === null ? (signal === "SIGTERM" ? 143 : 1) : code, lastText, sessionId, eventCount });
+      done(code === null ? (signal === "SIGTERM" ? 143 : 1) : code);
     });
   });
 }
 
-// The JSONL shape is Muse Code's to define; look in the usual places.
+// Muse Code's --json envelope names the session on its stream; older builds
+// put it in other places, so look there too.
 function findSessionId(event) {
   if (!event || typeof event !== "object") return null;
+  const stream = event.stream && typeof event.stream === "object" ? event.stream : null;
+  if (stream && stream.kind === "session" && typeof stream.id === "string" && stream.id.length >= 8) {
+    return stream.id;
+  }
+  if (stream && stream.kind === "exec.usage" && typeof stream.id === "string" && stream.id.length >= 8) {
+    return stream.id;
+  }
   const candidates = [event.session_id, event.sessionId, event.session && event.session.id];
   for (const value of candidates) {
     if (typeof value === "string" && value.length >= 8) return value;
@@ -238,6 +263,10 @@ function findSessionId(event) {
 
 function findAssistantText(event) {
   if (!event || typeof event !== "object") return null;
+  if (event.payload && typeof event.payload === "object" && typeof event.payload_type === "string") {
+    // Envelope records carry their content in the payload field.
+    return findAssistantText({ ...event.payload, type: event.payload_type });
+  }
   const type = String(event.type || event.event || "").toLowerCase();
   const role = String(event.role || (event.message && event.message.role) || "").toLowerCase();
   const isAssistant =
@@ -336,6 +365,7 @@ async function main() {
     headSha: pushResult.headSha,
     pushed: pushResult.pushed,
     commits: pushResult.commits,
+    usage: result.usage,
     error: pushError,
   });
 }

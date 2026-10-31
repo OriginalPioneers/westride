@@ -97,6 +97,8 @@ const SIGNED_WEBHOOKS = new Set([
   "/integrations/discord/interactions",
   "/integrations/whatsapp/webhook",
   "/integrations/muse-code/events",
+  "/integrations/agents/events",
+  "/integrations/agents/schedule",
 ]);
 
 export function proxy(request: NextRequest, event: NextFetchEvent) {

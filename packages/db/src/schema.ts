@@ -695,11 +695,16 @@ export const museRequests = pgTable(
      * Not a foreign key: the log outlives the project for cost accounting.
      */
     projectId: uuid("project_id"),
+    /**
+     * The Agent Studio agent this call ran for, when it was a report job.
+     * Not a foreign key: the log outlives the agent for cost accounting.
+     */
+    agentId: uuid("agent_id"),
     /** Clerk user id of the member whose Meta account paid for the call. */
     clerkUserId: text("clerk_user_id").notNull(),
     /** Agent slug from the catalog, or null for the synthesis step. */
     agentSlug: text("agent_slug"),
-    /** "chat" | "evaluation" | "synthesis" | "verify" | "plan" */
+    /** "chat" | "evaluation" | "synthesis" | "verify" | "plan" | "agent" */
     purpose: text("purpose").notNull(),
     model: text("model").notNull(),
     endpoint: text("endpoint").notNull(),
@@ -732,6 +737,7 @@ export const museRequests = pgTable(
     ),
     index("muse_requests_clerk_user_id_idx").on(table.clerkUserId),
     index("muse_requests_project_id_idx").on(table.projectId),
+    index("muse_requests_agent_id_idx").on(table.agentId),
   ],
 );
 
@@ -1255,3 +1261,39 @@ export type {
   TicketSource,
   TicketStatus,
 } from "./build-schema";
+
+// Agent Studio tables reference `ideas` and the Build Studio enums.
+export {
+  agentJobEvents,
+  agentJobEventsRelations,
+  agentJobKind,
+  agentJobs,
+  agentJobsRelations,
+  agentJobTrigger,
+  agentLogEntries,
+  agentLogEntriesRelations,
+  agents,
+  agentSchedule,
+  agentsRelations,
+  agentStatus,
+  agentTickets,
+  agentTicketSource,
+  agentTicketsRelations,
+} from "./agent-schema";
+export type {
+  Agent,
+  AgentJob,
+  AgentJobEvent,
+  AgentJobKind,
+  AgentJobTrigger,
+  AgentLogEntry,
+  AgentSchedule,
+  AgentStatus,
+  AgentTicket,
+  AgentTicketSource,
+  NewAgent,
+  NewAgentJob,
+  NewAgentJobEvent,
+  NewAgentLogEntry,
+  NewAgentTicket,
+} from "./agent-schema";

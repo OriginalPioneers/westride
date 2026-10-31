@@ -104,6 +104,9 @@ export function describeRunEvent(event: RunLogEvent): { title: string; detail: s
     }
     case "muse":
     default: {
+      if (typeof payload.payload_type === "string") {
+        return describeMuseRecord(payload.payload_type, payload.payload);
+      }
       const kind = str(payload.type) ?? str(payload.event) ?? str(payload.kind) ?? "event";
       const text =
         pickText(payload.text) ??
@@ -129,6 +132,58 @@ export function describeRunEvent(event: RunLogEvent): { title: string; detail: s
       return { title, detail };
     }
   }
+}
+
+/**
+ * Muse Code's `--json` envelope: `{ payload_type, payload, stream, ... }`.
+ * The record names are the stable part; the payloads are summarised loosely.
+ */
+function describeMuseRecord(payloadType: string, raw: unknown): { title: string; detail: string | null } {
+  const payload = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const str = (value: unknown) => (typeof value === "string" && value.trim() ? value : null);
+  const clip = (value: string | null, max = 600) => (value && value.length > max ? `${value.slice(0, max)}…` : value);
+
+  if (payloadType === "run.usage") {
+    const models = Array.isArray(payload.models) ? payload.models : [];
+    const detail = models
+      .map((entry) => {
+        const row = (entry && typeof entry === "object" ? entry : {}) as Record<string, unknown>;
+        const n = (key: string) => (typeof row[key] === "number" ? row[key] : 0);
+        return `${str(row.model) ?? "model"}: ${n("input_tokens")} in · ${n("cached_tokens")} cached · ${n("output_tokens")} out`;
+      })
+      .join("\n");
+    return {
+      title: `Usage · ${typeof payload.calls === "number" ? payload.calls : models.length} model call(s)`,
+      detail: detail || null,
+    };
+  }
+  if (payloadType.startsWith("run.terminal.")) {
+    const terminal = payloadType.slice("run.terminal.".length);
+    return {
+      title: `Run ${terminal}${str(payload.reason) ? ` · ${payload.reason}` : ""}`,
+      detail: clip(str(payload.text), 2_000),
+    };
+  }
+  if (payloadType === "run.output.delta") {
+    return { title: "Assistant", detail: clip(str(payload.text), 2_000) };
+  }
+  if (payloadType.startsWith("run.tool.") || payloadType.includes("tool")) {
+    const tool = str(payload.tool) ?? str(payload.tool_name) ?? str(payload.name) ?? null;
+    const args = payload.arguments ?? payload.args ?? payload.input ?? payload.command ?? null;
+    const output = pickText(payload.output) ?? pickText(payload.result) ?? null;
+    return {
+      title: tool ? `${payloadType} · ${tool}` : payloadType,
+      detail:
+        clip(output) ??
+        (args && typeof args === "object"
+          ? clip(JSON.stringify(args))
+          : typeof args === "string"
+            ? clip(args)
+            : null),
+    };
+  }
+  const text = pickText(payload.text) ?? pickText(payload.message) ?? pickText(payload.content) ?? null;
+  return { title: payloadType, detail: clip(text) };
 }
 
 function pickText(value: unknown): string | null {
