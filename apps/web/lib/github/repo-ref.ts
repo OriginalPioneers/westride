@@ -3,12 +3,24 @@ export type GithubRepoRef = { owner: string; repo: string };
 const OWNER = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const REPO = /^[A-Za-z0-9._-]{1,100}$/;
 
+export function isGithubRepoName(name: string): boolean {
+  return REPO.test(name) && name !== "." && name !== "..";
+}
+
+/** A repository name GitHub accepts, made from a project name. */
+export function suggestGithubRepoName(projectName: string): string {
+  return projectName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/-{2,}/g, "-")
+    .slice(0, 100)
+    .replace(/^[-.]+|[-.]+$/g, "");
+}
+
 function toRef(owner: string | undefined, repo: string | undefined) {
   const name = repo?.replace(/\.git$/i, "");
-  if (!owner || !name || !OWNER.test(owner) || !REPO.test(name)) {
-    return null;
-  }
-  if (name === "." || name === "..") {
+  if (!owner || !name || !OWNER.test(owner) || !isGithubRepoName(name)) {
     return null;
   }
   return { owner, repo: name };

@@ -6,7 +6,7 @@ import type {
   TicketStatus,
 } from "@westride/db";
 import { z } from "zod";
-import { parseGithubRepoRef } from "@/lib/github/repo-ref";
+import { isGithubRepoName, parseGithubRepoRef } from "@/lib/github/repo-ref";
 
 export const MAX_PROJECT_NAME = 120;
 export const MAX_PROJECT_DESCRIPTION = 8000;
@@ -85,6 +85,21 @@ const githubRepoUrlSchema = z
     "Use a GitHub repository link, like https://github.com/owner/repo.",
   );
 
+const newGithubRepoSchema = z.object({
+  /** The member's GitHub login or an organization's. */
+  owner: z.string().trim().min(1, "Choose where to create the repository.").max(39),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Name the repository.")
+    .max(100, "Keep the repository name under 100 characters.")
+    .refine(
+      isGithubRepoName,
+      "Use letters, numbers, dots, dashes, or underscores for the repository name.",
+    ),
+  isPrivate: z.boolean(),
+});
+
 export const createProjectSchema = z.object({
   name: projectNameSchema,
   description: projectDescriptionSchema,
@@ -95,6 +110,8 @@ export const createProjectSchema = z.object({
   invites: memberListSchema,
   /** Repositories to link right away. */
   githubRepoUrls: z.array(githubRepoUrlSchema).max(10).default([]),
+  /** A repository to create on GitHub and link as the primary one. */
+  newGithubRepo: newGithubRepoSchema.nullable().default(null),
 });
 
 export type CreateProjectInput = z.output<typeof createProjectSchema>;
@@ -272,6 +289,7 @@ export type ProjectDraft = {
   ideaId: string;
   invites: { clerkUserId: string; role: ProjectMemberRole }[];
   githubRepoUrls: string[];
+  newGithubRepo: { owner: string; name: string; isPrivate: boolean } | null;
 };
 
 export function validateProjectDraft(draft: ProjectDraft): FieldErrors {

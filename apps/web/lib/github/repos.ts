@@ -3,7 +3,7 @@ import { deleteGithubConnection, getGithubConnection } from "@westride/db/github
 import { installationToken, publicReadToken, repoInstallationId } from "./app";
 import { getGithubAppConfig, requireGithubAppConfig } from "./config";
 import { GithubApiError, githubJson, githubText, isGithubStatus } from "./http";
-import type { GithubRepoRef } from "./repo-ref";
+import { isGithubRepoName, type GithubRepoRef } from "./repo-ref";
 import { getGithubUserToken } from "./user";
 
 type RawRepo = {
@@ -171,6 +171,25 @@ export async function hasGithubInstallations(userToken: string): Promise<boolean
 
 const REPOS_PER_INSTALLATION = 100;
 
+/** The app's installations the member can reach. Null when GitHub revoked their token. */
+async function listUserInstallations(
+  clerkUserId: string,
+  token: string,
+): Promise<RawInstallation[] | null> {
+  try {
+    const { installations } = await githubJson<{ installations: RawInstallation[] }>(
+      "/user/installations?per_page=100",
+      { token },
+    );
+    return installations;
+  } catch (error) {
+    if (await dropRevokedConnection(clerkUserId, error)) {
+      return null;
+    }
+    throw error;
+  }
+}
+
 /**
  * Everything the settings page shows: the member's GitHub account, where the
  * app is installed for them, and which repositories it can reach. Null when
@@ -187,16 +206,9 @@ export async function getGithubAccountAccess(
     return null;
   }
 
-  let rawInstallations: RawInstallation[];
-  try {
-    ({ installations: rawInstallations } = await githubJson<{
-      installations: RawInstallation[];
-    }>("/user/installations?per_page=100", { token }));
-  } catch (error) {
-    if (await dropRevokedConnection(clerkUserId, error)) {
-      return null;
-    }
-    throw error;
+  const rawInstallations = await listUserInstallations(clerkUserId, token);
+  if (!rawInstallations) {
+    return null;
   }
 
   const installations = rawInstallations.map(
@@ -233,6 +245,53 @@ export async function getGithubAccountAccess(
   };
 }
 
+export type GithubRepoOwner = {
+  login: string;
+  avatarUrl: string | null;
+  isOrganization: boolean;
+};
+
+/**
+ * Where the member can create repositories through WeStride: their own
+ * account and organizations, wherever the app is installed. GitHub still
+ * decides whether they may create in an organization. Null when they are
+ * not connected.
+ */
+export async function listGithubRepoOwners(
+  clerkUserId: string,
+): Promise<GithubRepoOwner[] | null> {
+  const [connection, token] = await Promise.all([
+    getGithubConnection(clerkUserId),
+    getGithubUserToken(clerkUserId),
+  ]);
+  if (!connection || !token) {
+    return null;
+  }
+  const rawInstallations = await listUserInstallations(clerkUserId, token);
+  if (!rawInstallations) {
+    return null;
+  }
+
+  const ownLogin = connection.login.toLowerCase();
+  return rawInstallations
+    .flatMap((raw): GithubRepoOwner[] => {
+      const account = raw.account;
+      if (!account) {
+        return [];
+      }
+      const isOrganization = account.type === "Organization";
+      if (!isOrganization && account.login.toLowerCase() !== ownLogin) {
+        return [];
+      }
+      return [{ login: account.login, avatarUrl: account.avatar_url, isOrganization }];
+    })
+    .sort(
+      (a, b) =>
+        Number(a.isOrganization) - Number(b.isOrganization) ||
+        a.login.localeCompare(b.login, "en"),
+    );
+}
+
 export class GithubWriteError extends Error {
   constructor(message: string) {
     super(message);
@@ -248,8 +307,6 @@ async function requireUserToken(clerkUserId: string): Promise<string> {
   }
   return token;
 }
-
-const REPO_NAME = /^[A-Za-z0-9._-]{1,100}$/;
 
 /**
  * Creates a repository as the member, under their account or an organization
@@ -267,7 +324,7 @@ export async function createGithubRepo(
   },
 ): Promise<GithubRepo> {
   const token = await requireUserToken(clerkUserId);
-  if (!REPO_NAME.test(input.name) || input.name === "." || input.name === "..") {
+  if (!isGithubRepoName(input.name)) {
     throw new GithubWriteError(
       "Use letters, numbers, dots, dashes, or underscores for the repository name.",
     );

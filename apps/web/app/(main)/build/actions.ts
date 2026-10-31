@@ -32,6 +32,7 @@ import {
 import {
   createProjectSchema,
   fieldErrorsFrom,
+  type CreateProjectInput,
   milestoneSchema,
   moveTicketSchema,
   reorderTicketSchema,
@@ -43,7 +44,14 @@ import { ticketPath, ticketsPath } from "@/lib/build/labels";
 import { isGithubAppConfigured } from "@/lib/github/config";
 import { GithubApiError } from "@/lib/github/http";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
-import { findReadableRepo, type GithubRepo } from "@/lib/github/repos";
+import {
+  createGithubRepo,
+  findReadableRepo,
+  GithubWriteError,
+  listGithubRepoOwners,
+  type GithubRepo,
+  type GithubRepoOwner,
+} from "@/lib/github/repos";
 import { resolveMemberProfiles, type MemberProfile } from "@/lib/ideas/members";
 
 export type { Failure } from "@/lib/build/access";
@@ -124,6 +132,45 @@ async function lookupRepo(url: string, userId: string): Promise<RepoLookup> {
   }
 }
 
+const NEW_REPO_NAME_FIELD = "newGithubRepo.name";
+const NEW_REPO_OWNER_FIELD = "newGithubRepo.owner";
+
+/** Creates the repository as the member. GitHub decides where they may create. */
+async function createRepoForProject(
+  spec: NonNullable<CreateProjectInput["newGithubRepo"]>,
+  userId: string,
+): Promise<{ status: "created"; repo: GithubRepo } | Failure> {
+  if (!isGithubAppConfigured()) {
+    return failure("GitHub is not set up on WeStride, so repositories cannot be created here.");
+  }
+  try {
+    const owners = await listGithubRepoOwners(userId);
+    if (!owners) {
+      const message = "Connect GitHub in Settings to create a repository.";
+      return failure(message, { [NEW_REPO_OWNER_FIELD]: message });
+    }
+    const owner = owners.find(
+      (candidate) => candidate.login.toLowerCase() === spec.owner.toLowerCase(),
+    );
+    if (!owner) {
+      const message = `WeStride is not installed on ${spec.owner}. Add it on GitHub, then try again.`;
+      return failure(message, { [NEW_REPO_OWNER_FIELD]: message });
+    }
+    const repo = await createGithubRepo(userId, {
+      organization: owner.isOrganization ? owner.login : undefined,
+      name: spec.name,
+      isPrivate: spec.isPrivate,
+    });
+    return { status: "created", repo };
+  } catch (error) {
+    if (error instanceof GithubWriteError) {
+      return failure(error.message, { [NEW_REPO_NAME_FIELD]: error.message });
+    }
+    console.error("GitHub repo create failed", error);
+    return failure(githubFailureMessage(error));
+  }
+}
+
 function toRepoInput(repo: GithubRepo, userId: string) {
   return {
     repoId: repo.id,
@@ -185,7 +232,36 @@ export async function loadProjectPrefill(
   };
 }
 
-export type CreateProjectResult = { status: "created"; id: string } | Failure;
+export type GithubRepoOwnersResult =
+  | { status: "ok"; owners: GithubRepoOwner[] }
+  | { status: "needs-connection" }
+  | { status: "unavailable" }
+  | Failure;
+
+/** Where the new-project dialog can create a repository for the member. */
+export async function loadGithubRepoOwners(): Promise<GithubRepoOwnersResult> {
+  const { userId } = await auth();
+  if (!userId) {
+    return failure("Sign in to create a repository.");
+  }
+  if (!isGithubAppConfigured()) {
+    return { status: "unavailable" };
+  }
+  try {
+    const owners = await listGithubRepoOwners(userId);
+    return owners ? { status: "ok", owners } : { status: "needs-connection" };
+  } catch (error) {
+    console.error("GitHub owner lookup failed", error);
+    return failure(githubFailureMessage(error));
+  }
+}
+
+export type CreateProjectResult =
+  | { status: "created"; id: string }
+  | (Failure & {
+      /** Set when the repository was created but the project was not, so a retry links it. */
+      createdRepoUrl?: string;
+    });
 
 export async function createProjectFromStudio(draft: unknown): Promise<CreateProjectResult> {
   const { userId } = await auth();
@@ -230,6 +306,18 @@ export async function createProjectFromStudio(draft: unknown): Promise<CreatePro
     }
   }
 
+  // Last, so nothing else can still fail after it exists on GitHub.
+  let newRepo: GithubRepo | null = null;
+  if (input.newGithubRepo) {
+    const creation = await createRepoForProject(input.newGithubRepo, userId);
+    if (creation.status === "error") {
+      return creation;
+    }
+    newRepo = creation.repo;
+    // First linked is primary.
+    repos.unshift(newRepo);
+  }
+
   try {
     const created = await createProject({
       name: input.name,
@@ -253,6 +341,14 @@ export async function createProjectFromStudio(draft: unknown): Promise<CreatePro
     return { status: "created", id: created.id };
   } catch (error) {
     console.error("Project create failed", error);
+    if (newRepo) {
+      return {
+        ...failure(
+          `${newRepo.fullName} was created on GitHub, but the project could not be saved. Try again to link it.`,
+        ),
+        createdRepoUrl: newRepo.htmlUrl,
+      };
+    }
     return failure("The project could not be saved. Try again.");
   }
 }

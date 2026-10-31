@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
+import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
 import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
 import { Divider } from "@astryxdesign/core/Divider";
 import { FieldStatus } from "@astryxdesign/core/FieldStatus";
@@ -13,6 +14,7 @@ import { Heading } from "@astryxdesign/core/Heading";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
+import { Link } from "@astryxdesign/core/Link";
 import { List, ListItem } from "@astryxdesign/core/List";
 import {
   SegmentedControl,
@@ -38,13 +40,18 @@ import {
   type ProjectDraft,
 } from "@/lib/build/schema";
 import { PROJECT_ROLE_LABELS, projectPath } from "@/lib/build/labels";
-import { parseGithubRepoRef } from "@/lib/github/repo-ref";
+import { parseGithubRepoRef, suggestGithubRepoName } from "@/lib/github/repo-ref";
 import { searchIdeaPeople, type IdeaPersonHit } from "../ideas/actions";
 import {
   createProjectFromStudio,
+  loadGithubRepoOwners,
   loadProjectPrefill,
+  type GithubRepoOwnersResult,
   type ProjectPrefill,
 } from "./actions";
+
+const CONNECT_GITHUB_HREF = "/integrations/github/connect?returnTo=/settings";
+const INSTALL_GITHUB_HREF = "/integrations/github/connect?intent=install&returnTo=/settings";
 
 export type ProjectCreator = {
   name: string;
@@ -112,9 +119,41 @@ export function CreateProjectDialog({
   );
   const [repoInput, setRepoInput] = useState("");
   const [repoInputError, setRepoInputError] = useState<string | null>(null);
+  const [repoOwners, setRepoOwners] = useState<GithubRepoOwnersResult | null>(null);
+  const [isCreatingRepo, setIsCreatingRepo] = useState(false);
+  const [newRepoOwner, setNewRepoOwner] = useState("");
+  /** Null follows the project name until the member types their own. */
+  const [newRepoName, setNewRepoName] = useState<string | null>(null);
+  const [newRepoIsPrivate, setNewRepoIsPrivate] = useState(true);
   const [picker, setPicker] = useState<IdeaPersonHit | null>(null);
   const [serverErrors, setServerErrors] = useState<FieldErrors>({});
   const [formMessage, setFormMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || repoOwners) {
+      return;
+    }
+    let isCurrent = true;
+    loadGithubRepoOwners()
+      .then((result) => {
+        if (!isCurrent) {
+          return;
+        }
+        setRepoOwners(result);
+        if (result.status === "ok") {
+          setNewRepoOwner((current) => current || (result.owners[0]?.login ?? ""));
+        }
+      })
+      .catch((error: unknown) => {
+        console.error("GitHub owner lookup failed", error);
+      });
+    return () => {
+      isCurrent = false;
+    };
+  }, [isOpen, repoOwners]);
+
+  const owners = repoOwners?.status === "ok" ? repoOwners.owners : [];
+  const effectiveRepoName = newRepoName ?? suggestGithubRepoName(name);
 
   const draft: ProjectDraft = {
     name,
@@ -126,6 +165,10 @@ export function CreateProjectDialog({
       role: invite.role,
     })),
     githubRepoUrls: repoUrls,
+    newGithubRepo:
+      isCreatingRepo && owners.length > 0
+        ? { owner: newRepoOwner, name: effectiveRepoName, isPrivate: newRepoIsPrivate }
+        : null,
   };
   const errors: FieldErrors = {
     ...(submitted ? validateProjectDraft(draft) : {}),
@@ -238,6 +281,13 @@ export function CreateProjectDialog({
       try {
         const result = await createProjectFromStudio(draft);
         if (result.status === "error") {
+          const createdRepoUrl = result.createdRepoUrl;
+          if (createdRepoUrl) {
+            setRepoUrls((current) =>
+              current.includes(createdRepoUrl) ? current : [createdRepoUrl, ...current],
+            );
+            setIsCreatingRepo(false);
+          }
           setServerErrors(result.fieldErrors);
           setFormMessage(result.message);
           return;
@@ -336,7 +386,8 @@ export function CreateProjectDialog({
                     Repositories
                   </Heading>
                   <Text type="supporting">
-                    Where the code lives. Private repositories need your GitHub
+                    Where the code lives. Link repositories you already have, or
+                    create a new one. Private repositories need your GitHub
                     connection from Settings. You can add more later.
                   </Text>
                 </VStack>
@@ -382,6 +433,85 @@ export function CreateProjectDialog({
                       />
                     ))}
                   </List>
+                ) : null}
+                {owners.length > 0 ? (
+                  <VStack gap={4}>
+                    <CheckboxInput
+                      label="Create a new GitHub repository"
+                      description="Created with a README when you create the project, and linked as its primary repository."
+                      value={isCreatingRepo}
+                      onChange={(checked) => {
+                        setIsCreatingRepo(checked);
+                        clearServer("newGithubRepo.owner");
+                        clearServer("newGithubRepo.name");
+                      }}
+                      isDisabled={isSaving}
+                    />
+                    {isCreatingRepo ? (
+                      <FormLayout defaultOptionality="required">
+                        <Selector
+                          label="Owner"
+                          options={owners.map((owner) => ({
+                            value: owner.login,
+                            label: owner.login,
+                            description: owner.isOrganization
+                              ? "Organization"
+                              : "Your account",
+                          }))}
+                          value={newRepoOwner || undefined}
+                          placeholder="Choose an account"
+                          onChange={(value) => {
+                            setNewRepoOwner(value);
+                            clearServer("newGithubRepo.owner");
+                          }}
+                          hasSearch={owners.length > 8}
+                          isRequired
+                          isDisabled={isSaving}
+                          status={fieldStatus(errors["newGithubRepo.owner"])}
+                        />
+                        <TextInput
+                          label="Repository name"
+                          value={effectiveRepoName}
+                          onChange={(value) => {
+                            setNewRepoName(value);
+                            clearServer("newGithubRepo.name");
+                          }}
+                          placeholder="tool-library-app"
+                          description={
+                            newRepoOwner && effectiveRepoName
+                              ? `github.com/${newRepoOwner}/${effectiveRepoName}`
+                              : "Letters, numbers, dots, dashes, or underscores."
+                          }
+                          isRequired
+                          isDisabled={isSaving}
+                          status={fieldStatus(errors["newGithubRepo.name"])}
+                        />
+                        <SegmentedControl
+                          label="Visibility on GitHub"
+                          value={newRepoIsPrivate ? "private" : "public"}
+                          onChange={(value) => setNewRepoIsPrivate(value === "private")}
+                        >
+                          <SegmentedControlItem value="private" label="Private" />
+                          <SegmentedControlItem value="public" label="Public" />
+                        </SegmentedControl>
+                      </FormLayout>
+                    ) : null}
+                  </VStack>
+                ) : repoOwners?.status === "ok" ? (
+                  <Text type="supporting">
+                    To create a new repository from here,{" "}
+                    <Link href={INSTALL_GITHUB_HREF} isExternalLink>
+                      install WeStride on your GitHub account or an organization
+                    </Link>
+                    .
+                  </Text>
+                ) : repoOwners?.status === "needs-connection" ? (
+                  <Text type="supporting">
+                    <Link href={CONNECT_GITHUB_HREF} isExternalLink>
+                      Connect GitHub
+                    </Link>{" "}
+                    to create a new repository from here.
+                  </Text>
                 ) : null}
               </VStack>
 
