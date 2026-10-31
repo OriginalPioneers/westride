@@ -19,6 +19,11 @@ export function IdeaTypeBadge({ type }: { type: IdeaType }) {
   );
 }
 
+/** An imported idea or project that still has no founder or owner. */
+export function UnclaimedBadge() {
+  return <Badge variant="orange" label="Unclaimed" />;
+}
+
 // Icon takes a component, which a server component cannot hand across the
 // boundary. The badge is client-rendered so the star stays sized.
 export function FeaturedBadge() {

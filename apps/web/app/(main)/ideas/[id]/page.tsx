@@ -14,10 +14,12 @@ import { listAgentsForIdea } from "@westride/db/agents";
 import { listProjectsForIdea } from "@westride/db/build";
 import { getIdea } from "@westride/db/ideas";
 import { PROJECT_STATUS_LABELS, projectPath } from "@/lib/build/labels";
-import { IDEA_ROLE_LABELS, ideasPath } from "@/lib/ideas/filters";
+import { claimCardProps } from "@/lib/claims/view";
+import { IDEA_ROLE_LABELS, ideaPath, ideasPath } from "@/lib/ideas/filters";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
 import { LinkedAgents } from "../../agents/linked-agents";
-import { FeaturedBadge, IdeaTypeBadge } from "../idea-badges";
+import { ClaimIdeaCard } from "../claim-idea-card";
+import { FeaturedBadge, IdeaTypeBadge, UnclaimedBadge } from "../idea-badges";
 import { BuildProjectButton } from "./build-project-button";
 import { EditIdeaButton } from "./edit-idea-button";
 import { IdeaFactoryButton } from "./factory/idea-factory-button";
@@ -57,11 +59,12 @@ export default async function IdeaPage({ params }: { params: Params }) {
   const isMember =
     userId !== null &&
     idea.members.some((member) => member.clerkUserId === userId);
-  const [profiles, projects, agents, account] = await Promise.all([
+  const [profiles, projects, agents, account, claim] = await Promise.all([
     resolveMemberProfiles(idea.members.map((member) => member.clerkUserId)),
     listProjectsForIdea(idea.id, { clerkUserId: userId }),
     listAgentsForIdea(idea.id, { clerkUserId: userId }),
     isMember ? currentUser() : Promise.resolve(null),
+    claimCardProps(idea, userId, { returnTo: ideaPath(idea.id), surface: "idea" }),
   ]);
   const creator = account
     ? {
@@ -105,6 +108,7 @@ export default async function IdeaPage({ params }: { params: Params }) {
               <HStack gap={2} vAlign="center" wrap="wrap">
                 <IdeaTypeBadge type={idea.type} />
                 {idea.isFeatured ? <FeaturedBadge /> : null}
+                {claim ? <UnclaimedBadge /> : null}
                 {!idea.isPublic ? (
                   <Text type="supporting">
                     Private · visible to members only
@@ -137,6 +141,8 @@ export default async function IdeaPage({ params }: { params: Params }) {
       content={
         <LayoutContent>
           <VStack gap={8}>
+            {claim ? <ClaimIdeaCard {...claim} /> : null}
+
             <Markdown headingLevelStart={2} contentWidth="100%">
               {idea.description}
             </Markdown>
@@ -254,6 +260,16 @@ export default async function IdeaPage({ params }: { params: Params }) {
                       );
                     })}
                   </VStack>
+                </VStack>
+              </>
+            ) : idea.origin === "IMPORT" ? (
+              <>
+                <Divider />
+                <VStack gap={3}>
+                  <Heading level={2}>Team</Heading>
+                  <Text type="supporting">
+                    No team yet. Whoever claims this idea becomes its founder.
+                  </Text>
                 </VStack>
               </>
             ) : null}

@@ -20,6 +20,7 @@ import {
   ideas,
   ideaTags,
   tags,
+  type ContentOrigin,
   type Country,
   type Idea,
   type IdeaGithubRepo,
@@ -50,6 +51,8 @@ export type IdeaInput = {
   type: IdeaType;
   isFeatured: boolean;
   isPublic: boolean;
+  /** Defaults to MEMBER. IMPORT ideas have no team and can be claimed. */
+  origin?: ContentOrigin;
   /** May be empty. One row per user; a later duplicate wins. */
   members: IdeaMemberInput[];
   /** ISO 3166-1 alpha-2 codes. May be empty. Unknown codes are dropped. */
@@ -421,6 +424,7 @@ export async function createIdea(
       type: input.type,
       isFeatured: input.isFeatured,
       isPublic: input.isPublic,
+      origin: input.origin ?? "MEMBER",
     })
     .returning({ id: ideas.id });
 

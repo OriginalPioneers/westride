@@ -9,8 +9,10 @@ import {
   totalTickets,
   type ProjectWithDetails,
 } from "@westride/db/build";
+import { isClaimableProject } from "@westride/db/claim-rules";
 import { projectPath } from "@/lib/build/labels";
 import { markdownExcerpt } from "@/lib/ideas/excerpt";
+import { UnclaimedBadge } from "../ideas/idea-badges";
 import { ProjectStatusBadge } from "./project-badges";
 
 export function ProjectCard({ project }: { project: ProjectWithDetails }) {
@@ -24,6 +26,7 @@ export function ProjectCard({ project }: { project: ProjectWithDetails }) {
       <VStack gap={3}>
         <HStack gap={2} vAlign="center" wrap="wrap">
           <ProjectStatusBadge status={project.status} />
+          {isClaimableProject(project) ? <UnclaimedBadge /> : null}
           {!project.isPublic ? <Text type="supporting">Private</Text> : null}
         </HStack>
         <VStack gap={1}>

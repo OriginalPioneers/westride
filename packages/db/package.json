@@ -20,6 +20,8 @@
     "./builder": "./src/builder-progress.ts",
     "./build": "./src/build.ts",
     "./build-rules": "./src/build-rules.ts",
+    "./claims": "./src/claims.ts",
+    "./claim-rules": "./src/claim-rules.ts",
     "./build-agents": "./src/build-agents.ts",
     "./agents": "./src/agents.ts",
     "./agent-rules": "./src/agent-rules.ts",

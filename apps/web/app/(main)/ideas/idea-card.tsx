@@ -4,10 +4,11 @@ import { Link } from "@astryxdesign/core/Link";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
+import { isClaimableIdea } from "@westride/db/claim-rules";
 import type { IdeaWithDetails } from "@westride/db/ideas";
 import { markdownExcerpt } from "@/lib/ideas/excerpt";
 import { ideaPath, ideasPath } from "@/lib/ideas/filters";
-import { FeaturedBadge, IdeaTypeBadge } from "./idea-badges";
+import { FeaturedBadge, IdeaTypeBadge, UnclaimedBadge } from "./idea-badges";
 
 const VISIBLE_TAGS = 4;
 const VISIBLE_COUNTRIES = 3;
@@ -30,6 +31,7 @@ export function IdeaCard({ idea }: { idea: IdeaWithDetails }) {
         <HStack gap={2} vAlign="center" wrap="wrap">
           <IdeaTypeBadge type={idea.type} />
           {idea.isFeatured ? <FeaturedBadge /> : null}
+          {isClaimableIdea(idea) ? <UnclaimedBadge /> : null}
         </HStack>
         <VStack gap={1}>
           <Heading level={3} maxLines={2}>

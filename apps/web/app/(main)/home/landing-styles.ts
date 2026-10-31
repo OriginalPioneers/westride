@@ -188,9 +188,48 @@ export const LANDING_STYLES = `
   animation-delay: calc(var(--duration-slow-max) * var(--wl-star-delay));
 }
 
-.wl-hero-content {
+.wl-hero .wl-hero-content {
   position: relative;
   z-index: 1;
+  padding-inline: var(--spacing-6);
+  padding-block: calc(var(--spacing-12) * 2.25) calc(var(--spacing-12) * 2);
+}
+
+/* On a large screen the hero fills what the scroll area shows (the viewport
+   less the one-row site footer), and the globe shrinks on shorter windows so
+   the connection strip still fits above the fold. */
+@media (min-width: 64rem) and (min-height: 40rem) {
+  .wl-hero .wl-hero-content {
+    --wl-hero-pad: var(--spacing-10);
+    justify-content: center;
+    padding-block: var(--wl-hero-pad);
+    min-height: calc(
+      100dvh - var(--spacing-12) - var(--border-width) - var(--wl-hero-pad) * 2
+    );
+  }
+
+  .wl-hero-stage .wl-globe {
+    max-width: clamp(
+      calc(var(--spacing-12) * 7),
+      calc(100dvh - var(--spacing-12) * 9),
+      calc(var(--spacing-12) * 11)
+    );
+  }
+}
+
+@media (min-width: 64rem) and (min-height: 40rem) and (max-height: 56rem) {
+  .wl-hero .wl-hero-content {
+    --wl-hero-pad: var(--spacing-6);
+  }
+
+  .wl-hero .wl-wordmark {
+    width: min(100%, calc(var(--spacing-12) * 5));
+  }
+}
+
+/* The globe and the import panel share one cell, the panel in front. */
+.wl-hero-stage > * {
+  grid-area: 1 / 1;
 }
 
 .wl-hero-copy > *,
@@ -205,6 +244,23 @@ export const LANDING_STYLES = `
 .wl-hero-copy > :nth-child(5) { animation-delay: var(--duration-medium-max); }
 .wl-hero-copy > :nth-child(6) { animation-delay: var(--duration-slow-min); }
 .wl-hero-connect { animation-delay: var(--duration-slow); }
+
+.wl-hero-import {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: calc(var(--spacing-12) * 10);
+  margin-inline: auto;
+  box-sizing: border-box;
+  box-shadow: 0 0 var(--spacing-8) color-mix(in srgb, var(--wl-indigo) 35%, transparent);
+  animation: wl-rise var(--duration-slow) var(--ease-standard) both;
+  animation-delay: var(--duration-medium-max);
+  border-radius: var(--radius-container);
+  border: var(--border-width) solid var(--color-border);
+  background: color-mix(in srgb, var(--color-background-surface) 72%, transparent);
+  -webkit-backdrop-filter: blur(var(--spacing-3));
+  backdrop-filter: blur(var(--spacing-3));
+}
 
 /* ---------- Connection strip ---------- */
 
@@ -247,21 +303,25 @@ export const LANDING_STYLES = `
 }
 
 .wl-connect-tile,
-.wl-app-tile {
+.wl-app-tile,
+.wl-platform-tile {
   height: 100%;
   transition:
     transform var(--duration-medium) var(--ease-standard),
     box-shadow var(--duration-medium) var(--ease-standard);
 }
 
-.wl-app-tile {
+.wl-app-tile,
+.wl-platform-tile {
   background: color-mix(in srgb, var(--color-background-body) 45%, transparent);
 }
 
 .wl-connect-tile:hover,
 .wl-connect-tile:focus-within,
 .wl-app-tile:hover,
-.wl-app-tile:focus-within {
+.wl-app-tile:focus-within,
+.wl-platform-tile:hover,
+.wl-platform-tile:focus-within {
   transform: translateY(calc(-1 * var(--spacing-0-5)));
   box-shadow: var(--shadow-med);
 }
@@ -306,6 +366,8 @@ export const LANDING_STYLES = `
 }
 
 .wl-wordmark {
+  width: min(100%, calc(var(--spacing-12) * 7));
+  height: auto;
   animation: wl-float calc(var(--duration-slow-max) * 4) var(--ease-standard) infinite;
   filter: drop-shadow(0 var(--spacing-2) var(--spacing-6) color-mix(in srgb, var(--wl-purple) 45%, transparent));
 }
@@ -318,6 +380,40 @@ export const LANDING_STYLES = `
     var(--wl-blue),
     var(--wl-teal),
     var(--wl-indigo)
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: wl-shimmer calc(var(--duration-slow-max) * 6) linear infinite;
+}
+
+/* Studio names in the hero lede: brighter than the surrounding sentence. */
+.wl-studio-link,
+.wl-studio-link .astryx-text {
+  color: var(--color-on-dark);
+  -webkit-text-fill-color: var(--color-on-dark);
+}
+
+/* Meta product names: Facebook blue gradient, underline on hover only. */
+.wl-meta-link {
+  color: var(--color-data-blue-3);
+}
+
+/* The external icon is announced to screen readers. Keep the sentence as text. */
+.wl-meta-link > .astryx-icon {
+  display: none;
+}
+
+.wl-meta-link .astryx-text {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-data-categorical-blue),
+    var(--color-data-blue-3),
+    var(--color-data-blue-2),
+    var(--color-data-blue-3),
+    var(--color-data-categorical-blue)
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -535,11 +631,14 @@ export const LANDING_STYLES = `
   .wl-hero-sky .wl-node,
   .wl-hero-copy > *,
   .wl-hero-connect,
+  .wl-hero-import,
   .wl-connect-tile,
   .wl-app-tile,
+  .wl-platform-tile,
   .wl-globe,
   .wl-wordmark,
   .wl-gradient-text,
+  .wl-meta-link .astryx-text,
   .wl-glow-border,
   .wl-track .wl-runner,
   .wl-marquee-track,

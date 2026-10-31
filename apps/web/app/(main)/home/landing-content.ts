@@ -141,6 +141,33 @@ export const MOBILE_APPS: MobileApp[] = [
   },
 ];
 
+/** Compact links under the mobile apps: the platform, without a store. */
+export type PlatformSurface = {
+  name: string;
+  detail: string;
+  href: string;
+  label: string;
+  logo?: string;
+  icon?: IconComponent;
+};
+
+export const PLATFORM_SURFACES: PlatformSurface[] = [
+  {
+    name: "API",
+    detail: "Public REST",
+    href: "/api",
+    label: "WeStride public API",
+    icon: CodeBracketSquareIcon,
+  },
+  {
+    name: "MCP",
+    detail: "AI assistants",
+    href: "/mcp",
+    label: "WeStride MCP server",
+    logo: "/logos/model-context-protocol.svg",
+  },
+];
+
 export type MetaModel = {
   name: string;
   role: string;

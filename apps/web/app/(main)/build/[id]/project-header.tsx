@@ -3,6 +3,7 @@ import { Link } from "@astryxdesign/core/Link";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import type { ReactNode } from "react";
+import { UnclaimedBadge } from "../../ideas/idea-badges";
 import { ProjectStatusBadge } from "../project-badges";
 import type { ProjectPageContext } from "./load-project";
 import { ProjectNav, type ProjectSection } from "./project-nav";
@@ -28,6 +29,7 @@ export function ProjectHeader({
           <VStack gap={2}>
             <HStack gap={2} vAlign="center" wrap="wrap">
               <ProjectStatusBadge status={project.status} />
+              {context.isClaimable ? <UnclaimedBadge /> : null}
               {!project.isPublic ? (
                 <Text type="supporting">Private · visible to the team only</Text>
               ) : null}

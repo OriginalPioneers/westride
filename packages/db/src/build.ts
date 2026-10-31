@@ -35,6 +35,7 @@ import {
   type TicketStatus,
 } from "./build-schema";
 import { getDb } from "./client";
+import type { ContentOrigin } from "./origin-schema";
 
 export type ProjectWithDetails = Project & {
   members: ProjectMember[];
@@ -220,13 +221,21 @@ export type ProjectInput = {
   isPublic: boolean;
   /** The idea this project builds, if any. */
   ideaId: string | null;
-  /** At least one owner. A repeated user keeps the last role given. */
+  /** Defaults to PLANNING. */
+  status?: ProjectStatus;
+  /** Defaults to MEMBER. IMPORT projects start with no team and can be claimed. */
+  origin?: ContentOrigin;
+  /**
+   * At least one owner, unless the project is an import. A repeated user
+   * keeps the last role given.
+   */
   members: ProjectMemberInput[];
 };
 
 export async function createProject(input: ProjectInput): Promise<{ id: string }> {
   const members = dedupeMembers(input.members);
-  if (!members.some((member) => member.role === "OWNER")) {
+  const origin = input.origin ?? "MEMBER";
+  if (origin === "MEMBER" && !members.some((member) => member.role === "OWNER")) {
     throw new Error(OWNER_REQUIRED);
   }
   const db = getDb();
@@ -237,14 +246,18 @@ export async function createProject(input: ProjectInput): Promise<{ id: string }
       description: input.description,
       isPublic: input.isPublic,
       ideaId: input.ideaId,
+      status: input.status ?? "PLANNING",
+      origin,
     })
     .returning({ id: projects.id });
   if (!created) {
     throw new Error("The project could not be saved.");
   }
-  await db
-    .insert(projectMembers)
-    .values(members.map((member) => ({ projectId: created.id, ...member })));
+  if (members.length > 0) {
+    await db
+      .insert(projectMembers)
+      .values(members.map((member) => ({ projectId: created.id, ...member })));
+  }
   return created;
 }
 

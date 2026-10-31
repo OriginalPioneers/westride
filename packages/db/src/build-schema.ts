@@ -8,7 +8,7 @@
 // tickets; the columns those need are here from the start so the first
 // migration is the only one the core tables need.
 // ---------------------------------------------------------------------------
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
@@ -23,6 +23,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { contentOrigin } from "./origin-schema";
 import { ideas } from "./schema";
 
 export const projectStatus = pgEnum("project_status", [
@@ -72,6 +73,7 @@ export const projects = pgTable(
     /** The idea this project builds, when it came from one. */
     ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "set null" }),
     isPublic: boolean("is_public").notNull().default(false),
+    origin: contentOrigin("origin").notNull().default("MEMBER"),
     /** The next ticket number to hand out. Tickets read as PRJ-12 style keys. */
     nextTicketNumber: integer("next_ticket_number").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
@@ -83,6 +85,7 @@ export const projects = pgTable(
   },
   (table) => [
     index("projects_idea_id_idx").on(table.ideaId),
+    index("projects_origin_idx").on(table.origin),
     index("projects_visibility_idx").on(table.isPublic),
     index("projects_updated_at_idx").on(table.updatedAt),
   ],
@@ -124,8 +127,8 @@ export const projectRepos = pgTable(
     isPrivate: boolean("is_private").notNull(),
     /** The repository agents work in unless a ticket says otherwise. */
     isPrimary: boolean("is_primary").notNull().default(false),
-    /** Clerk user id of the member who linked the repository. */
-    linkedByClerkUserId: text("linked_by_clerk_user_id").notNull(),
+    /** Clerk user id of the member who linked the repository. Null when imported. */
+    linkedByClerkUserId: text("linked_by_clerk_user_id"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -330,6 +333,64 @@ export const agentRunEvents = pgTable(
   ],
 );
 
+export const claimRequestStatus = pgEnum("claim_request_status", [
+  "PENDING",
+  "APPROVED",
+  "DENIED",
+]);
+
+/**
+ * A member asking to become the founder of an imported idea (and the owner
+ * of the project built from it) without proving it through GitHub. The team
+ * reviews it from an email that carries a one-time link.
+ */
+export const claimRequests = pgTable(
+  "claim_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    /** The imported project that goes with the idea, when there is one. */
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+    /** Clerk user id of the person asking. */
+    clerkUserId: text("clerk_user_id").notNull(),
+    /** Why they should have it, in their words. */
+    message: text("message").notNull().default(""),
+    status: claimRequestStatus("status").notNull().default("PENDING"),
+    /** SHA-256 of the secret in the review links. The secret itself is only in the email. */
+    reviewTokenHash: text("review_token_hash").notNull(),
+    decidedAt: timestamp("decided_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // One open request per person per idea.
+    uniqueIndex("claim_requests_pending_unique")
+      .on(table.ideaId, table.clerkUserId)
+      .where(sql`${table.status} = 'PENDING'`),
+    index("claim_requests_idea_id_idx").on(table.ideaId),
+    index("claim_requests_clerk_user_id_idx").on(table.clerkUserId),
+  ],
+);
+
+export const claimRequestsRelations = relations(claimRequests, ({ one }) => ({
+  idea: one(ideas, {
+    fields: [claimRequests.ideaId],
+    references: [ideas.id],
+  }),
+  project: one(projects, {
+    fields: [claimRequests.projectId],
+    references: [projects.id],
+  }),
+}));
+
 export const projectsRelations = relations(projects, ({ one, many }) => ({
   idea: one(ideas, {
     fields: [projects.ideaId],
@@ -437,3 +498,6 @@ export type AgentRun = typeof agentRuns.$inferSelect;
 export type NewAgentRun = typeof agentRuns.$inferInsert;
 export type AgentRunEvent = typeof agentRunEvents.$inferSelect;
 export type NewAgentRunEvent = typeof agentRunEvents.$inferInsert;
+export type ClaimRequestStatus = (typeof claimRequestStatus.enumValues)[number];
+export type ClaimRequest = typeof claimRequests.$inferSelect;
+export type NewClaimRequest = typeof claimRequests.$inferInsert;

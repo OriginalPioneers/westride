@@ -15,13 +15,16 @@ type RawRepo = {
   default_branch: string;
   private: boolean;
   archived: boolean;
-  owner: { login: string };
+  owner: { id: number; login: string };
+  topics?: string[];
   permissions?: { admin?: boolean; push?: boolean; pull?: boolean };
 };
 
 export type GithubRepo = {
   id: number;
   owner: string;
+  /** GitHub's numeric id for the owning user or organization. */
+  ownerId: number;
   name: string;
   fullName: string;
   htmlUrl: string;
@@ -29,14 +32,19 @@ export type GithubRepo = {
   defaultBranch: string;
   isPrivate: boolean;
   isArchived: boolean;
+  /** Repository topics, as set on GitHub. */
+  topics: string[];
   /** Whether the member can push. Null when read without their token. */
   canPush: boolean | null;
+  /** Whether the member administers the repository. Null when read without their token. */
+  canAdmin: boolean | null;
 };
 
 function toRepo(raw: RawRepo, viaMember: boolean): GithubRepo {
   return {
     id: raw.id,
     owner: raw.owner.login,
+    ownerId: raw.owner.id,
     name: raw.name,
     fullName: raw.full_name,
     htmlUrl: raw.html_url,
@@ -44,12 +52,49 @@ function toRepo(raw: RawRepo, viaMember: boolean): GithubRepo {
     defaultBranch: raw.default_branch,
     isPrivate: raw.private,
     isArchived: raw.archived,
+    topics: raw.topics ?? [],
     canPush: viaMember ? Boolean(raw.permissions?.push) : null,
+    canAdmin: viaMember ? Boolean(raw.permissions?.admin) : null,
   };
 }
 
 function repoPath(ref: GithubRepoRef): string {
   return `/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}`;
+}
+
+export type MemberRepoRead =
+  | { status: "found"; repo: GithubRepo }
+  | { status: "not-visible" }
+  | { status: "needs-connection" };
+
+/**
+ * Reads a repository by GitHub's id with the member's own token, so the
+ * result carries their permissions. The id survives renames and transfers.
+ */
+export async function readRepoAsMember(
+  clerkUserId: string,
+  repoId: number,
+): Promise<MemberRepoRead> {
+  if (getGithubAppConfig() === null) {
+    return { status: "needs-connection" };
+  }
+  const token = await getGithubUserToken(clerkUserId);
+  if (!token) {
+    return { status: "needs-connection" };
+  }
+  try {
+    const raw = await githubJson<RawRepo>(`/repositories/${repoId}`, { token });
+    return { status: "found", repo: toRepo(raw, true) };
+  } catch (error) {
+    if (await dropRevokedConnection(clerkUserId, error)) {
+      return { status: "needs-connection" };
+    }
+    const isRateLimited = error instanceof GithubApiError && error.isRateLimited;
+    if (isGithubStatus(error, 403, 404) && !isRateLimited) {
+      return { status: "not-visible" };
+    }
+    throw error;
+  }
 }
 
 /** A user token GitHub has stopped accepting. The member must reconnect. */

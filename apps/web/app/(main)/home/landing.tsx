@@ -4,8 +4,10 @@ import Image from "next/image";
 import {
   useLayoutEffect,
   useRef,
+  type ComponentType,
   type CSSProperties,
   type ReactNode,
+  type SVGProps,
 } from "react";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Button } from "@astryxdesign/core/Button";
@@ -43,6 +45,7 @@ import {
   META_MODELS,
   MILESTONES,
   MOBILE_APPS,
+  PLATFORM_SURFACES,
   SOURCE_URL,
   STACK_ROWS,
   STUDIOS,
@@ -53,9 +56,11 @@ import {
   type HeroConnection,
   type Integration,
   type MobileApp,
+  type PlatformSurface,
   type StackLogo,
 } from "./landing-content";
 import { HeroGlobe } from "./hero-globe";
+import { ImportRepoForm } from "./import-repo-form";
 import { LANDING_STYLES } from "./landing-styles";
 
 export type LandingStats = {
@@ -77,12 +82,6 @@ const CONTENT_WIDTH = 1120;
 const bandPadding: CSSProperties = {
   paddingInline: "var(--spacing-6)",
   paddingBlock: "calc(var(--spacing-12) * 2)",
-};
-
-const heroPadding: CSSProperties = {
-  paddingInline: "var(--spacing-6)",
-  paddingBlockStart: "calc(var(--spacing-12) * 2.25)",
-  paddingBlockEnd: "calc(var(--spacing-12) * 2)",
 };
 
 const centered: CSSProperties = {
@@ -227,33 +226,46 @@ function SectionIntro({
 /** Light tile so dark artwork stays legible in both color modes. */
 function LogoTile({
   src,
+  icon,
   alt = "",
   wide = false,
   size = "md",
 }: {
-  src: string;
+  src?: string;
+  icon?: ComponentType<SVGProps<SVGSVGElement>>;
   alt?: string;
   wide?: boolean;
-  size?: "sm" | "md";
+  size?: "xs" | "sm" | "md";
 }) {
-  const side = size === "sm" ? "var(--spacing-8)" : "var(--spacing-12)";
+  const side =
+    size === "xs"
+      ? "var(--spacing-6)"
+      : size === "sm"
+        ? "var(--spacing-8)"
+        : "var(--spacing-12)";
   return (
     <Theme theme={themes[defaultThemeSlug]} mode="light">
       <Card
         className="wl-logo-tile"
-        padding={size === "sm" ? 1.5 : 2}
+        padding={size === "xs" ? 1 : size === "sm" ? 1.5 : 2}
         width={wide ? `calc(${side} * 2.5)` : side}
         height={side}
       >
-        <Image
-          src={src}
-          alt={alt}
-          width={120}
-          height={48}
-          // The optimizer fetches this file without a browser user agent,
-          // and the proxy refuses that request.
-          unoptimized
-        />
+        {src != null ? (
+          <Image
+            src={src}
+            alt={alt}
+            width={120}
+            height={48}
+            // The optimizer fetches this file without a browser user agent,
+            // and the proxy refuses that request.
+            unoptimized
+          />
+        ) : icon != null ? (
+          <Center>
+            <Icon icon={icon} size="xsm" />
+          </Center>
+        ) : null}
       </Card>
     </Theme>
   );
@@ -538,6 +550,30 @@ function MobileAppTile({ app }: { app: MobileApp }) {
   );
 }
 
+function PlatformTile({ surface }: { surface: PlatformSurface }) {
+  return (
+    <ClickableCard
+      className="wl-platform-tile"
+      href={surface.href}
+      label={surface.label}
+      padding={2}
+      variant="transparent"
+    >
+      <HStack gap={2} vAlign="center" wrap="nowrap">
+        <LogoTile src={surface.logo} icon={surface.icon} size="xs" />
+        <VStack gap={0}>
+          <Text size="sm" weight="semibold" textWrap="nowrap">
+            {surface.name}
+          </Text>
+          <Text type="supporting" size="xsm" textWrap="nowrap">
+            {surface.detail}
+          </Text>
+        </VStack>
+      </HStack>
+    </ClickableCard>
+  );
+}
+
 function ConnectionStrip({
   connections,
   isSignedIn,
@@ -575,13 +611,56 @@ function ConnectionStrip({
         padding={4}
       >
         <Eyebrow>Take it with you</Eyebrow>
-        <Grid columns={{ minWidth: 150, max: 2 }} gap={2}>
-          {MOBILE_APPS.map((app) => (
-            <MobileAppTile key={app.href} app={app} />
-          ))}
-        </Grid>
+        <VStack gap={2}>
+          <Grid columns={{ minWidth: 150, max: 2 }} gap={2}>
+            {MOBILE_APPS.map((app) => (
+              <MobileAppTile key={app.href} app={app} />
+            ))}
+          </Grid>
+          <Grid columns={{ minWidth: 150, max: 2 }} gap={2}>
+            {PLATFORM_SURFACES.map((surface) => (
+              <PlatformTile key={surface.href} surface={surface} />
+            ))}
+          </Grid>
+        </VStack>
       </VStack>
     </HStack>
+  );
+}
+
+const META_AI_URL = "https://meta.ai";
+const MUSE_CODE_URL = "https://dev.meta.ai/lp/muse-code";
+const MUSE_URL = "https://ai.meta.com/muse/";
+const META_MODELS_URL = "https://ai.meta.com/";
+
+function StudioLink({ where }: { where: string }) {
+  const studio = STUDIOS.find((item) => item.where === where);
+  if (!studio) return where;
+  return (
+    <Link
+      className="wl-studio-link"
+      href={studio.href}
+      hasUnderline
+      weight="bold"
+      color="primary"
+      type="inherit"
+    >
+      {studio.where}
+    </Link>
+  );
+}
+
+function MetaLink({ href, children }: { href: string; children: string }) {
+  return (
+    <Link
+      className="wl-meta-link"
+      href={href}
+      isExternalLink
+      type="inherit"
+      weight="semibold"
+    >
+      {children}
+    </Link>
   );
 }
 
@@ -594,7 +673,7 @@ function Hero({ isSignedIn, stats, connections }: LandingProps) {
           className="wl-hero-content"
           gap={10}
           maxWidth={CONTENT_WIDTH}
-          style={{ ...centered, ...heroPadding }}
+          style={centered}
         >
           <Grid columns={{ minWidth: 360, max: 2 }} gap={8} align="center">
             <VStack className="wl-hero-copy" gap={6} hAlign="start">
@@ -608,10 +687,6 @@ function Hero({ isSignedIn, stats, connections }: LandingProps) {
                 height={788}
                 preload
                 unoptimized
-                style={{
-                  width: "min(100%, calc(var(--spacing-12) * 7))",
-                  height: "auto",
-                }}
               />
 
               <Heading level={1} type="display-1" textWrap="balance">
@@ -631,7 +706,17 @@ function Hero({ isSignedIn, stats, connections }: LandingProps) {
                 textWrap="pretty"
                 maxLines={0}
               >
-                {`Bring an idea and WeStride takes it the whole way. A team of ${stats.advisors} Muse advisors pressure-tests it, Muse Code builds it in your GitHub repository, and Agent Studio gives it AI agents of its own. Open source, and powered by Meta's models.`}
+                Interact with <MetaLink href={META_AI_URL}>Meta AI</MetaLink>{" "}
+                advisors in <StudioLink where="Idea Studio" /> to vet and
+                refine your idea, then fire up{" "}
+                <MetaLink href={MUSE_CODE_URL}>Meta Muse Code</MetaLink> agents
+                in <StudioLink where="Build Studio" /> to bring it to life
+                directly in your GitHub repository. Take it even further with{" "}
+                <StudioLink where="Agent Studio" />, where you can build,
+                deploy, and run your own fleet of{" "}
+                <MetaLink href={MUSE_URL}>Muse AI</MetaLink> agents. Open
+                source. Powered by{" "}
+                <MetaLink href={META_MODELS_URL}>Meta&apos;s AI models</MetaLink>.
               </Text>
 
               <HStack gap={3} wrap="wrap">
@@ -656,11 +741,22 @@ function Hero({ isSignedIn, stats, connections }: LandingProps) {
                   rel="noopener noreferrer"
                   icon={<Icon icon={StarIcon} color="inherit" />}
                 />
-                <Button label="Our story" variant="ghost" href="/our-story" />
+                <Button label="Our Story" variant="ghost" href="/our-story" />
+                <Button label="Learn AI" variant="ghost" href="/academy" />
+                <Button label="Find a Mentor" variant="ghost" href="/mentorship" />
               </HStack>
             </VStack>
 
-            <HeroGlobe />
+            <Grid className="wl-hero-stage" columns={1} align="center">
+              <HeroGlobe />
+              <VStack className="wl-hero-import" gap={3} padding={4}>
+                <VStack gap={1}>
+                  <Eyebrow>Already building?</Eyebrow>
+                  <Text weight="semibold">Import a GitHub project</Text>
+                </VStack>
+                <ImportRepoForm isSignedIn={isSignedIn} />
+              </VStack>
+            </Grid>
           </Grid>
 
           <ConnectionStrip connections={connections} isSignedIn={isSignedIn} />

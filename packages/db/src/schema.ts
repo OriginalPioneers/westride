@@ -1,6 +1,7 @@
 export { socialPosts } from "./social-schema";
 export { learningAttempts, learningMuseBudgets } from "./learning-schema";
 import { relations } from "drizzle-orm";
+import { contentOrigin, type ContentOrigin } from "./origin-schema";
 import {
   bigint,
   boolean,
@@ -419,6 +420,8 @@ export const ideaType = pgEnum("idea_type", [
 
 export const ideaMemberRole = pgEnum("idea_member_role", ["FOUNDER", "MEMBER"]);
 
+export { contentOrigin, type ContentOrigin };
+
 /** ISO 3166-1 countries. Seeded from `country-catalog.ts`. */
 export const countries = pgTable(
   "countries",
@@ -442,6 +445,7 @@ export const ideas = pgTable(
     prototypeInstructions: text("prototype_instructions"),
     isFeatured: boolean("is_featured").notNull().default(false),
     isPublic: boolean("is_public").notNull().default(false),
+    origin: contentOrigin("origin").notNull().default("MEMBER"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -451,6 +455,7 @@ export const ideas = pgTable(
   },
   (table) => [
     index("ideas_name_idx").on(table.name),
+    index("ideas_origin_idx").on(table.origin),
     index("ideas_type_idx").on(table.type),
     index("ideas_visibility_idx").on(table.isPublic, table.isFeatured),
     index("ideas_created_at_idx").on(table.createdAt),
@@ -557,8 +562,8 @@ export const ideaGithubRepos = pgTable(
     htmlUrl: text("html_url").notNull(),
     defaultBranch: text("default_branch").notNull(),
     isPrivate: boolean("is_private").notNull(),
-    /** Clerk user id of the member who linked the repository. */
-    linkedByClerkUserId: text("linked_by_clerk_user_id").notNull(),
+    /** Clerk user id of the member who linked the repository. Null when imported. */
+    linkedByClerkUserId: text("linked_by_clerk_user_id"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -1217,6 +1222,9 @@ export {
   agentRuns,
   agentRunsRelations,
   agentRunStatus,
+  claimRequests,
+  claimRequestsRelations,
+  claimRequestStatus,
   milestoneStatus,
   projectMemberRole,
   projectMembers,
@@ -1240,9 +1248,12 @@ export type {
   AgentRun,
   AgentRunEvent,
   AgentRunStatus,
+  ClaimRequest,
+  ClaimRequestStatus,
   MilestoneStatus,
   NewAgentRun,
   NewAgentRunEvent,
+  NewClaimRequest,
   NewProject,
   NewProjectMember,
   NewProjectMilestone,

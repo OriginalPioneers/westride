@@ -23,12 +23,15 @@ import {
   PROJECT_ROLE_LABELS,
   TICKET_STATUS_LABELS,
   activityPath,
+  projectPath,
   projectSettingsPath,
   ticketsPath,
 } from "@/lib/build/labels";
+import { claimCardProps } from "@/lib/claims/view";
 import { ideaPath } from "@/lib/ideas/filters";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
 import { LinkedAgents } from "../../agents/linked-agents";
+import { ClaimIdeaCard } from "../../ideas/claim-idea-card";
 import { loadProjectPage } from "./load-project";
 import { PlanWithMuseButton } from "./plan-button";
 import { ProjectHeader } from "./project-header";
@@ -58,6 +61,13 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
   ]);
   const total = totalTickets(project.ticketCounts);
   const percent = ticketProgressPercent(project.ticketCounts);
+  const claim =
+    context.isClaimable && idea
+      ? await claimCardProps(idea, userId, {
+          returnTo: projectPath(project.id),
+          surface: "project",
+        })
+      : null;
 
   return (
     <Layout
@@ -98,6 +108,8 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
       content={
         <LayoutContent>
           <VStack gap={8}>
+            {claim ? <ClaimIdeaCard {...claim} /> : null}
+
             <Markdown headingLevelStart={2} contentWidth="100%">
               {project.description}
             </Markdown>
@@ -225,6 +237,13 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
 
             <VStack gap={3}>
               <Heading level={2}>Team</Heading>
+              {project.members.length === 0 ? (
+                <Text type="supporting">
+                  {context.isClaimable
+                    ? "No team yet. Whoever claims this project becomes its owner."
+                    : "No team."}
+                </Text>
+              ) : null}
               <VStack gap={3}>
                 {project.members.map((member) => {
                   const profile = profiles.get(member.clerkUserId);

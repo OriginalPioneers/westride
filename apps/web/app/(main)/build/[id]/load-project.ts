@@ -7,6 +7,7 @@ import {
   getProject,
   type ProjectWithDetails,
 } from "@westride/db/build";
+import { isClaimableProject } from "@westride/db/claim-rules";
 import { getMetaConnectionSummary } from "@/lib/meta/connection";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,6 +21,8 @@ export type ProjectPageContext = {
   /** Whether the viewer has a Meta account connected, so Muse features work. */
   hasMetaConnection: boolean;
   openTicketCount: number;
+  /** An imported project that nobody owns yet. */
+  isClaimable: boolean;
 };
 
 /** The project a page is about, and what the viewer may do with it. */
@@ -52,5 +55,6 @@ export async function loadProjectPage(id: string): Promise<ProjectPageContext | 
     isOwner: role === "OWNER",
     hasMetaConnection,
     openTicketCount,
+    isClaimable: isClaimableProject(project),
   };
 }
