@@ -365,6 +365,7 @@ export function AppFrame({
       variant="section"
       sideNav={
         <SideNav
+          style={{ userSelect: "none", WebkitUserSelect: "none" }}
           collapsible={{ hasButton: false }}
           resizable={{
             defaultWidth: 260,

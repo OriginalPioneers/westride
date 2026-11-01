@@ -164,6 +164,8 @@ export function SiteFooter() {
         style={{
           backgroundColor: "var(--color-background-surface)",
           maxHeight: "calc(var(--spacing-12) + var(--spacing-3))",
+          userSelect: "none",
+          WebkitUserSelect: "none",
         }}
       >
         <HStack
