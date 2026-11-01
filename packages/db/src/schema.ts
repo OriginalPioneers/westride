@@ -448,6 +448,10 @@ export const ideas = pgTable(
     isFeatured: boolean("is_featured").notNull().default(false),
     isPublic: boolean("is_public").notNull().default(false),
     origin: contentOrigin("origin").notNull().default("MEMBER"),
+    /** What the team is asking supporters for. Shown on the idea and in the supporter views. */
+    wantsTokens: boolean("wants_tokens").notNull().default(false),
+    wantsCompute: boolean("wants_compute").notNull().default(false),
+    wantsCapital: boolean("wants_capital").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -461,6 +465,7 @@ export const ideas = pgTable(
     index("ideas_type_idx").on(table.type),
     index("ideas_visibility_idx").on(table.isPublic, table.isFeatured),
     index("ideas_created_at_idx").on(table.createdAt),
+    index("ideas_wants_idx").on(table.wantsTokens, table.wantsCompute, table.wantsCapital),
   ],
 );
 
@@ -573,6 +578,34 @@ export const ideaGithubRepos = pgTable(
   (table) => [index("idea_github_repos_repo_id_idx").on(table.repoId)],
 );
 
+/**
+ * Where people can contribute money to an idea, on a service the founders
+ * chose. WeStride lists the link and nothing else: no funds pass through it.
+ * Lives here beside `ideas` so support-schema.ts needs nothing from here
+ * that would create an import cycle.
+ */
+export const ideaCapitalLinks = pgTable(
+  "idea_capital_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    /** HTTPS only. */
+    url: text("url").notNull(),
+    /** Optional, e.g. "Open Collective". The hostname shows when empty. */
+    label: text("label").notNull().default(""),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("idea_capital_links_idea_idx").on(table.ideaId, table.sortOrder)],
+);
+
+export type IdeaCapitalLink = typeof ideaCapitalLinks.$inferSelect;
+export type NewIdeaCapitalLink = typeof ideaCapitalLinks.$inferInsert;
+
 export const countriesRelations = relations(countries, ({ many }) => ({
   ideaGeographies: many(ideaGeographies),
 }));
@@ -582,6 +615,11 @@ export const ideasRelations = relations(ideas, ({ many, one }) => ({
   geographies: many(ideaGeographies),
   tags: many(ideaTags),
   githubRepo: one(ideaGithubRepos),
+  capitalLinks: many(ideaCapitalLinks),
+}));
+
+export const ideaCapitalLinksRelations = relations(ideaCapitalLinks, ({ one }) => ({
+  idea: one(ideas, { fields: [ideaCapitalLinks.ideaId], references: [ideas.id] }),
 }));
 
 export const ideaGithubReposRelations = relations(
@@ -1343,6 +1381,7 @@ export {
   agentTickets,
   agentTicketSource,
   agentTicketsRelations,
+  runnerKind,
 } from "./agent-schema";
 export type {
   Agent,
@@ -1360,4 +1399,31 @@ export type {
   NewAgentJobEvent,
   NewAgentLogEntry,
   NewAgentTicket,
+  RunnerKind,
 } from "./agent-schema";
+
+// Supporter tables reference `ideas` and `agentJobs`.
+export {
+  devicePairingCodes,
+  devices,
+  devicesRelations,
+  deviceStatus,
+  pledgeContributions,
+  pledgeContributionsRelations,
+  pledgeKind,
+  pledges,
+  pledgesRelations,
+  pledgeStatus,
+} from "./support-schema";
+export type {
+  Device,
+  DevicePairingCode,
+  DeviceStatus,
+  NewDevice,
+  NewPledge,
+  NewPledgeContribution,
+  Pledge,
+  PledgeContribution,
+  PledgeKind,
+  PledgeStatus,
+} from "./support-schema";

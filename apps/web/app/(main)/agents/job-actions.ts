@@ -12,7 +12,8 @@ import { failure, isFailure, requireAgentCollaborator, revalidateAgent, type Fai
 import { cancelAgentJob, reconcileStaleJob } from "@/lib/agents/finish";
 import { fieldErrorsFrom, runJobSchema, uuidSchema } from "@/lib/agents/schema";
 import { toJobSnapshot, type JobSnapshot } from "@/lib/agents/snapshot";
-import { AgentJobError, FIRST_EVENT_SEQUENCE, startAgentJob } from "@/lib/agents/start";
+import { AgentJobError, FIRST_EVENT_SEQUENCE, canRunCode, startAgentJob } from "@/lib/agents/start";
+import { resolveJobPayer } from "@/lib/support/payer";
 
 // Sandbox creation and the clone can take a while. The ticket page exports
 // `maxDuration`, since a "use server" file cannot.
@@ -41,12 +42,17 @@ export async function runJobAction(agentId: string, ticketId: string, input: unk
     return failure("This ticket is already done.");
   }
   try {
+    // A sponsor's pledge pays when the owner allows it; otherwise the member who pressed Run.
+    const payer = await resolveJobPayer(context.agent, context.userId, {
+      needsVercel: canRunCode(context.agent),
+    });
     const started = await startAgentJob({
       agent: context.agent,
       ticket,
       trigger: "MANUAL",
       startedByClerkUserId: context.userId,
-      payerClerkUserId: context.userId,
+      payerClerkUserId: payer.clerkUserId,
+      pledgeId: payer.pledgeId,
       instructions: parsed.data.instructions,
     });
     if (started.work) {

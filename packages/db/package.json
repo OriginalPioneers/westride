@@ -28,7 +28,9 @@
     "./agent-rules": "./src/agent-rules.ts",
     "./entity-images": "./src/entity-images.ts",
     "./social": "./src/social.ts",
-    "./social-progress": "./src/social-progress.ts"
+    "./social-progress": "./src/social-progress.ts",
+    "./support": "./src/support.ts",
+    "./devices": "./src/devices.ts"
   },
   "scripts": {
     "lint": "tsc --noEmit",

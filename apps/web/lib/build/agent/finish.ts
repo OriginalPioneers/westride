@@ -9,37 +9,11 @@ import { installationToken, repoInstallationId } from "@/lib/github/app";
 import { githubJson } from "@/lib/github/http";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 import { getVercelSandboxCredentials } from "@/lib/vercel/connection";
+import type { FinishedPayload, MuseModelUsage, MuseRunUsage } from "@westride/runner-protocol";
 import { getAgentRunnerConfig } from "./config";
 
-/** Token usage for one model inside a Muse Code run (`run.usage` record). */
-export type MuseModelUsage = {
-  model: string;
-  calls: number;
-  inputTokens: number;
-  cachedTokens: number;
-  outputTokens: number;
-  reasoningTokens: number;
-};
-
-/** Cumulative usage Muse Code reported for the run. */
-export type MuseRunUsage = {
-  calls: number;
-  completedCalls: number;
-  failedCalls: number;
-  models: MuseModelUsage[];
-};
-
-/** What the runner sends as its last event. */
-export type FinishedPayload = {
-  exitCode: number;
-  museSessionId?: string | null;
-  summary?: string | null;
-  headSha?: string | null;
-  pushed?: boolean;
-  commits?: number;
-  usage?: MuseRunUsage | null;
-  error?: string | null;
-};
+// The shapes are the runner protocol's; re-exported so existing imports hold.
+export type { FinishedPayload, MuseModelUsage, MuseRunUsage };
 
 const int = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;

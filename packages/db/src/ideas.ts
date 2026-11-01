@@ -23,6 +23,7 @@ import {
   type ContentOrigin,
   type Country,
   type Idea,
+  type IdeaCapitalLink,
   type IdeaGithubRepo,
   type IdeaMember,
   type IdeaMemberRole,
@@ -37,7 +38,17 @@ export type IdeaWithDetails = Idea & {
   countries: Country[];
   tags: Tag[];
   githubRepo: IdeaGithubRepo | null;
+  capitalLinks: IdeaCapitalLink[];
 };
+
+/** A kind of support an idea can ask for. */
+export type SupportWant = "tokens" | "compute" | "capital";
+
+export const SUPPORT_WANTS: readonly SupportWant[] = ["tokens", "compute", "capital"];
+
+export function isSupportWant(value: string): value is SupportWant {
+  return (SUPPORT_WANTS as readonly string[]).includes(value);
+}
 
 export type IdeaMemberInput = {
   clerkUserId: string;
@@ -82,6 +93,8 @@ export type IdeaFilters = {
   countryCode?: string;
   tagSlug?: string;
   featuredOnly?: boolean;
+  /** Only ideas asking supporters for this. */
+  wants?: SupportWant;
   sort?: IdeaSort;
 };
 
@@ -165,6 +178,9 @@ async function findIdeas(
         with: { tag: true },
       },
       githubRepo: true,
+      capitalLinks: {
+        orderBy: (link, { asc: by }) => [by(link.sortOrder), by(link.createdAt)],
+      },
     },
   });
 
@@ -202,6 +218,14 @@ export async function listIdeas(
 
   if (filters.featuredOnly) {
     conditions.push(eq(ideas.isFeatured, true));
+  }
+
+  if (filters.wants === "tokens") {
+    conditions.push(eq(ideas.wantsTokens, true));
+  } else if (filters.wants === "compute") {
+    conditions.push(eq(ideas.wantsCompute, true));
+  } else if (filters.wants === "capital") {
+    conditions.push(eq(ideas.wantsCapital, true));
   }
 
   if (filters.countryCode) {

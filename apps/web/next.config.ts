@@ -4,7 +4,7 @@ const ROBOTS_TAG =
   "noindex, nofollow, nocache, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@westride/db"],
+  transpilePackages: ["@westride/db", "@westride/runner-protocol"],
   serverExternalPackages: ["@neondatabase/serverless"],
   // The dev server allows localhost by default. 127.0.0.1 is a different
   // origin, and Next blocks its HMR socket, which prevents the page from hydrating.

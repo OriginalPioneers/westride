@@ -23,6 +23,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { agentRunStatus, ticketPriority, ticketStatus } from "./build-enums";
 import { contentOrigin } from "./origin-schema";
 import { ideas } from "./schema";
 
@@ -38,20 +39,9 @@ export const projectMemberRole = pgEnum("project_member_role", [
   "MEMBER",
 ]);
 
-export const ticketStatus = pgEnum("ticket_status", [
-  "BACKLOG",
-  "IN_PROGRESS",
-  "IN_REVIEW",
-  "BLOCKED",
-  "DONE",
-]);
-
-export const ticketPriority = pgEnum("ticket_priority", [
-  "LOW",
-  "MEDIUM",
-  "HIGH",
-  "URGENT",
-]);
+// Shared with agent-schema.ts; defined in a leaf module so neither file
+// trips over the other mid-evaluation.
+export { agentRunStatus, ticketPriority, ticketStatus };
 
 /** Who wrote the ticket: a member, or Muse during planning. */
 export const ticketSource = pgEnum("ticket_source", ["MEMBER", "MUSE"]);
@@ -252,14 +242,6 @@ export const ticketComments = pgTable(
   },
   (table) => [index("ticket_comments_ticket_created_idx").on(table.ticketId, table.createdAt)],
 );
-
-export const agentRunStatus = pgEnum("agent_run_status", [
-  "QUEUED",
-  "RUNNING",
-  "SUCCEEDED",
-  "FAILED",
-  "CANCELLED",
-]);
 
 /**
  * One Muse Code agent run against a ticket. The agent works in a Vercel

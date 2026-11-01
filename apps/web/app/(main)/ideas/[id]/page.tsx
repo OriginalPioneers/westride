@@ -22,10 +22,11 @@ import { LinkedAgents } from "../../agents/linked-agents";
 import { EntityImage } from "../../entity-image";
 import { EntityImageMenu } from "../../entity-image-menu";
 import { ClaimIdeaCard } from "../claim-idea-card";
-import { FeaturedBadge, IdeaTypeBadge, UnclaimedBadge } from "../idea-badges";
+import { FeaturedBadge, IdeaTypeBadge, LookingForBadges, UnclaimedBadge } from "../idea-badges";
 import { BuildProjectButton } from "./build-project-button";
 import { EditIdeaButton } from "./edit-idea-button";
 import { IdeaFactoryButton } from "./factory/idea-factory-button";
+import { SupportSection } from "./support/support-section";
 
 type Params = Promise<{ id: string }>;
 
@@ -121,6 +122,7 @@ export default async function IdeaPage({ params }: { params: Params }) {
                         Private · visible to members only
                       </Text>
                     ) : null}
+                    <LookingForBadges idea={idea} />
                   </HStack>
                   <Heading level={1}>{idea.name}</Heading>
                 </VStack>
@@ -198,6 +200,8 @@ export default async function IdeaPage({ params }: { params: Params }) {
             ) : null}
 
             <LinkedAgents agents={agents} />
+
+            <SupportSection idea={idea} viewerId={userId} isFounder={isFounder} />
 
             {idea.githubRepo ? (
               <VStack gap={3}>

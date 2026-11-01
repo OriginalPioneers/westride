@@ -1,7 +1,9 @@
 import "server-only";
 
-/** The path a sandbox posts an agent job's work log to. Listed in proxy.ts. */
-export const AGENT_JOB_EVENTS_PATH = "/integrations/agents/events";
+import { AGENT_JOB_EVENTS_PATH } from "@westride/runner-protocol";
+
+/** The path a sandbox or supporter device posts an agent job's work log to. Listed in proxy.ts. */
+export { AGENT_JOB_EVENTS_PATH };
 
 /** The path Vercel Cron calls to run due schedules. Listed in proxy.ts. */
 export const AGENT_SCHEDULE_PATH = "/integrations/agents/schedule";

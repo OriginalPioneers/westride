@@ -100,6 +100,9 @@ export default async function AgentSettingsPage({ params }: { params: Params }) 
                   projectId: agent.projectId,
                   model: agent.model,
                   maxSteps: agent.maxSteps,
+                  allowSponsorTokens: agent.allowSponsorTokens,
+                  allowVolunteerCompute: agent.allowVolunteerCompute,
+                  volunteerLocalModel: agent.volunteerLocalModel,
                 }}
                 ideas={links.ideas}
                 projects={links.projects}

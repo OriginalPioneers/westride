@@ -27,6 +27,7 @@ import {
   type AgentStatus,
   type AgentTicket,
   type AgentTicketSource,
+  type RunnerKind,
 } from "./agent-schema";
 import { projectMembers, projects, type AgentRunStatus, type TicketPriority, type TicketStatus } from "./build-schema";
 import { getDb } from "./client";
@@ -295,6 +296,9 @@ export type AgentInput = {
   projectId: string | null;
   model: string;
   maxSteps: number;
+  allowSponsorTokens: boolean;
+  allowVolunteerCompute: boolean;
+  volunteerLocalModel: string | null;
   repo: AgentRepoInput | null;
 } & AgentScheduleInput;
 
@@ -338,6 +342,9 @@ export async function createAgent(
       projectId: input.projectId,
       model: input.model,
       maxSteps: input.maxSteps,
+      allowSponsorTokens: input.allowSponsorTokens,
+      allowVolunteerCompute: input.allowVolunteerCompute,
+      volunteerLocalModel: input.volunteerLocalModel,
       ...repoColumns(input.repo),
       ...scheduleColumns(input, "ACTIVE"),
     })
@@ -362,6 +369,9 @@ export async function updateAgentDetails(id: string, input: AgentDetailsPatch): 
       projectId: input.projectId,
       model: input.model,
       maxSteps: input.maxSteps,
+      allowSponsorTokens: input.allowSponsorTokens,
+      allowVolunteerCompute: input.allowVolunteerCompute,
+      volunteerLocalModel: input.volunteerLocalModel,
       updatedAt: new Date(),
     })
     .where(eq(agents.id, id));
@@ -641,6 +651,9 @@ export type NewAgentJobInput = {
   paidByClerkUserId: string;
   model: string;
   maxSteps: number;
+  pledgeId?: string | null;
+  runnerKind?: RunnerKind | null;
+  prompt?: string | null;
   repoFullName?: string | null;
   branch?: string | null;
   baseBranch?: string | null;
@@ -728,6 +741,12 @@ export type AgentJobPatch = Partial<
     | "error"
     | "startedAt"
     | "finishedAt"
+    | "deviceId"
+    | "leaseExpiresAt"
+    | "callbackTokenHash"
+    | "prompt"
+    | "paidByClerkUserId"
+    | "pledgeId"
   > &
     AgentJobUsagePatch
 >;

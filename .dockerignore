@@ -1,0 +1,12 @@
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/.env*
+**/coverage
+.git
+apps/web
+apps/api
+apps/mcp
+apps/mobile
+docs

@@ -1,14 +1,16 @@
 import { after, type NextRequest } from "next/server";
 import { z } from "zod";
 import { appendAgentJobEvents, getAgentJob, isJobActive } from "@westride/db/agents";
-import { isAgentRunnerConfigured } from "@/lib/build/agent/config";
+import { isAgentRunnerConfigured, isVolunteerRunnerConfigured } from "@/lib/build/agent/config";
 import { runTokenMatches } from "@/lib/build/agent/token";
 import { completeCodeJob, readFinishedPayload } from "@/lib/agents/finish";
 
 /**
- * The sandbox runner for an Agent Studio job posts its work log here, a
- * batch at a time, with the job's own bearer token. proxy.ts lets this path
- * through its user-agent filter; the token is the whole of the authentication.
+ * The runner for an Agent Studio job (a sandbox, or a supporter's computer)
+ * posts its work log here, a batch at a time, with the job's own bearer
+ * token. proxy.ts lets this path through its user-agent filter; the token is
+ * the whole of the authentication. A supporter's device ends its job through
+ * the result route instead of a `finished` event, so that path is ignored here.
  */
 
 const EVENT_TYPES = ["setup", "muse", "git", "log", "finished"] as const;
@@ -35,7 +37,7 @@ function json(status: number, body: unknown) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAgentRunnerConfigured()) {
+  if (!isAgentRunnerConfigured() && !isVolunteerRunnerConfigured()) {
     return json(503, { error: "Agent jobs are not set up on this server." });
   }
   const authorization = request.headers.get("authorization") ?? "";
@@ -74,7 +76,7 @@ export async function POST(request: NextRequest) {
   );
 
   const finished = parsed.events.find((event) => event.type === "finished");
-  if (finished) {
+  if (finished && job.runnerKind !== "VOLUNTEER_DEVICE") {
     const payload = readFinishedPayload(finished.payload) ?? {
       exitCode: 1,
       error: "The runner's final report could not be read.",

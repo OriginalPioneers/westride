@@ -21,7 +21,8 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { agentRunStatus, projects, ticketPriority, ticketStatus } from "./build-schema";
+import { agentRunStatus, ticketPriority, ticketStatus } from "./build-enums";
+import { projects } from "./build-schema";
 import { ideas } from "./schema";
 
 export const agentStatus = pgEnum("agent_status", ["ACTIVE", "PAUSED", "ARCHIVED"]);
@@ -40,6 +41,12 @@ export const agentJobKind = pgEnum("agent_job_kind", ["CODE", "REPORT"]);
 
 /** Who wrote the ticket: a member, or the schedule from the standing task. */
 export const agentTicketSource = pgEnum("agent_ticket_source", ["MEMBER", "SCHEDULE"]);
+
+/**
+ * Where a code job runs: a Vercel Sandbox on the payer's account, or a
+ * supporter's own computer running the WeStride runner.
+ */
+export const runnerKind = pgEnum("runner_kind", ["VERCEL_SANDBOX", "VOLUNTEER_DEVICE"]);
 
 export const agents = pgTable(
   "agents",
@@ -60,6 +67,22 @@ export const agents = pgTable(
     projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
     model: text("model").notNull(),
     maxSteps: integer("max_steps").notNull(),
+    /**
+     * Supporters with a TOKENS pledge on the linked idea may pay for this
+     * agent's jobs. The owner still chooses the model; a sponsor sets a cap.
+     */
+    allowSponsorTokens: boolean("allow_sponsor_tokens").notNull().default(false),
+    /**
+     * Supporters with a COMPUTE pledge on the linked idea may run this
+     * agent's code jobs on their own computers. Public repositories only.
+     */
+    allowVolunteerCompute: boolean("allow_volunteer_compute").notNull().default(false),
+    /**
+     * An Ollama model tag, e.g. `qwen2.5-coder:14b`, a volunteer device may
+     * use in place of `model` when it serves that model locally. Null means
+     * volunteers must bring their own Meta key.
+     */
+    volunteerLocalModel: text("volunteer_local_model"),
     /** The GitHub repository the agent works in. All null when it has none. */
     repoId: bigint("repo_id", { mode: "number" }),
     repoOwner: text("repo_owner"),
@@ -157,7 +180,19 @@ export const agentJobs = pgTable(
     paidByClerkUserId: text("paid_by_clerk_user_id").notNull(),
     model: text("model").notNull(),
     maxSteps: integer("max_steps").notNull(),
+    /** The TOKENS or COMPUTE pledge this job drew on. Null when the payer is the team. */
+    pledgeId: uuid("pledge_id"),
     // CODE jobs
+    runnerKind: runnerKind("runner_kind"),
+    /** The supporter's device that ran it. Null for sandbox and report jobs. */
+    deviceId: uuid("device_id"),
+    /**
+     * A volunteer job waits in QUEUED until a device leases it; the lease
+     * lapses when heartbeats stop, and the job goes back to the queue.
+     */
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true, mode: "date" }),
+    /** The full prompt, kept for volunteer jobs so the device can fetch it. */
+    prompt: text("prompt"),
     sandboxName: text("sandbox_name"),
     repoFullName: text("repo_full_name"),
     branch: text("branch"),
@@ -198,6 +233,8 @@ export const agentJobs = pgTable(
     index("agent_jobs_ticket_created_idx").on(table.ticketId, table.createdAt),
     index("agent_jobs_status_idx").on(table.status),
     index("agent_jobs_paid_by_idx").on(table.paidByClerkUserId),
+    index("agent_jobs_runner_status_idx").on(table.runnerKind, table.status),
+    index("agent_jobs_device_idx").on(table.deviceId),
   ],
 );
 
@@ -280,6 +317,7 @@ export type AgentSchedule = (typeof agentSchedule.enumValues)[number];
 export type AgentJobTrigger = (typeof agentJobTrigger.enumValues)[number];
 export type AgentJobKind = (typeof agentJobKind.enumValues)[number];
 export type AgentTicketSource = (typeof agentTicketSource.enumValues)[number];
+export type RunnerKind = (typeof runnerKind.enumValues)[number];
 export type Agent = typeof agents.$inferSelect;
 export type NewAgent = typeof agents.$inferInsert;
 export type AgentTicket = typeof agentTickets.$inferSelect;

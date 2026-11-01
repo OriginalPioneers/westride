@@ -28,6 +28,7 @@ import {
   Cog6ToothIcon,
   CommandLineIcon,
   CpuChipIcon,
+  HeartIcon,
   HomeIcon,
   LightBulbIcon,
   PaintBrushIcon,
@@ -49,6 +50,7 @@ import {
   Cog6ToothIcon as Cog6ToothIconSolid,
   CommandLineIcon as CommandLineIconSolid,
   CpuChipIcon as CpuChipIconSolid,
+  HeartIcon as HeartIconSolid,
   HomeIcon as HomeIconSolid,
   LightBulbIcon as LightBulbIconSolid,
   PaintBrushIcon as PaintBrushIconSolid,
@@ -106,6 +108,12 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: "Connect",
     links: [
+      {
+        label: "Supporting",
+        href: "/supporting",
+        icon: HeartIcon,
+        selectedIcon: HeartIconSolid,
+      },
       {
         label: "Mentorship",
         href: "/mentorship",

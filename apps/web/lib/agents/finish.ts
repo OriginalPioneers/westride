@@ -3,6 +3,7 @@ import "server-only";
 import type { Agent, AgentJob } from "@westride/db";
 import {
   addAgentLog,
+  getAgentJob,
   getAgentRow,
   getAgentTicketById,
   isJobActive,
@@ -10,11 +11,16 @@ import {
   updateAgentJob,
 } from "@westride/db/agents";
 import { agentTicketKey } from "@westride/db/agent-rules";
-import { getAgentRunnerConfig } from "@/lib/build/agent/config";
+import { VOLUNTEER_QUEUE_TIMEOUT_MS, clearDeviceJob } from "@westride/db/devices";
+import type { ResultRequest } from "@westride/runner-protocol";
+import { getAgentRunnerConfig, getVolunteerRunnerConfig } from "@/lib/build/agent/config";
 import { stopSandboxFor, type FinishedPayload } from "@/lib/build/agent/finish";
 import { installationToken, repoInstallationId } from "@/lib/github/app";
+import { commitFilesToBranch } from "@/lib/github/commit-files";
+import { requireGithubAppConfig } from "@/lib/github/config";
 import { githubJson } from "@/lib/github/http";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
+import { creditJobToPledge } from "@/lib/support/ledger";
 import { usageFromMuseRun } from "./usage";
 
 export { readFinishedPayload, type FinishedPayload } from "@/lib/build/agent/finish";
@@ -90,7 +96,7 @@ export async function completeCodeJob(job: AgentJob, payload: FinishedPayload): 
   }
 
   const status = succeeded && (!payload.pushed || prUrl) ? "SUCCEEDED" : "FAILED";
-  await updateAgentJob(job.id, {
+  const closed = await updateAgentJob(job.id, {
     status,
     exitCode: payload.exitCode,
     museSessionId: payload.museSessionId ?? null,
@@ -104,7 +110,68 @@ export async function completeCodeJob(job: AgentJob, payload: FinishedPayload): 
   });
 
   await settleTicket({ agent, job, ticketId: ticket?.id ?? null, status, prUrl, prNumber, error, exitCode: payload.exitCode });
+  if (closed) {
+    await creditJobToPledge(closed);
+  }
+  if (job.runnerKind === "VOLUNTEER_DEVICE") {
+    if (job.deviceId) {
+      await clearDeviceJob(job.deviceId, job.id, status === "SUCCEEDED");
+    }
+    return;
+  }
   await stopSandbox(job);
+}
+
+/**
+ * A supporter's device finished a job and sent back the files it changed.
+ * WeStride writes them as one commit on the job's branch with its own
+ * installation token, then closes the job like any other code job, opening
+ * the pull request when there is something to review.
+ */
+export async function completeVolunteerJob(job: AgentJob, result: ResultRequest): Promise<void> {
+  if (!isJobActive(job.status)) {
+    return;
+  }
+  const payload: FinishedPayload = {
+    exitCode: result.exitCode,
+    museSessionId: result.museSessionId,
+    summary: result.summary,
+    usage: result.usage,
+    error: result.error,
+    headSha: result.baseSha,
+    pushed: false,
+    commits: 0,
+  };
+  const hasChanges = result.changed.length > 0 || result.deleted.length > 0;
+  if (hasChanges && job.repoFullName && job.branch) {
+    const ref = parseGithubRepoRef(`https://github.com/${job.repoFullName}`);
+    if (ref) {
+      const { commitAuthor } = requireGithubAppConfig();
+      const agent = await getAgentRow(job.agentId);
+      try {
+        const committed = await commitFilesToBranch({
+          ref,
+          baseSha: result.baseSha,
+          branch: job.branch,
+          message: `${job.ticketTitle}\n\nCommitted by WeStride from a supporter's computer after a Muse Code run.`,
+          changed: result.changed,
+          deleted: result.deleted,
+          author: {
+            name: commitAuthor?.name ?? `${agent?.name ?? "Agent"} (WeStride)`,
+            email: commitAuthor?.email ?? "agents@westride.org",
+          },
+        });
+        payload.headSha = committed.headSha;
+        payload.pushed = true;
+        payload.commits = 1;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("Committing a supporter's result failed", job.id, error);
+        payload.error = payload.error ? `${payload.error}; commit failed: ${message}` : `Commit failed: ${message}`;
+      }
+    }
+  }
+  await completeCodeJob(job, payload);
 }
 
 /** The outcome of a report job, already run. */
@@ -130,6 +197,11 @@ export async function completeReportJob(job: AgentJob, outcome: ReportOutcome): 
     error: outcome.error,
     exitCode: outcome.succeeded ? 0 : 1,
   });
+  // The caller already wrote usage; credit the pledge from the stored row.
+  const closed = await getAgentJob(job.id);
+  if (closed) {
+    await creditJobToPledge(closed);
+  }
 }
 
 async function settleTicket(input: {
@@ -195,6 +267,13 @@ export async function cancelAgentJob(job: AgentJob, byClerkUserId: string): Prom
   if (ticket && ticket.status === "IN_PROGRESS") {
     await moveAgentTicket(job.agentId, ticket.id, "BACKLOG");
   }
+  if (job.runnerKind === "VOLUNTEER_DEVICE") {
+    // The device learns on its next heartbeat that the job is gone.
+    if (job.deviceId) {
+      await clearDeviceJob(job.deviceId, job.id, false);
+    }
+    return;
+  }
   await stopSandbox(job);
 }
 
@@ -204,11 +283,15 @@ const REPORT_TIMEOUT_MS = 10 * 60_000;
 /**
  * A sandbox that hit Vercel's timeout never sends `finished`, and a report
  * whose server function was cut off never settles. Anything still active
- * well past its limit is closed as failed.
+ * well past its limit is closed as failed. Volunteer jobs expire when no
+ * device takes them, or when the device that did stops heartbeating.
  */
 export async function reconcileStaleJob(job: AgentJob): Promise<AgentJob> {
   if (!isJobActive(job.status)) {
     return job;
+  }
+  if (job.runnerKind === "VOLUNTEER_DEVICE") {
+    return reconcileStaleVolunteerJob(job);
   }
   const since = (job.startedAt ?? job.createdAt).getTime();
   const message =
@@ -229,5 +312,30 @@ export async function reconcileStaleJob(job: AgentJob): Promise<AgentJob> {
     await updateAgentJob(job.id, { status: "FAILED", error: message, finishedAt: new Date() });
     await completeReportJob(job, { succeeded: false, text: null, error: message });
   }
+  return { ...job, status: "FAILED", error: message };
+}
+
+export async function reconcileStaleVolunteerJob(job: AgentJob, now = new Date()): Promise<AgentJob> {
+  if (!isJobActive(job.status)) {
+    return job;
+  }
+  let message: string | null = null;
+  if (job.status === "QUEUED" && !job.deviceId) {
+    if (now.getTime() - job.createdAt.getTime() > VOLUNTEER_QUEUE_TIMEOUT_MS) {
+      message = "No supporter's computer picked this job up in time.";
+    }
+  } else if (job.status === "RUNNING") {
+    const config = getVolunteerRunnerConfig();
+    const hardLimit = (job.startedAt ?? job.createdAt).getTime() + (config?.jobTimeoutMs ?? 45 * 60_000) + 5 * 60_000;
+    if (job.leaseExpiresAt && job.leaseExpiresAt.getTime() < now.getTime()) {
+      message = "The supporter's computer stopped responding before the job finished.";
+    } else if (now.getTime() > hardLimit) {
+      message = "The job ran past its time limit on the supporter's computer.";
+    }
+  }
+  if (!message) {
+    return job;
+  }
+  await completeCodeJob(job, { exitCode: 124, error: message });
   return { ...job, status: "FAILED", error: message };
 }

@@ -95,6 +95,17 @@
         "typescript": "~6.0.3",
       },
     },
+    "apps/runner": {
+      "name": "@westride/runner",
+      "version": "0.1.0",
+      "dependencies": {
+        "@westride/runner-protocol": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^5",
+      },
+    },
     "apps/web": {
       "name": "web",
       "version": "0.1.0",
@@ -108,6 +119,7 @@
         "@vercel/sandbox": "^3.9.1",
         "@westride/api-client": "workspace:*",
         "@westride/db": "workspace:*",
+        "@westride/runner-protocol": "workspace:*",
         "canvas-confetti": "^1.9.4",
         "cobe": "^2.0.1",
         "next": "16.2.4",
@@ -146,6 +158,13 @@
       "devDependencies": {
         "dotenv": "^18.0.9",
         "drizzle-kit": "^0.31.11",
+        "typescript": "^5",
+      },
+    },
+    "packages/runner-protocol": {
+      "name": "@westride/runner-protocol",
+      "version": "0.1.0",
+      "devDependencies": {
         "typescript": "^5",
       },
     },
@@ -996,6 +1015,10 @@
     "@westride/api-client": ["@westride/api-client@workspace:packages/api-client"],
 
     "@westride/db": ["@westride/db@workspace:packages/db"],
+
+    "@westride/runner": ["@westride/runner@workspace:apps/runner"],
+
+    "@westride/runner-protocol": ["@westride/runner-protocol@workspace:packages/runner-protocol"],
 
     "@workflow/serde": ["@workflow/serde@4.1.0-beta.2", "", {}, "sha512-8kkeoQKLDaKXefjV5dbhBj2aErfKp1Mc4pb6tj8144cF+Em5SPbyMbyLCHp+BVrFfFVCBluCtMx+jjvaFVZGww=="],
 

@@ -4,11 +4,14 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
+import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
 import { FormLayout } from "@astryxdesign/core/FormLayout";
+import { Heading } from "@astryxdesign/core/Heading";
 import { NumberInput } from "@astryxdesign/core/NumberInput";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
+import { Text } from "@astryxdesign/core/Text";
 import { TextArea } from "@astryxdesign/core/TextArea";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import {
@@ -16,6 +19,7 @@ import {
   MAX_AGENT_INSTRUCTIONS,
   MAX_AGENT_NAME,
   MAX_AGENT_STEPS,
+  MAX_LOCAL_MODEL,
   MIN_AGENT_STEPS,
   validateAgentDetails,
   type AgentDetailsDraft,
@@ -191,6 +195,38 @@ export function AgentDetailsForm({
           step={10}
         />
       </FormLayout>
+      <VStack gap={3}>
+        <Heading level={3}>Supporters</Heading>
+        <Text color="secondary">
+          Supporters pledge to the idea this agent is linked to. Each kind of help is off until you turn it on.
+        </Text>
+        <CheckboxInput
+          label="Accept token pledges"
+          description="When a supporter has pledged tokens to the linked idea, their Meta key pays for this agent's jobs, up to their cap. Your model choice still applies."
+          value={draft.allowSponsorTokens}
+          onChange={(value) => patch({ allowSponsorTokens: value }, "allowSponsorTokens")}
+          isDisabled={!draft.ideaId}
+          disabledMessage="Link this agent to an idea first."
+        />
+        <CheckboxInput
+          label="Run code jobs on supporters' computers"
+          description="Code jobs go to a supporter's computer that has pledged compute to the linked idea, instead of a sandbox. Public repositories only; the computer never receives GitHub access, WeStride commits what it returns."
+          value={draft.allowVolunteerCompute}
+          onChange={(value) => patch({ allowVolunteerCompute: value }, "allowVolunteerCompute")}
+          isDisabled={!draft.ideaId}
+          disabledMessage="Link this agent to an idea first."
+        />
+        {draft.allowVolunteerCompute ? (
+          <TextInput
+            label="Local model for supporters without a Meta key"
+            description="An Ollama model name, like llama3.1:8b. A supporter's computer with that model can run jobs with no Meta key at all. Leave empty to require a Meta key."
+            value={draft.volunteerLocalModel ?? ""}
+            onChange={(value) => patch({ volunteerLocalModel: value.slice(0, MAX_LOCAL_MODEL) || null }, "volunteerLocalModel")}
+            status={fieldStatus(errors.volunteerLocalModel)}
+          />
+        ) : null}
+        {!draft.ideaId ? <Text type="supporting">Link this agent to an idea to accept support.</Text> : null}
+      </VStack>
       <HStack gap={2} vAlign="center">
         <StackItem size="fill" />
         <Button label="Save changes" variant="primary" isLoading={isSaving} onClick={save} />

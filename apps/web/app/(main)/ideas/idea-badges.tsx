@@ -24,6 +24,21 @@ export function UnclaimedBadge() {
   return <Badge variant="orange" label="Unclaimed" />;
 }
 
+/** What the team is asking supporters for. */
+export function LookingForBadges({
+  idea,
+}: {
+  idea: { wantsTokens: boolean; wantsCompute: boolean; wantsCapital: boolean };
+}) {
+  return (
+    <>
+      {idea.wantsTokens ? <Badge variant="blue" label="Looking for tokens" /> : null}
+      {idea.wantsCompute ? <Badge variant="green" label="Looking for compute" /> : null}
+      {idea.wantsCapital ? <Badge variant="orange" label="Looking for capital" /> : null}
+    </>
+  );
+}
+
 // Icon takes a component, which a server component cannot hand across the
 // boundary. The badge is client-rendered so the star stays sized.
 export function FeaturedBadge() {

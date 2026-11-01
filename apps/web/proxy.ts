@@ -91,7 +91,8 @@ const STATIC_FILE =
 
 // Chat platforms call these from servers with bot user agents (Slack sends
 // "Slackbot"). Each handler checks the platform's request signature instead.
-// Build Studio's sandbox runner posts its work log with a per-run token.
+// Build Studio's sandbox runner posts its work log with a per-run token, and
+// supporters' runners authenticate with a per-device token.
 const SIGNED_WEBHOOKS = new Set([
   "/integrations/slack/commands",
   "/integrations/discord/interactions",
@@ -99,13 +100,21 @@ const SIGNED_WEBHOOKS = new Set([
   "/integrations/muse-code/events",
   "/integrations/agents/events",
   "/integrations/agents/schedule",
+  "/integrations/runner/pair",
+  "/integrations/runner/heartbeat",
+  "/integrations/runner/lease",
+  "/integrations/runner/result",
 ]);
+
+// Fetched by `curl … | sh` and `irm … | iex`, whose user agents the filter
+// would otherwise refuse. Plain files from /public.
+const INSTALL_SCRIPTS = new Set(["/install.sh", "/install.ps1"]);
 
 export function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl;
 
   // Crawlers need to read the disallow policy. Everything else is refused.
-  if (pathname === "/robots.txt" || SIGNED_WEBHOOKS.has(pathname)) {
+  if (pathname === "/robots.txt" || SIGNED_WEBHOOKS.has(pathname) || INSTALL_SCRIPTS.has(pathname)) {
     return NextResponse.next();
   }
 

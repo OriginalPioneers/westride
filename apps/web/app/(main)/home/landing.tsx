@@ -50,6 +50,7 @@ import {
   STACK_ROWS,
   STUDIOS,
   SUPPORT,
+  SUPPORTER_WAYS,
   TEAM,
   type ConnectionStatus,
   type ConnectionStatuses,
@@ -560,7 +561,7 @@ function ConnectionStrip({
         padding={4}
       >
         <HStack gap={2} hAlign="between" vAlign="center" wrap="wrap">
-          <Eyebrow>{isSignedIn ? "Your connections" : "Works with"}</Eyebrow>
+          <Eyebrow>{isSignedIn ? "WeStride integrations" : "Works with"}</Eyebrow>
           <Link href="/settings" isStandalone size="sm">
             {isSignedIn ? "Manage connections" : "Sign in to connect"}
           </Link>
@@ -581,7 +582,7 @@ function ConnectionStrip({
         gap={3}
         padding={4}
       >
-        <Eyebrow>Take it with you</Eyebrow>
+        <Eyebrow>Take WeStride with you</Eyebrow>
         <VStack gap={2}>
           <Grid columns={{ minWidth: 150, max: 2 }} gap={2}>
             {MOBILE_APPS.map((app) => (
@@ -646,7 +647,7 @@ function Hero({ isSignedIn, stats, connections }: LandingProps) {
           maxWidth={CONTENT_WIDTH}
           style={centered}
         >
-          <Grid columns={{ minWidth: 360, max: 2 }} gap={8} align="center">
+          <Grid className="wl-hero-split" columns={{ minWidth: 484, max: 2 }} gap={8} align="center">
             <VStack className="wl-hero-copy" gap={6} hAlign="start">
               <Image
                 className="wl-wordmark"
@@ -658,8 +659,8 @@ function Hero({ isSignedIn, stats, connections }: LandingProps) {
                 unoptimized
               />
 
-              <Heading level={1} type="display-1" textWrap="balance">
-                Help build what&apos;s 
+              <Heading level={1} type="display-1" textWrap="nowrap" className="wl-hero-title">
+                Help build what&apos;s
                 <Text
                   type="inherit"
                   display="inline"
@@ -688,19 +689,6 @@ function Hero({ isSignedIn, stats, connections }: LandingProps) {
                 <MetaLink href={META_MODELS_URL}>Meta&apos;s AI models</MetaLink>.
               </Text>
 
-              <HStack gap={3} wrap="wrap">
-                {STUDIOS.map((studio, index) => (
-                  <Button
-                    key={studio.href}
-                    label={studio.action}
-                    variant={index === 0 ? "primary" : undefined}
-                    size="lg"
-                    href={studio.href}
-                    icon={<Icon icon={studio.icon} color="inherit" />}
-                  />
-                ))}
-              </HStack>
-
               <HStack gap={2} wrap="wrap">
                 <Button
                   label="Star on GitHub"
@@ -718,12 +706,45 @@ function Hero({ isSignedIn, stats, connections }: LandingProps) {
 
             <Grid className="wl-hero-stage" columns={1} align="center">
               <HeroGlobe />
-              <VStack className="wl-hero-import" gap={3} padding={4}>
-                <VStack gap={1}>
-                  <Eyebrow>Already building?</Eyebrow>
-                  <Text weight="semibold">Import a GitHub project</Text>
+              <VStack className="wl-hero-cards" gap={4}>
+                <VStack className="wl-hero-card" gap={4} padding={4}>
+                  <VStack gap={1}>
+                    <Eyebrow>Builders</Eyebrow>
+                    <Text weight="semibold">Bring an idea, or import a GitHub project</Text>
+                  </VStack>
+                  <ImportRepoForm isSignedIn={isSignedIn} />
+                  <HStack gap={2} wrap="wrap">
+                    {STUDIOS.map((studio, index) => (
+                      <Button
+                        key={studio.href}
+                        label={studio.action}
+                        variant={index === 0 ? "primary" : undefined}
+                        href={studio.href}
+                        icon={<Icon icon={studio.icon} color="inherit" />}
+                      />
+                    ))}
+                  </HStack>
                 </VStack>
-                <ImportRepoForm isSignedIn={isSignedIn} />
+                <VStack className="wl-hero-card wl-hero-card-support" gap={4} padding={4}>
+                  <VStack gap={1}>
+                    <Eyebrow>Supporters</Eyebrow>
+                    <Text weight="semibold">Back an idea you believe in</Text>
+                    <Text type="supporting">
+                      Pledge tokens or compute to the ideas you choose, or contribute capital through a team&apos;s
+                      own links. WeStride never collects or holds money.
+                    </Text>
+                  </VStack>
+                  <HStack gap={2} wrap="wrap">
+                    {SUPPORTER_WAYS.map((way) => (
+                      <Button
+                        key={way.href}
+                        label={way.action}
+                        href={way.href}
+                        icon={<Icon icon={way.icon} color="inherit" />}
+                      />
+                    ))}
+                  </HStack>
+                </VStack>
               </VStack>
             </Grid>
           </Grid>

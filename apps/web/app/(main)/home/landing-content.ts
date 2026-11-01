@@ -1,9 +1,11 @@
 import type { ComponentType, SVGProps } from "react";
 import {
   AcademicCapIcon,
+  BanknotesIcon,
   BoltIcon,
   CodeBracketSquareIcon,
   CommandLineIcon,
+  ComputerDesktopIcon,
   CpuChipIcon,
   DevicePhoneMobileIcon,
   LightBulbIcon,
@@ -44,7 +46,7 @@ export type PathStep = {
 };
 
 export type Studio = PathStep & {
-  /** The hero call to action that opens this studio. */
+  /** The call to action that opens this studio. */
   action: string;
 };
 
@@ -76,6 +78,40 @@ export const STUDIOS: Studio[] = [
     how: "Design the Muse agents a project needs, give each one a job, and add them to it, so the product keeps working after you ship it.",
     icon: CpuChipIcon,
     tints: ["orange", "pink"],
+  },
+];
+
+export type SupporterWay = {
+  /** The hero call to action. */
+  action: string;
+  href: string;
+  /** One line on what the supporter gives. */
+  how: string;
+  icon: IconComponent;
+};
+
+/**
+ * Three ways to back an idea without joining its team. WeStride never
+ * collects or holds money: capital goes through links the team lists.
+ */
+export const SUPPORTER_WAYS: SupporterWay[] = [
+  {
+    action: "Pledge tokens",
+    href: "/supporting?kind=tokens",
+    how: "Let a team's agents run on your Meta API key, up to a cap you set.",
+    icon: SparklesIcon,
+  },
+  {
+    action: "Pledge compute",
+    href: "/supporting?kind=compute",
+    how: "Run agent jobs on your own computer, in an isolated container.",
+    icon: ComputerDesktopIcon,
+  },
+  {
+    action: "Pledge capital",
+    href: "/supporting?kind=capital",
+    how: "Contribute through the links a team lists, outside WeStride.",
+    icon: BanknotesIcon,
   },
 ];
 

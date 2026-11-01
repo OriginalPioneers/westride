@@ -8,8 +8,9 @@ import {
   hasDueAgents,
   nextQueuedAgentTicket,
 } from "@westride/db/agents";
+import { resolveJobPayer } from "@/lib/support/payer";
 import { SCHEDULE_BATCH_SIZE } from "./config";
-import { AgentJobError, startAgentJob } from "./start";
+import { AgentJobError, canRunCode, startAgentJob } from "./start";
 
 export type ScheduleTickResult = {
   claimed: number;
@@ -44,7 +45,7 @@ async function pickScheduledTicket(agent: Agent): Promise<AgentTicket | null> {
 
 /**
  * Claims every agent whose slot has come and starts one job each, on the
- * owner's Meta key. Claiming is atomic, so the cron route and the
+ * owner's Meta key or a sponsor's. Claiming is atomic, so the cron route and the
  * opportunistic page ticks can both call this without doubling up.
  */
 export async function runDueAgents(now = new Date()): Promise<ScheduleTickResult> {
@@ -62,12 +63,16 @@ export async function runDueAgents(now = new Date()): Promise<ScheduleTickResult
         });
         continue;
       }
+      const payer = await resolveJobPayer(agent, agent.ownerClerkUserId, {
+        needsVercel: canRunCode(agent),
+      });
       const started = await startAgentJob({
         agent,
         ticket,
         trigger: "SCHEDULE",
         startedByClerkUserId: null,
-        payerClerkUserId: agent.ownerClerkUserId,
+        payerClerkUserId: payer.clerkUserId,
+        pledgeId: payer.pledgeId,
         instructions: "",
       });
       result.started.push(started.jobId);

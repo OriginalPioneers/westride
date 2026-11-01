@@ -1,0 +1,20 @@
+{
+  "name": "@westride/runner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The WeStride supporter runner: picks up agent jobs for ideas you pledged compute to and runs Muse Code on them inside Docker.",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun run --watch src/index.ts",
+    "lint": "tsc --noEmit",
+    "docker:build": "docker build -f apps/runner/Dockerfile -t westride-runner ../.."
+  },
+  "dependencies": {
+    "@westride/runner-protocol": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "typescript": "^5"
+  }
+}

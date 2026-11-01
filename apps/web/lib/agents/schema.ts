@@ -31,6 +31,7 @@ export const MAX_AGENT_DESCRIPTION = 2000;
 export const MAX_AGENT_INSTRUCTIONS = 8000;
 export const MAX_STANDING_TASK = 4000;
 export const MAX_JOB_INSTRUCTIONS = MAX_PLAN_NOTES;
+export const MAX_LOCAL_MODEL = 120;
 
 const agentStatuses = ["ACTIVE", "PAUSED", "ARCHIVED"] as const satisfies readonly AgentStatus[];
 const agentSchedules = ["NONE", "HOURLY", "DAILY", "WEEKLY"] as const satisfies readonly AgentSchedule[];
@@ -73,6 +74,15 @@ const agentFields = {
     .min(MIN_AGENT_STEPS, `Allow at least ${MIN_AGENT_STEPS} steps.`)
     .max(MAX_AGENT_STEPS, `Keep the step limit under ${MAX_AGENT_STEPS}.`)
     .default(DEFAULT_AGENT_STEPS),
+  /** Let supporters' token pledges on the linked idea pay for this agent's jobs. */
+  allowSponsorTokens: z.boolean().default(false),
+  /** Let supporters' computers run this agent's code jobs (public repos only). */
+  allowVolunteerCompute: z.boolean().default(false),
+  /** Ollama model a volunteer computer may use when it has no Meta key. */
+  volunteerLocalModel: z
+    .union([z.string().trim().max(MAX_LOCAL_MODEL, `Keep the model name under ${MAX_LOCAL_MODEL} characters.`), z.null()])
+    .transform((value) => value || null)
+    .default(null),
 };
 
 export const githubRepoUrlSchema = z
@@ -188,6 +198,9 @@ export type AgentDraft = {
   projectId: string | null;
   model: string;
   maxSteps: number;
+  allowSponsorTokens: boolean;
+  allowVolunteerCompute: boolean;
+  volunteerLocalModel: string | null;
   githubRepoUrl: string;
   schedule: AgentSchedule;
   scheduleHourUtc: number | null;

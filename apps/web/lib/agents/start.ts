@@ -15,15 +15,17 @@ import {
 } from "@westride/db/agents";
 import { agentTicketKey } from "@westride/db/agent-rules";
 import { logMuseRequest } from "@westride/db/idea-factory";
+import { hasEligibleDevice } from "@westride/db/devices";
 import {
   VERCEL_CONNECTION_MESSAGE,
   getAgentRunnerConfig,
+  getVolunteerRunnerConfig,
   isSandboxAuthError,
 } from "@/lib/build/agent/config";
 import { RUNNER_SCRIPT } from "@/lib/build/agent/runner-script";
 import type { AgentConnection } from "@/lib/build/agent/start";
 import { createRunToken } from "@/lib/build/agent/token";
-import { installationToken, repoInstallationId } from "@/lib/github/app";
+import { installationToken, publicReadToken, repoInstallationId } from "@/lib/github/app";
 import { requireGithubAppConfig } from "@/lib/github/config";
 import { githubJson, isGithubStatus } from "@/lib/github/http";
 import { getGithubUserToken } from "@/lib/github/user";
@@ -74,12 +76,16 @@ export type StartJobInput = {
   startedByClerkUserId: string | null;
   /** Whose Meta key (and GitHub access) the job uses. */
   payerClerkUserId: string;
+  /** The TOKENS pledge the payer is spending from, when a sponsor pays. */
+  pledgeId: string | null;
   instructions: string;
 };
 
 export type StartedJob = {
   jobId: string;
   kind: "CODE" | "REPORT";
+  /** Set when the job is waiting for a supporter's device rather than running already. */
+  queuedForVolunteer?: boolean;
   /**
    * Report jobs do their work after the response goes out. The caller runs
    * this in `after()` (or awaits it directly from a background route).
@@ -93,24 +99,34 @@ export function canRunCode(agent: Agent): boolean {
 }
 
 /**
+ * Whether a supporter's computer could take this agent's next code job: the
+ * owner opted in, the repository is public, and a pledged device is online.
+ */
+export async function canRunOnVolunteer(agent: Agent): Promise<boolean> {
+  if (
+    !agent.repoOwner ||
+    !agent.repoName ||
+    !agent.allowVolunteerCompute ||
+    agent.repoIsPrivate !== false ||
+    !agent.ideaId ||
+    getVolunteerRunnerConfig() === null
+  ) {
+    return false;
+  }
+  return hasEligibleDevice(agent);
+}
+
+/**
  * Starts a job for a ticket. Code jobs launch a sandbox on the payer's own
  * Vercel account and come back through the events route; report jobs make
  * one Model API call. Either way the member's own Meta key pays for the
- * model, never WeStride's.
+ * model, never WeStride's. When the owner allows it and a supporter's device
+ * is online, a code job is queued for that device instead of a sandbox.
  */
 export async function startAgentJob(input: StartJobInput): Promise<StartedJob> {
   const { agent, ticket, payerClerkUserId } = input;
   if (agent.status !== "ACTIVE") {
     throw new AgentJobError("This agent is paused. Resume it in Settings to run jobs.");
-  }
-  const museKey = await getMuseApiKey(payerClerkUserId);
-  if (!museKey) {
-    throw new AgentJobError(
-      input.trigger === "MANUAL"
-        ? "Connect your Meta account in Settings to run this agent."
-        : "The owner's Meta account is not connected, so the scheduled job could not run.",
-      "meta",
-    );
   }
   if (await getActiveJobForTicket(ticket.id)) {
     throw new AgentJobError("The agent is already working on this ticket.");
@@ -127,6 +143,20 @@ export async function startAgentJob(input: StartJobInput): Promise<StartedJob> {
     idea: links.idea,
     project: links.project,
   };
+
+  if (await canRunOnVolunteer(agent)) {
+    return startVolunteerJob(input, context);
+  }
+
+  const museKey = await getMuseApiKey(payerClerkUserId);
+  if (!museKey) {
+    throw new AgentJobError(
+      input.trigger === "MANUAL"
+        ? "Connect your Meta account in Settings to run this agent."
+        : "The owner's Meta account is not connected, so the scheduled job could not run.",
+      "meta",
+    );
+  }
 
   if (canRunCode(agent)) {
     return startCodeJob(input, context, museKey);
@@ -212,6 +242,8 @@ async function startCodeJob(
     kind: "CODE",
     startedByClerkUserId: input.startedByClerkUserId,
     paidByClerkUserId: payerClerkUserId,
+    pledgeId: input.pledgeId,
+    runnerKind: "VERCEL_SANDBOX",
     model: agent.model,
     maxSteps: agent.maxSteps,
     repoFullName,
@@ -314,6 +346,90 @@ async function startCodeJob(
 }
 
 // ---------------------------------------------------------------------------
+// Volunteer jobs: queued for a supporter's device to lease
+// ---------------------------------------------------------------------------
+
+/**
+ * Parks a code job for a pledged device. The device clones the public
+ * repository anonymously, runs Muse Code, and sends the changed files back;
+ * WeStride commits them and opens the pull request. No credential of the
+ * team's ever reaches the device, and the team's Meta key is not used.
+ */
+async function startVolunteerJob(input: StartJobInput, context: AgentPromptContext): Promise<StartedJob> {
+  const { agent, ticket } = input;
+  if (!agent.repoOwner || !agent.repoName) {
+    throw new AgentJobError("This agent has no repository.");
+  }
+  const ref = { owner: agent.repoOwner, repo: agent.repoName };
+  const readToken = await publicReadToken();
+  let raw: RawRepo & { private?: boolean };
+  try {
+    raw = await githubJson<RawRepo & { private?: boolean }>(`/repos/${ref.owner}/${ref.repo}`, {
+      token: readToken,
+    });
+  } catch (error) {
+    if (isGithubStatus(error, 404)) {
+      throw new AgentJobError("The repository could not be found on GitHub.", "github");
+    }
+    throw error;
+  }
+  if (raw.private) {
+    throw new AgentJobError("Supporters can only run jobs in public repositories.");
+  }
+  if (raw.archived) {
+    throw new AgentJobError("This repository is archived on GitHub.");
+  }
+  try {
+    await repoInstallationId(ref);
+  } catch (error) {
+    if (isGithubStatus(error, 404)) {
+      throw new AgentJobError("Install the WeStride GitHub App on this repository first.", "github");
+    }
+    throw error;
+  }
+
+  const baseBranch = raw.default_branch || agent.repoDefaultBranch || "main";
+  const branch = agentJobBranchName(agent, ticket);
+  const repoFullName = `${agent.repoOwner}/${agent.repoName}`;
+  const prompt = buildCodeJobPrompt({ ...context, branch });
+  // The run token is minted when a device leases the job (lib/runner/lease.ts),
+  // so nothing usable sits on a job that is only waiting.
+  const job = await createAgentJob({
+    agentId: agent.id,
+    ticketId: ticket.id,
+    ticketTitle: ticket.title,
+    trigger: input.trigger,
+    kind: "CODE",
+    startedByClerkUserId: input.startedByClerkUserId,
+    paidByClerkUserId: input.payerClerkUserId,
+    pledgeId: null,
+    runnerKind: "VOLUNTEER_DEVICE",
+    model: agent.model,
+    maxSteps: agent.maxSteps,
+    prompt,
+    repoFullName,
+    branch,
+    baseBranch,
+  });
+
+  const key = agentTicketKey(agent.name, ticket.number);
+  await appendAgentJobEvents(job.id, [
+    {
+      sequence: SERVER_EVENT_SEQUENCE,
+      type: "setup",
+      payload: {
+        step: "queue",
+        message: "Waiting for a supporter's computer to pick this up",
+        repo: repoFullName,
+        branch,
+      },
+    },
+  ]);
+  await afterStart(input, job.id, `Queued ${key} for a supporter's computer in ${repoFullName} on ${branch}.`);
+  return { jobId: job.id, kind: "CODE", work: null, queuedForVolunteer: true };
+}
+
+// ---------------------------------------------------------------------------
 // Report jobs: one Model API call with web search
 // ---------------------------------------------------------------------------
 
@@ -331,6 +447,7 @@ async function startReportJob(
     kind: "REPORT",
     startedByClerkUserId: input.startedByClerkUserId,
     paidByClerkUserId: input.payerClerkUserId,
+    pledgeId: input.pledgeId,
     model: agent.model,
     maxSteps: 1,
   });

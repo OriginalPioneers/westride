@@ -53,6 +53,35 @@ export function isAgentRunnerConfigured(): boolean {
   return getAgentRunnerConfig() !== null;
 }
 
+/**
+ * Supporter devices need less from the server than sandboxes: only the
+ * GitHub App (to commit their work and open the pull request) and a public
+ * callback URL. No Vercel connection is involved.
+ */
+export type VolunteerRunnerConfig = {
+  callbackBaseUrl: string;
+  jobTimeoutMs: number;
+};
+
+export function getVolunteerRunnerConfig(): VolunteerRunnerConfig | null {
+  if (!isGithubAppConfigured()) {
+    return null;
+  }
+  const callbackBaseUrl = env("BUILD_RUNNER_CALLBACK_URL").replace(/\/+$/, "");
+  if (!/^https?:\/\//.test(callbackBaseUrl)) {
+    return null;
+  }
+  const minutes = Number(env("BUILD_RUNNER_SANDBOX_TIMEOUT_MINUTES")) || DEFAULT_TIMEOUT_MINUTES;
+  return {
+    callbackBaseUrl,
+    jobTimeoutMs: Math.min(Math.max(minutes, 5), MAX_TIMEOUT_MINUTES) * 60_000,
+  };
+}
+
+export function isVolunteerRunnerConfigured(): boolean {
+  return getVolunteerRunnerConfig() !== null;
+}
+
 /** The path the sandbox posts its work log to. Listed in proxy.ts. */
 export const AGENT_EVENTS_PATH = "/integrations/muse-code/events";
 

@@ -209,11 +209,26 @@ export const LANDING_STYLES = `
   }
 
   .wl-hero-stage .wl-globe {
-    max-width: clamp(
-      calc(var(--spacing-12) * 7),
-      calc(100dvh - var(--spacing-12) * 9),
-      calc(var(--spacing-12) * 11)
+    width: clamp(
+      calc(var(--spacing-12) * 16),
+      calc(100dvh - var(--spacing-12) * 1.5),
+      calc(var(--spacing-12) * 28)
     );
+  }
+}
+
+/* Side by side (the Grid goes to two columns once both fit 484px), the
+   card column is at least wide enough for the Builders row of three
+   buttons to sit on one line; the copy takes the rest. Grid exposes its
+   template through this variable, set inline, so the override has to be
+   important. */
+.wl-hero .wl-hero-content {
+  container-type: inline-size;
+}
+
+@container (min-width: 62.5rem) {
+  .wl-hero .wl-hero-split {
+    --x-gridTemplateColumns: minmax(0, 1fr) minmax(calc(var(--spacing-12) * 11.5), 1fr) !important;
   }
 }
 
@@ -227,9 +242,43 @@ export const LANDING_STYLES = `
   }
 }
 
-/* The globe and the import panel share one cell, the panel in front. */
+/* The globe and the cards share one cell, the cards in front. The globe is
+   a backdrop: it is taken out of flow, centred on the stage, and left to
+   spill past the column (the hero clips it), so it never sizes the row. */
+.wl-hero-stage {
+  position: relative;
+}
+
 .wl-hero-stage > * {
   grid-area: 1 / 1;
+}
+
+.wl-hero-stage .wl-globe {
+  position: absolute;
+  top: 50%;
+  left: 62%;
+  translate: -50% -50%;
+  width: calc(var(--spacing-12) * 18);
+  max-width: none;
+  margin: 0;
+  pointer-events: none;
+}
+
+.wl-hero-stage .wl-globe-canvas {
+  pointer-events: auto;
+}
+
+/* One line at any width: the title is sized from its own column, so it
+   never runs under the cards beside it. */
+.wl-hero .wl-hero-copy {
+  container-type: inline-size;
+  /* Above the globe, which can spill under this column, so links stay clickable. */
+  position: relative;
+  z-index: 1;
+}
+
+.wl-hero .wl-hero-copy .wl-hero-title {
+  font-size: clamp(var(--font-size-2xl), 8.4cqw, var(--font-size-5xl));
 }
 
 .wl-hero-copy > *,
@@ -245,12 +294,17 @@ export const LANDING_STYLES = `
 .wl-hero-copy > :nth-child(6) { animation-delay: var(--duration-slow-min); }
 .wl-hero-connect { animation-delay: var(--duration-slow); }
 
-.wl-hero-import {
+/* The two hero cards (Builders, Supporters) stack in front of the globe. */
+.wl-hero-cards {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: calc(var(--spacing-12) * 10);
+  max-width: calc(var(--spacing-12) * 20);
   margin-inline: auto;
+}
+
+.wl-hero-card {
+  width: 100%;
   box-sizing: border-box;
   box-shadow: 0 0 var(--spacing-8) color-mix(in srgb, var(--wl-indigo) 35%, transparent);
   animation: wl-rise var(--duration-slow) var(--ease-standard) both;
@@ -260,6 +314,11 @@ export const LANDING_STYLES = `
   background: color-mix(in srgb, var(--color-background-surface) 72%, transparent);
   -webkit-backdrop-filter: blur(var(--spacing-3));
   backdrop-filter: blur(var(--spacing-3));
+}
+
+.wl-hero-card-support {
+  animation-delay: var(--duration-slow-min);
+  box-shadow: 0 0 var(--spacing-8) color-mix(in srgb, var(--wl-teal) 30%, transparent);
 }
 
 /* ---------- Connection strip ---------- */
@@ -619,7 +678,7 @@ export const LANDING_STYLES = `
   .wl-hero-sky .wl-node,
   .wl-hero-copy > *,
   .wl-hero-connect,
-  .wl-hero-import,
+  .wl-hero-card,
   .wl-connect-tile,
   .wl-app-tile,
   .wl-platform-tile,
