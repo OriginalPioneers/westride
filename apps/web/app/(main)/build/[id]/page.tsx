@@ -31,6 +31,7 @@ import { claimCardProps } from "@/lib/claims/view";
 import { ideaPath } from "@/lib/ideas/filters";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
 import { LinkedAgents } from "../../agents/linked-agents";
+import { EntityImageMenu } from "../../entity-image-menu";
 import { ClaimIdeaCard } from "../../ideas/claim-idea-card";
 import { loadProjectPage } from "./load-project";
 import { PlanWithMuseButton } from "./plan-button";
@@ -39,7 +40,7 @@ import { NewTicketButton } from "./tickets/new-ticket-button";
 
 type Params = Promise<{ id: string }>;
 
-/** Muse planning actions called from this page can take a few minutes. */
+/** Muse planning and image actions called from this page can take a few minutes. */
 export const maxDuration = 300;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
@@ -94,6 +95,15 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
                       name: profiles.get(member.clerkUserId)?.name ?? "WeStride member",
                     }))}
                   />
+                  {context.isOwner ? (
+                    <EntityImageMenu
+                      kind="project"
+                      id={project.id}
+                      name={project.name}
+                      imageUrl={project.imageUrl}
+                      hasMetaConnection={context.hasMetaConnection}
+                    />
+                  ) : null}
                   <Button
                     label="Settings"
                     variant="secondary"

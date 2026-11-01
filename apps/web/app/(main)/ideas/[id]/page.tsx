@@ -17,7 +17,10 @@ import { PROJECT_STATUS_LABELS, projectPath } from "@/lib/build/labels";
 import { claimCardProps } from "@/lib/claims/view";
 import { IDEA_ROLE_LABELS, ideaPath, ideasPath } from "@/lib/ideas/filters";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
+import { getMetaConnectionSummary } from "@/lib/meta/connection";
 import { LinkedAgents } from "../../agents/linked-agents";
+import { EntityImage } from "../../entity-image";
+import { EntityImageMenu } from "../../entity-image-menu";
 import { ClaimIdeaCard } from "../claim-idea-card";
 import { FeaturedBadge, IdeaTypeBadge, UnclaimedBadge } from "../idea-badges";
 import { BuildProjectButton } from "./build-project-button";
@@ -59,12 +62,18 @@ export default async function IdeaPage({ params }: { params: Params }) {
   const isMember =
     userId !== null &&
     idea.members.some((member) => member.clerkUserId === userId);
-  const [profiles, projects, agents, account, claim] = await Promise.all([
+  const isFounder =
+    userId !== null &&
+    idea.members.some(
+      (member) => member.clerkUserId === userId && member.role === "FOUNDER",
+    );
+  const [profiles, projects, agents, account, claim, metaConnection] = await Promise.all([
     resolveMemberProfiles(idea.members.map((member) => member.clerkUserId)),
     listProjectsForIdea(idea.id, { clerkUserId: userId }),
     listAgentsForIdea(idea.id, { clerkUserId: userId }),
     isMember ? currentUser() : Promise.resolve(null),
     claimCardProps(idea, userId, { returnTo: ideaPath(idea.id), surface: "idea" }),
+    isFounder && userId ? getMetaConnectionSummary(userId) : Promise.resolve(null),
   ]);
   const creator = account
     ? {
@@ -72,11 +81,6 @@ export default async function IdeaPage({ params }: { params: Params }) {
         imageUrl: account.hasImage ? account.imageUrl : null,
       }
     : null;
-  const isFounder =
-    userId !== null &&
-    idea.members.some(
-      (member) => member.clerkUserId === userId && member.role === "FOUNDER",
-    );
   const editableIdea = {
     id: idea.id,
     prototypeUrl: idea.prototypeUrl,
@@ -104,19 +108,24 @@ export default async function IdeaPage({ params }: { params: Params }) {
             <Link href="/ideas" isStandalone>
               All ideas
             </Link>
-            <VStack gap={2}>
-              <HStack gap={2} vAlign="center" wrap="wrap">
-                <IdeaTypeBadge type={idea.type} />
-                {idea.isFeatured ? <FeaturedBadge /> : null}
-                {claim ? <UnclaimedBadge /> : null}
-                {!idea.isPublic ? (
-                  <Text type="supporting">
-                    Private · visible to members only
-                  </Text>
-                ) : null}
-              </HStack>
-              <Heading level={1}>{idea.name}</Heading>
-            </VStack>
+            <HStack gap={4} vAlign="center">
+              <EntityImage name={idea.name} imageUrl={idea.imageUrl} size={72} />
+              <StackItem size="fill">
+                <VStack gap={2}>
+                  <HStack gap={2} vAlign="center" wrap="wrap">
+                    <IdeaTypeBadge type={idea.type} />
+                    {idea.isFeatured ? <FeaturedBadge /> : null}
+                    {claim ? <UnclaimedBadge /> : null}
+                    {!idea.isPublic ? (
+                      <Text type="supporting">
+                        Private · visible to members only
+                      </Text>
+                    ) : null}
+                  </HStack>
+                  <Heading level={1}>{idea.name}</Heading>
+                </VStack>
+              </StackItem>
+            </HStack>
             {isMember && userId ? (
               <HStack gap={3} vAlign="center" wrap="wrap">
                 <IdeaFactoryButton
@@ -127,7 +136,16 @@ export default async function IdeaPage({ params }: { params: Params }) {
                   <BuildProjectButton ideaId={idea.id} creator={creator} />
                 ) : null}
                 {isFounder ? (
-                  <EditIdeaButton idea={editableIdea} viewerId={userId} />
+                  <>
+                    <EditIdeaButton idea={editableIdea} viewerId={userId} />
+                    <EntityImageMenu
+                      kind="idea"
+                      id={idea.id}
+                      name={idea.name}
+                      imageUrl={idea.imageUrl}
+                      hasMetaConnection={metaConnection !== null}
+                    />
+                  </>
                 ) : null}
                 <Text type="supporting">
                   Work through this idea with your AI advisory team, then build

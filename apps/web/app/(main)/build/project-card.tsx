@@ -2,7 +2,7 @@ import { Card } from "@astryxdesign/core/Card";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Link } from "@astryxdesign/core/Link";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
-import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import {
   ticketProgressPercent,
@@ -12,6 +12,7 @@ import {
 import { isClaimableProject } from "@westride/db/claim-rules";
 import { projectPath } from "@/lib/build/labels";
 import { markdownExcerpt } from "@/lib/ideas/excerpt";
+import { EntityImage } from "../entity-image";
 import { UnclaimedBadge } from "../ideas/idea-badges";
 import { ProjectStatusBadge } from "./project-badges";
 
@@ -29,16 +30,21 @@ export function ProjectCard({ project }: { project: ProjectWithDetails }) {
           {isClaimableProject(project) ? <UnclaimedBadge /> : null}
           {!project.isPublic ? <Text type="supporting">Private</Text> : null}
         </HStack>
-        <VStack gap={1}>
-          <Heading level={3} maxLines={2}>
-            <Link href={projectPath(project.id)}>{project.name}</Link>
-          </Heading>
-          {repos.length > 0 ? (
-            <Text type="supporting" maxLines={1}>
-              {repos.join(", ")}
-            </Text>
-          ) : null}
-        </VStack>
+        <HStack gap={3} vAlign="center">
+          <EntityImage name={project.name} imageUrl={project.imageUrl} size={48} />
+          <StackItem size="fill">
+            <VStack gap={1}>
+              <Heading level={3} maxLines={2}>
+                <Link href={projectPath(project.id)}>{project.name}</Link>
+              </Heading>
+              {repos.length > 0 ? (
+                <Text type="supporting" maxLines={1}>
+                  {repos.join(", ")}
+                </Text>
+              ) : null}
+            </VStack>
+          </StackItem>
+        </HStack>
         {excerpt ? <Text maxLines={3}>{excerpt}</Text> : null}
         {total > 0 ? (
           <ProgressBar

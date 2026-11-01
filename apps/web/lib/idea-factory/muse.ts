@@ -354,6 +354,144 @@ export async function callMuse(options: MuseCallOptions): Promise<MuseResult> {
   }
 }
 
+const IMAGES_ENDPOINT = "/images/generations";
+
+export type MuseImageOptions = {
+  apiKey: string;
+  model: string;
+  prompt: string;
+  /** Sets the aspect ratio only; Muse Image renders at its own resolution. */
+  size: `${number}x${number}`;
+  /** A stable id for the member, which Meta uses to spot abuse. */
+  user: string;
+  costPerImageMicros: number;
+  timeoutMs?: number;
+};
+
+export type MuseImageResult = {
+  attempt: MuseAttempt;
+  image: Buffer | null;
+};
+
+/** The response with image bytes removed, so the log stays small. */
+function withoutImageData(body: unknown): unknown {
+  const record = asRecord(body);
+  if (!record || !Array.isArray(record.data)) {
+    return body;
+  }
+  return {
+    ...record,
+    data: record.data.map((item) => {
+      const entry = asRecord(item);
+      return entry && typeof entry.b64_json === "string"
+        ? { ...entry, b64_json: `<${entry.b64_json.length} base64 chars>` }
+        : item;
+    }),
+  };
+}
+
+/**
+ * One call to `POST /v1/images/generations` for a single image. Like
+ * callMuse, it never throws: failures are recorded on the attempt.
+ */
+export async function generateMuseImage(options: MuseImageOptions): Promise<MuseImageResult> {
+  const payload = {
+    model: options.model,
+    prompt: options.prompt,
+    n: 1,
+    size: options.size,
+    output_format: "png",
+    response_format: "b64_json",
+    user: options.user,
+    // A single subject on a plain ground needs no lookups, and they slow it down.
+    tool_enablement: { enable_web_search: false, enable_shell: false },
+  };
+  const started = Date.now();
+  const failed = (
+    error: string,
+    statusCode: number | null,
+    responseBody: unknown,
+    rateLimit: MuseRateLimit = { remainingTokens: null, remainingRequests: null },
+  ): MuseImageResult => ({
+    attempt: {
+      endpoint: IMAGES_ENDPOINT,
+      requestBody: payload,
+      responseBody,
+      statusCode,
+      durationMs: Date.now() - started,
+      usage: EMPTY_USAGE,
+      rateLimit,
+      error,
+    },
+    image: null,
+  });
+
+  try {
+    const response = await fetch(`${MUSE_API_BASE}${IMAGES_ENDPOINT}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${options.apiKey}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(options.timeoutMs ?? REQUEST_TIMEOUT_MS),
+    });
+    const body = await readBody(response);
+    const loggedBody = withoutImageData(body);
+    const rateLimit: MuseRateLimit = {
+      remainingTokens: headerInt(response.headers, "x-ratelimit-remaining-tokens"),
+      remainingRequests: headerInt(response.headers, "x-ratelimit-remaining-requests"),
+    };
+    if (!response.ok) {
+      return failed(errorMessage(response.status, body), response.status, loggedBody, rateLimit);
+    }
+
+    const record = asRecord(body);
+    const first = Array.isArray(record?.data) ? asRecord(record.data[0]) : null;
+    const encoded = typeof first?.b64_json === "string" ? first.b64_json : null;
+    if (!encoded) {
+      // Images removed by Meta's safety filter come back missing, and are not billed.
+      return failed(
+        "Muse did not return an image. Try describing it differently.",
+        response.status,
+        loggedBody,
+        rateLimit,
+      );
+    }
+    const usage = asRecord(record?.usage);
+    return {
+      attempt: {
+        endpoint: IMAGES_ENDPOINT,
+        requestBody: payload,
+        responseBody: loggedBody,
+        statusCode: response.status,
+        durationMs: Date.now() - started,
+        usage: {
+          ...EMPTY_USAGE,
+          inputTokens: asNumber(usage?.input_tokens),
+          outputTokens: asNumber(usage?.output_tokens),
+          totalTokens: asNumber(usage?.total_tokens),
+          estimatedCostMicros: options.costPerImageMicros,
+        },
+        rateLimit,
+        error: null,
+      },
+      image: Buffer.from(encoded, "base64"),
+    };
+  } catch (error) {
+    const timedOut =
+      error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+    return failed(
+      timedOut
+        ? "Muse took too long to draw. Try again, or ask for something simpler."
+        : "Meta Model API could not be reached.",
+      null,
+      null,
+    );
+  }
+}
+
 function parseJsonValue(text: string): unknown | undefined {
   try {
     return JSON.parse(text) as unknown;

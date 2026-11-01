@@ -1,13 +1,14 @@
 import { Card } from "@astryxdesign/core/Card";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Link } from "@astryxdesign/core/Link";
-import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { describeSchedule, totalTickets, type AgentWithDetails } from "@westride/db/agents";
 import { agentPath } from "@/lib/agents/labels";
 import { formatMicrosAsUsd, formatTokens } from "@/lib/idea-factory/pricing";
 import { markdownExcerpt } from "@/lib/ideas/excerpt";
+import { EntityImage } from "../entity-image";
 import { AgentStatusBadge, ScheduleBadge } from "./agent-badges";
 
 export function AgentCard({ agent }: { agent: AgentWithDetails }) {
@@ -25,16 +26,21 @@ export function AgentCard({ agent }: { agent: AgentWithDetails }) {
           {agent.activeJobs > 0 ? <Text type="supporting">Working now</Text> : null}
           {!agent.isPublic ? <Text type="supporting">Private</Text> : null}
         </HStack>
-        <VStack gap={1}>
-          <Heading level={3} maxLines={2}>
-            <Link href={agentPath(agent.id)}>{agent.name}</Link>
-          </Heading>
-          {repo || links.length > 0 ? (
-            <Text type="supporting" maxLines={1}>
-              {[repo, ...links].filter(Boolean).join(" · ")}
-            </Text>
-          ) : null}
-        </VStack>
+        <HStack gap={3} vAlign="center">
+          <EntityImage name={agent.name} imageUrl={agent.imageUrl} size={48} />
+          <StackItem size="fill">
+            <VStack gap={1}>
+              <Heading level={3} maxLines={2}>
+                <Link href={agentPath(agent.id)}>{agent.name}</Link>
+              </Heading>
+              {repo || links.length > 0 ? (
+                <Text type="supporting" maxLines={1}>
+                  {[repo, ...links].filter(Boolean).join(" · ")}
+                </Text>
+              ) : null}
+            </VStack>
+          </StackItem>
+        </HStack>
         {excerpt ? <Text maxLines={3}>{excerpt}</Text> : null}
         <VStack gap={0}>
           <Text type="supporting">

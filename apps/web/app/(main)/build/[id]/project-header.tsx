@@ -3,6 +3,7 @@ import { Link } from "@astryxdesign/core/Link";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import type { ReactNode } from "react";
+import { EntityImage } from "../../entity-image";
 import { UnclaimedBadge } from "../../ideas/idea-badges";
 import { ProjectStatusBadge } from "../project-badges";
 import type { ProjectPageContext } from "./load-project";
@@ -25,6 +26,7 @@ export function ProjectHeader({
         All projects
       </Link>
       <HStack gap={4} vAlign="center" wrap="wrap">
+        <EntityImage name={project.name} imageUrl={project.imageUrl} size={72} />
         <StackItem size="fill">
           <VStack gap={2}>
             <HStack gap={2} vAlign="center" wrap="wrap">

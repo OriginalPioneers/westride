@@ -39,6 +39,7 @@ import { projectPath } from "@/lib/build/labels";
 import { formatMicrosAsUsd, formatTokens } from "@/lib/idea-factory/pricing";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
 import { ideaPath } from "@/lib/ideas/filters";
+import { EntityImageMenu } from "../../entity-image-menu";
 import { AgentHeader } from "./agent-header";
 import { JobRow } from "./job-row";
 import { loadAgentPage } from "./load-agent";
@@ -47,6 +48,9 @@ import { NewAgentTicketButton } from "./tickets/new-ticket-button";
 type Params = Promise<{ id: string }>;
 
 export const dynamic = "force-dynamic";
+
+/** Muse image actions called from this page can take a minute or two. */
+export const maxDuration = 180;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const context = await loadAgentPage((await params).id);
@@ -90,7 +94,16 @@ export default async function AgentOverviewPage({ params }: { params: Params }) 
                 <>
                   <NewAgentTicketButton agentId={agent.id} runsCode={context.runsCode} />
                   {context.isOwner ? (
-                    <Button label="Settings" variant="secondary" href={agentSettingsPath(agent.id)} />
+                    <>
+                      <EntityImageMenu
+                        kind="agent"
+                        id={agent.id}
+                        name={agent.name}
+                        imageUrl={agent.imageUrl}
+                        hasMetaConnection={context.hasMetaConnection}
+                      />
+                      <Button label="Settings" variant="secondary" href={agentSettingsPath(agent.id)} />
+                    </>
                   ) : null}
                 </>
               ) : null

@@ -4,6 +4,7 @@ import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import type { ReactNode } from "react";
 import { agentsPath } from "@/lib/agents/labels";
+import { EntityImage } from "../../entity-image";
 import { AgentStatusBadge, ScheduleBadge } from "../agent-badges";
 import { AgentNav, type AgentSection } from "./agent-nav";
 import type { AgentPageContext } from "./load-agent";
@@ -25,6 +26,7 @@ export function AgentHeader({
         All agents
       </Link>
       <HStack gap={4} vAlign="center" wrap="wrap">
+        <EntityImage name={agent.name} imageUrl={agent.imageUrl} size={72} />
         <StackItem size="fill">
           <VStack gap={2}>
             <HStack gap={2} vAlign="center" wrap="wrap">

@@ -1,13 +1,14 @@
 import { Card } from "@astryxdesign/core/Card";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Link } from "@astryxdesign/core/Link";
-import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
 import { isClaimableIdea } from "@westride/db/claim-rules";
 import type { IdeaWithDetails } from "@westride/db/ideas";
 import { markdownExcerpt } from "@/lib/ideas/excerpt";
 import { ideaPath, ideasPath } from "@/lib/ideas/filters";
+import { EntityImage } from "../entity-image";
 import { FeaturedBadge, IdeaTypeBadge, UnclaimedBadge } from "./idea-badges";
 
 const VISIBLE_TAGS = 4;
@@ -33,16 +34,21 @@ export function IdeaCard({ idea }: { idea: IdeaWithDetails }) {
           {idea.isFeatured ? <FeaturedBadge /> : null}
           {isClaimableIdea(idea) ? <UnclaimedBadge /> : null}
         </HStack>
-        <VStack gap={1}>
-          <Heading level={3} maxLines={2}>
-            <Link href={ideaPath(idea.id)}>{idea.name}</Link>
-          </Heading>
-          {countries ? (
-            <Text type="supporting" maxLines={1}>
-              {countries}
-            </Text>
-          ) : null}
-        </VStack>
+        <HStack gap={3} vAlign="center">
+          <EntityImage name={idea.name} imageUrl={idea.imageUrl} size={48} />
+          <StackItem size="fill">
+            <VStack gap={1}>
+              <Heading level={3} maxLines={2}>
+                <Link href={ideaPath(idea.id)}>{idea.name}</Link>
+              </Heading>
+              {countries ? (
+                <Text type="supporting" maxLines={1}>
+                  {countries}
+                </Text>
+              ) : null}
+            </VStack>
+          </StackItem>
+        </HStack>
         {excerpt ? <Text maxLines={3}>{excerpt}</Text> : null}
         {shownTags.length > 0 ? (
           <HStack gap={1} wrap="wrap" vAlign="center">

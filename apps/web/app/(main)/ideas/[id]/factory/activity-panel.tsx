@@ -40,6 +40,8 @@ const PURPOSE_LABELS: Record<string, string> = {
   evaluation: "Evaluation",
   synthesis: "Synthesis",
   verify: "Key check",
+  image: "Image",
+  "image-prompt": "Image description",
 };
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {

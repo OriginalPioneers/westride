@@ -148,6 +148,13 @@
       "when": 1793466135775,
       "tag": "0020_vercel_connections",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793547365156,
+      "tag": "0021_entity_images",
+      "breakpoints": true
     }
   ]
 }

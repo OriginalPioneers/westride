@@ -443,6 +443,8 @@ export const ideas = pgTable(
     type: ideaType("type").notNull(),
     prototypeUrl: text("prototype_url"),
     prototypeInstructions: text("prototype_instructions"),
+    /** Public Blob URL of a 512×512 square image. */
+    imageUrl: text("image_url"),
     isFeatured: boolean("is_featured").notNull().default(false),
     isPublic: boolean("is_public").notNull().default(false),
     origin: contentOrigin("origin").notNull().default("MEMBER"),

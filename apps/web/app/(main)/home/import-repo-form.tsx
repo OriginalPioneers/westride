@@ -33,13 +33,17 @@ export function ImportRepoForm({ isSignedIn }: { isSignedIn: boolean }) {
   function submit() {
     const trimmed = url.trim();
     if (!trimmed) {
-      setNotice({ status: "error", title: "Paste a GitHub repository link first." });
+      setNotice({
+        status: "error",
+        title: "Paste a GitHub repository link first.",
+      });
       return;
     }
     if (!parseGithubRepoRef(trimmed)) {
       setNotice({
         status: "error",
-        title: "Use a GitHub repository link, like https://github.com/owner/repo.",
+        title:
+          "Use a GitHub repository link, like https://github.com/owner/repo.",
       });
       return;
     }
@@ -114,10 +118,10 @@ export function ImportRepoForm({ isSignedIn }: { isSignedIn: boolean }) {
           title="Sign in to import"
           description={
             <Text type="inherit">
-              Importing takes a WeStride account, so the idea has a record of who
-              brought it in.{" "}
-              <Link href={signInPath}>Sign in or create a free account</Link>, then
-              paste the link again.
+              Importing takes a WeStride account, so the idea has a record of
+              who brought it in.{" "}
+              <Link href={signInPath}>Sign in or create a free account</Link>,
+              then paste the link again.
             </Text>
           }
         />
@@ -125,13 +129,14 @@ export function ImportRepoForm({ isSignedIn }: { isSignedIn: boolean }) {
         <Banner
           status={notice.status}
           title={notice.title}
-          description={notice.status === "info" ? notice.description : undefined}
+          description={
+            notice.status === "info" ? notice.description : undefined
+          }
         />
       ) : (
         <Text type="supporting" size="sm">
-          Public repositories only. WeStride reads the README to write the idea,
-          links the repository to a Build Studio project, and leaves both
-          unclaimed until a maintainer picks them up.
+          Import a GitHub repository to instantly create an &quot;Idea&quot; and a
+          &quot;Project&quot; for it in WeStride.org
         </Text>
       )}
     </VStack>

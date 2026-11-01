@@ -26,6 +26,7 @@
     "./build-agents": "./src/build-agents.ts",
     "./agents": "./src/agents.ts",
     "./agent-rules": "./src/agent-rules.ts",
+    "./entity-images": "./src/entity-images.ts",
     "./social": "./src/social.ts",
     "./social-progress": "./src/social-progress.ts"
   },

@@ -55,6 +55,17 @@ export const MUSE_MODELS: MuseModelOption[] = [
 
 export const DEFAULT_MUSE_MODEL: MuseModelId = "muse-spark-1.3";
 
+/**
+ * Image models are billed per image, not per token, and only make pictures,
+ * so they stay out of MUSE_MODELS and the text-model pickers built from it.
+ */
+export const MUSE_IMAGE_MODEL = {
+  id: "muse-image-1.0",
+  label: "Muse Image 1.0",
+  description: "Meta's image model. $0.01 per image, billed to your Meta account.",
+  perImageMicros: 10_000,
+} as const;
+
 /** USD per web search query, billed on top of tokens. */
 const WEB_SEARCH_PER_QUERY = 2.5 / 1000;
 

@@ -50,6 +50,8 @@ export const agents = pgTable(
     description: text("description").notNull(),
     /** Markdown. The standing brief every job starts from. */
     instructions: text("instructions").notNull().default(""),
+    /** Public Blob URL of a 512×512 square image. */
+    imageUrl: text("image_url"),
     status: agentStatus("status").notNull().default("ACTIVE"),
     isPublic: boolean("is_public").notNull().default(false),
     /** Clerk user id. Owns the settings; their Meta key pays for scheduled jobs. */

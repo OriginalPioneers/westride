@@ -72,6 +72,8 @@ export const projects = pgTable(
     status: projectStatus("status").notNull().default("PLANNING"),
     /** The idea this project builds, when it came from one. */
     ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "set null" }),
+    /** Public Blob URL of a 512×512 square image. */
+    imageUrl: text("image_url"),
     isPublic: boolean("is_public").notNull().default(false),
     origin: contentOrigin("origin").notNull().default("MEMBER"),
     /** The next ticket number to hand out. Tickets read as PRJ-12 style keys. */
