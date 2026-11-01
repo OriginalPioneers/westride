@@ -18,15 +18,24 @@ import { githubJson, isGithubStatus } from "@/lib/github/http";
 import { getGithubUserToken } from "@/lib/github/user";
 import { getMuseModel } from "@/lib/idea-factory/pricing";
 import { getMuseApiKey } from "@/lib/meta/connection";
-import { AGENT_EVENTS_PATH, getAgentRunnerConfig } from "./config";
+import { getVercelSandboxCredentials } from "@/lib/vercel/connection";
+import {
+  AGENT_EVENTS_PATH,
+  VERCEL_CONNECTION_MESSAGE,
+  getAgentRunnerConfig,
+  isSandboxAuthError,
+} from "./config";
 import { agentBranchName, buildAgentPrompt } from "./prompt";
 import { RUNNER_SCRIPT } from "./runner-script";
 import { createRunToken } from "./token";
 
+/** A connection the member can fix in Settings. */
+export type AgentConnection = "meta" | "github" | "vercel";
+
 export class AgentStartError extends Error {
   constructor(
     message: string,
-    readonly needsConnection: "meta" | "github" | null = null,
+    readonly needsConnection: AgentConnection | null = null,
   ) {
     super(message);
     this.name = "AgentStartError";
@@ -68,10 +77,15 @@ export async function startAgentRun(input: {
   }
   const { commitAuthor } = requireGithubAppConfig();
 
-  // The member's own Meta key pays for the run.
+  // The member's own Meta key pays for the model, and their own Vercel
+  // account hosts the sandbox. WeStride is billed for neither.
   const museKey = await getMuseApiKey(userId);
   if (!museKey) {
     throw new AgentStartError("Connect your Meta account in Settings to run agents.", "meta");
+  }
+  const vercel = await getVercelSandboxCredentials(userId);
+  if (!vercel) {
+    throw new AgentStartError(VERCEL_CONNECTION_MESSAGE, "vercel");
   }
 
   // The member must be able to push, the same rule as committing from WeStride.
@@ -157,7 +171,7 @@ export async function startAgentRun(input: {
       },
     ]);
     const sandbox = await Sandbox.create({
-      ...(config.credentials ?? {}),
+      ...vercel,
       name: sandboxName,
       source: {
         type: "git",
@@ -233,6 +247,12 @@ export async function startAgentRun(input: {
       error: `The sandbox could not be started: ${message}`,
       finishedAt: new Date(),
     });
+    if (isSandboxAuthError(error)) {
+      throw new AgentStartError(
+        "Vercel refused the sandbox on your account. Reconnect Vercel in Settings and check the team has Sandbox enabled.",
+        "vercel",
+      );
+    }
     throw new AgentStartError("The sandbox could not be started. Try again in a moment.");
   }
 }

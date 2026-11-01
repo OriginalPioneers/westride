@@ -125,6 +125,7 @@ export default async function AgentTicketPage({ params }: { params: Params }) {
                     runsCode={context.runsCode}
                     repoFullName={repoFullName}
                     hasMetaConnection={context.hasMetaConnection}
+                    hasVercelConnection={context.hasVercelConnection}
                     isDisabled={activeJob !== null || ticket.status === "DONE" || agent.status !== "ACTIVE"}
                     disabledReason={
                       activeJob

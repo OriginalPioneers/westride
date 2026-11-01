@@ -50,7 +50,7 @@ export default async function AgentJobsPage({ params }: { params: Params }) {
               <Banner
                 status="info"
                 title="Code jobs are not set up on this server"
-                description="The agent has a repository, but Muse Code sandboxes need Vercel Sandbox credentials and a public callback URL, so jobs run as reports for now. See docs/agent-studio.md."
+                description="The agent has a repository, but Muse Code sandboxes need the GitHub App, a public callback URL, and an encryption key for members' Vercel tokens, so jobs run as reports for now. See docs/agent-studio.md."
               />
             ) : null}
             {jobs.length === 0 ? (

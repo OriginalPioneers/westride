@@ -8,6 +8,7 @@ import { ticketKey } from "@westride/db/build-rules";
 import { installationToken, repoInstallationId } from "@/lib/github/app";
 import { githubJson } from "@/lib/github/http";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
+import { getVercelSandboxCredentials } from "@/lib/vercel/connection";
 import { getAgentRunnerConfig } from "./config";
 
 /** Token usage for one model inside a Muse Code run (`run.usage` record). */
@@ -105,18 +106,30 @@ export function readFinishedPayload(value: unknown): FinishedPayload | null {
 
 const MAX_SUMMARY = 20_000;
 
+/**
+ * Stops the sandbox on the account of the member who started the run. If
+ * they have since disconnected Vercel, the sandbox stops at its timeout.
+ */
+export async function stopSandboxFor(sandboxName: string, clerkUserId: string | null) {
+  const credentials = clerkUserId ? await getVercelSandboxCredentials(clerkUserId) : null;
+  if (!credentials) {
+    console.warn("Sandbox stop skipped: no Vercel connection for its owner", sandboxName);
+    return;
+  }
+  try {
+    const sandbox = await Sandbox.get({ ...credentials, name: sandboxName });
+    await sandbox.stop();
+  } catch (error) {
+    // Already stopped, or timed out. Either way it is not running up a bill.
+    console.warn("Sandbox stop skipped", sandboxName, error instanceof Error ? error.message : error);
+  }
+}
+
 async function stopSandbox(run: AgentRun) {
   if (!run.sandboxName) {
     return;
   }
-  const config = getAgentRunnerConfig();
-  try {
-    const sandbox = await Sandbox.get({ ...(config?.credentials ?? {}), name: run.sandboxName });
-    await sandbox.stop();
-  } catch (error) {
-    // Already stopped, or timed out. Either way it is not running up a bill.
-    console.warn("Sandbox stop skipped", run.sandboxName, error instanceof Error ? error.message : error);
-  }
+  await stopSandboxFor(run.sandboxName, run.startedByClerkUserId);
 }
 
 async function openPullRequest(run: AgentRun, title: string, body: string) {

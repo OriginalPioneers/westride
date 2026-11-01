@@ -157,6 +157,7 @@ export default async function TicketPage({ params }: { params: Params }) {
                     ticketRepoId={ticket.repoId}
                     repos={project.repos}
                     hasMetaConnection={context.hasMetaConnection}
+                    hasVercelConnection={context.hasVercelConnection}
                     isConfigured={isAgentRunnerConfigured()}
                     isDisabled={activeRun !== null || ticket.status === "DONE"}
                     disabledReason={

@@ -19,7 +19,7 @@ import { AgentJobError, FIRST_EVENT_SEQUENCE, startAgentJob } from "@/lib/agents
 
 export type RunJobResult =
   | { status: "ok"; jobId: string }
-  | (Failure & { needsConnection?: boolean; needsGithub?: boolean });
+  | (Failure & { needsConnection?: boolean; needsGithub?: boolean; needsVercel?: boolean });
 
 export async function runJobAction(agentId: string, ticketId: string, input: unknown): Promise<RunJobResult> {
   const parsed = runJobSchema.safeParse(input);
@@ -67,6 +67,7 @@ export async function runJobAction(agentId: string, ticketId: string, input: unk
         ...failure(error.message),
         needsConnection: error.needsConnection === "meta",
         needsGithub: error.needsConnection === "github",
+        needsVercel: error.needsConnection === "vercel",
       };
     }
     console.error("Agent job start failed", error);

@@ -4,8 +4,11 @@
 - Enable Cloudflare/Vercel Protections
 - Enable rate limiting for API and MCP.
 - Ensure apps are GDPR compliant.
+- Allow the designer/etc agents to access Muse Wonder to generate images, etc and then store the artifacts/attach them to the idea/project/etc.
 - Add voice to text.
-- Can we build an app that users can install/run locally for "free"?
+- We should offer more ways to run Muse Code to complete a ticket:
+-- Cloud : Vercel, AWS, Google Cloud, Azure, etc.
+-- Local : Can we build an app that users can install/run locally?  Can we tie this into local free LLM models too?
 
 ## Completed Tasks
 

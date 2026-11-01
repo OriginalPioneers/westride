@@ -1,6 +1,5 @@
 import "server-only";
 
-import { Sandbox } from "@vercel/sandbox";
 import type { Agent, AgentJob } from "@westride/db";
 import {
   addAgentLog,
@@ -12,7 +11,7 @@ import {
 } from "@westride/db/agents";
 import { agentTicketKey } from "@westride/db/agent-rules";
 import { getAgentRunnerConfig } from "@/lib/build/agent/config";
-import type { FinishedPayload } from "@/lib/build/agent/finish";
+import { stopSandboxFor, type FinishedPayload } from "@/lib/build/agent/finish";
 import { installationToken, repoInstallationId } from "@/lib/github/app";
 import { githubJson } from "@/lib/github/http";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
@@ -22,17 +21,12 @@ export { readFinishedPayload, type FinishedPayload } from "@/lib/build/agent/fin
 
 const MAX_SUMMARY = 20_000;
 
+/** The sandbox lives on the payer's Vercel account, so it is stopped with their credentials. */
 async function stopSandbox(job: AgentJob) {
   if (!job.sandboxName) {
     return;
   }
-  const config = getAgentRunnerConfig();
-  try {
-    const sandbox = await Sandbox.get({ ...(config?.credentials ?? {}), name: job.sandboxName });
-    await sandbox.stop();
-  } catch (error) {
-    console.warn("Sandbox stop skipped", job.sandboxName, error instanceof Error ? error.message : error);
-  }
+  await stopSandboxFor(job.sandboxName, job.paidByClerkUserId);
 }
 
 async function openPullRequest(job: AgentJob, title: string, body: string) {

@@ -141,6 +141,13 @@
       "when": 1793461983340,
       "tag": "0019_claims_and_imports",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793466135775,
+      "tag": "0020_vercel_connections",
+      "breakpoints": true
     }
   ]
 }

@@ -1,8 +1,8 @@
 # Agent Studio
 
-Agent Studio is where a member sets up **standing agents**: a named Muse persona with its own description and instructions, its own backlog of tickets, an optional schedule, and a running account of tokens and spend. An agent can be tied to a project, an idea, both, or neither, and to one GitHub repository. With a repository it works tickets as Muse Code in a Vercel Sandbox and opens pull requests, exactly like Build Studio's **Run with Muse Code**; without one it answers tickets as written reports through the Meta Model API with web search.
+Agent Studio is where a member sets up **standing agents**: a named Muse persona with its own description and instructions, its own backlog of tickets, an optional schedule, and a running account of tokens and spend. An agent can be tied to a project, an idea, both, or neither, and to one GitHub repository. With a repository it works tickets as Muse Code in a Vercel Sandbox on the member's own Vercel account and opens pull requests, exactly like Build Studio's **Run with Muse Code**; without one it answers tickets as written reports through the Meta Model API with web search.
 
-The whole feature runs on the member's own Meta key. WeStride never calls Muse with its own key for member work.
+The whole feature runs on the member's own accounts: their Meta key pays for the model and their Vercel plan for the sandbox. WeStride never calls Muse with its own key or creates sandboxes on its own Vercel account for member work.
 
 ## Setup
 
@@ -16,7 +16,7 @@ What each part needs:
 | --- | --- |
 | Agents, tickets, log, usage pages | Nothing beyond the database. |
 | Report jobs | The member's Meta account connected in Settings (`META_TOKEN_ENCRYPTION_KEY` on the server). |
-| Code jobs (repository, sandbox, pull request) | The same as Build Studio's runner: the GitHub App (`GITHUB_APP_*`), Vercel Sandbox credentials, and `BUILD_RUNNER_CALLBACK_URL`. See `docs/build-studio.md`. |
+| Code jobs (repository, sandbox, pull request) | The same as Build Studio's runner: the GitHub App (`GITHUB_APP_*`), `VERCEL_TOKEN_ENCRYPTION_KEY`, and `BUILD_RUNNER_CALLBACK_URL` on the server; the payer's Vercel account connected in Settings with a team and project chosen. See `docs/build-studio.md`. |
 | Schedules on exact time | `CRON_SECRET` and a scheduler calling `GET /integrations/agents/schedule`. See below. |
 
 `canRunCode(agent)` in `apps/web/lib/agents/start.ts` decides per agent: a repository is linked **and** `isAgentRunnerConfigured()`. Otherwise jobs are reports. A linked repository is kept either way, so configuring the runner later switches the agent to code jobs with no further change.
@@ -34,7 +34,7 @@ Both go through `runDueAgents()` in `apps/web/lib/agents/schedule.ts`, which cla
 
 Vercel's Hobby plan runs cron jobs at most **once a day** and at an imprecise time; Pro runs them on the declared schedule. On Hobby, hourly agents fire when the daily cron or a page visit catches them. The schedule form says so when `CRON_SECRET` is unset.
 
-A scheduled run picks the agent's highest-priority `BACKLOG` ticket (URGENT → LOW, then queue order). If the backlog is empty and the agent has a **standing task**, the run files a new ticket from it (first line is the title; `source = SCHEDULE`) and works that. With neither, the slot is logged and skipped. Scheduled jobs pay with the **owner's** Meta key; a missing connection is logged on the agent and the slot is skipped.
+A scheduled run picks the agent's highest-priority `BACKLOG` ticket (URGENT → LOW, then queue order). If the backlog is empty and the agent has a **standing task**, the run files a new ticket from it (first line is the title; `source = SCHEDULE`) and works that. With neither, the slot is logged and skipped. Scheduled jobs pay with the **owner's** Meta key and, for code jobs, run on the **owner's** Vercel account; a missing connection of either kind is logged on the agent and the slot is skipped.
 
 ## Data model
 
@@ -86,7 +86,7 @@ Both are listed in `SIGNED_WEBHOOKS` in `apps/web/proxy.ts` so the crawler filte
 
 ## Job lifecycle
 
-**Code job** (`startAgentJob` → `startCodeJob` in `apps/web/lib/agents/start.ts`): checks the agent is ACTIVE, the payer has a Meta key, the ticket has no active job and the agent is under its concurrency cap (one job at a time); verifies the payer can push to the repository and mints a repository-scoped installation token; creates the job with a hashed per-job token; writes the prompt (`buildCodeJobPrompt`: ticket, agent persona and instructions, linked project and idea, how to work, report format); launches the sandbox detached with the shared `RUNNER_SCRIPT`; moves the ticket to IN_PROGRESS. Completion goes through the events route. Success with a push → pull request, ticket to IN_REVIEW; success without changes → ticket back to BACKLOG; failure → ticket BLOCKED with the error as the reason.
+**Code job** (`startAgentJob` → `startCodeJob` in `apps/web/lib/agents/start.ts`): checks the agent is ACTIVE, the payer has a Meta key, the ticket has no active job and the agent is under its concurrency cap (one job at a time); requires the payer's Vercel sandbox credentials (`getVercelSandboxCredentials`); verifies the payer can push to the repository and mints a repository-scoped installation token; creates the job with a hashed per-job token; writes the prompt (`buildCodeJobPrompt`: ticket, agent persona and instructions, linked project and idea, how to work, report format); launches the sandbox detached on the payer's Vercel team and project with the shared `RUNNER_SCRIPT`; moves the ticket to IN_PROGRESS. Completion goes through the events route. Success with a push → pull request, ticket to IN_REVIEW; success without changes → ticket back to BACKLOG; failure → ticket BLOCKED with the error as the reason.
 
 **Report job** (`startReportJob`): creates the job RUNNING and returns a `work` closure. The server action runs it in `after()` so the page returns at once; the cron route awaits it. `work` calls `callMuse` with web search, logs the request, writes two events (the answer as `run.terminal.completed`, then `finished`), copies usage onto the job, and moves the ticket to IN_REVIEW (or BLOCKED on failure). Reports that never settle are closed as failed after ten minutes by `reconcileStaleJob`.
 

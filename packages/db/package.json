@@ -13,6 +13,7 @@
     "./feedback": "./src/feedback.ts",
     "./github": "./src/github.ts",
     "./meta": "./src/meta.ts",
+    "./vercel": "./src/vercel.ts",
     "./chat": "./src/chat.ts",
     "./countries": "./src/country-catalog.ts",
     "./learning": "./src/learning.ts",

@@ -16,7 +16,7 @@ import {
   getGithubAccountAccess,
   type GithubAccountAccess,
 } from "@/lib/github/repos";
-import { ChatSection, MetaSection } from "./connection-sections";
+import { ChatSection, MetaSection, VercelSection } from "./connection-sections";
 import { DisconnectGithubButton } from "./disconnect-github-button";
 import { GithubAccess } from "./github-access";
 
@@ -236,6 +236,19 @@ export default async function SettingsPage({
                 </Text>
               </VStack>
               <MetaSection userId={userId} />
+            </VStack>
+            <Divider />
+            <VStack gap={6}>
+              <VStack gap={2}>
+                <Heading level={2}>Vercel</Heading>
+                <Text type="supporting">
+                  Connect Vercel so Muse Code agents run in sandboxes on your
+                  own Vercel account. Vercel bills you for sandbox time; WeStride
+                  keeps the token encrypted and only uses it for runs you or
+                  your scheduled agents start.
+                </Text>
+              </VStack>
+              <VercelSection userId={userId} />
             </VStack>
             <Divider />
             <VStack gap={6}>

@@ -15,8 +15,13 @@ import {
 } from "@westride/db/agents";
 import { agentTicketKey } from "@westride/db/agent-rules";
 import { logMuseRequest } from "@westride/db/idea-factory";
-import { getAgentRunnerConfig } from "@/lib/build/agent/config";
+import {
+  VERCEL_CONNECTION_MESSAGE,
+  getAgentRunnerConfig,
+  isSandboxAuthError,
+} from "@/lib/build/agent/config";
 import { RUNNER_SCRIPT } from "@/lib/build/agent/runner-script";
+import type { AgentConnection } from "@/lib/build/agent/start";
 import { createRunToken } from "@/lib/build/agent/token";
 import { installationToken, repoInstallationId } from "@/lib/github/app";
 import { requireGithubAppConfig } from "@/lib/github/config";
@@ -25,6 +30,7 @@ import { getGithubUserToken } from "@/lib/github/user";
 import { callMuse } from "@/lib/idea-factory/muse";
 import { getMuseModel } from "@/lib/idea-factory/pricing";
 import { getMuseApiKey } from "@/lib/meta/connection";
+import { getVercelSandboxCredentials } from "@/lib/vercel/connection";
 import { AGENT_JOB_EVENTS_PATH, MAX_ACTIVE_JOBS_PER_AGENT } from "./config";
 import { completeReportJob } from "./finish";
 import {
@@ -39,7 +45,7 @@ import { usageFromMuseAttempt } from "./usage";
 export class AgentJobError extends Error {
   constructor(
     message: string,
-    readonly needsConnection: "meta" | "github" | null = null,
+    readonly needsConnection: AgentConnection | null = null,
   ) {
     super(message);
     this.name = "AgentJobError";
@@ -87,9 +93,10 @@ export function canRunCode(agent: Agent): boolean {
 }
 
 /**
- * Starts a job for a ticket. Code jobs launch a sandbox and come back
- * through the events route; report jobs make one Model API call. Either
- * way the member's own Meta key pays, never WeStride's.
+ * Starts a job for a ticket. Code jobs launch a sandbox on the payer's own
+ * Vercel account and come back through the events route; report jobs make
+ * one Model API call. Either way the member's own Meta key pays for the
+ * model, never WeStride's.
  */
 export async function startAgentJob(input: StartJobInput): Promise<StartedJob> {
   const { agent, ticket, payerClerkUserId } = input;
@@ -142,6 +149,17 @@ async function startCodeJob(
     throw new AgentJobError("Muse Code agents are not set up on this WeStride server.");
   }
   const { commitAuthor } = requireGithubAppConfig();
+
+  // The sandbox runs on the payer's Vercel account, so Vercel bills them.
+  const vercel = await getVercelSandboxCredentials(payerClerkUserId);
+  if (!vercel) {
+    throw new AgentJobError(
+      input.trigger === "MANUAL"
+        ? VERCEL_CONNECTION_MESSAGE
+        : "The owner's Vercel account is not connected, so the scheduled job could not run.",
+      "vercel",
+    );
+  }
 
   const userToken = await getGithubUserToken(payerClerkUserId);
   if (!userToken) {
@@ -216,7 +234,7 @@ async function startCodeJob(
       },
     ]);
     const sandbox = await Sandbox.create({
-      ...(config.credentials ?? {}),
+      ...vercel,
       name: sandboxName,
       source: {
         type: "git",
@@ -283,6 +301,14 @@ async function startCodeJob(
       ticketId: ticket.id,
       jobId: job.id,
     });
+    if (isSandboxAuthError(error)) {
+      throw new AgentJobError(
+        input.trigger === "MANUAL"
+          ? "Vercel refused the sandbox on your account. Reconnect Vercel in Settings and check the team has Sandbox enabled."
+          : "Vercel refused the sandbox on the owner's account, so the scheduled job could not run.",
+        "vercel",
+      );
+    }
     throw new AgentJobError("The sandbox could not be started. Try again in a moment.");
   }
 }

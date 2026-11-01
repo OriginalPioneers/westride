@@ -10,6 +10,7 @@ Apply the migrations with the normal workflow (`bun run db:migrate` from `packag
 
 - `0013_build_studio.sql`: `projects`, `project_members`, `project_repos`, `project_milestones`, `tickets`, and their enums.
 - `0014_build_studio_agents.sql`: `ticket_comments`, `agent_runs`, `agent_run_events`; makes `muse_requests.idea_id` nullable and adds `muse_requests.project_id` so planning requests are logged against a project.
+- `0020_vercel_connections.sql`: `vercel_connections`, the member's Vercel account that hosts their sandboxes.
 
 What each feature needs:
 
@@ -18,17 +19,29 @@ What each feature needs:
 | Projects, tickets, board, comments | Nothing beyond the database. |
 | Private repositories, GitHub activity for private repos | The member's GitHub connection (Settings), as for ideas. |
 | Plan with Muse | The member's Meta account connected in Settings (`META_TOKEN_ENCRYPTION_KEY` on the server). WeStride never calls Muse with its own key for member work. |
-| Run with Muse Code | The GitHub App (`GITHUB_APP_*`), Vercel Sandbox credentials, and `BUILD_RUNNER_CALLBACK_URL`. See below. |
+| Run with Muse Code | On the server: the GitHub App (`GITHUB_APP_*`), `VERCEL_TOKEN_ENCRYPTION_KEY`, and `BUILD_RUNNER_CALLBACK_URL`. For the member: a Meta account, GitHub, and a Vercel account connected in Settings. See below. |
 
 ### Agent runner environment
 
-Muse Code agents run in [Vercel Sandbox](https://vercel.com/docs/vercel-sandbox) microVMs. The server needs:
+Muse Code agents run in [Vercel Sandbox](https://vercel.com/docs/vercel-sandbox) microVMs on the **member's own Vercel account**, never on WeStride's, so Vercel bills the member for sandbox time. The server needs:
 
 - `BUILD_RUNNER_CALLBACK_URL`: the public origin of this WeStride server, e.g. `https://westride.org`. The sandbox posts its work log here; it cannot reach `localhost`, so local development needs a tunnel URL.
-- Vercel credentials: on Vercel, `VERCEL_OIDC_TOKEN` is injected automatically. Elsewhere set `VERCEL_TOKEN`, `VERCEL_TEAM_ID`, and `VERCEL_PROJECT_ID` (an access token for a project with Sandbox enabled). Locally, `vercel link && vercel env pull` also works.
+- `VERCEL_TOKEN_ENCRYPTION_KEY`: 32 random bytes, base64. Members' Vercel tokens are kept AES-256-GCM encrypted with it (`apps/web/lib/sealed-secret.ts`), the same way as Meta keys.
+- Optional: `VERCEL_DEVICE_CLIENT_ID` turns on **Sign in with Vercel** (the OAuth device flow Vercel's CLI and Sandbox SDK use). Without it, members paste an access token from their Vercel account settings.
 - Optional tuning: `BUILD_RUNNER_SANDBOX_TIMEOUT_MINUTES` (default 45, max 300), `BUILD_RUNNER_SANDBOX_VCPUS` (default 2), `BUILD_RUNNER_MAX_ACTIVE_RUNS` (default 2 per project).
 
 `isAgentRunnerConfigured()` in `apps/web/lib/build/agent/config.ts` gates the UI: without these, the **Run with Muse Code** button is disabled with a note, and everything else in Build Studio still works.
+
+### The member's Vercel connection
+
+Code in `apps/web/lib/vercel/`:
+
+- `api.ts`: the slice of Vercel's REST API that connecting needs (`/v2/user`, `/v2/teams`, `/v10/projects`, `POST /v11/projects`) and the device sign-in against `vercel.com/.well-known/openid-configuration` (start, poll, refresh, revoke).
+- `connection.ts`: `saveVercelAccount` / `saveVercelAccessToken` (verify the token with `/v2/user`, store it encrypted), `setVercelScope`, `getVercelAccessToken` (renews a device sign-in token from its refresh token a few minutes before expiry; a rejected refresh deletes the connection), `getVercelSandboxCredentials` (the `{ token, teamId, projectId }` the Sandbox SDK takes; null until the member has connected **and** picked a team and project), `disconnectVercelAccount`.
+
+Settings (`apps/web/app/(main)/settings/vercel-settings.tsx`, actions in `apps/web/app/(main)/vercel-actions.ts`) walks the member through it: connect (sign in or paste a token), then choose the team that pays and the project the sandboxes are created under. The project picker lists the team's projects and offers to create an empty `westride-muse-code` project; a team with no projects gets one created. The choice can be changed later. `vercel_connections` holds the kind (`VERCEL_ACCOUNT` or `ACCESS_TOKEN`), Vercel user id and username, the encrypted tokens, and the team and project (id, slug, name).
+
+A run started by a member without a scoped Vercel connection fails before anything is created with `needsConnection = "vercel"`, and the run dialog shows a banner pointing at Settings. If Vercel refuses the sandbox itself (401/403, e.g. the team has no Sandbox access), the run is marked FAILED and the same banner says so.
 
 ## Data model
 
@@ -89,8 +102,8 @@ Code in `apps/web/lib/build/agent/`:
 What happens on **Run with Muse Code**:
 
 1. `startRunAction` (`run-actions.ts`) checks the member may edit the project, that the ticket is not done, and picks the repository (chosen → ticket's → primary).
-2. `startAgentRun` requires the member's Meta key and a GitHub connection with push rights to the repository (the same rule as committing from WeStride), allows one active run per ticket and `BUILD_RUNNER_MAX_ACTIVE_RUNS` per project, and mints an installation token scoped to that one repository with `contents: write`, `pull_requests: write`, `metadata: read`.
-3. It records the run, then creates a non-persistent sandbox that clones the repository at its default branch (`x-access-token` + the installation token), writes the runner and the prompt under `/tmp/westride/`, and starts the runner detached. The ticket moves to IN_PROGRESS and gets a comment.
+2. `startAgentRun` requires the member's Meta key, their Vercel sandbox credentials, and a GitHub connection with push rights to the repository (the same rule as committing from WeStride), allows one active run per ticket and `BUILD_RUNNER_MAX_ACTIVE_RUNS` per project, and mints an installation token scoped to that one repository with `contents: write`, `pull_requests: write`, `metadata: read`.
+3. It records the run, then creates a non-persistent sandbox **on the member's Vercel team and project** that clones the repository at its default branch (`x-access-token` + the installation token), writes the runner and the prompt under `/tmp/westride/`, and starts the runner detached. The ticket moves to IN_PROGRESS and gets a comment.
 4. The runner installs Muse Code (`curl -fsSL https://dev.meta.ai/install.sh | sh` into `/tmp/westride/bin`), creates the branch, and runs `muse exec --json --yolo --no-session-log --max-model-steps <n> --model <model> --contributor-mode <on|off> --prompt-file …` with `META_API_KEY` set. `--yolo` is appropriate because the sandbox is a disposable microVM that holds nothing but this checkout. Every JSONL line is forwarded as a `muse` event; non-JSON output and stderr become `log` events; events are batched and posted with retries to `POST /integrations/muse-code/events` with the run token.
 5. After Muse exits, the runner commits anything left in the working tree, and if the branch is ahead of the base, pushes it with the installation token. It then sends a `finished` event with the exit code, head SHA, whether it pushed, the Muse session id, and the agent's final message.
 6. The events route verifies the token, appends the batch (idempotent on `sequence`), and on `finished` runs `completeAgentRun` after the response: opens the pull request as the WeStride app (title `<key>: <ticket title>`, body = the agent's report), marks the run SUCCEEDED or FAILED, posts a comment with the report, moves the ticket to IN_REVIEW (pull request opened), back to BACKLOG (finished with no changes), or to BLOCKED with the error, and stops the sandbox.
@@ -98,6 +111,7 @@ What happens on **Run with Muse Code**:
 Other behaviour:
 
 - **Stop** on the ticket page cancels: the run is marked CANCELLED, the ticket returns to BACKLOG if it was IN_PROGRESS, and the sandbox is stopped. The route then answers the runner with `410`, and the runner stops posting.
+- Stopping uses the Vercel credentials of the member who started the run (`agent_runs.started_by_clerk_user_id`; `agent_jobs.paid_by_clerk_user_id` for Agent Studio). If they have disconnected Vercel since, the stop is skipped with a warning and the sandbox ends at its timeout.
 - A sandbox that hits Vercel's timeout never reports back. `reconcileStaleRun` closes any run still active more than five minutes past the timeout as FAILED; it runs whenever a run is read.
 - `proxy.ts` lists `/integrations/muse-code/events` with the other signed webhooks so the user-agent filter lets the runner through; the bearer token is the whole authentication.
 - The work log view polls `readRunAction` every three seconds while a run is active and refreshes the page when it ends.
@@ -114,4 +128,4 @@ Muse Code's JSONL event shape is Muse's own and not documented in detail; `descr
 
 From the repository root: `bun test packages/db/tests/build-rules.test.ts`, `bunx tsc --noEmit -p apps/web`, and `bun run lint`. From `apps/web`: `npx @astryxdesign/cli@0.7.4 doctor --built "app/(main)/build"`. The two `theme-*` doctor findings are pre-existing repository-wide theme checks, not Build Studio findings.
 
-The agent runner cannot be exercised without Vercel Sandbox credentials and a public callback URL; the rest of Build Studio is covered by the checks above and a browser smoke test.
+The agent runner cannot be exercised without a member's connected Vercel account and a public callback URL; the rest of Build Studio is covered by the checks above and a browser smoke test.

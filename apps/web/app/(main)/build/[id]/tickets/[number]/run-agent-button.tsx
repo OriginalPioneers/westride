@@ -32,6 +32,7 @@ export function RunAgentButton({
   ticketRepoId,
   repos,
   hasMetaConnection,
+  hasVercelConnection,
   isConfigured,
   isDisabled,
   disabledReason,
@@ -41,6 +42,8 @@ export function RunAgentButton({
   ticketRepoId: string | null;
   repos: ProjectRepo[];
   hasMetaConnection: boolean;
+  /** Whether the viewer's Vercel account is connected with a team and project chosen. */
+  hasVercelConnection: boolean;
   /** Whether this server can launch sandboxes at all. */
   isConfigured: boolean;
   isDisabled?: boolean;
@@ -56,7 +59,9 @@ export function RunAgentButton({
   const [maxSteps, setMaxSteps] = useState<number>(DEFAULT_AGENT_STEPS);
   const [instructions, setInstructions] = useState("");
   const [message, setMessage] = useState<string | null>(null);
-  const [needs, setNeeds] = useState<"meta" | "github" | null>(hasMetaConnection ? null : "meta");
+  const [needs, setNeeds] = useState<"meta" | "github" | "vercel" | null>(
+    !hasMetaConnection ? "meta" : !hasVercelConnection ? "vercel" : null,
+  );
 
   const modelOption = getMuseModel(model);
   const blocked = !isConfigured || repos.length === 0 || Boolean(isDisabled);
@@ -85,7 +90,15 @@ export function RunAgentButton({
         });
         if (result.status === "error") {
           setMessage(result.message);
-          setNeeds(result.needsConnection ? "meta" : result.needsGithub ? "github" : null);
+          setNeeds(
+            result.needsConnection
+              ? "meta"
+              : result.needsVercel
+                ? "vercel"
+                : result.needsGithub
+                  ? "github"
+                  : null,
+          );
           return;
         }
         setIsOpen(false);
@@ -138,15 +151,26 @@ export function RunAgentButton({
               <LayoutContent>
                 <FormLayout defaultOptionality="optional">
                   <Text type="supporting">
-                    A Muse Code agent clones the repository into a disposable Vercel Sandbox,
-                    works the ticket on a new branch, and opens a pull request when it is done.
-                    Your own Meta key pays for the model; nothing runs on your machine.
+                    A Muse Code agent clones the repository into a disposable Vercel Sandbox on
+                    your own Vercel account, works the ticket on a new branch, and opens a pull
+                    request when it is done. Your Meta key pays for the model and your Vercel plan
+                    for the sandbox; nothing runs on your machine.
                   </Text>
                   {needs === "meta" ? (
                     <Banner
                       status="info"
                       title="Connect your Meta account first"
                       description="The agent runs on your Meta API key."
+                      collapsible={false}
+                    >
+                      <Button label="Open settings" href="/settings" variant="secondary" />
+                    </Banner>
+                  ) : null}
+                  {needs === "vercel" ? (
+                    <Banner
+                      status="info"
+                      title="Connect your Vercel account first"
+                      description={message ?? "The sandbox runs on your Vercel account, so Vercel bills you, not WeStride. Choose a team and project after connecting."}
                       collapsible={false}
                     >
                       <Button label="Open settings" href="/settings" variant="secondary" />

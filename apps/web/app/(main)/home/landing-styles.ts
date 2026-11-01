@@ -277,8 +277,8 @@ export const LANDING_STYLES = `
   backdrop-filter: blur(var(--spacing-3));
 }
 
-/* The apps sit apart from the integrations: a tinted panel inside the same
-   animated border the hackathon pill uses. */
+/* The apps sit apart from the integrations: a tinted panel inside an
+   animated border. */
 .wl-connect-apps {
   flex: 1 1 calc(var(--spacing-12) * 6);
   box-shadow: 0 0 var(--spacing-6) color-mix(in srgb, var(--wl-purple) 30%, transparent);
@@ -372,7 +372,8 @@ export const LANDING_STYLES = `
   filter: drop-shadow(0 var(--spacing-2) var(--spacing-6) color-mix(in srgb, var(--wl-purple) 45%, transparent));
 }
 
-.wl-gradient-text {
+.wl-gradient-text,
+.wl-studio-link .astryx-text {
   background-image: linear-gradient(
     90deg,
     var(--wl-indigo),
@@ -389,11 +390,10 @@ export const LANDING_STYLES = `
   animation: wl-shimmer calc(var(--duration-slow-max) * 6) linear infinite;
 }
 
-/* Studio names in the hero lede: brighter than the surrounding sentence. */
-.wl-studio-link,
-.wl-studio-link .astryx-text {
-  color: var(--color-on-dark);
-  -webkit-text-fill-color: var(--color-on-dark);
+/* The underline stays on the anchor so the text fill does not clip it away. */
+.wl-studio-link {
+  color: var(--wl-indigo);
+  text-decoration-color: var(--wl-indigo);
 }
 
 /* Meta product names: Facebook blue gradient, underline on hover only. */
@@ -423,7 +423,7 @@ export const LANDING_STYLES = `
   animation: wl-shimmer calc(var(--duration-slow-max) * 6) linear infinite;
 }
 
-/* Animated conic border, shared with the hackathon pill and feature frames. */
+/* Animated conic border for framed panels. */
 .wl-glow-border {
   position: relative;
   border: var(--border-width) solid transparent;
@@ -443,18 +443,6 @@ export const LANDING_STYLES = `
 
 .wl-glow-border:hover {
   animation-duration: calc(var(--duration-slow-max) * 2);
-}
-
-.wl-pill {
-  border-radius: var(--radius-full);
-  box-shadow: 0 0 var(--spacing-4) color-mix(in srgb, var(--wl-indigo) 35%, transparent);
-}
-
-.wl-pill-logo {
-  border-radius: var(--radius-full);
-  width: var(--spacing-6);
-  height: var(--spacing-6);
-  object-fit: cover;
 }
 
 /* ---------- Path ---------- */
@@ -638,6 +626,7 @@ export const LANDING_STYLES = `
   .wl-globe,
   .wl-wordmark,
   .wl-gradient-text,
+  .wl-studio-link .astryx-text,
   .wl-meta-link .astryx-text,
   .wl-glow-border,
   .wl-track .wl-runner,

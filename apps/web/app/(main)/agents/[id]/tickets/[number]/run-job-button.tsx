@@ -25,6 +25,7 @@ export function RunJobButton({
   runsCode,
   repoFullName,
   hasMetaConnection,
+  hasVercelConnection,
   isDisabled,
   disabledReason,
 }: {
@@ -35,6 +36,8 @@ export function RunJobButton({
   runsCode: boolean;
   repoFullName: string | null;
   hasMetaConnection: boolean;
+  /** Whether the viewer's Vercel account is connected with a team and project chosen. */
+  hasVercelConnection: boolean;
   isDisabled?: boolean;
   disabledReason?: string;
 }) {
@@ -43,7 +46,10 @@ export function RunJobButton({
   const [isStarting, startStarting] = useTransition();
   const [instructions, setInstructions] = useState("");
   const [message, setMessage] = useState<string | null>(null);
-  const [needs, setNeeds] = useState<"meta" | "github" | null>(hasMetaConnection ? null : "meta");
+  // Only code jobs need a sandbox; reports run through the Model API alone.
+  const [needs, setNeeds] = useState<"meta" | "github" | "vercel" | null>(
+    !hasMetaConnection ? "meta" : runsCode && !hasVercelConnection ? "vercel" : null,
+  );
 
   function handleOpenChange(next: boolean) {
     if (!next && isStarting) {
@@ -59,7 +65,15 @@ export function RunJobButton({
         const result = await runJobAction(agentId, ticketId, { instructions });
         if (result.status === "error") {
           setMessage(result.message);
-          setNeeds(result.needsConnection ? "meta" : result.needsGithub ? "github" : null);
+          setNeeds(
+            result.needsConnection
+              ? "meta"
+              : result.needsVercel
+                ? "vercel"
+                : result.needsGithub
+                  ? "github"
+                  : null,
+          );
           return;
         }
         setIsOpen(false);
@@ -91,10 +105,19 @@ export function RunJobButton({
                 <FormLayout defaultOptionality="optional">
                   <Text type="supporting">
                     {runsCode
-                      ? `The agent clones ${repoFullName} into a disposable Vercel Sandbox, works the ticket on a new branch with ${model}, and opens a pull request when it is done.`
-                      : `The agent answers the ticket with ${model} and web search, and leaves the write-up on the ticket.`}{" "}
-                    Your own Meta key pays for the model; nothing runs on your machine.
+                      ? `The agent clones ${repoFullName} into a disposable Vercel Sandbox on your own Vercel account, works the ticket on a new branch with ${model}, and opens a pull request when it is done. Your Meta key pays for the model and your Vercel plan for the sandbox; nothing runs on your machine.`
+                      : `The agent answers the ticket with ${model} and web search, and leaves the write-up on the ticket. Your own Meta key pays for the model; nothing runs on your machine.`}
                   </Text>
+                  {needs === "vercel" ? (
+                    <Banner
+                      status="info"
+                      title="Connect your Vercel account first"
+                      description={message ?? "The sandbox runs on your Vercel account, so Vercel bills you, not WeStride. Choose a team and project after connecting."}
+                      collapsible={false}
+                    >
+                      <Button label="Open settings" href="/settings" variant="secondary" />
+                    </Banner>
+                  ) : null}
                   {needs === "meta" ? (
                     <Banner
                       status="info"
@@ -137,7 +160,7 @@ export function RunJobButton({
                     variant="primary"
                     icon={<Icon icon={BoltIcon} size="sm" />}
                     isLoading={isStarting}
-                    isDisabled={needs === "meta"}
+                    isDisabled={needs === "meta" || needs === "vercel"}
                     onClick={start}
                   />
                 </HStack>

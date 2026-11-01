@@ -1093,6 +1093,54 @@ export const metaConnections = pgTable("meta_connections", {
 });
 
 // ---------------------------------------------------------------------------
+// Vercel
+//
+// A member's Vercel account, which hosts the Vercel Sandbox microVMs their
+// Muse Code runs execute in, so Vercel bills them and not WeStride. Either a
+// token from Vercel's device sign-in (short-lived, re-minted from the refresh
+// token) or an access token the member created and pasted. The team and
+// project the sandboxes are created under are chosen after connecting; until
+// then the connection cannot start a run. Secrets arrive already encrypted by
+// the web app.
+// ---------------------------------------------------------------------------
+
+export const vercelCredentialKind = pgEnum("vercel_credential_kind", [
+  "VERCEL_ACCOUNT",
+  "ACCESS_TOKEN",
+]);
+
+export const vercelConnections = pgTable("vercel_connections", {
+  /** Clerk user id. One Vercel account per WeStride account. */
+  clerkUserId: text("clerk_user_id").primaryKey(),
+  kind: vercelCredentialKind("kind").notNull(),
+  /** Vercel's user id. */
+  vercelUserId: text("vercel_user_id").notNull(),
+  username: text("username").notNull(),
+  /** Encrypted API token. */
+  accessToken: text("access_token").notNull(),
+  /** When a device sign-in token lapses. Null for a pasted token. */
+  accessTokenExpiresAt: timestamp("access_token_expires_at", {
+    withTimezone: true,
+    mode: "date",
+  }),
+  /** Encrypted refresh token. Null for a pasted token. */
+  refreshToken: text("refresh_token"),
+  /** The team sandboxes are billed to. Null until the member picks one. */
+  teamId: text("team_id"),
+  teamSlug: text("team_slug"),
+  teamName: text("team_name"),
+  /** The project sandboxes are created under. Null until the member picks one. */
+  projectId: text("project_id"),
+  projectName: text("project_name"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // Chat platforms
 //
 // Slack, Discord, and WhatsApp accounts a member has linked, so messages that
@@ -1192,6 +1240,9 @@ export type NewGithubConnection = typeof githubConnections.$inferInsert;
 export type MetaCredentialKind = (typeof metaCredentialKind.enumValues)[number];
 export type MetaConnection = typeof metaConnections.$inferSelect;
 export type NewMetaConnection = typeof metaConnections.$inferInsert;
+export type VercelCredentialKind = (typeof vercelCredentialKind.enumValues)[number];
+export type VercelConnection = typeof vercelConnections.$inferSelect;
+export type NewVercelConnection = typeof vercelConnections.$inferInsert;
 export type ChatPlatform = (typeof chatPlatform.enumValues)[number];
 export type ChatConnection = typeof chatConnections.$inferSelect;
 export type NewChatConnection = typeof chatConnections.$inferInsert;

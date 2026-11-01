@@ -13,8 +13,14 @@ import {
   getMetaConnectionSummary,
   isMetaConnectionConfigured,
 } from "@/lib/meta/connection";
+import { vercelDeviceClientId } from "@/lib/vercel/api";
+import {
+  getVercelConnectionSummary,
+  isVercelConnectionConfigured,
+} from "@/lib/vercel/connection";
 import { DisconnectChatButton } from "./disconnect-chat-button";
 import { MetaSettings } from "./meta-settings";
+import { VercelSettings } from "./vercel-settings";
 import { WhatsAppLink } from "./whatsapp-link";
 
 export async function MetaSection({ userId }: { userId: string }) {
@@ -30,6 +36,16 @@ export async function MetaSection({ userId }: { userId: string }) {
       canConnectMetaAccount={deviceClientId() !== null}
     />
   );
+}
+
+export async function VercelSection({ userId }: { userId: string }) {
+  if (!isVercelConnectionConfigured()) {
+    return (
+      <Text type="supporting">Connecting Vercel is not set up on this WeStride server yet.</Text>
+    );
+  }
+  const connection = await getVercelConnectionSummary(userId);
+  return <VercelSettings connection={connection} canSignIn={vercelDeviceClientId() !== null} />;
 }
 
 function ConnectedAccount({

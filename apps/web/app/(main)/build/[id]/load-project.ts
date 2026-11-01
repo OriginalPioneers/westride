@@ -9,6 +9,7 @@ import {
 } from "@westride/db/build";
 import { isClaimableProject } from "@westride/db/claim-rules";
 import { getMetaConnectionSummary } from "@/lib/meta/connection";
+import { hasVercelSandboxAccess } from "@/lib/vercel/connection";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -20,6 +21,8 @@ export type ProjectPageContext = {
   isOwner: boolean;
   /** Whether the viewer has a Meta account connected, so Muse features work. */
   hasMetaConnection: boolean;
+  /** Whether the viewer's Vercel account can host sandboxes, so Muse Code runs work. */
+  hasVercelConnection: boolean;
   openTicketCount: number;
   /** An imported project that nobody owns yet. */
   isClaimable: boolean;
@@ -39,10 +42,13 @@ export async function loadProjectPage(id: string): Promise<ProjectPageContext | 
     userId === null
       ? null
       : (project.members.find((member) => member.clerkUserId === userId)?.role ?? null);
-  const hasMetaConnection =
+  const [hasMetaConnection, hasVercelConnection] =
     role !== null && userId !== null
-      ? (await getMetaConnectionSummary(userId)) !== null
-      : false;
+      ? await Promise.all([
+          getMetaConnectionSummary(userId).then((summary) => summary !== null),
+          hasVercelSandboxAccess(userId),
+        ])
+      : [false, false];
   const openTicketCount = OPEN_TICKET_STATUSES.reduce(
     (sum, status) => sum + project.ticketCounts[status],
     0,
@@ -54,6 +60,7 @@ export async function loadProjectPage(id: string): Promise<ProjectPageContext | 
     isMember: role !== null,
     isOwner: role === "OWNER",
     hasMetaConnection,
+    hasVercelConnection,
     openTicketCount,
     isClaimable: isClaimableProject(project),
   };

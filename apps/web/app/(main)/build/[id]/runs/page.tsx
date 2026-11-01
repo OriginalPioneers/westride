@@ -60,7 +60,7 @@ export default async function RunsPage({ params }: { params: Params }) {
               <Banner
                 status="info"
                 title="Agents are not set up on this server"
-                description="Muse Code runs need Vercel Sandbox credentials and a public callback URL. See docs/build-studio.md."
+                description="Muse Code runs need the GitHub App, a public callback URL, and an encryption key for members' Vercel tokens. See docs/build-studio.md."
               />
             ) : null}
             {runs.length === 0 ? (

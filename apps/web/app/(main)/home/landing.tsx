@@ -450,35 +450,6 @@ function HeroSky() {
   );
 }
 
-function HackathonPill() {
-  return (
-    <ClickableCard
-      className="wl-glow-border wl-pill"
-      href={HACKATHON_URL}
-      target="_blank"
-      label={`Built at the 2026 ${HACKATHON_NAME} (opens in a new tab)`}
-      padding={1}
-      width="fit-content"
-      elevation="none"
-    >
-      <HStack gap={2} vAlign="center" wrap="nowrap" paddingInlineEnd={2}>
-        <Image
-          className="wl-pill-logo"
-          src={HACKATHON_LOGO}
-          alt=""
-          width={630}
-          height={630}
-          unoptimized
-        />
-        <Text type="label" size="sm" weight="semibold" textWrap="nowrap">
-          Built at the 2026 {HACKATHON_NAME}
-        </Text>
-        <Icon icon={ArrowTopRightOnSquareIcon} size="xsm" color="secondary" />
-      </HStack>
-    </ClickableCard>
-  );
-}
-
 const CONNECTION_STATUS: Record<
   ConnectionStatus,
   { label: string; variant: "success" | "accent" | "neutral" }
@@ -677,8 +648,6 @@ function Hero({ isSignedIn, stats, connections }: LandingProps) {
         >
           <Grid columns={{ minWidth: 360, max: 2 }} gap={8} align="center">
             <VStack className="wl-hero-copy" gap={6} hAlign="start">
-              <HackathonPill />
-
               <Image
                 className="wl-wordmark"
                 src="/logos/westride/WeStride_landscape_white.png"

@@ -15,7 +15,7 @@ import { isMuseModelId } from "@/lib/idea-factory/pricing";
 
 export type StartRunResult =
   | { status: "ok"; runId: string }
-  | (Failure & { needsConnection?: boolean; needsGithub?: boolean });
+  | (Failure & { needsConnection?: boolean; needsGithub?: boolean; needsVercel?: boolean });
 
 export async function startRunAction(
   projectId: string,
@@ -76,6 +76,7 @@ export async function startRunAction(
         ...failure(error.message),
         needsConnection: error.needsConnection === "meta",
         needsGithub: error.needsConnection === "github",
+        needsVercel: error.needsConnection === "vercel",
       };
     }
     console.error("Agent run start failed", error);

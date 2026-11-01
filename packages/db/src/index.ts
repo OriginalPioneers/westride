@@ -120,6 +120,8 @@ export {
   tracksRelations,
   userAchievements,
   userAchievementsRelations,
+  vercelConnections,
+  vercelCredentialKind,
 } from "./schema";
 
 export type {
@@ -233,4 +235,7 @@ export type {
   Tag,
   Track,
   UserAchievement,
+  VercelConnection,
+  VercelCredentialKind,
+  NewVercelConnection,
 } from "./schema";
