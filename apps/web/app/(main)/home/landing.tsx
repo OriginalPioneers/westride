@@ -659,7 +659,7 @@ function Hero({ isSignedIn, stats, connections }: LandingProps) {
               />
 
               <Heading level={1} type="display-1" textWrap="balance">
-                Build what&apos;s 
+                Help build what&apos;s 
                 <Text
                   type="inherit"
                   display="inline"
