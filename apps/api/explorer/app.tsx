@@ -10,7 +10,7 @@ import {
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Theme } from "@astryxdesign/core/theme";
-import { stoneTheme } from "@astryxdesign/theme-stone/built";
+import { westrideTheme } from "@westride/theme/themes/westride";
 import {
   CodeBracketSquareIcon,
   DocumentTextIcon,
@@ -149,7 +149,7 @@ export function App() {
   const route = useRoute();
 
   return (
-    <Theme theme={stoneTheme}>
+    <Theme theme={westrideTheme}>
       <AppShell variant="section" sideNav={<ExplorerNav state={state} route={route} />}>
         <ExplorerContent state={state} route={route} />
       </AppShell>

@@ -1,11 +1,9 @@
 "use client";
 
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import { Center } from "@astryxdesign/core/Center";
-import { Icon } from "@astryxdesign/core/Icon";
 import { StackItem, VStack } from "@astryxdesign/core/Stack";
-import { Text } from "@astryxdesign/core/Text";
-import { RocketLaunchIcon } from "@heroicons/react/24/outline";
 import { SiteFooter } from "../site-footer";
 
 const pageStyle: CSSProperties = {
@@ -26,12 +24,21 @@ export default function AuthLayout({
       <StackItem size="fill" isScrollable>
         <Center axis="both" padding={6} minHeight="100%">
           <VStack gap={4} hAlign="center">
-            <VStack gap={2} hAlign="center">
-              <Icon icon={RocketLaunchIcon} size="lg" />
-              <Text type="body" weight="bold">
-                WeStride
-              </Text>
-            </VStack>
+            <Image
+              src="/logos/westride/WeStride_landscape_navy.png"
+              alt="WeStride"
+              width={2492}
+              height={762}
+              preload
+              // The optimizer fetches this file without a browser user agent,
+              // and the proxy refuses that request.
+              unoptimized
+              style={{
+                height: "var(--spacing-12)",
+                width: "auto",
+                maxWidth: "100%",
+              }}
+            />
             {children}
           </VStack>
         </Center>

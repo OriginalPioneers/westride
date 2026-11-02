@@ -2,201 +2,63 @@
 
 import { Show, useClerk } from "@clerk/nextjs";
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Fragment } from "react";
 import { AppShell } from "@astryxdesign/core/AppShell";
-import type { IconType } from "@astryxdesign/core/Icon";
+import { Button } from "@astryxdesign/core/Button";
+import { Divider } from "@astryxdesign/core/Divider";
+import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
+import { Icon } from "@astryxdesign/core/Icon";
+import { IconButton } from "@astryxdesign/core/IconButton";
 import { Layout } from "@astryxdesign/core/Layout";
-import { Section } from "@astryxdesign/core/Section";
-import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
+import { VStack } from "@astryxdesign/core/Stack";
 import {
-  SideNav,
-  SideNavCollapseButton,
-  SideNavHeading,
-  SideNavItem,
-  SideNavSection,
-  useSideNavCollapse,
-  useSideNavRenderMode,
-} from "@astryxdesign/core/SideNav";
+  TopNav,
+  TopNavHeading,
+  TopNavItem,
+  useTopNavRenderMode,
+} from "@astryxdesign/core/TopNav";
 import {
-  AcademicCapIcon,
-  ArrowRightEndOnRectangleIcon,
   ArrowRightStartOnRectangleIcon,
-  BookOpenIcon,
   Cog6ToothIcon,
-  CpuChipIcon,
-  HeartIcon,
-  HomeIcon,
-  LightBulbIcon,
   UserCircleIcon,
-  UserGroupIcon,
-  UserPlusIcon,
-  WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
-import { afterAuthPath, signInPath, signUpPath } from "@/lib/auth-paths";
+import { afterAuthPath, signInPath } from "@/lib/auth-paths";
 import { MuseDock } from "./muse-dock";
-import { SiteFooter } from "../site-footer";
-import {
-  AcademicCapIcon as AcademicCapIconSolid,
-  BookOpenIcon as BookOpenIconSolid,
-  Cog6ToothIcon as Cog6ToothIconSolid,
-  CpuChipIcon as CpuChipIconSolid,
-  HeartIcon as HeartIconSolid,
-  HomeIcon as HomeIconSolid,
-  LightBulbIcon as LightBulbIconSolid,
-  UserCircleIcon as UserCircleIconSolid,
-  UserGroupIcon as UserGroupIconSolid,
-  WrenchScrewdriverIcon as WrenchScrewdriverIconSolid,
-} from "@heroicons/react/24/solid";
+import { SITE_CONTAINER_WIDTH, SiteFooter } from "../site-footer";
 
 type NavLink = {
   label: string;
   href: string;
-  icon: IconType;
-  selectedIcon: IconType;
 };
 
-type NavGroup = {
-  title: string;
-  isHeaderHidden?: boolean;
-  links: NavLink[];
-};
-
-const NAV_GROUPS: NavGroup[] = [
-  {
-    title: "Overview",
-    isHeaderHidden: true,
-    links: [
-      { label: "Home", href: "/", icon: HomeIcon, selectedIcon: HomeIconSolid },
-    ],
-  },
-  {
-    title: "Create",
-    links: [
-      {
-        label: "Idea Studio",
-        href: "/ideas",
-        icon: LightBulbIcon,
-        selectedIcon: LightBulbIconSolid,
-      },
-      {
-        label: "Build Studio",
-        href: "/build",
-        icon: WrenchScrewdriverIcon,
-        selectedIcon: WrenchScrewdriverIconSolid,
-      },
-      {
-        label: "Agent Studio",
-        href: "/agents",
-        icon: CpuChipIcon,
-        selectedIcon: CpuChipIconSolid,
-      },
-    ],
-  },
-  {
-    title: "Connect",
-    links: [
-      {
-        label: "Supporting",
-        href: "/supporting",
-        icon: HeartIcon,
-        selectedIcon: HeartIconSolid,
-      },
-      {
-        label: "Mentorship",
-        href: "/mentorship",
-        icon: UserGroupIcon,
-        selectedIcon: UserGroupIconSolid,
-      },
-    ],
-  },
-  {
-    title: "Learn",
-    links: [
-      {
-        label: "Academy",
-        href: "/academy",
-        icon: AcademicCapIcon,
-        selectedIcon: AcademicCapIconSolid,
-      },
-    ],
-  },
-  {
-    title: "About",
-    links: [
-      {
-        label: "Our Story",
-        href: "/our-story",
-        icon: BookOpenIcon,
-        selectedIcon: BookOpenIconSolid,
-      },
-    ],
-  },
-];
-
-const ACCOUNT_LINKS: NavLink[] = [
-  {
-    label: "Settings",
-    href: "/settings",
-    icon: Cog6ToothIcon,
-    selectedIcon: Cog6ToothIconSolid,
-  },
-  {
-    label: "Profile",
-    href: "/profile",
-    icon: UserCircleIcon,
-    selectedIcon: UserCircleIconSolid,
-  },
+/** Primary destinations, in two groups: make something, then get help with it. */
+const NAV_GROUPS: NavLink[][] = [
+  [
+    { label: "Idea Workshop", href: "/ideas" },
+    { label: "Build Studio", href: "/build" },
+    { label: "AI Agent Fleet", href: "/agents" },
+  ],
+  [
+    { label: "Support A Project", href: "/supporting" },
+    { label: "Mentorship", href: "/mentorship" },
+    { label: "AI Academy", href: "/academy" },
+  ],
 ];
 
 function isActive(pathname: string, href: string) {
-  if (href === "/") {
-    return pathname === "/";
-  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-// SideNav's sticky header and footer pad themselves by spacing-2 (the footer
-// top pad is spacing-1). These margins pull a band out to the rail edges so
-// its fill and divider read as the boundary of that region.
-const headerBandStyle = {
-  alignSelf: "stretch",
-  marginInline: "calc(-1 * var(--spacing-2))",
-  marginBlock: "calc(-1 * var(--spacing-2))",
-};
-
-function footerBandStyle(isCollapsed: boolean) {
-  return {
-    alignSelf: "stretch",
-    marginInline: "calc(-1 * var(--spacing-2))",
-    marginBlockStart: isCollapsed ? 0 : "calc(-1 * var(--spacing-1))",
-    // Covers the sticky footer's bottom pad and the empty icon row SideNav
-    // still reserves after the built-in collapse button is moved out.
-    marginBlockEnd: "calc(-1 * var(--spacing-4))",
-  };
-}
-
-function BrandMark() {
+/** Separates the nav groups: a vertical rule in the bar, a horizontal one in the drawer. */
+function GroupDivider() {
+  const renderMode = useTopNavRenderMode();
   return (
-    <Image
-      src="/westride-stamp.png"
-      alt=""
-      width={1156}
-      height={778}
-      preload
-      // The optimizer fetches this file without a browser user agent,
-      // and the proxy refuses that request.
-      unoptimized
-      style={{
-        // Narrow enough to sit inside the collapsed rail (spacing-12).
-        width: "var(--spacing-10)",
-        height: "auto",
-      }}
-    />
+    <Divider orientation={renderMode === "drawer" ? "horizontal" : "vertical"} />
   );
 }
 
-function LandscapeWordmark() {
+function Wordmark() {
   return (
     <Image
       src="/logos/westride/WeStride_landscape_navy.png"
@@ -204,93 +66,48 @@ function LandscapeWordmark() {
       width={2492}
       height={762}
       preload
+      // The optimizer fetches this file without a browser user agent,
+      // and the proxy refuses that request.
       unoptimized
       style={{
-        height: "var(--spacing-12)",
+        height: "var(--spacing-8)",
         width: "auto",
-        maxWidth: "100%",
+        display: "block",
       }}
     />
   );
 }
 
-function NavBrand() {
-  const mode = useSideNavRenderMode();
-  const { isCollapsed } = useSideNavCollapse();
-  // The landscape lockup already includes the wordmark, so it replaces
-  // the stamp-plus-title row whenever the rail is open. Collapsed, only
-  // the stamp fits.
-  const isRailCollapsed = mode === "default" && isCollapsed;
-  const heading = isRailCollapsed ? (
-    <SideNavHeading heading="WeStride" headingHref="/" icon={<BrandMark />} />
-  ) : (
-    <Link
-      href="/"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        width: "100%",
-        lineHeight: 0,
-      }}
-    >
-      <LandscapeWordmark />
-    </Link>
-  );
-
-  // Mobile top bar and drawer already frame the wordmark. The band and
-  // collapse control belong to the desktop rail.
-  if (mode !== "default") {
-    return heading;
-  }
+function AccountMenu() {
+  const { signOut } = useClerk();
 
   return (
-    <Section
-      variant="section"
-      padding={0}
-      paddingInline={isCollapsed ? 0 : 2}
-      paddingBlock={isCollapsed ? 1 : 2}
-      dividers={["bottom"]}
-      style={headerBandStyle}
-    >
-      {isCollapsed ? (
-        <VStack align="center" gap={1}>
-          <SideNavCollapseButton size="sm" />
-          {heading}
-        </VStack>
-      ) : (
-        <HStack align="center" gap={1}>
-          <StackItem size="fill">{heading}</StackItem>
-          <SideNavCollapseButton size="sm" />
-        </HStack>
+    <DropdownMenu
+      placement="below"
+      alignment="end"
+      hasChevron={false}
+      renderTrigger={(props) => (
+        <IconButton
+          {...props}
+          label="Account"
+          tooltip="Account"
+          variant="ghost"
+          icon={<Icon icon={UserCircleIcon} />}
+        />
       )}
-    </Section>
-  );
-}
-
-function NavAccount({ children }: { children: React.ReactNode }) {
-  const mode = useSideNavRenderMode();
-  const { isCollapsed } = useSideNavCollapse();
-  const links = (
-    <SideNavSection title="Account" isHeaderHidden>
-      {children}
-    </SideNavSection>
-  );
-
-  if (mode !== "default") {
-    return links;
-  }
-
-  return (
-    <Section
-      variant="section"
-      padding={0}
-      paddingInline={isCollapsed ? 0 : 2}
-      paddingBlock={1}
-      dividers={["top"]}
-      style={footerBandStyle(isCollapsed)}
-    >
-      <VStack align={isCollapsed ? "center" : "stretch"}>{links}</VStack>
-    </Section>
+      items={[
+        { label: "Profile", href: "/profile", icon: UserCircleIcon },
+        { label: "Settings", href: "/settings", icon: Cog6ToothIcon },
+        { type: "divider" },
+        {
+          label: "Sign Out",
+          icon: ArrowRightStartOnRectangleIcon,
+          onClick: () => {
+            void signOut({ redirectUrl: afterAuthPath });
+          },
+        },
+      ]}
+    />
   );
 }
 
@@ -302,74 +119,47 @@ export function AppFrame({
   viewerId?: string | null;
 }) {
   const pathname = usePathname();
-  const { signOut } = useClerk();
-
-  const renderLink = (link: NavLink) => (
-    <SideNavItem
-      key={link.href}
-      label={link.label}
-      href={link.href}
-      icon={link.icon}
-      selectedIcon={link.selectedIcon}
-      isSelected={isActive(pathname, link.href)}
-    />
-  );
 
   return (
     <AppShell
       variant="section"
-      sideNav={
-        <SideNav
-          style={{ userSelect: "none", WebkitUserSelect: "none" }}
-          collapsible={{ hasButton: false }}
-          resizable={{
-            defaultWidth: 200,
-            minWidth: 180,
-            maxWidth: 280,
-            // Width key bumped so browsers that saved the old 260px default
-            // pick up the tighter rail.
-            autoSaveId: "westride-side-nav-v2",
-          }}
-          header={<NavBrand />}
-          footer={
-            <NavAccount>
+      height="fill"
+      topNav={
+        <TopNav
+          label="WeStride"
+          // Center the bar's content in the site column; the shell keeps
+          // the divider full-bleed.
+          style={{ maxWidth: SITE_CONTAINER_WIDTH, marginInline: "auto" }}
+          heading={
+            // The lockup carries the name, so no heading text beside it.
+            <TopNavHeading headingHref="/" logo={<Wordmark />} />
+          }
+          // Items sit directly in the slot (no wrapper) so TopNav can lay
+          // them out as a row in the bar and as a column in the phone drawer.
+          startContent={NAV_GROUPS.map((group, index) => (
+            <Fragment key={index}>
+              {index > 0 ? <GroupDivider /> : null}
+              {group.map((link) => (
+                <TopNavItem
+                  key={link.href}
+                  label={link.label}
+                  href={link.href}
+                  isSelected={isActive(pathname, link.href)}
+                />
+              ))}
+            </Fragment>
+          ))}
+          endContent={
+            <>
               <Show when="signed-out">
-                <SideNavItem
-                  label="Register"
-                  href={signUpPath}
-                  icon={UserPlusIcon}
-                  isSelected={isActive(pathname, signUpPath)}
-                />
-                <SideNavItem
-                  label="Sign In"
-                  href={signInPath}
-                  icon={ArrowRightEndOnRectangleIcon}
-                  isSelected={isActive(pathname, signInPath)}
-                />
+                <Button label="Sign In" variant="secondary" href={signInPath} />
               </Show>
               <Show when="signed-in">
-                {ACCOUNT_LINKS.map(renderLink)}
-                <SideNavItem
-                  label="Sign Out"
-                  icon={ArrowRightStartOnRectangleIcon}
-                  onClick={() => {
-                    void signOut({ redirectUrl: afterAuthPath });
-                  }}
-                />
+                <AccountMenu />
               </Show>
-            </NavAccount>
+            </>
           }
-        >
-          {NAV_GROUPS.map((group) => (
-            <SideNavSection
-              key={group.title}
-              title={group.title}
-              isHeaderHidden={group.isHeaderHidden}
-            >
-              {group.links.map(renderLink)}
-            </SideNavSection>
-          ))}
-        </SideNav>
+        />
       }
     >
       <Layout

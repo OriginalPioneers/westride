@@ -12,49 +12,24 @@ import { List, ListItem } from "@astryxdesign/core/List";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Table } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
+import {
+  brandColorRoleLabels,
+  brandColors,
+  brandDescriptor,
+  brandFontWeights,
+  brandTagline,
+  brandTaglineSupport,
+} from "@westride/theme";
 import { DocPage, DocSection } from "../../doc-page";
 import { OurStoryTabs } from "../../section-tabs";
 
 const DESIGN_URL = "https://design.westride.org";
 
-const BRAND_COLORS = [
-  {
-    name: "Deep Stride Navy",
-    hex: "#0F1B2D",
-    use: "The wordmark, and the single-color mark on light backgrounds.",
-  },
-  {
-    name: "Electric Indigo",
-    hex: "#5B5BD6",
-    use: "First stroke of the stamp. The first step of the stride.",
-  },
-  {
-    name: "Vivid Violet",
-    hex: "#8B5CF6",
-    use: "Second stroke of the stamp.",
-  },
-  {
-    name: "Bright Azure",
-    hex: "#0EA5E9",
-    use: "Third stroke of the stamp.",
-  },
-  {
-    name: "Stride Teal",
-    hex: "#14B8A6",
-    use: "Tallest stroke of the stamp. The stride at full height.",
-  },
-  {
-    name: "Sunrise Coral",
-    hex: "#FF6B4A",
-    use: "The spark only. Human warmth at the end of the gradient.",
-  },
-];
-
 const LEAVE_OUT = [
   "No robot, brain, gear, factory, or lightbulb in the mark.",
   "No drop shadow, bevel, or 3D treatment of the strokes.",
   "No extra words in the lockup. The name is westride, lowercase.",
-  "No recoloring the spark. Coral belongs only there.",
+  "No recoloring the spark. Spark Orange belongs only there.",
 ];
 
 const SURFACES = [
@@ -87,7 +62,7 @@ const TINTS: NonNullable<CardProps["variant"]>[] = [
 const TYPE_FAMILIES = [
   {
     role: "Headings",
-    face: "Montserrat",
+    face: "Figtree",
     token: "--font-family-heading",
     sample: (
       <Text
@@ -95,7 +70,7 @@ const TYPE_FAMILIES = [
         weight="bold"
         style={{ fontFamily: "var(--font-family-heading)" }}
       >
-        Learn together
+        {brandTagline}
       </Text>
     ),
   },
@@ -137,19 +112,20 @@ const PRINCIPLES = [
   {
     label: "Brand colors stay on the brand",
     detail:
-      "The stamp palette paints the mark and wordmark only. Product screens use Stone.",
+      "The theme publishes the palette as --color-brand-* tokens for the mark, the wordmark, and brand moments. Product controls use the semantic tokens.",
   },
 ];
 
 const DESIGN_SITE = [
   {
     label: "Brand",
-    detail: "The name, the logo, brand color, and the wordmark's type.",
+    detail:
+      "The logo system, brand icon, color palette, Figtree typography, and the tagline.",
     href: `${DESIGN_URL}/?path=/story/brand-introduction--guide`,
   },
   {
     label: "Foundations",
-    detail: "Stone's color and type tokens, with live swatches.",
+    detail: "The theme's color and type tokens, with live swatches.",
     href: `${DESIGN_URL}/?path=/story/foundations-color--guide`,
   },
   {
@@ -225,11 +201,47 @@ export function DesignOverview() {
             </Text>
             <Text>
               The wordmark is <Code>westride</Code>, always lowercase, set in
-              Manrope ExtraBold with tight tracking. It is Deep Stride Navy on
-              light backgrounds and white on navy.
+              Figtree Bold with tight tracking. It is Midnight Navy on light
+              backgrounds and white on navy.
             </Text>
           </VStack>
         </Grid>
+        <Card padding={6} style={{ backgroundColor: "var(--color-brand-navy)" }}>
+          <VStack gap={2}>
+            <Text
+              type="label"
+              size="sm"
+              style={{
+                color: "var(--color-brand-white)",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+              }}
+            >
+              {brandDescriptor}
+            </Text>
+            <Heading
+              level={3}
+              type="display-3"
+              weight="bold"
+              style={{
+                color: "var(--color-brand-white)",
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+              }}
+            >
+              {brandTagline}
+            </Heading>
+            <Text
+              weight="normal"
+              style={{
+                color: "var(--color-brand-white)",
+                letterSpacing: "0.08em",
+              }}
+            >
+              {brandTaglineSupport}
+            </Text>
+          </VStack>
+        </Card>
         <VStack gap={2}>
           <Heading level={3}>Leave out</Heading>
           <List density="compact" listStyle="disc">
@@ -242,13 +254,20 @@ export function DesignOverview() {
 
       <DocSection id="brand-colors" title="Brand colors">
         <Text>
-          Six colors belong to the identity. The stamp runs from indigo to
-          teal, and coral is saved for the spark. They paint the mark and the
-          wordmark, not the product. Screens use the theme colors further down.
+          Our colors reflect growth, community, innovation, and opportunity.
+          Midnight Navy and Bright Blue lead, White is the field, three
+          supporting hues build the stamp, and Spark Orange is saved for the
+          spark. They paint the mark, the wordmark, and brand moments, not
+          the product controls. Screens use the theme colors further down.
         </Text>
+        <Grid columns={{ minWidth: 120, max: 7 }} gap={3}>
+          {brandColors.map((color) => (
+            <Swatch key={color.token} name={color.name} token={color.token} />
+          ))}
+        </Grid>
         <Table
-          data={BRAND_COLORS}
-          idKey="name"
+          data={[...brandColors]}
+          idKey="token"
           columns={[
             { key: "name", header: "Color" },
             {
@@ -256,12 +275,17 @@ export function DesignOverview() {
               header: "Hex",
               renderCell: (row) => <Code>{row.hex}</Code>,
             },
+            {
+              key: "role",
+              header: "Role",
+              renderCell: (row) => brandColorRoleLabels[row.role],
+            },
             { key: "use", header: "Use" },
           ]}
         />
         <Text type="supporting">
           For favicons, avatars, and anything else that cannot hold the
-          gradient, use the stamp in solid Deep Stride Navy on light, or solid
+          gradient, use the stamp in solid Midnight Navy on light, or solid
           white on navy.
         </Text>
       </DocSection>
@@ -272,14 +296,16 @@ export function DesignOverview() {
           <Text type="inherit" weight="semibold">
             Astryx
           </Text>
-          , a React design system, themed with{" "}
+          , a React design system, themed with the{" "}
           <Text type="inherit" weight="semibold">
-            Stone
+            WeStride theme
           </Text>
           . Astryx supplies layout, navigation, forms, tables, and dialogs as
-          components, so pages are composed rather than hand-styled. Stone sets
-          the color, type, spacing, and corner radius, and switches between
-          light and dark.
+          components, so pages are composed rather than hand-styled. The theme
+          extends Astryx&apos;s Stone theme: it keeps Stone&apos;s surfaces,
+          spacing, and corner radius, sets every face in Figtree, and
+          publishes the brand palette as tokens. It switches between light and
+          dark on its own.
         </Text>
         <Text>
           This website, the API explorer, the MCP setup guide, and the design
@@ -290,10 +316,12 @@ export function DesignOverview() {
           code={`import "@astryxdesign/core/reset.css";
 import "@astryxdesign/core/astryx.css";
 import { Theme } from "@astryxdesign/core/theme";
-import { stoneTheme } from "@astryxdesign/theme-stone/built";
+import { westrideTheme } from "@westride/theme/themes/westride";
+import "@westride/theme/themes/westride.css";
+import "@westride/theme/themes/westride.fonts.css";
 
 export function Providers({ children }) {
-  return <Theme theme={stoneTheme}>{children}</Theme>;
+  return <Theme theme={westrideTheme}>{children}</Theme>;
 }`}
           language="tsx"
           width="100%"
@@ -302,8 +330,8 @@ export function Providers({ children }) {
 
       <DocSection id="color" title="Product color">
         <Text>
-          Stone&apos;s colors are tokens that already flip between light and
-          dark. Surfaces layer from the page canvas up to cards:
+          The theme&apos;s colors are tokens that already flip between light
+          and dark. Surfaces layer from the page canvas up to cards:
         </Text>
         <Grid columns={{ minWidth: 120, max: 4 }} gap={4}>
           {SURFACES.map((swatch) => (
@@ -334,9 +362,31 @@ export function Providers({ children }) {
 
       <DocSection id="typography" title="Typography">
         <Text>
-          Stone loads three families. Use Heading, Text, and Code so size,
-          weight, and line height stay on the theme&apos;s scale.
+          Figtree is used for all brand communications, so headings and body
+          share it; code is the one exception. Use Heading, Text, and Code so
+          size, weight, and line height stay on the theme&apos;s scale.
         </Text>
+        <Grid columns={{ minWidth: 96, max: 5 }} gap={3}>
+          {brandFontWeights.map((weight) => (
+            <Card key={weight.weight} padding={4}>
+              <VStack gap={1}>
+                <Text
+                  type="large"
+                  style={{
+                    fontFamily: "var(--font-family-body)",
+                    fontWeight: weight.weight,
+                  }}
+                >
+                  Aa
+                </Text>
+                <Text type="label">{weight.name}</Text>
+                <Text type="supporting" size="sm">
+                  {weight.weight}
+                </Text>
+              </VStack>
+            </Card>
+          ))}
+        </Grid>
         <Table
           data={TYPE_FAMILIES}
           idKey="role"
@@ -356,7 +406,8 @@ export function Providers({ children }) {
           ]}
         />
         <Text type="supporting">
-          Manrope is only for the wordmark. Product screens never use it.
+          The wordmark is the same Figtree, in Bold. There is no separate
+          display or wordmark face.
         </Text>
       </DocSection>
 

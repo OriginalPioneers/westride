@@ -52,7 +52,7 @@ export const Guide = {
   render: () => (
     <Page
       title="Product color"
-      lede="Screens use the Stone theme. These tokens already flip between light and dark. Prefer them, and the component variants that map to them, over raw colors."
+      lede="Screens use the WeStride theme, which keeps Stone's surfaces and semantics. These tokens already flip between light and dark. Prefer them, and the component variants that map to them, over raw colors."
     >
       <Section title="Surfaces">
         <Grid columns={{ minWidth: 200, max: 3 }} gap={4}>

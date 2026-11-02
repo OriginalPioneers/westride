@@ -79,6 +79,11 @@ export const LANDING_STYLES = `
   50% { transform: scaleY(1.25); }
 }
 
+@keyframes wl-dots-drift {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
+}
+
 @keyframes wl-globe-in {
   from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: none; }
@@ -91,16 +96,17 @@ export const LANDING_STYLES = `
   to { transform: scaleX(1); }
 }
 
-/* Stone keeps its semantic colors earthy. The brand stamp's hues live in the
-   data-visualization ramp, so the landing's accents alias those tokens. */
+/* The theme keeps its semantic colors earthy and publishes the brand palette
+   as --color-brand-*. The stamp's hues alias those; the extra tints the
+   landing needs come from the data-visualization ramp. */
 .wl-root {
-  --wl-indigo: var(--color-data-categorical-indigo);
-  --wl-purple: var(--color-data-purple-3);
-  --wl-blue: var(--color-data-blue-3);
-  --wl-teal: var(--color-data-teal-3);
+  --wl-indigo: var(--color-brand-indigo);
+  --wl-purple: var(--color-brand-purple);
+  --wl-blue: var(--color-brand-blue);
+  --wl-teal: var(--color-brand-teal);
+  --wl-orange: var(--color-brand-orange);
   --wl-green: var(--color-data-categorical-green);
   --wl-pink: var(--color-data-categorical-pink);
-  --wl-orange: var(--color-data-orange-3);
   --wl-yellow: var(--color-data-yellow-3);
   --wl-accent: var(--color-data-categorical-purple);
 }
@@ -663,6 +669,43 @@ export const LANDING_STYLES = `
   animation: wl-shimmer calc(var(--duration-slow-max) * 6) linear infinite;
 }
 
+/* ---------- Studios band ---------- */
+
+/* Both edges of the muted band are waves rather than straight lines. The
+   mask keeps the band below the top curve and above the bottom one; the two
+   run out of phase so the band reads as a ribbon. StudiosEdge traces only
+   the top curve. The bottom edge is the band's own gray, with no stroke. */
+.wl-studios {
+  --wl-edge: var(--spacing-12);
+  --wl-edge-mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C240 0 480 0 720 24C960 48 1200 48 1440 24V48H0Z'/%3E%3C/svg%3E")
+      top / 100% var(--wl-edge) no-repeat,
+    linear-gradient(black, black)
+      center / 100% calc(100% - var(--wl-edge) * 2 + var(--border-width) * 2) no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C240 48 480 48 720 24C960 0 1200 0 1440 24V0H0Z'/%3E%3C/svg%3E")
+      bottom / 100% var(--wl-edge) no-repeat;
+  position: relative;
+  isolation: isolate;
+  -webkit-mask: var(--wl-edge-mask);
+  mask: var(--wl-edge-mask);
+}
+
+.wl-studios-edge {
+  position: absolute;
+  inset-inline: 0;
+  width: 100%;
+  height: var(--wl-edge);
+  pointer-events: none;
+}
+
+.wl-studios-edge[data-edge="top"] {
+  top: 0;
+}
+
+.wl-studios-edge[data-edge="bottom"] {
+  bottom: 0;
+}
+
 /* ---------- Path ---------- */
 
 .wl-track {
@@ -752,6 +795,45 @@ export const LANDING_STYLES = `
 }
 
 /* ---------- Integrations ---------- */
+
+/* A dot grid behind the cards. The dots are holes in a mask over a slowly
+   drifting brand gradient, so their color shifts across the band over time;
+   the second mask layer fades the grid out toward the edges. */
+.wl-integrations {
+  position: relative;
+  isolation: isolate;
+}
+
+.wl-integrations::before {
+  --wl-dot-mask:
+    radial-gradient(
+      circle,
+      black calc(var(--border-width) * 1.5),
+      transparent calc(var(--border-width) * 2)
+    ) center / var(--spacing-6) var(--spacing-6) repeat,
+    radial-gradient(ellipse 70% 65% at 50% 45%, black, transparent)
+      center / 100% 100% no-repeat;
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    120deg,
+    var(--wl-indigo),
+    var(--wl-purple),
+    var(--wl-teal),
+    var(--wl-blue),
+    var(--wl-indigo)
+  );
+  background-size: 300% 300%;
+  opacity: 0.35;
+  -webkit-mask: var(--wl-dot-mask);
+  mask: var(--wl-dot-mask);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  animation: wl-dots-drift calc(var(--duration-slow-max) * 24) var(--ease-standard) infinite alternate;
+}
 
 .wl-integration {
   height: 100%;
@@ -854,7 +936,8 @@ export const LANDING_STYLES = `
   .wl-step-icon,
   .wl-support,
   .wl-feature,
-  .wl-integration {
+  .wl-integration,
+  .wl-integrations::before {
     animation: none;
     transition: none;
   }

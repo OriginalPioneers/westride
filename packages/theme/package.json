@@ -1,0 +1,32 @@
+{
+  "name": "@westride/theme",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./themes/westride": "./themes/westride/westride.js",
+    "./themes/westride.css": "./themes/westride/westride.css",
+    "./themes/westride.fonts.css": "./themes/westride/westride.fonts.css"
+  },
+  "scripts": {
+    "build": "astryx theme build themes/westride/westrideTheme.ts",
+    "lint": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@astryxdesign/core": "^0.7.4",
+    "@astryxdesign/theme-stone": "^0.7.4",
+    "@astryxdesign/cli": ">=0.6.4"
+  },
+  "devDependencies": {
+    "@astryxdesign/cli": "0.7.4",
+    "@astryxdesign/core": "^0.7.4",
+    "@astryxdesign/theme-stone": "^0.7.4",
+    "typescript": "^5"
+  },
+  "peerDependenciesMeta": {
+    "@astryxdesign/cli": {
+      "optional": true
+    }
+  }
+}

@@ -40,8 +40,6 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import { defaultThemeSlug, themes } from "@/astryx-themes";
-import { signUpPath } from "@/lib/auth-paths";
-import { STORE_LINKS } from "../../store-links";
 import {
   CLONE_SNIPPET,
   COMMITS_URL,
@@ -1099,9 +1097,56 @@ function PathTrack() {
   );
 }
 
+/**
+ * A gradient line along the top wavy edge of the studios band. The path
+ * traces the curve that edge's mask cuts (see `.wl-studios` in the styles),
+ * so the two must change together. The bottom edge stays the band's own gray.
+ */
+function StudiosEdge({ edge }: { edge: "top" | "bottom" }) {
+  const gradientId = `wl-edge-gradient-${edge}`;
+  return (
+    <svg
+      className="wl-studios-edge"
+      data-edge={edge}
+      viewBox="0 0 1440 48"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        <linearGradient
+          id={gradientId}
+          gradientUnits="userSpaceOnUse"
+          x1="0"
+          x2="1440"
+          y1="0"
+          y2="0"
+        >
+          <stop offset="0" stopColor="var(--wl-indigo)" />
+          <stop offset="0.5" stopColor="var(--wl-purple)" />
+          <stop offset="1" stopColor="var(--wl-teal)" />
+        </linearGradient>
+      </defs>
+      <path
+        d={
+          edge === "top"
+            ? "M0 24C240 0 480 0 720 24C960 48 1200 48 1440 24"
+            : "M0 24C240 48 480 48 720 24C960 0 1200 0 1440 24"
+        }
+        fill="none"
+        stroke={`url(#${gradientId})`}
+        strokeWidth="3"
+        vectorEffect="non-scaling-stroke"
+        opacity="0.6"
+      />
+    </svg>
+  );
+}
+
 function StudiosSection() {
   return (
-    <Section variant="muted" padding={0}>
+    <Section className="wl-studios" variant="muted" padding={0}>
+      <StudiosEdge edge="top" />
       <Container>
         <SectionIntro
           eyebrow="Idea, build, agent"
@@ -1257,7 +1302,7 @@ function HackathonSection() {
   return (
     <Theme theme={themes[defaultThemeSlug]} mode="dark">
       <Section className="wl-band" variant="transparent" padding={0}>
-        <Container>
+        <Container gap={10}>
           <Grid columns={{ minWidth: 320, max: 2 }} gap={8} align="center">
             <VStack gap={5} className="wl-reveal">
               <Eyebrow>Where it started</Eyebrow>
@@ -1345,6 +1390,46 @@ function HackathonSection() {
               </VStack>
             </Card>
           </Grid>
+
+          <Grid columns={{ minWidth: 320, max: 2 }} gap={8} align="center">
+            <VStack gap={3} className="wl-reveal">
+              <Heading level={3} textWrap="balance">
+                Three friends, one hackathon, and a problem we kept seeing in
+                the Discord
+              </Heading>
+              <Text color="secondary" textWrap="pretty">
+                Team after team was ideating, vetting, and researching. The
+                people doing it could not have been more different: students on
+                a first project, people who had never written code, and
+                engineers with decades behind them. The project was not any one
+                of our ideas. It was the path all of them were walking.
+              </Text>
+            </VStack>
+            <VStack gap={5} className="wl-reveal" style={revealDelay(2)}>
+              <Grid columns={{ minWidth: 160, max: 3 }} gap={4}>
+                {TEAM.map((member) => (
+                  <VStack key={member.name} gap={2} hAlign="center">
+                    <Avatar name={member.name} size={72} tooltip={false} />
+                    <VStack gap={0.5} hAlign="center">
+                      <Text weight="semibold" justify="center">
+                        {member.name}
+                      </Text>
+                      <Text type="supporting" size="sm" justify="center">
+                        {member.role}
+                      </Text>
+                    </VStack>
+                  </VStack>
+                ))}
+              </Grid>
+              <HStack hAlign="center">
+                <Button
+                  label="Read our story"
+                  href="/our-story"
+                  endContent={<Icon icon={ArrowRightIcon} color="inherit" />}
+                />
+              </HStack>
+            </VStack>
+          </Grid>
         </Container>
       </Section>
     </Theme>
@@ -1393,7 +1478,7 @@ function IntegrationCard({
 
 function IntegrationsSection() {
   return (
-    <Section variant="transparent" padding={0}>
+    <Section className="wl-integrations" variant="transparent" padding={0}>
       <Container>
         <SectionIntro
           eyebrow="Integrations"
@@ -1513,114 +1598,6 @@ function StackSection() {
   );
 }
 
-/* ---------------------------- Story ----------------------------- */
-
-function StorySection() {
-  return (
-    <Section variant="transparent" padding={0}>
-      <Container>
-        <Grid columns={{ minWidth: 320, max: 2 }} gap={8} align="center">
-          <SectionIntro
-            eyebrow="Our story"
-            title="Three friends, one hackathon, and a problem we kept seeing in the Discord"
-            lede="Team after team was ideating, vetting, and researching. The people doing it could not have been more different: students on a first project, people who had never written code, and engineers with decades behind them. The project was not any one of our ideas. It was the path all of them were walking."
-          />
-          <VStack gap={5} className="wl-reveal" style={revealDelay(2)}>
-            <Grid columns={{ minWidth: 160, max: 3 }} gap={4}>
-              {TEAM.map((member) => (
-                <VStack key={member.name} gap={2} hAlign="center">
-                  <Avatar name={member.name} size={72} tooltip={false} />
-                  <VStack gap={0.5} hAlign="center">
-                    <Text weight="semibold" justify="center">
-                      {member.name}
-                    </Text>
-                    <Text type="supporting" size="sm" justify="center">
-                      {member.role}
-                    </Text>
-                  </VStack>
-                </VStack>
-              ))}
-            </Grid>
-            <HStack hAlign="center">
-              <Button
-                label="Read our story"
-                href="/our-story"
-                endContent={<Icon icon={ArrowRightIcon} color="inherit" />}
-              />
-            </HStack>
-          </VStack>
-        </Grid>
-      </Container>
-    </Section>
-  );
-}
-
-/* --------------------------- Closing ---------------------------- */
-
-function ClosingSection({ isSignedIn }: { isSignedIn: boolean }) {
-  return (
-    <Theme theme={themes[defaultThemeSlug]} mode="dark">
-      <Section className="wl-band" variant="transparent" padding={0}>
-        <Container gap={6}>
-          <SectionIntro
-            align="center"
-            eyebrow="Stride with us"
-            title={
-              <>
-                Bring an idea. Build it for real.{" "}
-                <Text type="inherit" className="wl-gradient-text">
-                  Give it agents.
-                </Text>
-              </>
-            }
-            lede="WeStride is open source, and the path is the same whether this is your first idea or your fiftieth repository."
-          />
-          <HStack
-            gap={3}
-            wrap="wrap"
-            hAlign="center"
-            className="wl-reveal"
-            style={revealDelay(1)}
-          >
-            {isSignedIn ? (
-              <Button
-                label="Start an idea"
-                variant="primary"
-                size="lg"
-                href="/ideas"
-              />
-            ) : (
-              <Button
-                label="Create a free account"
-                variant="primary"
-                size="lg"
-                href={signUpPath}
-              />
-            )}
-            <Button
-              label="Become a mentor"
-              size="lg"
-              href="/mentorship/become"
-            />
-            {STORE_LINKS.map((link) => (
-              <Button
-                key={link.href}
-                label={link.label}
-                variant="ghost"
-                size="lg"
-                href={link.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${link.label} (opens in a new tab)`}
-              />
-            ))}
-          </HStack>
-        </Container>
-      </Section>
-    </Theme>
-  );
-}
-
 /* ----------------------------- Page ----------------------------- */
 
 export function Landing(props: LandingProps) {
@@ -1637,10 +1614,8 @@ export function Landing(props: LandingProps) {
             <MetaAiSection />
             <StudiosSection />
             <IntegrationsSection />
-            <HackathonSection />
             <StackSection />
-            <StorySection />
-            <ClosingSection isSignedIn={props.isSignedIn} />
+            <HackathonSection />
           </VStack>
         </LayoutContent>
       }

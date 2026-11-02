@@ -41,11 +41,11 @@ import {
 } from "./track-progress";
 
 const sectionColors = [
-  "var(--color-journey-indigo)",
-  "var(--color-journey-purple)",
-  "var(--color-journey-blue)",
-  "var(--color-journey-teal)",
-  "var(--color-journey-red)",
+  "var(--color-brand-indigo)",
+  "var(--color-brand-purple)",
+  "var(--color-brand-blue)",
+  "var(--color-brand-teal)",
+  "var(--color-brand-orange)",
 ] as const;
 
 const challengeDescriptions: Record<string, string> = {
@@ -141,7 +141,7 @@ export function AchievementTrack({
                 <Text
                   type="label"
                   color="accent"
-                  style={{ color: "var(--color-journey-purple)" }}
+                  style={{ color: "var(--color-brand-purple)" }}
                 >
                   Next up
                 </Text>
@@ -377,7 +377,7 @@ export function AchievementTrack({
               label="Continue the journey!"
               style={
                 {
-                  "--journey-section-color": "var(--color-journey-red)",
+                  "--journey-section-color": "var(--color-brand-orange)",
                 } as React.CSSProperties
               }
             />
@@ -420,7 +420,7 @@ export function AchievementTrack({
                       icon={achievementIcons[item.slug]}
                       size="lg"
                       color={earned.has(item.slug) ? "success" : "secondary"}
-                      style={{ color: "var(--color-journey-blue)" }}
+                      style={{ color: "var(--color-brand-blue)" }}
                     />
                   }
                   label={
@@ -432,7 +432,7 @@ export function AchievementTrack({
                         type="supporting"
                         style={
                           earned.has(item.slug)
-                            ? { color: "var(--color-journey-teal)" }
+                            ? { color: "var(--color-brand-teal)" }
                             : undefined
                         }
                       >

@@ -20,6 +20,7 @@
     "@westride/api-client": "workspace:*",
     "@westride/db": "workspace:*",
     "@westride/runner-protocol": "workspace:*",
+    "@westride/theme": "workspace:*",
     "canvas-confetti": "^1.9.4",
     "cobe": "^2.0.1",
     "next": "16.2.4",

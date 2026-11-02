@@ -1,21 +1,17 @@
 import { defineTheme } from "@astryxdesign/core/theme";
 
+// The stamp's strokes, published by the WeStride theme as --color-brand-*.
 export const journeyGradient =
-  "linear-gradient(110deg, var(--color-journey-indigo), var(--color-journey-purple) 32%, var(--color-journey-blue) 68%, var(--color-journey-teal))";
+  "linear-gradient(110deg, var(--color-brand-indigo), var(--color-brand-purple) 32%, var(--color-brand-blue) 68%, var(--color-brand-teal))";
 export const bonusBadgeStyle = {
   backgroundImage: journeyGradient,
   color: "var(--color-journey-ink)",
   fontWeight: "var(--font-weight-bold)",
 };
-// Brand colors sampled from public/westride-stamp.png. Only this journey is themed.
+// Only this journey is themed; it paints with the brand palette.
 export const achievementTheme = defineTheme({
   name: "westride-journey",
   localTokens: {
-    "--color-journey-indigo": "#595dd6",
-    "--color-journey-purple": "#885ff5",
-    "--color-journey-blue": "#0aa2e8",
-    "--color-journey-teal": "#10b3a5",
-    "--color-journey-red": "#ff6e49",
     "--color-journey-ink": "#18181b",
   },
   components: {

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "outputs": [
+        "themes/*/*.js",
+        "themes/*/*.css",
+        "themes/*/*.d.ts",
+        "!themes/*/*.fonts.css"
+      ]
+    }
+  }
+}

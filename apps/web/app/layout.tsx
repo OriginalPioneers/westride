@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { brandTagline } from "@westride/theme";
 import { afterAuthPath, signInPath, signUpPath } from "@/lib/auth-paths";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -9,8 +10,7 @@ export const metadata: Metadata = {
     default: "WeStride",
     template: "%s · WeStride",
   },
-  description:
-    "Shape an idea, build it for real, and give it AI agents, powered by Meta's models.",
+  description: `${brandTagline} Shape an idea, build it for real, and give it AI agents, powered by Meta's models.`,
   // Pre-launch: do not index, follow, or offer pages to AI training crawlers.
   robots:
     "noindex, nofollow, nocache, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai",

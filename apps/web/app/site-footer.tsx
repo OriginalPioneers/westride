@@ -1,37 +1,39 @@
 import Image from "next/image";
 import { ClickableCard } from "@astryxdesign/core/ClickableCard";
+import { Divider } from "@astryxdesign/core/Divider";
+import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
 import { Icon } from "@astryxdesign/core/Icon";
 import { LayoutFooter } from "@astryxdesign/core/Layout";
 import { Link } from "@astryxdesign/core/Link";
-import { HStack } from "@astryxdesign/core/Stack";
+import { HStack, StackItem } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
-import { STORE_LINKS } from "./store-links";
+import { GlobeAltIcon } from "@heroicons/react/24/outline";
+
+/**
+ * Max width of the header and footer content. The bars themselves (and their
+ * dividers) stay full-bleed; only what's inside is centered in this column.
+ */
+export const SITE_CONTAINER_WIDTH = 1200;
+
+const GITHUB_PROFILE_URL = "https://github.com/WeStrideOrg";
 
 const HACKATHON_EVENT_NAME = "Meta Global AI Developer Hackathon";
 const HACKATHON_EVENT_URL =
   "https://cerebralvalley.ai/e/meta-ai-developer-hackathon";
-const HACKATHON_EVENT_LOGO = "/logos/meta-global-ai-developer-hackathon.jpg";
 const HACKATHON_BADGE_LABEL = `Built at the 2026 ${HACKATHON_EVENT_NAME}`;
+const META_AI_LOGO = "/logos/meta-ai.png";
 
-const FACEBOOK_PROFILE_URL = "https://www.facebook.com/WeStrideOrg";
-const INSTAGRAM_PROFILE_URL = "https://www.instagram.com/WeStrideOrg";
-const THREADS_PROFILE_URL = "https://www.threads.com/@westrideorg";
-const X_PROFILE_URL = "https://x.com/WeStrideOrg";
-const GITHUB_PROFILE_URL = "https://github.com/WeStrideOrg";
-
-const FOOTER_LINKS = [
+const LEGAL_LINKS = [
   { label: "Terms of Service", href: "/terms" },
-  { label: "Privacy Policy", href: "/privacy" },
-  ...STORE_LINKS.map((link) => ({ ...link, isExternal: true as const })),
-  { label: "GitHub", href: GITHUB_PROFILE_URL, isExternal: true },
-  { label: "Facebook", href: FACEBOOK_PROFILE_URL, isExternal: true },
-  { label: "Instagram", href: INSTAGRAM_PROFILE_URL, isExternal: true },
-  { label: "Threads", href: THREADS_PROFILE_URL, isExternal: true },
-  { label: "X", href: X_PROFILE_URL, isExternal: true },
+  { label: "Privacy", href: "/privacy" },
+  { label: "Open Source", href: GITHUB_PROFILE_URL, isExternal: true },
 ] as const;
 
-const BADGE_STYLES = `
+/** Only English ships today; the menu is where other languages will appear. */
+const LANGUAGES = [{ label: "English", code: "en" }] as const;
+
+const FOOTER_STYLES = `
 @property --westride-hackathon-angle {
   syntax: "<angle>";
   inherits: false;
@@ -44,14 +46,15 @@ const BADGE_STYLES = `
   }
 }
 
+/* A pill with a slowly turning brand-gradient ring; the fill is painted over
+   the gradient so only the border shows it. */
 .westride-hackathon-badge {
   position: relative;
   flex-shrink: 0;
-  margin-inline-start: auto;
   border-radius: var(--radius-full);
   border: var(--border-width) solid transparent;
   box-shadow: 0 0 var(--spacing-4)
-    color-mix(in srgb, var(--color-data-categorical-indigo) 35%, transparent);
+    color-mix(in srgb, var(--color-brand-indigo) 35%, transparent);
   background:
     linear-gradient(
         var(--color-background-surface),
@@ -60,12 +63,12 @@ const BADGE_STYLES = `
       padding-box,
     conic-gradient(
       from var(--westride-hackathon-angle),
-      var(--color-data-categorical-indigo),
-      var(--color-data-purple-3),
-      var(--color-data-blue-3),
-      var(--color-data-teal-3),
-      var(--color-data-orange-3),
-      var(--color-data-categorical-indigo)
+      var(--color-brand-indigo),
+      var(--color-brand-purple),
+      var(--color-brand-blue),
+      var(--color-brand-teal),
+      var(--color-brand-orange),
+      var(--color-brand-indigo)
     )
       border-box;
   animation: westride-hackathon-spin-angle calc(var(--duration-slow-max) * 6)
@@ -77,10 +80,28 @@ const BADGE_STYLES = `
 }
 
 .westride-hackathon-logo {
-  border-radius: var(--radius-full);
-  width: var(--spacing-6);
-  height: var(--spacing-6);
-  object-fit: cover;
+  height: var(--spacing-3);
+  width: auto;
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .westride-hackathon-badge {
+    animation: none;
+    background:
+      linear-gradient(
+          var(--color-background-surface),
+          var(--color-background-surface)
+        )
+        padding-box,
+      linear-gradient(
+          120deg,
+          var(--color-brand-indigo),
+          var(--color-brand-purple),
+          var(--color-brand-teal)
+        )
+        border-box;
+  }
 }
 
 .westride-site-footer-row {
@@ -102,25 +123,6 @@ const BADGE_STYLES = `
   display: none;
   height: 0;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .westride-hackathon-badge {
-    animation: none;
-    background:
-      linear-gradient(
-          var(--color-background-surface),
-          var(--color-background-surface)
-        )
-        padding-box,
-      linear-gradient(
-          120deg,
-          var(--color-data-categorical-indigo),
-          var(--color-data-purple-3),
-          var(--color-data-teal-3)
-        )
-        border-box;
-  }
-}
 `;
 
 function HackathonBadge() {
@@ -134,13 +136,13 @@ function HackathonBadge() {
       width="fit-content"
       elevation="none"
     >
-      <HStack gap={2} vAlign="center" wrap="nowrap" paddingInlineEnd={2}>
+      <HStack gap={2} vAlign="center" wrap="nowrap" paddingInline={2}>
         <Image
           className="westride-hackathon-logo"
-          src={HACKATHON_EVENT_LOGO}
+          src={META_AI_LOGO}
           alt=""
-          width={630}
-          height={630}
+          width={1084}
+          height={209}
           unoptimized
         />
         <Text type="label" size="sm" weight="semibold" textWrap="nowrap">
@@ -152,10 +154,28 @@ function HackathonBadge() {
   );
 }
 
+function LanguageMenu() {
+  return (
+    <DropdownMenu
+      placement="above"
+      button={{
+        label: LANGUAGES[0].label,
+        variant: "ghost",
+        size: "sm",
+        icon: <Icon icon={GlobeAltIcon} size="sm" />,
+      }}
+      items={LANGUAGES.map((language) => ({
+        id: language.code,
+        label: language.label,
+      }))}
+    />
+  );
+}
+
 export function SiteFooter() {
   return (
     <>
-      <style>{BADGE_STYLES}</style>
+      <style>{FOOTER_STYLES}</style>
       <LayoutFooter
         hasDivider
         padding={2}
@@ -173,12 +193,18 @@ export function SiteFooter() {
           gap={4}
           wrap="nowrap"
           vAlign="center"
+          width="100%"
+          maxWidth={SITE_CONTAINER_WIDTH}
+          style={{ marginInline: "auto" }}
         >
-          <Text type="supporting" size="sm" textWrap="nowrap">
-            WeStride is an open-source project.
-          </Text>
+          <LanguageMenu />
+          <Divider orientation="vertical" />
+          <Link href="/our-story" isStandalone size="sm" color="secondary">
+            About WeStride
+          </Link>
+          <Divider orientation="vertical" />
           <HStack gap={3} wrap="nowrap" vAlign="center">
-            {FOOTER_LINKS.map((link) => (
+            {LEGAL_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -191,6 +217,7 @@ export function SiteFooter() {
               </Link>
             ))}
           </HStack>
+          <StackItem size="fill" />
           <HackathonBadge />
         </HStack>
       </LayoutFooter>

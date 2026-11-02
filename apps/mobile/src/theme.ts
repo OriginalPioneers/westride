@@ -1,7 +1,7 @@
 /**
- * Light-mode values of the Astryx Stone theme (@astryxdesign/theme-stone),
- * which the web app uses. Astryx itself is DOM-only, so keep these in sync
- * by hand when the web theme changes.
+ * Light-mode values of the WeStride theme (packages/theme), which extends
+ * Astryx Stone and which the web app uses. Astryx itself is DOM-only, so keep
+ * these in sync by hand when the web theme changes.
  */
 export const colors = {
   backgroundBody: "#f0f0f7",
@@ -17,6 +17,21 @@ export const colors = {
   blue: { background: "#d3e4fc", border: "#c2d6f1", text: "#344861" },
   purple: { background: "#e7def5", border: "#d9cfea", text: "#4c405b" },
   gray: { background: "#e2e2e8", border: "#d4d3dd", text: "#46464e" },
+} as const;
+
+/**
+ * The brand identity palette, mirrored from `brandColors` in
+ * `packages/theme/themes/westride/brand.ts`. For the mark, splashes, and brand
+ * moments; product controls use `colors`.
+ */
+export const brand = {
+  navy: "#0D1A2D",
+  white: "#FFFFFF",
+  blue: "#0AA2E8",
+  indigo: "#5B5BD6",
+  purple: "#885FF5",
+  teal: "#10B3A5",
+  orange: "#FF694B",
 } as const;
 
 export type Tone = "green" | "blue" | "purple" | "gray";

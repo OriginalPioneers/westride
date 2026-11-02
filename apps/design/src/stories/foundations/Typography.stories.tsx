@@ -8,8 +8,8 @@ const families = [
   {
     name: "Headings",
     token: "--font-family-heading",
-    face: "Montserrat",
-    sample: "Learn together",
+    face: "Figtree",
+    sample: "Stride with AI. Build with community.",
     style: { fontFamily: "var(--font-family-heading)" },
   },
   {
@@ -39,7 +39,7 @@ export const Guide = {
   render: () => (
     <Page
       title="Product type"
-      lede="Stone loads three families. Use Heading and Text so size, weight, and leading stay on the theme scale."
+      lede="The WeStride theme sets headings and body in Figtree, the brand's only typeface, and code in JetBrains Mono. Use Heading and Text so size, weight, and leading stay on the theme scale."
     >
       <Section title="Families">
         <VStack gap={4}>
