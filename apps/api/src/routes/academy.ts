@@ -3,8 +3,7 @@ import type {
   AcademyTrack,
   AcademyTrackDetail,
   ApiErrorResponse,
-  GetAcademyTrackResponse,
-  ListAcademyTracksResponse,
+  DataResponse,
 } from "@westride/api-client";
 import type { Track } from "@westride/db";
 import {
@@ -112,7 +111,7 @@ academy.openapi(listTracksRoute, async (c) => {
   const tracks = await listTracks();
   c.header("Cache-Control", CATALOG_CACHE_CONTROL);
   return c.json(
-    { data: tracks.map(toAcademyTrack) } satisfies ListAcademyTracksResponse,
+    { data: tracks.map(toAcademyTrack) } satisfies DataResponse<AcademyTrack[]>,
     200,
   );
 });
@@ -136,7 +135,7 @@ academy.openapi(getTrackRoute, async (c) => {
   return c.json(
     {
       data: toAcademyTrackDetail(track, prerequisites),
-    } satisfies GetAcademyTrackResponse,
+    } satisfies DataResponse<AcademyTrackDetail>,
     200,
   );
 });

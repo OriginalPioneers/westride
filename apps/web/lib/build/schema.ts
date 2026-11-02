@@ -6,16 +6,38 @@ import type {
   TicketStatus,
 } from "@westride/db";
 import { z } from "zod";
+import {
+  DEFAULT_AGENT_STEPS,
+  MAX_AGENT_STEPS,
+  MAX_BLOCKED_REASON,
+  MAX_COMMENT,
+  MAX_MILESTONE_DESCRIPTION,
+  MAX_MILESTONE_TITLE,
+  MAX_PLAN_NOTES,
+  MAX_PROJECT_DESCRIPTION,
+  MAX_PROJECT_MEMBERS,
+  MAX_PROJECT_NAME,
+  MAX_TICKET_DESCRIPTION,
+  MAX_TICKET_TITLE,
+  MIN_AGENT_STEPS,
+} from "@westride/db/limits";
 import { isGithubRepoName, parseGithubRepoRef } from "@/lib/github/repo-ref";
 
-export const MAX_PROJECT_NAME = 120;
-export const MAX_PROJECT_DESCRIPTION = 8000;
-export const MAX_PROJECT_MEMBERS = 30;
-export const MAX_TICKET_TITLE = 160;
-export const MAX_TICKET_DESCRIPTION = 8000;
-export const MAX_BLOCKED_REASON = 600;
-export const MAX_MILESTONE_TITLE = 120;
-export const MAX_MILESTONE_DESCRIPTION = 2000;
+export {
+  DEFAULT_AGENT_STEPS,
+  MAX_AGENT_STEPS,
+  MAX_BLOCKED_REASON,
+  MAX_COMMENT,
+  MAX_MILESTONE_DESCRIPTION,
+  MAX_MILESTONE_TITLE,
+  MAX_PLAN_NOTES,
+  MAX_PROJECT_DESCRIPTION,
+  MAX_PROJECT_MEMBERS,
+  MAX_PROJECT_NAME,
+  MAX_TICKET_DESCRIPTION,
+  MAX_TICKET_TITLE,
+  MIN_AGENT_STEPS,
+};
 
 const projectStatuses = [
   "PLANNING",
@@ -208,12 +230,6 @@ export type MilestoneInputValues = z.output<typeof milestoneSchema>;
 // ---------------------------------------------------------------------------
 // Muse planning, comments, agent runs
 // ---------------------------------------------------------------------------
-
-export const MAX_PLAN_NOTES = 1500;
-export const MAX_COMMENT = 4000;
-export const MIN_AGENT_STEPS = 10;
-export const MAX_AGENT_STEPS = 400;
-export const DEFAULT_AGENT_STEPS = 120;
 
 export const planRequestSchema = z.object({
   mode: z.enum(["backlog", "prioritize"], { error: "Choose what to plan." }),

@@ -35,13 +35,27 @@ export type ResponseObject = {
   content?: Record<string, MediaTypeObject>;
 };
 
+export type RequestBodyObject = {
+  description?: string;
+  required?: boolean;
+  content?: Record<string, MediaTypeObject>;
+};
+
 export type OperationObject = {
   operationId?: string;
   summary?: string;
   description?: string;
   tags?: string[];
   parameters?: ParameterObject[];
+  requestBody?: RequestBodyObject;
   responses: Record<string, ResponseObject>;
+  security?: Record<string, string[]>[];
+};
+
+export type SecuritySchemeObject = {
+  type: string;
+  scheme?: string;
+  description?: string;
 };
 
 export type OpenApiDocument = {
@@ -50,7 +64,10 @@ export type OpenApiDocument = {
   servers?: { url: string; description?: string }[];
   tags?: { name: string; description?: string }[];
   paths: Record<string, Record<string, OperationObject>>;
-  components?: { schemas?: Record<string, SchemaObject> };
+  components?: {
+    schemas?: Record<string, SchemaObject>;
+    securitySchemes?: Record<string, SecuritySchemeObject>;
+  };
 };
 
 export type Operation = OperationObject & {
@@ -238,8 +255,46 @@ export function exampleFromSchema(
   }
 }
 
-export function jsonSchemaOf(response: ResponseObject): SchemaObject | undefined {
-  return response.content?.["application/json"]?.schema;
+export function jsonSchemaOf(
+  holder: ResponseObject | RequestBodyObject,
+): SchemaObject | undefined {
+  return holder.content?.["application/json"]?.schema;
+}
+
+/** Whether the operation lists a bearer scheme in its `security`. */
+export function acceptsBearer(operation: Operation): boolean {
+  return (operation.security ?? []).some((requirement) =>
+    Object.keys(requirement).length > 0,
+  );
+}
+
+/** A write needs a token; a read merely accepts one for private data. */
+export function requiresBearer(operation: Operation): boolean {
+  return acceptsBearer(operation) && operation.method !== "GET";
+}
+
+/**
+ * A starting request body: example values for required fields, so the user
+ * fills in real ones rather than guessing the shape. Optional fields are
+ * left out and listed in the body table instead.
+ */
+export function exampleRequestBody(
+  doc: OpenApiDocument,
+  operation: Operation,
+): string | null {
+  const body = operation.requestBody;
+  if (!body) {
+    return null;
+  }
+  const schema = normalizeSchema(doc, jsonSchemaOf(body));
+  if (!schema?.properties) {
+    return JSON.stringify(exampleFromSchema(doc, jsonSchemaOf(body)), null, 2);
+  }
+  const required = new Set(schema.required ?? []);
+  const entries = Object.entries(schema.properties)
+    .filter(([key]) => required.has(key))
+    .map(([key, property]) => [key, exampleFromSchema(doc, property)]);
+  return JSON.stringify(Object.fromEntries(entries), null, 2);
 }
 
 export function buildRequestPath(

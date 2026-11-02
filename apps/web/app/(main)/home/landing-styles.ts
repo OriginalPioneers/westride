@@ -439,8 +439,11 @@ export const LANDING_STYLES = `
   --wl-hero-dwell: calc(var(--duration-slow-max) * 6);
   position: relative;
   z-index: 1;
-  width: 100%;
-  max-width: calc(var(--spacing-12) * 12);
+  /* Shrink to the longest tab. Every tab is 100% of this column, so the
+     longest label sets one shared width and shorter tabs do not stretch
+     out to the stage. The cap only stops a long label overflowing it. */
+  width: max-content;
+  max-width: min(100%, calc(var(--spacing-12) * 12));
   margin-inline: auto;
 }
 
@@ -568,13 +571,13 @@ export const LANDING_STYLES = `
   animation-play-state: paused;
 }
 
-/* Side by side, the tabs hug the stage's far edge and the globe sits
-   behind its near side, spilling under the tabs like a photo tucked
-   behind a panel. After the base rules above so it wins on order. */
+/* Side by side, the tabs sit just in from the stage's far edge and the
+   globe sits behind their near side, spilling under the tabs like a photo
+   tucked behind a panel. After the base rules above so it wins on order. */
 @container (min-width: 62.5rem) {
   .wl-hero .wl-hero-tabs {
     max-width: calc(var(--spacing-12) * 7.5);
-    margin-inline-end: 0;
+    margin-inline-end: var(--spacing-4);
   }
 
   .wl-hero-stage .wl-globe {
