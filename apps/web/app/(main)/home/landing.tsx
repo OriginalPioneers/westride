@@ -1564,7 +1564,11 @@ function MarqueeRow({
 function StackSection() {
   return (
     <Section className="wl-stack" variant="transparent" padding={0}>
-      <StudiosEdge edge="top" id="wl-stack" />
+      <StudiosEdge
+        edge="top"
+        id="wl-stack"
+        color="var(--color-brand-pastel-blue)"
+      />
       <Container gap={10}>
         <SectionIntro
           align="center"
@@ -1614,7 +1618,11 @@ function StackSection() {
           </VStack>
         </Grid>
       </Container>
-      <StudiosEdge edge="bottom" id="wl-stack" />
+      <StudiosEdge
+        edge="bottom"
+        id="wl-stack"
+        color="var(--color-brand-pastel-blue)"
+      />
     </Section>
   );
 }
