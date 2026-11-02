@@ -11,6 +11,7 @@ import "server-only";
  *   META_API_KEY, GITHUB_TOKEN, REPO_FULL_NAME, REPO_DIR
  *   BRANCH, BASE_BRANCH, MUSE_MODEL, MAX_STEPS, PROMPT_FILE
  *   GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL, CONTRIBUTOR_MODE ("on" | "off")
+ *   CLONE_REPO ("1" when the sandbox did not clone the repository itself)
  *
  * Kept free of template literals so it can live inside one.
  */
@@ -146,6 +147,25 @@ async function installMuse() {
   }
   const version = sh("muse", ["--version"], { cwd: "/tmp" });
   emit("setup", { step: "install", message: "Muse Code ready", version: version.stdout || null });
+}
+
+/**
+ * Vercel Sandbox clones the repository before the runner starts. Other
+ * hosts, such as WeStride Cloud's Modal sandboxes, start from a bare image
+ * and set CLONE_REPO=1 so the runner fetches it here, where a failure still
+ * reports back through the event stream.
+ */
+function cloneRepo() {
+  if (env.CLONE_REPO !== "1") return;
+  if (existsSync(REPO_DIR + "/.git")) return;
+  emit("setup", { step: "clone", message: "Cloning " + env.REPO_FULL_NAME + " at " + BASE_BRANCH });
+  const url = "https://x-access-token:" + env.GITHUB_TOKEN + "@github.com/" + env.REPO_FULL_NAME + ".git";
+  const clone = sh("git", ["clone", "--depth", "50", "--branch", BASE_BRANCH, url, REPO_DIR], { cwd: "/tmp" });
+  if (clone.code !== 0) {
+    const safe = (clone.stderr || clone.stdout).split(env.GITHUB_TOKEN).join("***");
+    throw new Error("git clone failed (" + clone.code + "): " + safe);
+  }
+  emit("setup", { step: "clone", message: "Repository ready", repoDir: REPO_DIR });
 }
 
 function prepareBranch() {
@@ -337,6 +357,7 @@ async function main() {
   emit("setup", { step: "start", message: "Sandbox is up", node: process.version, repoDir: REPO_DIR });
   await flush();
 
+  cloneRepo();
   await installMuse();
   const baseSha = prepareBranch();
   await flush();

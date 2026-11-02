@@ -137,14 +137,15 @@ export function IdeaFactoryDialog({
     };
   }, [idea.id]);
 
-  // First visit without a Meta connection lands on the connect screen.
+  // First visit with no way to pay for Muse lands on the connect screen.
   useEffect(() => {
-    if (data && !data.meta && !hasChosenView) {
+    if (data && !data.meta && !data.canUseCloud && !hasChosenView) {
       setView({ kind: "connect" });
     }
   }, [data, hasChosenView]);
 
-  const isConnected = meta !== null;
+  // A funded WeStride Cloud balance counts as connected: the shared key pays.
+  const isConnected = meta !== null || Boolean(data?.canUseCloud);
   const modelLabel = getMuseModel(preferences.model)?.label ?? preferences.model;
 
   const updatePreferences = useCallback(
@@ -447,6 +448,7 @@ export function IdeaFactoryDialog({
           <ConnectPanel
             canConnectMeta={data.canConnectMeta}
             canConnectMetaAccount={data.canConnectMetaAccount}
+            cloudAvailable={data.cloudAvailable}
             onConnected={handleConnected}
           />
         </VStack>
@@ -557,7 +559,7 @@ export function IdeaFactoryDialog({
             endContent={
               isConnected ? (
                 <HStack gap={2} vAlign="center" wrap="wrap">
-                  <Badge variant="success" label="Connected" />
+                  <Badge variant="success" label={meta ? "Connected" : "WeStride Cloud"} />
                   <Text type="supporting">{modelLabel}</Text>
                   <Button
                     label="Settings"
@@ -580,7 +582,13 @@ export function IdeaFactoryDialog({
           />
         }
         start={
-          <LayoutPanel width={RAIL_WIDTH} hasDivider padding={3} label="Advisory team">
+          <LayoutPanel
+            width={RAIL_WIDTH}
+            hasDivider
+            padding={3}
+            label="Advisory team"
+            style={{ userSelect: "none", WebkitUserSelect: "none" }}
+          >
             <AgentRail
               ideaType={idea.type}
               view={view}

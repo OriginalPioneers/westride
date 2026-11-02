@@ -32,7 +32,8 @@
     "./social": "./src/social.ts",
     "./social-progress": "./src/social-progress.ts",
     "./support": "./src/support.ts",
-    "./devices": "./src/devices.ts"
+    "./devices": "./src/devices.ts",
+    "./cloud": "./src/cloud.ts"
   },
   "scripts": {
     "lint": "tsc --noEmit",
@@ -42,7 +43,8 @@
     "db:seed": "bun src/seed.ts",
     "db:seed:production": "bun src/seed.ts --target production",
     "db:reset": "bun src/reset.ts",
-    "db:reset:production": "bun src/reset.ts --target production"
+    "db:reset:production": "bun src/reset.ts --target production",
+    "cloud:code": "bun src/cloud-code.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

@@ -30,3 +30,21 @@ export const agentRunStatus = pgEnum("agent_run_status", [
   "FAILED",
   "CANCELLED",
 ]);
+
+/**
+ * Where a Muse Code job runs: a Vercel Sandbox on the payer's own account, a
+ * supporter's computer running the WeStride runner, or a Modal sandbox that
+ * WeStride Cloud pays for and bills to the member's balance.
+ */
+export const runnerKind = pgEnum("runner_kind", [
+  "VERCEL_SANDBOX",
+  "VOLUNTEER_DEVICE",
+  "MODAL_SANDBOX",
+]);
+
+/**
+ * Whose Meta Model API key a piece of work used: the payer's own connected
+ * account (or a sponsor's, through a pledge), or WeStride Cloud's shared key,
+ * which bills the member's balance.
+ */
+export const museSource = pgEnum("muse_source", ["OWN", "WESTRIDE_CLOUD"]);

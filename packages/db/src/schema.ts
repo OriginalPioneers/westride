@@ -1418,6 +1418,7 @@ export {
   agentTickets,
   agentTicketSource,
   agentTicketsRelations,
+  museSource,
   runnerKind,
 } from "./agent-schema";
 export type {
@@ -1431,6 +1432,7 @@ export type {
   AgentStatus,
   AgentTicket,
   AgentTicketSource,
+  MuseKeySource,
   NewAgent,
   NewAgentJob,
   NewAgentJobEvent,
@@ -1438,6 +1440,29 @@ export type {
   NewAgentTicket,
   RunnerKind,
 } from "./agent-schema";
+
+// WeStride Cloud tables stand alone; they reference members by Clerk id only.
+export {
+  cloudAccounts,
+  cloudCodeRedemptions,
+  cloudCodeRedemptionsRelations,
+  cloudLedgerEntries,
+  cloudLedgerKind,
+  cloudProviderPreference,
+  cloudRedemptionCodes,
+  cloudRedemptionCodesRelations,
+} from "./cloud-schema";
+export type {
+  CloudAccount,
+  CloudCodeRedemption,
+  CloudLedgerEntry,
+  CloudLedgerKind,
+  CloudProviderPreference,
+  CloudRedemptionCode,
+  NewCloudAccount,
+  NewCloudLedgerEntry,
+  NewCloudRedemptionCode,
+} from "./cloud-schema";
 
 // Supporter tables reference `ideas` and `agentJobs`.
 export {

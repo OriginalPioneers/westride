@@ -9,8 +9,7 @@ import {
   type AgentWithDetails,
 } from "@westride/db/agents";
 import { canRunCode } from "@/lib/agents/start";
-import { getMetaConnectionSummary } from "@/lib/meta/connection";
-import { hasVercelSandboxAccess } from "@/lib/vercel/connection";
+import { hasMuseAccess, hasSandboxAccess } from "@/lib/cloud/provider";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -22,9 +21,9 @@ export type AgentPageContext = {
   canWork: boolean;
   /** May change settings, schedule, and status. */
   isOwner: boolean;
-  /** Whether the viewer has a Meta account connected, so jobs can run on their key. */
+  /** Whether Muse can run for the viewer: a Meta account connected, or a funded WeStride Cloud balance. */
   hasMetaConnection: boolean;
-  /** Whether the viewer's Vercel account can host sandboxes, so code jobs can run on it. */
+  /** Whether a sandbox can start for the viewer: their Vercel account, or WeStride Cloud. */
   hasVercelConnection: boolean;
   /** Whether jobs for this agent run as Muse Code in its repository. */
   runsCode: boolean;
@@ -44,10 +43,7 @@ export async function loadAgentPage(id: string): Promise<AgentPageContext | null
   const role = await getAgentRole(agent, userId);
   const [hasMetaConnection, hasVercelConnection] =
     role !== null && userId !== null
-      ? await Promise.all([
-          getMetaConnectionSummary(userId).then((summary) => summary !== null),
-          hasVercelSandboxAccess(userId),
-        ])
+      ? await Promise.all([hasMuseAccess(userId), hasSandboxAccess(userId)])
       : [false, false];
   const openTicketCount = OPEN_TICKET_STATUSES.reduce((sum, status) => sum + agent.ticketCounts[status], 0);
   return {

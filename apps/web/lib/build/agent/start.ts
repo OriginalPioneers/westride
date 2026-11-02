@@ -1,6 +1,5 @@
 import "server-only";
 
-import { Sandbox } from "@vercel/sandbox";
 import type { ProjectRepo } from "@westride/db";
 import { moveTicket, type ProjectWithDetails, type TicketWithDetails } from "@westride/db/build";
 import {
@@ -16,17 +15,11 @@ import { installationToken, repoInstallationId } from "@/lib/github/app";
 import { requireGithubAppConfig } from "@/lib/github/config";
 import { githubJson, isGithubStatus } from "@/lib/github/http";
 import { getGithubUserToken } from "@/lib/github/user";
+import { resolveMuseAccess, resolveSandboxAccess } from "@/lib/cloud/provider";
+import { isSandboxCredentialError, launchSandbox } from "@/lib/cloud/sandbox";
 import { getMuseModel } from "@/lib/idea-factory/pricing";
-import { getMuseApiKey } from "@/lib/meta/connection";
-import { getVercelSandboxCredentials } from "@/lib/vercel/connection";
-import {
-  AGENT_EVENTS_PATH,
-  VERCEL_CONNECTION_MESSAGE,
-  getAgentRunnerConfig,
-  isSandboxAuthError,
-} from "./config";
+import { AGENT_EVENTS_PATH, getAgentRunnerConfig } from "./config";
 import { agentBranchName, buildAgentPrompt } from "./prompt";
-import { RUNNER_SCRIPT } from "./runner-script";
 import { createRunToken } from "./token";
 
 /** A connection the member can fix in Settings. */
@@ -42,8 +35,6 @@ export class AgentStartError extends Error {
   }
 }
 
-const WORK_DIR = "/tmp/westride";
-const REPO_DIR = "/vercel/sandbox";
 const SERVER_EVENT_SEQUENCE = -1000;
 /** Pass as `afterSequence` to read a run's log from the very start. */
 export const FIRST_EVENT_SEQUENCE = -10_000;
@@ -77,15 +68,15 @@ export async function startAgentRun(input: {
   }
   const { commitAuthor } = requireGithubAppConfig();
 
-  // The member's own Meta key pays for the model, and their own Vercel
-  // account hosts the sandbox. WeStride is billed for neither.
-  const museKey = await getMuseApiKey(userId);
-  if (!museKey) {
-    throw new AgentStartError("Connect your Meta account in Settings to run agents.", "meta");
+  // The member's own Meta key and Vercel account pay when they have them;
+  // otherwise WeStride Cloud does, against their balance.
+  const muse = await resolveMuseAccess(userId);
+  if (!muse.ok) {
+    throw new AgentStartError(muse.message, muse.needs);
   }
-  const vercel = await getVercelSandboxCredentials(userId);
-  if (!vercel) {
-    throw new AgentStartError(VERCEL_CONNECTION_MESSAGE, "vercel");
+  const sandboxAccess = await resolveSandboxAccess(userId);
+  if (!sandboxAccess.ok) {
+    throw new AgentStartError(sandboxAccess.message, sandboxAccess.needs);
   }
 
   // The member must be able to push, the same rule as committing from WeStride.
@@ -148,6 +139,8 @@ export async function startAgentRun(input: {
     model: input.model,
     maxSteps: input.maxSteps,
     callbackTokenHash: hash,
+    runnerKind: sandboxAccess.access.kind,
+    museSource: muse.access.source,
   });
 
   const key = ticketKey(project.name, ticket.number);
@@ -158,8 +151,8 @@ export async function startAgentRun(input: {
     branch,
     instructions: input.instructions,
   });
-  const sandboxName = `westride-run-${run.id}`;
   const model = getMuseModel(input.model);
+  const onCloud = sandboxAccess.access.kind === "MODAL_SANDBOX";
 
   try {
     // Server-side events use negative sequences; the runner counts up from 0.
@@ -167,66 +160,44 @@ export async function startAgentRun(input: {
       {
         sequence: SERVER_EVENT_SEQUENCE,
         type: "setup",
-        payload: { step: "sandbox", message: "Creating sandbox", repo: `${repo.owner}/${repo.name}`, branch },
+        payload: {
+          step: "sandbox",
+          message: onCloud ? "Creating WeStride Cloud sandbox" : "Creating sandbox",
+          repo: `${repo.owner}/${repo.name}`,
+          branch,
+        },
       },
     ]);
-    const sandbox = await Sandbox.create({
-      ...vercel,
-      name: sandboxName,
-      source: {
-        type: "git",
-        url: `https://github.com/${repo.owner}/${repo.name}.git`,
-        username: "x-access-token",
-        password: githubToken,
-        revision: baseBranch,
-        depth: 50,
-      },
-      resources: { vcpus: config.vcpus },
-      timeout: config.sandboxTimeoutMs,
-      persistent: false,
+    const launched = await launchSandbox({
+      access: sandboxAccess.access,
+      sandboxName: `westride-run-${run.id}`,
+      repoFullName: `${repo.owner}/${repo.name}`,
+      baseBranch,
+      githubToken,
+      museKey: muse.access.apiKey,
+      runToken,
+      prompt,
+      vcpus: config.vcpus,
+      timeoutMs: config.sandboxTimeoutMs,
       tags: { app: "westride", run: run.id.slice(0, 8) },
-      env: {
-        META_API_KEY: museKey,
-        GITHUB_TOKEN: githubToken,
+      runnerEnv: {
+        WESTRIDE_RUN_ID: run.id,
+        WESTRIDE_CALLBACK_URL: `${config.callbackBaseUrl}${AGENT_EVENTS_PATH}`,
+        REPO_FULL_NAME: `${repo.owner}/${repo.name}`,
+        BRANCH: branch,
+        BASE_BRANCH: baseBranch,
+        MUSE_MODEL: input.model,
+        CONTRIBUTOR_MODE: model?.isContributor ? "on" : "off",
+        MAX_STEPS: String(input.maxSteps),
+        COMMIT_MESSAGE: `${key}: ${ticket.title}`,
+        GIT_AUTHOR_NAME: commitAuthor?.name ?? "WeStride Muse Code",
+        GIT_AUTHOR_EMAIL: commitAuthor?.email ?? "build@westride.org",
       },
     });
 
-    try {
-      await sandbox.mkDir(WORK_DIR);
-      await sandbox.writeFiles([
-        { path: `${WORK_DIR}/runner.mjs`, content: RUNNER_SCRIPT },
-        { path: `${WORK_DIR}/prompt.md`, content: prompt },
-      ]);
-      await sandbox.runCommand({
-        cmd: "node",
-        args: [`${WORK_DIR}/runner.mjs`],
-        cwd: REPO_DIR,
-        detached: true,
-        env: {
-          WESTRIDE_RUN_ID: run.id,
-          WESTRIDE_CALLBACK_URL: `${config.callbackBaseUrl}${AGENT_EVENTS_PATH}`,
-          WESTRIDE_RUN_TOKEN: runToken,
-          REPO_FULL_NAME: `${repo.owner}/${repo.name}`,
-          REPO_DIR,
-          BRANCH: branch,
-          BASE_BRANCH: baseBranch,
-          MUSE_MODEL: input.model,
-          CONTRIBUTOR_MODE: model?.isContributor ? "on" : "off",
-          MAX_STEPS: String(input.maxSteps),
-          PROMPT_FILE: `${WORK_DIR}/prompt.md`,
-          COMMIT_MESSAGE: `${key}: ${ticket.title}`,
-          GIT_AUTHOR_NAME: commitAuthor?.name ?? "WeStride Muse Code",
-          GIT_AUTHOR_EMAIL: commitAuthor?.email ?? "build@westride.org",
-        },
-      });
-    } catch (error) {
-      await sandbox.stop().catch(() => undefined);
-      throw error;
-    }
-
     await updateAgentRun(run.id, {
       status: "RUNNING",
-      sandboxName,
+      sandboxName: launched.sandboxName,
       startedAt: new Date(),
     });
     if (ticket.status === "BACKLOG" || ticket.status === "BLOCKED") {
@@ -236,7 +207,7 @@ export async function startAgentRun(input: {
       ticketId: ticket.id,
       authorClerkUserId: null,
       agentRunId: run.id,
-      body: `Muse Code started working on this ticket in \`${repo.owner}/${repo.name}\`, branch \`${branch}\`.`,
+      body: `Muse Code started working on this ticket in \`${repo.owner}/${repo.name}\`, branch \`${branch}\`${onCloud ? ", in a WeStride Cloud sandbox" : ""}.`,
     });
     return { runId: run.id };
   } catch (error) {
@@ -247,7 +218,10 @@ export async function startAgentRun(input: {
       error: `The sandbox could not be started: ${message}`,
       finishedAt: new Date(),
     });
-    if (isSandboxAuthError(error)) {
+    if (onCloud) {
+      throw new AgentStartError("WeStride Cloud could not start the sandbox. Try again in a moment.");
+    }
+    if (isSandboxCredentialError(error)) {
       throw new AgentStartError(
         "Vercel refused the sandbox on your account. Reconnect Vercel in Settings and check the team has Sandbox enabled.",
         "vercel",

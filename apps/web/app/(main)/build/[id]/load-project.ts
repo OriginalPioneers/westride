@@ -8,8 +8,7 @@ import {
   type ProjectWithDetails,
 } from "@westride/db/build";
 import { isClaimableProject } from "@westride/db/claim-rules";
-import { getMetaConnectionSummary } from "@/lib/meta/connection";
-import { hasVercelSandboxAccess } from "@/lib/vercel/connection";
+import { hasMuseAccess, hasSandboxAccess } from "@/lib/cloud/provider";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -19,9 +18,9 @@ export type ProjectPageContext = {
   role: ProjectMemberRole | null;
   isMember: boolean;
   isOwner: boolean;
-  /** Whether the viewer has a Meta account connected, so Muse features work. */
+  /** Whether Muse can run for the viewer: a Meta account connected, or a funded WeStride Cloud balance. */
   hasMetaConnection: boolean;
-  /** Whether the viewer's Vercel account can host sandboxes, so Muse Code runs work. */
+  /** Whether a sandbox can start for the viewer: their Vercel account, or WeStride Cloud. */
   hasVercelConnection: boolean;
   openTicketCount: number;
   /** An imported project that nobody owns yet. */
@@ -44,10 +43,7 @@ export async function loadProjectPage(id: string): Promise<ProjectPageContext | 
       : (project.members.find((member) => member.clerkUserId === userId)?.role ?? null);
   const [hasMetaConnection, hasVercelConnection] =
     role !== null && userId !== null
-      ? await Promise.all([
-          getMetaConnectionSummary(userId).then((summary) => summary !== null),
-          hasVercelSandboxAccess(userId),
-        ])
+      ? await Promise.all([hasMuseAccess(userId), hasSandboxAccess(userId)])
       : [false, false];
   const openTicketCount = OPEN_TICKET_STATUSES.reduce(
     (sum, status) => sum + project.ticketCounts[status],

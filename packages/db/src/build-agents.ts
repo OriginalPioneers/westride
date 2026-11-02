@@ -2,6 +2,7 @@
 // Build Studio: agent runs, their event streams, and ticket comments.
 // ---------------------------------------------------------------------------
 import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
+import type { MuseKeySource, RunnerKind } from "./agent-schema";
 import {
   agentRunEvents,
   agentRuns,
@@ -83,6 +84,8 @@ export type NewAgentRunInput = {
   model: string;
   maxSteps: number;
   callbackTokenHash: string;
+  runnerKind?: RunnerKind;
+  museSource?: MuseKeySource;
 };
 
 export async function createAgentRun(input: NewAgentRunInput): Promise<AgentRun> {
@@ -141,6 +144,17 @@ export async function countActiveRunsForProject(projectId: string): Promise<numb
   return Number(row?.count ?? 0);
 }
 
+export type AgentRunUsagePatch = Pick<
+  AgentRun,
+  | "modelCalls"
+  | "inputTokens"
+  | "cachedTokens"
+  | "outputTokens"
+  | "reasoningTokens"
+  | "totalTokens"
+  | "estimatedCostMicros"
+>;
+
 export type AgentRunPatch = Partial<
   Pick<
     AgentRun,
@@ -155,7 +169,8 @@ export type AgentRunPatch = Partial<
     | "error"
     | "startedAt"
     | "finishedAt"
-  >
+  > &
+    AgentRunUsagePatch
 >;
 
 export async function updateAgentRun(runId: string, patch: AgentRunPatch): Promise<AgentRun | null> {

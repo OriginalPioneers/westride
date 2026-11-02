@@ -16,7 +16,8 @@ import {
 } from "@/lib/entity-images/storage";
 import { callMuse, generateMuseImage, parseJsonOutput, type MuseAttempt } from "@/lib/idea-factory/muse";
 import { DEFAULT_MUSE_MODEL, MUSE_IMAGE_MODEL } from "@/lib/idea-factory/pricing";
-import { getMuseApiKey } from "@/lib/meta/connection";
+import { settleMuseRequest } from "@/lib/cloud/billing";
+import { resolveMuseAccess, type MuseAccess } from "@/lib/cloud/provider";
 
 // Muse Image can take a minute or more. The pages that call these actions
 // export `maxDuration`, since a "use server" file cannot.
@@ -34,34 +35,36 @@ const suggestSchema = targetSchema.extend({
   draft: z.string().trim().max(MAX_IMAGE_PROMPT),
 });
 
-async function museKeyFor(userId: string): Promise<string | Failure> {
+async function museKeyFor(userId: string): Promise<MuseAccess | Failure> {
+  let resolved: Awaited<ReturnType<typeof resolveMuseAccess>>;
   try {
-    const apiKey = await getMuseApiKey(userId);
-    if (apiKey) {
-      return apiKey;
-    }
+    resolved = await resolveMuseAccess(userId);
   } catch (error) {
     console.error("Meta key lookup failed", error);
     return failure("Your Meta key could not be refreshed. Try again in a moment.");
   }
+  if (resolved.ok) {
+    return resolved.access;
+  }
   return {
-    ...failure("Connect your Meta account in Settings to create images with Muse."),
+    ...failure(resolved.message),
     needsConnection: true,
   };
 }
 
 async function record(
   context: ImageEditorContext,
+  access: MuseAccess,
   purpose: "image" | "image-prompt",
   model: string,
   attempt: MuseAttempt,
 ): Promise<void> {
   try {
-    await logMuseRequest({
+    const logged = await logMuseRequest({
       ideaId: context.kind === "idea" ? context.id : null,
       projectId: context.kind === "project" ? context.id : null,
       agentId: context.kind === "agent" ? context.id : null,
-      clerkUserId: context.userId,
+      clerkUserId: access.clerkUserId,
       agentSlug: null,
       purpose,
       model,
@@ -81,6 +84,7 @@ async function record(
       rateLimitRemainingRequests: attempt.rateLimit.remainingRequests,
       error: attempt.error,
     });
+    await settleMuseRequest(access, logged);
   } catch (error) {
     console.error("Muse request log failed", error);
   }
@@ -173,7 +177,7 @@ export type GenerateImageResult =
     }
   | Failure;
 
-/** Draws one image with Muse Image on the member's own Meta key. */
+/** Draws one image with Muse Image on the member's own Meta key, or WeStride Cloud's. */
 export async function generateEntityImageAction(input: unknown): Promise<GenerateImageResult> {
   const parsed = generateSchema.safeParse(input);
   if (!parsed.success) {
@@ -183,20 +187,20 @@ export async function generateEntityImageAction(input: unknown): Promise<Generat
   if (isFailure(context)) {
     return context;
   }
-  const apiKey = await museKeyFor(context.userId);
-  if (isFailure(apiKey)) {
-    return apiKey;
+  const access = await museKeyFor(context.userId);
+  if (isFailure(access)) {
+    return access;
   }
 
   const result = await generateMuseImage({
-    apiKey,
+    apiKey: access.apiKey,
     model: MUSE_IMAGE_MODEL.id,
     prompt: parsed.data.prompt,
     size: "1024x1024",
     user: createHash("sha256").update(context.userId).digest("hex"),
     costPerImageMicros: MUSE_IMAGE_MODEL.perImageMicros,
   });
-  await record(context, "image", MUSE_IMAGE_MODEL.id, result.attempt);
+  await record(context, access, "image", MUSE_IMAGE_MODEL.id, result.attempt);
   if (!result.image) {
     return failure(result.attempt.error ?? "Muse did not return an image. Try again.");
   }
@@ -222,9 +226,9 @@ export async function suggestEntityImagePromptAction(input: unknown): Promise<Su
   if (isFailure(context)) {
     return context;
   }
-  const apiKey = await museKeyFor(context.userId);
-  if (isFailure(apiKey)) {
-    return apiKey;
+  const access = await museKeyFor(context.userId);
+  if (isFailure(access)) {
+    return access;
   }
 
   const request = buildImagePromptRequest({
@@ -234,7 +238,7 @@ export async function suggestEntityImagePromptAction(input: unknown): Promise<Su
     draft: parsed.data.draft,
   });
   const result = await callMuse({
-    apiKey,
+    apiKey: access.apiKey,
     model: DEFAULT_MUSE_MODEL,
     instructions: request.instructions,
     input: request.input,
@@ -244,7 +248,7 @@ export async function suggestEntityImagePromptAction(input: unknown): Promise<Su
     maxOutputTokens: 800,
     timeoutMs: 60_000,
   });
-  await record(context, "image-prompt", DEFAULT_MUSE_MODEL, result.attempt);
+  await record(context, access, "image-prompt", DEFAULT_MUSE_MODEL, result.attempt);
 
   const prompt = parseJsonOutput<{ prompt?: unknown }>(result.text)?.prompt;
   if (typeof prompt !== "string" || !prompt.trim()) {

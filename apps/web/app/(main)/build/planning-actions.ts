@@ -37,17 +37,15 @@ import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 import { findReadableRepo, readRepoReadme } from "@/lib/github/repos";
 import { callMuse, type MuseAttempt } from "@/lib/idea-factory/muse";
 import { isMuseModelId } from "@/lib/idea-factory/pricing";
-import {
-  getMetaConnectionSummary,
-  getMuseApiKey,
-  isMetaConnectionConfigured,
-} from "@/lib/meta/connection";
+import { settleMuseRequest } from "@/lib/cloud/billing";
+import { getCloudStatus, resolveMuseAccess, type MuseAccess } from "@/lib/cloud/provider";
+import { getMetaConnectionSummary, isMetaConnectionConfigured } from "@/lib/meta/connection";
 
 // Muse can take a minute or two on a full backlog. The pages that call
 // these actions export `maxDuration`, since a "use server" file cannot.
 
 export type PlanningState = {
-  /** Whether the member has a Meta account connected. */
+  /** Whether the member can run Muse: a Meta account connected, or a funded WeStride Cloud balance. */
   hasMetaConnection: boolean;
   canConnectMeta: boolean;
 };
@@ -57,26 +55,30 @@ export async function getPlanningState(projectId: string): Promise<PlanningState
   if (isFailure(context)) {
     return context;
   }
-  const summary = await getMetaConnectionSummary(context.userId);
+  const [summary, cloud] = await Promise.all([
+    getMetaConnectionSummary(context.userId),
+    getCloudStatus(context.userId),
+  ]);
   return {
-    hasMetaConnection: summary !== null,
+    hasMetaConnection: summary !== null || cloud.canRunAi,
     canConnectMeta: isMetaConnectionConfigured(),
   };
 }
 
-async function museKeyFor(userId: string): Promise<string | Failure> {
+async function museKeyFor(userId: string): Promise<MuseAccess | Failure> {
+  let resolved: Awaited<ReturnType<typeof resolveMuseAccess>>;
   try {
-    const apiKey = await getMuseApiKey(userId);
-    if (apiKey) {
-      return apiKey;
-    }
+    resolved = await resolveMuseAccess(userId);
   } catch (error) {
     console.error("Meta key lookup failed", error);
     return failure("Your Meta key could not be refreshed. Try again in a moment.");
   }
+  if (resolved.ok) {
+    return resolved.access;
+  }
   return {
     status: "error",
-    message: "Connect your Meta account in Settings to plan with Muse.",
+    message: resolved.message,
     fieldErrors: {},
     needsConnection: true,
   };
@@ -84,7 +86,7 @@ async function museKeyFor(userId: string): Promise<string | Failure> {
 
 async function record(input: {
   projectId: string;
-  userId: string;
+  access: MuseAccess;
   model: string;
   attempt: MuseAttempt;
 }): Promise<string | null> {
@@ -92,7 +94,7 @@ async function record(input: {
     const logged = await logMuseRequest({
       ideaId: null,
       projectId: input.projectId,
-      clerkUserId: input.userId,
+      clerkUserId: input.access.clerkUserId,
       agentSlug: null,
       purpose: "plan",
       model: input.model,
@@ -112,6 +114,7 @@ async function record(input: {
       rateLimitRemainingRequests: input.attempt.rateLimit.remainingRequests,
       error: input.attempt.error,
     });
+    await settleMuseRequest(input.access, logged);
     return logged.id;
   } catch (error) {
     console.error("Muse request log failed", error);
@@ -179,9 +182,9 @@ export async function planWithMuse(projectId: string, input: unknown): Promise<P
   if (isFailure(member)) {
     return member;
   }
-  const apiKey = await museKeyFor(member.userId);
-  if (isFailure(apiKey)) {
-    return apiKey;
+  const access = await museKeyFor(member.userId);
+  if (isFailure(access)) {
+    return access;
   }
   const context = await gatherContext(projectId, member.userId, parsed.data.notes);
   if (isFailure(context)) {
@@ -194,7 +197,7 @@ export async function planWithMuse(projectId: string, input: unknown): Promise<P
   const prompt =
     parsed.data.mode === "backlog" ? buildBacklogPrompt(context) : buildRankingPrompt(context);
   const result = await callMuse({
-    apiKey,
+    apiKey: access.apiKey,
     model: parsed.data.model,
     instructions: prompt.instructions,
     input: prompt.input,
@@ -208,7 +211,7 @@ export async function planWithMuse(projectId: string, input: unknown): Promise<P
   });
   const museRequestId = await record({
     projectId,
-    userId: member.userId,
+    access,
     model: parsed.data.model,
     attempt: result.attempt,
   });

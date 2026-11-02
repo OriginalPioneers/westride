@@ -27,6 +27,7 @@ import {
   type AgentStatus,
   type AgentTicket,
   type AgentTicketSource,
+  type MuseKeySource,
   type RunnerKind,
 } from "./agent-schema";
 import { projectMembers, projects, type AgentRunStatus, type TicketPriority, type TicketStatus } from "./build-schema";
@@ -710,6 +711,7 @@ export type NewAgentJobInput = {
   maxSteps: number;
   pledgeId?: string | null;
   runnerKind?: RunnerKind | null;
+  museSource?: MuseKeySource;
   prompt?: string | null;
   repoFullName?: string | null;
   branch?: string | null;
@@ -804,6 +806,8 @@ export type AgentJobPatch = Partial<
     | "prompt"
     | "paidByClerkUserId"
     | "pledgeId"
+    | "museSource"
+    | "runnerKind"
   > &
     AgentJobUsagePatch
 >;

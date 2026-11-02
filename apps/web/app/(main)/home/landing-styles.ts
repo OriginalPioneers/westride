@@ -403,6 +403,8 @@ export const LANDING_STYLES = `
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
   border-radius: var(--radius-container);
   border-color: var(--color-border);
   background: color-mix(in srgb, var(--color-background-surface) 72%, transparent);

@@ -3,7 +3,6 @@
 import { Show, useClerk } from "@clerk/nextjs";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Fragment } from "react";
 import { AppShell } from "@astryxdesign/core/AppShell";
 import { Button } from "@astryxdesign/core/Button";
 import { Divider } from "@astryxdesign/core/Divider";
@@ -20,6 +19,7 @@ import {
 } from "@astryxdesign/core/TopNav";
 import {
   ArrowRightStartOnRectangleIcon,
+  CloudIcon,
   Cog6ToothIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
@@ -32,29 +32,63 @@ type NavLink = {
   href: string;
 };
 
-/** Primary destinations, in two groups: make something, then get help with it. */
-const NAV_GROUPS: NavLink[][] = [
-  [
-    { label: "Idea Workshop", href: "/ideas" },
-    { label: "Build Studio", href: "/build" },
-    { label: "AI Agent Fleet", href: "/agents" },
-  ],
-  [
-    { label: "Support A Project", href: "/supporting" },
-    { label: "Mentorship", href: "/mentorship" },
-    { label: "AI Academy", href: "/academy" },
-  ],
+/** The four studios, and what they cost. Left of the bar. */
+const PRIMARY_LINKS: NavLink[] = [
+  { label: "Idea Workshop", href: "/ideas" },
+  { label: "Build Studio", href: "/build" },
+  { label: "AI Agent Fleet", href: "/agents" },
+  { label: "Support A Project", href: "/supporting" },
+  { label: "Pricing", href: "/pricing" },
+];
+
+/** Help along the way. Right of the bar, quieter than the studios. */
+const SECONDARY_LINKS: NavLink[] = [
+  { label: "Mentorship", href: "/mentorship" },
+  { label: "AI Academy", href: "/academy" },
 ];
 
 function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Separates the nav groups: a vertical rule in the bar, a horizontal one in the drawer. */
-function GroupDivider() {
+/**
+ * The secondary links live in a different slot depending on how TopNav is
+ * rendering: the phone drawer only shows `startContent`, and the phone bar
+ * only shows `endContent`, so each slot renders them in exactly one mode.
+ * In the full bar they sit at the right, before the account controls, as
+ * smaller plain text; in the drawer they follow the studios under a rule.
+ */
+function SecondaryNav({
+  slot,
+  pathname,
+}: {
+  slot: "start" | "end";
+  pathname: string;
+}) {
   const renderMode = useTopNavRenderMode();
-  return (
-    <Divider orientation={renderMode === "drawer" ? "horizontal" : "vertical"} />
+  const isDrawer = renderMode === "drawer";
+  if (slot === "start" ? !isDrawer : renderMode !== "default") {
+    return null;
+  }
+  const items = SECONDARY_LINKS.map((link) => (
+    <TopNavItem
+      key={link.href}
+      label={link.label}
+      href={link.href}
+      isSelected={isActive(pathname, link.href)}
+      className={isDrawer ? undefined : "westride-nav-secondary"}
+    />
+  ));
+  return isDrawer ? (
+    <>
+      <Divider orientation="horizontal" />
+      {items}
+    </>
+  ) : (
+    <>
+      {items}
+      <Divider orientation="vertical" />
+    </>
   );
 }
 
@@ -107,6 +141,7 @@ function AccountMenu() {
       )}
       items={[
         { label: "Profile", href: "/profile", icon: UserCircleIcon },
+        { label: "WeStride Cloud", href: "/cloud", icon: CloudIcon },
         { label: "Settings", href: "/settings", icon: Cog6ToothIcon },
         { type: "divider" },
         {
@@ -150,10 +185,9 @@ export function AppFrame({
           }
           // Items sit directly in the slot (no wrapper) so TopNav can lay
           // them out as a row in the bar and as a column in the phone drawer.
-          startContent={NAV_GROUPS.map((group, index) => (
-            <Fragment key={index}>
-              {index > 0 ? <GroupDivider /> : null}
-              {group.map((link) => (
+          startContent={
+            <>
+              {PRIMARY_LINKS.map((link) => (
                 <TopNavItem
                   key={link.href}
                   label={link.label}
@@ -161,10 +195,12 @@ export function AppFrame({
                   isSelected={isActive(pathname, link.href)}
                 />
               ))}
-            </Fragment>
-          ))}
+              <SecondaryNav slot="start" pathname={pathname} />
+            </>
+          }
           endContent={
             <>
+              <SecondaryNav slot="end" pathname={pathname} />
               <Show when="signed-out">
                 <Button label="Sign In" variant="secondary" href={signInPath} />
               </Show>

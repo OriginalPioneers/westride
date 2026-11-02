@@ -1,18 +1,69 @@
 # WeStride.org
 
-WeStride.org is a platform for learning AI, mentorship and entrepreneurship.
+WeStride.org takes an idea from a hunch to a shipped product with AI agents of its own, and lets anyone back it with tokens or compute instead of money. A team of Muse advisors pressure-tests the idea with live, cited research; Muse plans the backlog; Muse Code works the tickets in isolated sandboxes and opens pull requests; standing Muse agents keep the product running after launch. Every step runs on Meta's models, on the member's own key or on a supporter's.
+
+Built in public for the [Meta Global AI Developer Hackathon](https://cerebralvalley.ai/e/meta-ai-developer-hackathon), October 26 to November 4, 2026. Licensed under [Apache 2.0](LICENSE).
 
 ## Features
 
-| Module | Capabilities |
+| Studio | What it does |
 | -------- | -------------- |
-| WeStride Academy | AI fundamentals, prompting, agents, coding, entrepreneurship, structured learning paths |
-| Achievements | Badges, XP, certifications, learning streaks, portfolio accomplishments |
-| Mentorship | Mentor discovery, matching, availability, messaging, office hours |
-| Idea Studio | Business and nonprofit idea creation, validation, research, market analysis |
-| Muse AI Assistant | AI-powered business planning, customer discovery, drafting, research, competitive analysis |
-| Build Studio | Generate applications, websites, prototypes, and MVPs through AI coding tools |
-| Community | Share progress, collaborate on ideas, form teams, participate in challenges |
+| Idea Studio | Bring a business, non-profit, game, or open-source idea. A team of Muse advisors, each with a specialist brief, researches it with web search and cited sources, evaluates it in parallel, and a synthesis step weighs where they agree and disagree. Import any public GitHub repository to start from existing work. |
+| Build Studio | Projects, tickets, milestones, and linked GitHub repositories. Muse drafts the backlog and roadmap and ranks the open tickets. Muse Code takes a ticket, works it in a Vercel Sandbox on the member's own account, streams the work log live, and opens a pull request. |
+| Agent Studio | Standing Muse agents with their own instructions, backlog, schedule, and usage ledger. With a repository they work tickets as Muse Code; without one they answer with researched reports. |
+| Supporting | Back an idea without joining its team. Pledge tokens (your Meta key pays for the team's agents up to a cap you set), pledge compute (your computer runs their jobs in an isolated container, optionally on a local model), or follow the team's own capital links. WeStride never collects or holds money. |
+
+Around the studios: free one-to-one Mentorship, an Academy with Muse feedback on challenges, a public REST API with an OpenAPI explorer, an MCP server, Slack, Discord, and WhatsApp bots, and iOS and Android apps.
+
+### Meta models in use
+
+| Model | Where |
+| ----- | ----- |
+| Muse Spark 1.3 and Muse Wonder 1.0 | Every advisor, evaluation, synthesis, plan, report job, and companion reply, through the Responses API with structured JSON output and web search |
+| Muse Code | Headless in Vercel Sandbox microVMs and in supporters' Docker containers, working tickets and opening pull requests |
+| Muse Image 1.0 | Pictures for ideas, projects, and agents; Spark writes the prompt, Image renders it |
+| Muse Voice Transcribe 1.0 | Dictation on every long-text field |
+| Open-weight models through Ollama | Supporter runners can work code jobs on a local model instead of a Meta key |
+
+Members connect their own Meta account, with the same device sign-in Muse Code uses or by pasting a key, and see what every request cost.
+
+## Built during the hackathon
+
+Every line of WeStride was written by one person, [Garrett Hampton](https://www.linkedin.com/in/garretthampton/), during the hackathon, starting at kickoff on October 26, 2026. The repository's first commit is the initial commit of this project; there is no earlier codebase. The [full history](https://github.com/OriginalPioneers/westride/commits/main) is public. The first commit of each feature:
+
+| Date | Feature | First commit |
+| ---- | ------- | ------------ |
+| Oct 26 | Repository, Next.js site, Astryx design system, Bun | `878e0d2` |
+| Oct 26 | Sign-in with Clerk | `0e7cf5f` |
+| Oct 26 | Turborepo monorepo | `713703f` |
+| Oct 26 | WeStride stamp and the Meta prompts used to make it | `1951ef4` |
+| Oct 26 | Academy data model (tracks and lessons) | `903ee4c` |
+| Oct 26 | Terms of service and privacy policy | `48f4ea7` |
+| Oct 26 | Design site (Storybook) | `e103e21` |
+| Oct 27 | Mobile app (Expo, React Native), iOS and Android builds | `755099f`, `924663d` |
+| Oct 27 | Academy tracks, achievements, and mentorship seeds | `babdccb`, `3281e23`, `48aeb1c` |
+| Oct 27 | Public REST API and MCP server | `0ef0fb6` |
+| Oct 28 | Ideas: create, view, edit | `51262ee`, `566cbbb`, `2b04d8a` |
+| Oct 28 | Idea Studio advisory team on Muse (Responses API, web search, structured output) | `646bfb7` |
+| Oct 28 | Feedback form | `b181527` |
+| Oct 28 | Achievements, Muse learning challenges, Muse dock, social bonus | `1f58380`, `37256a2` |
+| Oct 29 | GitHub connection and repository linking | `d432de8` |
+| Oct 29 | Meta account connection (device sign-in and pasted key); Slack, Discord, WhatsApp bots | `90af991` |
+| Oct 29 | Profile page | `ec21b5f` |
+| Oct 29 | Build Studio: projects, tickets, board, milestones, Muse planning | `dc57dfd` |
+| Oct 29 | Muse Code agent runs from a ticket (sandbox, work log, pull request) | `e1abe0b` |
+| Oct 29 | Mentor request form | `0c3c9a3` |
+| Oct 29 | Game idea path with its advisors | `6bc7d5e` |
+| Oct 30 | Open-source idea path with its advisors | `38742fd` |
+| Oct 30 | Create a GitHub repository while creating a project | `e616680` |
+| Oct 31 | Agent Studio: standing agents, schedules, report and code jobs, usage | `30f8831` |
+| Oct 31 | GitHub import and idea claims | `b6f21fc` |
+| Nov 1 | Vercel Sandbox on the member's own Vercel account | `c6f0b45` |
+| Nov 1 | Muse Image pictures for ideas, projects, and agents | `c5eca0c` |
+| Nov 1 | Supporters: token and compute pledges, supporter runner, capital links | `0a1400e` |
+| Nov 1 | Muse Voice dictation on every long-text field | `3e9cfaf` |
+| Nov 1 | Follow an idea | `8352910` |
+| Nov 2 | Apache 2.0 license, hackathon self-assessment, header reorganised around the studios | this change |
 
 ## Repository Layout
 

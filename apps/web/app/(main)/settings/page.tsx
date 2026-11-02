@@ -17,6 +17,7 @@ import {
   type GithubAccountAccess,
 } from "@/lib/github/repos";
 import { SettingsTabs } from "../section-tabs";
+import { CloudSection } from "./cloud-section";
 import { ChatSection, MetaSection, VercelSection } from "./connection-sections";
 import { DisconnectGithubButton } from "./disconnect-github-button";
 import { GithubAccess } from "./github-access";
@@ -227,6 +228,18 @@ export default async function SettingsPage({
                 </Text>
               </VStack>
               <GithubSection userId={userId} />
+            </VStack>
+            <Divider />
+            <VStack gap={6}>
+              <VStack gap={2}>
+                <Heading level={2}>WeStride Cloud</Heading>
+                <Text type="supporting">
+                  No Meta or Vercel account? Fund your WeStride account and Muse
+                  and sandboxes run on WeStride&apos;s own accounts, charged to your
+                  balance. Bring your own accounts below and WeStride is free.
+                </Text>
+              </VStack>
+              <CloudSection userId={userId} />
             </VStack>
             <Divider />
             <VStack gap={6}>
