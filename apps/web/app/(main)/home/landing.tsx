@@ -57,7 +57,7 @@ import {
   STUDIOS,
   SUPPORT,
   SUPPORTER_WAYS,
-  TEAM,
+  FOUNDER,
   type Integration,
   type MobileApp,
   type PlatformSurface,
@@ -1394,7 +1394,7 @@ function HackathonSection() {
                   orientation="vertical"
                   activeStep={CURRENT_MILESTONE_STEP}
                   density="compact"
-                  label="What we built each day"
+                  label="What shipped each day"
                 >
                   {MILESTONES.map((milestone, index) => (
                     <Step
@@ -1412,38 +1412,34 @@ function HackathonSection() {
           <Grid columns={{ minWidth: 320, max: 2 }} gap={8} align="center">
             <VStack gap={3} className="wl-reveal">
               <Heading level={3} textWrap="balance">
-                Three friends, one hackathon, and a problem we kept seeing in
-                the Discord
+                One builder, one hackathon, and a problem I kept seeing in the
+                Discord
               </Heading>
               <Text color="secondary" textWrap="pretty">
                 Team after team was ideating, vetting, and researching. The
                 people doing it could not have been more different: students on
                 a first project, people who had never written code, and
                 engineers with decades behind them. The project was not any one
-                of our ideas. It was the path all of them were walking.
+                of my ideas. It was the path all of them were walking.
               </Text>
             </VStack>
             <VStack gap={5} className="wl-reveal" style={revealDelay(2)}>
-              <Grid columns={{ minWidth: 160, max: 3 }} gap={4}>
-                {TEAM.map((member) => (
-                  <VStack key={member.name} gap={2} hAlign="center">
-                    <Avatar
-                      src={member.photo}
-                      name={member.name}
-                      size={72}
-                      tooltip={false}
-                    />
-                    <VStack gap={0.5} hAlign="center">
-                      <Text weight="semibold" justify="center">
-                        {member.name}
-                      </Text>
-                      <Text type="supporting" size="sm" justify="center">
-                        {member.role}
-                      </Text>
-                    </VStack>
-                  </VStack>
-                ))}
-              </Grid>
+              <VStack gap={2} hAlign="center">
+                <Avatar
+                  src={FOUNDER.photo}
+                  name={FOUNDER.name}
+                  size={72}
+                  tooltip={false}
+                />
+                <VStack gap={0.5} hAlign="center">
+                  <Text weight="semibold" justify="center">
+                    {FOUNDER.name}
+                  </Text>
+                  <Text type="supporting" size="sm" justify="center">
+                    {FOUNDER.role}
+                  </Text>
+                </VStack>
+              </VStack>
               <HStack hAlign="center">
                 <Button
                   label="Read our story"

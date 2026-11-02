@@ -29,7 +29,7 @@ Members connect their own Meta account, with the same device sign-in Muse Code u
 
 ## Built during the hackathon
 
-Every line of WeStride was written during the hackathon, starting at kickoff on October 26, 2026. The repository's first commit is the initial commit of this project; there is no earlier codebase. The [full history](https://github.com/OriginalPioneers/westride/commits/main) is public. The first commit of each feature:
+Every line of WeStride was written by one person, [Garrett Hampton](https://www.linkedin.com/in/garretthampton/), during the hackathon, starting at kickoff on October 26, 2026. The repository's first commit is the initial commit of this project; there is no earlier codebase. The [full history](https://github.com/OriginalPioneers/westride/commits/main) is public. The first commit of each feature:
 
 | Date | Feature | First commit |
 | ---- | ------- | ------------ |
@@ -46,23 +46,23 @@ Every line of WeStride was written during the hackathon, starting at kickoff on 
 | Oct 28 | Ideas: create, view, edit | `51262ee`, `566cbbb`, `2b04d8a` |
 | Oct 28 | Idea Studio advisory team on Muse (Responses API, web search, structured output) | `646bfb7` |
 | Oct 28 | Feedback form | `b181527` |
-| Oct 28 | Achievements, Muse learning challenges, Muse dock, social bonus | `828a2fa`, `4c66e42` |
-| Oct 29 | GitHub connection and repository linking | `9f955d6` |
-| Oct 29 | Meta account connection (device sign-in and pasted key); Slack, Discord, WhatsApp bots | `f0fc8cb` |
-| Oct 29 | Profile page | `4593512` |
-| Oct 29 | Build Studio: projects, tickets, board, milestones, Muse planning | `8833574` |
-| Oct 29 | Muse Code agent runs from a ticket (sandbox, work log, pull request) | `27fb74b` |
-| Oct 29 | Mentor request form | `89ca124` |
-| Oct 29 | Game idea path with its advisors | `dbeaede` |
-| Oct 30 | Open-source idea path with its advisors | `ab86068` |
-| Oct 30 | Create a GitHub repository while creating a project | `2cbb869` |
-| Oct 31 | Agent Studio: standing agents, schedules, report and code jobs, usage | `80789fe` |
-| Oct 31 | GitHub import and idea claims | `659474c` |
-| Nov 1 | Vercel Sandbox on the member's own Vercel account | `70e2c0c` |
-| Nov 1 | Muse Image pictures for ideas, projects, and agents | `a2fd7fe` |
-| Nov 1 | Supporters: token and compute pledges, supporter runner, capital links | `b233d7e` |
-| Nov 1 | Muse Voice dictation on every long-text field | `aa96982` |
-| Nov 1 | Follow an idea | `506fa23` |
+| Oct 28 | Achievements, Muse learning challenges, Muse dock, social bonus | `1f58380`, `37256a2` |
+| Oct 29 | GitHub connection and repository linking | `d432de8` |
+| Oct 29 | Meta account connection (device sign-in and pasted key); Slack, Discord, WhatsApp bots | `90af991` |
+| Oct 29 | Profile page | `ec21b5f` |
+| Oct 29 | Build Studio: projects, tickets, board, milestones, Muse planning | `dc57dfd` |
+| Oct 29 | Muse Code agent runs from a ticket (sandbox, work log, pull request) | `e1abe0b` |
+| Oct 29 | Mentor request form | `0c3c9a3` |
+| Oct 29 | Game idea path with its advisors | `6bc7d5e` |
+| Oct 30 | Open-source idea path with its advisors | `38742fd` |
+| Oct 30 | Create a GitHub repository while creating a project | `e616680` |
+| Oct 31 | Agent Studio: standing agents, schedules, report and code jobs, usage | `30f8831` |
+| Oct 31 | GitHub import and idea claims | `b6f21fc` |
+| Nov 1 | Vercel Sandbox on the member's own Vercel account | `c6f0b45` |
+| Nov 1 | Muse Image pictures for ideas, projects, and agents | `c5eca0c` |
+| Nov 1 | Supporters: token and compute pledges, supporter runner, capital links | `0a1400e` |
+| Nov 1 | Muse Voice dictation on every long-text field | `3e9cfaf` |
+| Nov 1 | Follow an idea | `8352910` |
 | Nov 2 | Apache 2.0 license, hackathon self-assessment, header reorganised around the studios | this change |
 
 ## Repository Layout
@@ -99,3 +99,8 @@ Other root scripts: `bun run build`, `bun run lint`, `bun run start`, `bun run d
 - Bun
 - TypeScript
 - Drizzle
+
+## Thanks
+
+- Lauren Hampton, my wife, for advice on the brand, the colors, and how WeStride should look and feel.
+- Jace Whitten, my friend of many years, for advice on the achievement system.
