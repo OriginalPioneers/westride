@@ -314,7 +314,12 @@ export const STACK_ROWS: StackLogo[][] = [
   ],
 ];
 
-export type Milestone = { date: string; built: string };
+export type Milestone = {
+  date: string;
+  built: string;
+  /** Still ahead of us: shown as upcoming, and left out of the shipped list. */
+  isPlanned?: boolean;
+};
 
 /** What shipped each day of the building period. Kickoff was October 26, 2026. */
 export const MILESTONES: Milestone[] = [
@@ -339,10 +344,50 @@ export const MILESTONES: Milestone[] = [
       "Connected GitHub and Meta accounts, and started Build Studio: projects, tickets, Muse planning, and Muse Code agent runs.",
   },
   {
+    date: "October 30",
+    built:
+      "Added the game and open-source idea paths with their own advisors, repository creation from a new project, and the mentor request form.",
+  },
+  {
+    date: "October 31",
+    built:
+      "Opened Agent Studio: standing Muse agents with backlogs, schedules, report and code jobs, and a usage ledger. Added GitHub import and idea claims.",
+  },
+  {
+    date: "November 1",
+    built:
+      "Shipped Supporters: token and compute pledges, the supporter runner, and capital links. Added Vercel Sandbox on members' own accounts, Muse Image pictures for ideas, projects, and agents, and Muse Voice dictation on every long field.",
+  },
+  {
+    date: "November 2",
+    built:
+      "Licensed the code under Apache 2.0, reviewed the platform against the judging rubric, and reorganised the header around the four studios.",
+  },
+  {
+    date: "November 3",
+    built:
+      "Last full day of building. Demo video, seeded public ideas and projects, and submission checks.",
+    isPlanned: true,
+  },
+  {
     date: "November 4",
     built: "Submission day. The building period closes and judging begins.",
+    isPlanned: true,
   },
 ];
+
+/** The days whose work has landed, for the "what we built" tables. */
+export const SHIPPED_MILESTONES = MILESTONES.filter(
+  (milestone) => !milestone.isPlanned,
+);
+
+/** The Stepper's current step: the first day still ahead, or the last day. */
+export const CURRENT_MILESTONE_STEP = Math.max(
+  0,
+  MILESTONES.findIndex((milestone) => milestone.isPlanned) === -1
+    ? MILESTONES.length - 1
+    : MILESTONES.findIndex((milestone) => milestone.isPlanned),
+);
 
 export const TEAM = [
   {

@@ -43,6 +43,7 @@ import { defaultThemeSlug, themes } from "@/astryx-themes";
 import {
   CLONE_SNIPPET,
   COMMITS_URL,
+  CURRENT_MILESTONE_STEP,
   HACKATHON_LOGO,
   HACKATHON_NAME,
   HACKATHON_URL,
@@ -1391,7 +1392,7 @@ function HackathonSection() {
                 </HStack>
                 <Stepper
                   orientation="vertical"
-                  activeStep={MILESTONES.length - 1}
+                  activeStep={CURRENT_MILESTONE_STEP}
                   density="compact"
                   label="What we built each day"
                 >

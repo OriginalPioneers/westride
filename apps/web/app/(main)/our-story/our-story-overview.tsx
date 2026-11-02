@@ -12,6 +12,7 @@ import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { proportional, Table } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { AGENTS } from "@/lib/idea-factory/agents";
+import { SHIPPED_MILESTONES } from "../home/landing-content";
 import { DocPage, DocSection } from "../doc-page";
 import { OurStoryTabs } from "../section-tabs";
 
@@ -184,31 +185,6 @@ const AUDIENCE = [
     label: "Non-profits",
     detail:
       "Idea Studio has a non-profit path, with advisors for grants, donors and volunteers, governance, and program evaluation.",
-  },
-];
-
-type Milestone = { date: string; built: string };
-
-const MILESTONES: Milestone[] = [
-  {
-    date: "October 26",
-    built:
-      "Kickoff. Created the repository and set up the website, sign-in, the design site, the Academy data model, and the WeStride stamp.",
-  },
-  {
-    date: "October 27",
-    built:
-      "Seeded the Academy tracks, achievements, and Mentorship. Shipped the public API, the MCP server, and the first iOS and Android builds.",
-  },
-  {
-    date: "October 28",
-    built:
-      "Opened Idea Studio with its Muse advisory team. Added the achievement track, Muse learning challenges, and the Muse dock.",
-  },
-  {
-    date: "October 29",
-    built:
-      "Connected GitHub and Meta accounts, and started Build Studio: projects, tickets, Muse planning, and Muse Code agent runs.",
   },
 ];
 
@@ -440,7 +416,7 @@ export function OurStoryOverview() {
           kickoff. The full commit history is public.
         </Text>
         <Table
-          data={MILESTONES}
+          data={SHIPPED_MILESTONES}
           idKey="date"
           columns={[
             { key: "date", header: "Date", width: proportional(1) },
