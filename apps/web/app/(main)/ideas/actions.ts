@@ -2,7 +2,13 @@
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { linkIdeaGithubRepo } from "@westride/db/github";
-import { createIdea, getIdea, updateIdeaDetails } from "@westride/db/ideas";
+import {
+  createIdea,
+  followIdea,
+  getIdea,
+  unfollowIdea,
+  updateIdeaDetails,
+} from "@westride/db/ideas";
 import { syncLearningAwards } from "@westride/db/learning";
 import { awardAchievement } from "@westride/db/client";
 import { revalidatePath } from "next/cache";
@@ -281,7 +287,7 @@ export async function createIdeaFromStudio(
         isFeatured: false,
         isPublic: parsed.data.isPublic,
         countryCodes: [],
-        tagNames: [],
+        tagNames: parsed.data.categories,
         // Founder is last so a repeated id cannot replace that role.
         members: [...invites, { clerkUserId: userId, role: "FOUNDER" }],
       },
@@ -320,7 +326,7 @@ const EDIT_ERRORS = new Set([
   "Test your prototype and confirm it works before sharing.",
 ]);
 
-/** A founder updates the name, description, and team. Other fields stay put. */
+/** A founder updates the name, description, categories, and team. Other fields stay put. */
 export async function updateIdeaFromStudio(
   ideaId: string,
   draft: unknown,
@@ -378,6 +384,7 @@ export async function updateIdeaFromStudio(
     await updateIdeaDetails(ideaId, userId, {
       name: parsed.data.name,
       description: parsed.data.description,
+      categoryNames: parsed.data.categories,
       members: parsed.data.members,
       prototypeUrl: parsed.data.prototypeUrl,
       prototypeInstructions: parsed.data.prototypeInstructions,
@@ -400,4 +407,49 @@ export async function updateIdeaFromStudio(
     (member) => member.clerkUserId === userId,
   );
   return { status: "saved", canStillView: idea.isPublic || stillMember };
+}
+
+export type FollowResult =
+  | { status: "following"; isFollowing: boolean }
+  | { status: "error"; message: string };
+
+/**
+ * Follows or unfollows an idea for the signed-in member. Following is for
+ * ideas you are not on the team of; your own ideas are already under
+ * "Your Ideas".
+ */
+export async function setIdeaFollow(
+  ideaId: string,
+  isFollowing: boolean,
+): Promise<FollowResult> {
+  const { userId } = await auth();
+  if (!userId) {
+    return { status: "error", message: "Sign in to follow ideas." };
+  }
+  if (!ideaIdSchema.safeParse(ideaId).success) {
+    return { status: "error", message: "That idea does not exist." };
+  }
+
+  try {
+    if (isFollowing) {
+      const found = await followIdea(ideaId, userId);
+      if (!found) {
+        return { status: "error", message: "That idea does not exist." };
+      }
+    } else {
+      await unfollowIdea(ideaId, userId);
+    }
+  } catch (error) {
+    console.error("Idea follow failed", error);
+    return {
+      status: "error",
+      message: isFollowing
+        ? "The idea could not be followed. Try again."
+        : "The idea could not be unfollowed. Try again.",
+    };
+  }
+
+  revalidatePath("/ideas");
+  revalidatePath(`/ideas/${ideaId}`);
+  return { status: "following", isFollowing };
 }

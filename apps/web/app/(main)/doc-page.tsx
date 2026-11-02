@@ -17,22 +17,34 @@ import { useMediaQuery } from "@astryxdesign/core/hooks";
 import { Layout, LayoutContent, LayoutPanel } from "@astryxdesign/core/Layout";
 import { Outline, type OutlineItem } from "@astryxdesign/core/Outline";
 import { Selector } from "@astryxdesign/core/Selector";
-import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 
-type DocSectionProps = {
+export type DocSectionProps = {
   id: string;
   title: string;
+  /** Controls shown at the end of the section's heading row. */
+  actions?: ReactNode;
   children: ReactNode;
 };
 
 /** One titled section of a DocPage. Its id and title also feed the outline. */
-export function DocSection({ id, title, children }: DocSectionProps) {
+export function DocSection({ id, title, actions, children }: DocSectionProps) {
+  const heading = (
+    <Heading id={id} level={2}>
+      {title}
+    </Heading>
+  );
   return (
     <VStack gap={4}>
-      <Heading id={id} level={2}>
-        {title}
-      </Heading>
+      {actions != null ? (
+        <HStack gap={3} vAlign="center" wrap="wrap">
+          <StackItem size="fill">{heading}</StackItem>
+          {actions}
+        </HStack>
+      ) : (
+        heading
+      )}
       {children}
     </VStack>
   );
@@ -65,13 +77,16 @@ export function DocPage({
   title,
   lede,
   actions,
+  hero,
   children,
 }: {
-  /** Section tabs shown above the title. */
+  /** Shown above the title: section tabs, or a back link and labels. */
   tabs?: ReactNode;
   title: string;
   lede: ReactNode;
   actions?: ReactNode;
+  /** Featured content between the title block and the first section. */
+  hero?: ReactNode;
   children: ReactNode;
 }) {
   const sections = Children.toArray(children).filter(isDocSection);
@@ -158,6 +173,8 @@ export function DocPage({
                 />
               )}
             </VStack>
+
+            {hero}
 
             {sections.map((section, index) => (
               <Fragment key={section.props.id}>

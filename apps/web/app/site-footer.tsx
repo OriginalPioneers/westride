@@ -80,7 +80,7 @@ const FOOTER_STYLES = `
 }
 
 .westride-hackathon-logo {
-  height: var(--spacing-3);
+  height: 11px;
   width: auto;
   display: block;
 }

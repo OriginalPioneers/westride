@@ -36,6 +36,9 @@ export type Tint =
   | "orange"
   | "yellow";
 
+/** The brand pastels the theme publishes as `--color-brand-pastel-<name>`. */
+export type Pastel = "blue" | "indigo" | "purple" | "teal" | "orange";
+
 export type PathStep = {
   step: string;
   where: string;
@@ -184,7 +187,9 @@ export type MetaModel = {
   role: string;
   detail: string;
   icon: IconComponent;
-  variant: "blue" | "purple" | "cyan";
+  /** The card's field. */
+  pastel: Pastel;
+  /** The icon's ink, the brand color the pastel is a tint of. */
   tint: Tint;
 };
 
@@ -195,7 +200,7 @@ export const META_MODELS: MetaModel[] = [
     detail:
       "Every Idea Studio advisor is Muse with its own specialist brief. Advisors search the web, cite sources, and answer in structured JSON the page renders directly. Members pick Muse Spark 1.3 or Muse Wonder 1.0 and see what each request cost.",
     icon: SparklesIcon,
-    variant: "blue",
+    pastel: "blue",
     tint: "blue",
   },
   {
@@ -204,7 +209,7 @@ export const META_MODELS: MetaModel[] = [
     detail:
       "In Build Studio, Muse reads the project, the linked idea, and the repository README, then drafts a backlog and roadmap and ranks the open tickets. Every ticket is a self-contained brief, ready for a coding agent.",
     icon: BoltIcon,
-    variant: "purple",
+    pastel: "purple",
     tint: "purple",
   },
   {
@@ -213,7 +218,7 @@ export const META_MODELS: MetaModel[] = [
     detail:
       "Hand a ticket to Muse Code without installing anything. WeStride starts an isolated sandbox, clones the repo, runs Muse Code headless on a branch, streams the work log live, and opens a pull request when it finishes.",
     icon: CommandLineIcon,
-    variant: "cyan",
+    pastel: "teal",
     tint: "teal",
   },
 ];
@@ -340,9 +345,21 @@ export const MILESTONES: Milestone[] = [
 ];
 
 export const TEAM = [
-  { name: "Garrett Hampton", role: "Technology, code, and AI" },
-  { name: "Lauren Hampton", role: "Brand, marketing, and design" },
-  { name: "Jace Whitten", role: "Front end, achievements, and artifacts" },
+  {
+    name: "Garrett Hampton",
+    role: "Technology, code, and AI",
+    photo: "/team/garrett-hampton.jpg",
+  },
+  {
+    name: "Lauren Hampton",
+    role: "Brand, marketing, and design",
+    photo: "/team/lauren-hampton.jpg",
+  },
+  {
+    name: "Jace Whitten",
+    role: "Front end, achievements, and artifacts",
+    photo: "/team/jace-whitten.jpg",
+  },
 ] as const;
 
 export const CLONE_SNIPPET = `git clone ${SOURCE_URL}.git

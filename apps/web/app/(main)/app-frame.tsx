@@ -58,23 +58,33 @@ function GroupDivider() {
   );
 }
 
+const WORDMARK_NAVY = "/logos/westride/WeStride_landscape_navy.png";
+const WORDMARK_WHITE = "/logos/westride/WeStride_landscape_white.png";
+
 function Wordmark() {
   return (
-    <Image
-      src="/logos/westride/WeStride_landscape_navy.png"
-      alt="WeStride"
-      width={2492}
-      height={762}
-      preload
-      // The optimizer fetches this file without a browser user agent,
-      // and the proxy refuses that request.
-      unoptimized
-      style={{
-        height: "var(--spacing-8)",
-        width: "auto",
-        display: "block",
-      }}
-    />
+    <>
+      <Image
+        className="westride-header-wordmark westride-header-wordmark-light"
+        src={WORDMARK_NAVY}
+        alt=""
+        width={2492}
+        height={762}
+        preload
+        // The optimizer fetches this file without a browser user agent,
+        // and the proxy refuses that request.
+        unoptimized
+      />
+      <Image
+        className="westride-header-wordmark westride-header-wordmark-dark"
+        src={WORDMARK_WHITE}
+        alt=""
+        width={2492}
+        height={762}
+        preload
+        unoptimized
+      />
+    </>
   );
 }
 
@@ -132,7 +142,11 @@ export function AppFrame({
           style={{ maxWidth: SITE_CONTAINER_WIDTH, marginInline: "auto" }}
           heading={
             // The lockup carries the name, so no heading text beside it.
-            <TopNavHeading headingHref="/" logo={<Wordmark />} />
+            <TopNavHeading
+              headingHref="/"
+              logo={<Wordmark />}
+              logoLabel="WeStride"
+            />
           }
           // Items sit directly in the slot (no wrapper) so TopNav can lay
           // them out as a row in the bar and as a column in the phone drawer.

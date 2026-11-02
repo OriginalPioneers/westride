@@ -76,6 +76,70 @@ export const brandColorRoleLabels: Record<BrandColorRole, string> = {
   accent: "Accent",
 };
 
+export type BrandPastel = {
+  name: string;
+  token: `--color-brand-pastel-${string}`;
+  /** The brand color this pastel is a tint of. */
+  from: BrandColor["token"];
+  /** The light-mode value: the brand hue at OKLCH lightness 0.93, chroma 0.035. */
+  hex: string;
+  /** The dark-mode value: the same hue at OKLCH lightness 0.36, chroma 0.045. */
+  darkHex: string;
+  /** Where the pastel belongs, in one sentence. */
+  use: string;
+};
+
+/**
+ * The pastel tints: one per chromatic brand color, all at the same
+ * lightness and saturation so any two sit evenly beside each other. They
+ * are fields, not inks: a card, a band, or a tile that should feel like the
+ * brand without shouting. Primary text keeps full contrast on every one.
+ * The theme publishes each as `--color-brand-pastel-*`, switching between
+ * the light and dark values with the theme's mode.
+ */
+export const brandPastels: readonly BrandPastel[] = [
+  {
+    name: "Sky",
+    token: "--color-brand-pastel-blue",
+    from: "--color-brand-blue",
+    hex: "#D3ECFD",
+    darkHex: "#264152",
+    use: "The default pastel. Fields beside Bright Blue, and anything about the advisory team.",
+  },
+  {
+    name: "Periwinkle",
+    token: "--color-brand-pastel-indigo",
+    from: "--color-brand-indigo",
+    hex: "#E2E6FF",
+    darkHex: "#383B55",
+    use: "Wide fields and section bands. The quietest of the five, so it can sit under cards.",
+  },
+  {
+    name: "Lilac",
+    token: "--color-brand-pastel-purple",
+    from: "--color-brand-purple",
+    hex: "#E7E4FE",
+    darkHex: "#3D3953",
+    use: "Fields about planning and building, beside Electric Purple.",
+  },
+  {
+    name: "Seafoam",
+    token: "--color-brand-pastel-teal",
+    from: "--color-brand-teal",
+    hex: "#CFF0EB",
+    darkHex: "#1E4540",
+    use: "Fields about agents and finished work, beside Teal.",
+  },
+  {
+    name: "Peach",
+    token: "--color-brand-pastel-orange",
+    from: "--color-brand-orange",
+    hex: "#FEE0D9",
+    darkHex: "#52342E",
+    use: "Warm highlights and callouts. Sparingly, like the spark it comes from.",
+  },
+];
+
 /** The four stamp strokes, left to right, as theme tokens. */
 export const stampStrokeTokens = [
   "--color-brand-indigo",

@@ -1,11 +1,14 @@
 import { skillSlug } from "./skill-catalog";
 
-/** Tags fold spelling variants onto one key the same way skills do. */
+/** Categories fold spelling variants onto one key the same way skills do. */
 export function tagSlug(name: string): string {
   return skillSlug(name);
 }
 
-/** Starter list offered when tagging an idea. Anyone can add their own. */
+/**
+ * Starter list of idea categories offered when creating an idea. Anyone can
+ * add their own. Stored in the `tags` table; the UI calls them categories.
+ */
 export const tagCatalog = [
   "Education",
   "Healthcare",
@@ -31,6 +34,13 @@ export const tagCatalog = [
   "SaaS",
   "AI",
   "Fintech",
+  "Crypto",
+  "Legal",
+  "Real Estate",
+  "Developer Tools",
+  "Productivity",
+  "Gaming",
+  "Open Source",
   "Local Services",
   "Manufacturing",
   "Media & Entertainment",

@@ -17,6 +17,7 @@ import {
   brandColors,
   brandDescriptor,
   brandFontWeights,
+  brandPastels,
   brandTagline,
   brandTaglineSupport,
 } from "@westride/theme";
@@ -288,6 +289,48 @@ export function DesignOverview() {
           gradient, use the stamp in solid Midnight Navy on light, or solid
           white on navy.
         </Text>
+        <Heading level={3}>Pastels</Heading>
+        <Text>
+          Each chromatic brand color has one pastel: the same hue, lightened
+          to a shared lightness and saturation so any two sit evenly side by
+          side. Pastels are fields, not inks. Use them as the background of a
+          card, a band, or a tile that should feel like the brand without
+          shouting, and keep text on them in the theme&apos;s primary color.
+          Each one flips to a deep, muted version of itself in dark mode.
+        </Text>
+        <Grid columns={{ minWidth: 120, max: 5 }} gap={3}>
+          {brandPastels.map((pastel) => (
+            <Swatch
+              key={pastel.token}
+              name={pastel.name}
+              token={pastel.token}
+            />
+          ))}
+        </Grid>
+        <Table
+          data={[...brandPastels]}
+          idKey="token"
+          columns={[
+            { key: "name", header: "Pastel" },
+            {
+              key: "from",
+              header: "Tint of",
+              renderCell: (row) =>
+                brandColors.find((color) => color.token === row.from)?.name,
+            },
+            {
+              key: "hex",
+              header: "Light",
+              renderCell: (row) => <Code>{row.hex}</Code>,
+            },
+            {
+              key: "darkHex",
+              header: "Dark",
+              renderCell: (row) => <Code>{row.darkHex}</Code>,
+            },
+            { key: "use", header: "Use" },
+          ]}
+        />
       </DocSection>
 
       <DocSection id="design-system" title="Design system">

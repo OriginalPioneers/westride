@@ -120,6 +120,13 @@ export const LANDING_STYLES = `
   color: var(--wl-accent);
 }
 
+/* A pastel field. The element sets --wl-pastel to one of the theme's
+   --color-brand-pastel-* tokens; Periwinkle is the default. Pair it with a
+   transparent Card variant so no border or card background competes. */
+.wl-pastel {
+  background: var(--wl-pastel, var(--color-brand-pastel-indigo));
+}
+
 /* ---------- Scroll reveal ---------- */
 
 .wl-root[data-js] .wl-reveal {
@@ -669,13 +676,13 @@ export const LANDING_STYLES = `
   animation: wl-shimmer calc(var(--duration-slow-max) * 6) linear infinite;
 }
 
-/* ---------- Studios band ---------- */
+/* ---------- Wavy bands ---------- */
 
-/* Both edges of the muted band are waves rather than straight lines. The
-   mask keeps the band below the top curve and above the bottom one; the two
-   run out of phase so the band reads as a ribbon. StudiosEdge traces only
-   the top curve. The bottom edge is the band's own gray, with no stroke. */
-.wl-studios {
+/* Both edges are waves rather than straight lines. The mask keeps the band
+   below the top curve and above the bottom one; the two run out of phase so
+   the band reads as a ribbon. StudiosEdge traces the same curves. */
+.wl-studios,
+.wl-stack {
   --wl-edge: var(--spacing-12);
   --wl-edge-mask:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C240 0 480 0 720 24C960 48 1200 48 1440 24V48H0Z'/%3E%3C/svg%3E")
@@ -690,9 +697,25 @@ export const LANDING_STYLES = `
   mask: var(--wl-edge-mask);
 }
 
+/* Periwinkle, the quietest brand pastel, so the white studio cards lift off
+   it. StudiosEdge traces only the top curve. The bottom edge is the band's
+   own pastel, with no stroke. */
+.wl-studios {
+  background: var(--color-brand-pastel-indigo);
+}
+
+/* Sky. The hackathon band is pulled up under this one, so the bottom curve
+   is the seam between them instead of a straight cut. */
+.wl-stack {
+  z-index: 1;
+  background: var(--color-brand-pastel-blue);
+}
+
 .wl-studios-edge {
+  --wl-edge: var(--spacing-12);
   position: absolute;
   inset-inline: 0;
+  z-index: 1;
   width: 100%;
   height: var(--wl-edge);
   pointer-events: none;
@@ -794,17 +817,17 @@ export const LANDING_STYLES = `
   box-shadow: var(--shadow-low);
 }
 
-/* ---------- Integrations ---------- */
+/* ---------- Dotted bands ---------- */
 
-/* A dot grid behind the cards. The dots are holes in a mask over a slowly
+/* A dot grid behind a band. The dots are holes in a mask over a slowly
    drifting brand gradient, so their color shifts across the band over time;
    the second mask layer fades the grid out toward the edges. */
-.wl-integrations {
+.wl-dots {
   position: relative;
   isolation: isolate;
 }
 
-.wl-integrations::before {
+.wl-dots::before {
   --wl-dot-mask:
     radial-gradient(
       circle,
@@ -890,6 +913,10 @@ export const LANDING_STYLES = `
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  /* Sit under the sky band's bottom wave. The padding keeps the copy where
+     it was before the overlap. */
+  margin-top: calc(-1 * var(--spacing-12));
+  padding-top: var(--spacing-12);
   background:
     radial-gradient(
       ellipse at 20% 0%,
@@ -937,7 +964,7 @@ export const LANDING_STYLES = `
   .wl-support,
   .wl-feature,
   .wl-integration,
-  .wl-integrations::before {
+  .wl-dots::before {
     animation: none;
     transition: none;
   }

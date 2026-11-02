@@ -4,8 +4,10 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { agentJobs, agents } from "./agent-schema";
 import { getDb } from "./client";
+import { DEVICE_ONLINE_WINDOW_MS } from "./devices";
 import { ideaMembers, ideas, type Idea } from "./schema";
 import {
+  devices,
   ideaCapitalLinks,
   pledgeContributions,
   pledges,
@@ -360,6 +362,132 @@ export async function summarizeSupporter(clerkUserId: string): Promise<Supporter
     sponsoredMicros: Number(ledger?.sponsoredMicros ?? 0),
     computeSeconds: Number(ledger?.computeSeconds ?? 0),
     jobs: Number(ledger?.jobs ?? 0),
+  };
+}
+
+/**
+ * What the whole platform has behind it, for the supporting page. Pledged
+ * amounts are the standing offers (the caps on active token pledges, the
+ * computers linked right now); used amounts come from the ledger.
+ */
+export type PlatformSupportSummary = {
+  /** People with at least one active pledge. */
+  supporters: number;
+  /** Ideas with at least one active pledge. */
+  ideasBacked: number;
+  tokenPledges: number;
+  computePledges: number;
+  /** Caps on active monthly token pledges, summed. Renews every month. */
+  monthlyCapMicros: number;
+  /** Caps on active one-time token pledges, summed. */
+  oneTimeCapMicros: number;
+  /** Active token pledges with no cap at all. */
+  uncappedTokenPledges: number;
+  /** Lifetime spend sponsors have covered. */
+  sponsoredMicros: number;
+  /** Lifetime time volunteer computers have run jobs. */
+  computeSeconds: number;
+  jobs: number;
+  /** Linked computers, and how many have checked in recently. */
+  devices: number;
+  devicesOnline: number;
+  /** Hardware across all linked computers. */
+  cpus: number;
+  memoryMb: number;
+  /** Public ideas asking for each kind of support. */
+  ideasWantingTokens: number;
+  ideasWantingCompute: number;
+  ideasWantingCapital: number;
+  /** Capital links published by public ideas. */
+  capitalLinks: number;
+};
+
+export const EMPTY_PLATFORM_SUPPORT_SUMMARY: PlatformSupportSummary = {
+  supporters: 0,
+  ideasBacked: 0,
+  tokenPledges: 0,
+  computePledges: 0,
+  monthlyCapMicros: 0,
+  oneTimeCapMicros: 0,
+  uncappedTokenPledges: 0,
+  sponsoredMicros: 0,
+  computeSeconds: 0,
+  jobs: 0,
+  devices: 0,
+  devicesOnline: 0,
+  cpus: 0,
+  memoryMb: 0,
+  ideasWantingTokens: 0,
+  ideasWantingCompute: 0,
+  ideasWantingCapital: 0,
+  capitalLinks: 0,
+};
+
+export async function summarizePlatformSupport(now = new Date()): Promise<PlatformSupportSummary> {
+  const db = getDb();
+  const onlineSince = new Date(now.getTime() - DEVICE_ONLINE_WINDOW_MS);
+  const [[pledgeRow], [ledger], [deviceRow], [ideaRow], [linkRow]] = await Promise.all([
+    db
+      .select({
+        supporters: sql<number>`count(distinct ${pledges.clerkUserId})::int`,
+        ideasBacked: sql<number>`count(distinct ${pledges.ideaId})::int`,
+        tokenPledges: sql<number>`count(*) filter (where ${pledges.kind} = 'TOKENS')::int`,
+        computePledges: sql<number>`count(*) filter (where ${pledges.kind} = 'COMPUTE')::int`,
+        monthlyCapMicros: sql<number>`coalesce(sum(case when ${pledges.kind} = 'TOKENS' and ${pledges.resetsMonthly} then ${pledges.capMicros} else 0 end), 0)::bigint`,
+        oneTimeCapMicros: sql<number>`coalesce(sum(case when ${pledges.kind} = 'TOKENS' and not ${pledges.resetsMonthly} then ${pledges.capMicros} else 0 end), 0)::bigint`,
+        uncappedTokenPledges: sql<number>`count(*) filter (where ${pledges.kind} = 'TOKENS' and ${pledges.capMicros} is null)::int`,
+      })
+      .from(pledges)
+      .where(eq(pledges.status, "ACTIVE")),
+    db
+      .select({
+        sponsoredMicros: sql<number>`coalesce(sum(case when ${pledgeContributions.kind} = 'TOKENS' then ${pledgeContributions.estimatedCostMicros} else 0 end), 0)::bigint`,
+        computeSeconds: sql<number>`coalesce(sum(case when ${pledgeContributions.kind} = 'COMPUTE' then ${pledgeContributions.wallClockSeconds} else 0 end), 0)::bigint`,
+        jobs: sql<number>`count(*)::int`,
+      })
+      .from(pledgeContributions),
+    db
+      .select({
+        devices: sql<number>`count(*)::int`,
+        devicesOnline: sql<number>`count(*) filter (where ${devices.lastSeenAt} > ${onlineSince.toISOString()}::timestamptz)::int`,
+        cpus: sql<number>`coalesce(sum(${devices.cpus}), 0)::bigint`,
+        memoryMb: sql<number>`coalesce(sum(${devices.memoryMb}), 0)::bigint`,
+      })
+      .from(devices)
+      .where(eq(devices.status, "ACTIVE")),
+    db
+      .select({
+        ideasWantingTokens: sql<number>`count(*) filter (where ${ideas.wantsTokens})::int`,
+        ideasWantingCompute: sql<number>`count(*) filter (where ${ideas.wantsCompute})::int`,
+        ideasWantingCapital: sql<number>`count(*) filter (where ${ideas.wantsCapital})::int`,
+      })
+      .from(ideas)
+      .where(eq(ideas.isPublic, true)),
+    db
+      .select({ capitalLinks: sql<number>`count(*)::int` })
+      .from(ideaCapitalLinks)
+      .innerJoin(ideas, eq(ideas.id, ideaCapitalLinks.ideaId))
+      .where(and(eq(ideas.isPublic, true), eq(ideas.wantsCapital, true))),
+  ]);
+  return {
+    supporters: Number(pledgeRow?.supporters ?? 0),
+    ideasBacked: Number(pledgeRow?.ideasBacked ?? 0),
+    tokenPledges: Number(pledgeRow?.tokenPledges ?? 0),
+    computePledges: Number(pledgeRow?.computePledges ?? 0),
+    monthlyCapMicros: Number(pledgeRow?.monthlyCapMicros ?? 0),
+    oneTimeCapMicros: Number(pledgeRow?.oneTimeCapMicros ?? 0),
+    uncappedTokenPledges: Number(pledgeRow?.uncappedTokenPledges ?? 0),
+    sponsoredMicros: Number(ledger?.sponsoredMicros ?? 0),
+    computeSeconds: Number(ledger?.computeSeconds ?? 0),
+    jobs: Number(ledger?.jobs ?? 0),
+    devices: Number(deviceRow?.devices ?? 0),
+    devicesOnline: Number(deviceRow?.devicesOnline ?? 0),
+    cpus: Number(deviceRow?.cpus ?? 0),
+    memoryMb: Number(deviceRow?.memoryMb ?? 0),
+    ideasWantingTokens: Number(ideaRow?.ideasWantingTokens ?? 0),
+    ideasWantingCompute: Number(ideaRow?.ideasWantingCompute ?? 0),
+    ideasWantingCapital: Number(ideaRow?.ideasWantingCapital ?? 0),
+    capitalLinks: Number(linkRow?.capitalLinks ?? 0),
   };
 }
 

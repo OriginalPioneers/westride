@@ -269,6 +269,11 @@
     --color-brand-purple: #885FF5;
     --color-brand-teal: #10B3A5;
     --color-brand-orange: #FF694B;
+    --color-brand-pastel-blue: light-dark(#D3ECFD, #264152);
+    --color-brand-pastel-indigo: light-dark(#E2E6FF, #383B55);
+    --color-brand-pastel-purple: light-dark(#E7E4FE, #3D3953);
+    --color-brand-pastel-teal: light-dark(#CFF0EB, #1E4540);
+    --color-brand-pastel-orange: light-dark(#FEE0D9, #52342E);
   }
 
   :scope {

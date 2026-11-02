@@ -29,6 +29,7 @@ import {
 } from "@astryxdesign/core/Typeahead";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import type { IdeaMemberRole } from "@westride/db";
+import type { CategoryOption } from "@westride/db/ideas";
 import {
   MAX_IDEA_DESCRIPTION,
   MAX_IDEA_NAME,
@@ -42,6 +43,7 @@ import {
   updateIdeaFromStudio,
   type IdeaPersonHit,
 } from "../actions";
+import { CategoryPicker } from "../category-picker";
 
 export type EditableIdeaMember = {
   clerkUserId: string;
@@ -57,6 +59,8 @@ export type EditableIdea = {
   id: string;
   name: string;
   description: string;
+  /** Category names, in order. */
+  categories: string[];
   members: EditableIdeaMember[];
 };
 
@@ -103,17 +107,20 @@ export function EditIdeaDialog({
   onOpenChange,
   idea,
   viewerId,
+  categoryOptions,
 }: {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   idea: EditableIdea;
   viewerId: string;
+  categoryOptions: CategoryOption[];
 }) {
   const router = useRouter();
   const [isSaving, startSaving] = useTransition();
   const [submitted, setSubmitted] = useState(false);
   const [name, setName] = useState(idea.name);
   const [description, setDescription] = useState(idea.description);
+  const [categories, setCategories] = useState<string[]>(idea.categories);
   const [prototypeUrl, setPrototypeUrl] = useState(idea.prototypeUrl ?? "");
   const [prototypeInstructions, setPrototypeInstructions] = useState(
     idea.prototypeInstructions ?? "",
@@ -134,6 +141,7 @@ export function EditIdeaDialog({
     prototypeTested,
     name,
     description,
+    categories,
     members: members.map((member) => ({
       clerkUserId: member.clerkUserId,
       role: member.role,
@@ -329,6 +337,15 @@ export function EditIdeaDialog({
                   maxLength={MAX_IDEA_DESCRIPTION}
                   isRequired
                   status={fieldStatus(errors.description)}
+                />
+                <CategoryPicker
+                  options={categoryOptions}
+                  value={categories}
+                  onChange={(next) => {
+                    setCategories(next);
+                    clearServer("categories");
+                  }}
+                  status={fieldStatus(messageFor(errors, "categories"))}
                 />
               </FormLayout>
 

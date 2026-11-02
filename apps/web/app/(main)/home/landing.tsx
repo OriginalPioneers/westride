@@ -1098,12 +1098,22 @@ function PathTrack() {
 }
 
 /**
- * A gradient line along the top wavy edge of the studios band. The path
- * traces the curve that edge's mask cuts (see `.wl-studios` in the styles),
- * so the two must change together. The bottom edge stays the band's own gray.
+ * A line along a wavy section edge. The path traces the curve the studios
+ * band's mask cuts (see `.wl-studios` in the styles), so those two must
+ * change together. Without `color` the stroke is the brand gradient, and
+ * `id` keeps each gradient unique. The studios band's bottom edge stays
+ * its own pastel.
  */
-function StudiosEdge({ edge }: { edge: "top" | "bottom" }) {
-  const gradientId = `wl-edge-gradient-${edge}`;
+function StudiosEdge({
+  edge,
+  id,
+  color,
+}: {
+  edge: "top" | "bottom";
+  id: string;
+  color?: string;
+}) {
+  const gradientId = `${id}-gradient-${edge}`;
   return (
     <svg
       className="wl-studios-edge"
@@ -1113,20 +1123,22 @@ function StudiosEdge({ edge }: { edge: "top" | "bottom" }) {
       aria-hidden="true"
       focusable="false"
     >
-      <defs>
-        <linearGradient
-          id={gradientId}
-          gradientUnits="userSpaceOnUse"
-          x1="0"
-          x2="1440"
-          y1="0"
-          y2="0"
-        >
-          <stop offset="0" stopColor="var(--wl-indigo)" />
-          <stop offset="0.5" stopColor="var(--wl-purple)" />
-          <stop offset="1" stopColor="var(--wl-teal)" />
-        </linearGradient>
-      </defs>
+      {color == null ? (
+        <defs>
+          <linearGradient
+            id={gradientId}
+            gradientUnits="userSpaceOnUse"
+            x1="0"
+            x2="1440"
+            y1="0"
+            y2="0"
+          >
+            <stop offset="0" stopColor="var(--wl-indigo)" />
+            <stop offset="0.5" stopColor="var(--wl-purple)" />
+            <stop offset="1" stopColor="var(--wl-teal)" />
+          </linearGradient>
+        </defs>
+      ) : null}
       <path
         d={
           edge === "top"
@@ -1134,10 +1146,10 @@ function StudiosEdge({ edge }: { edge: "top" | "bottom" }) {
             : "M0 24C240 48 480 48 720 24C960 0 1200 0 1440 24"
         }
         fill="none"
-        stroke={`url(#${gradientId})`}
+        stroke={color ?? `url(#${gradientId})`}
         strokeWidth="3"
         vectorEffect="non-scaling-stroke"
-        opacity="0.6"
+        opacity={color == null ? 0.6 : 1}
       />
     </svg>
   );
@@ -1145,8 +1157,8 @@ function StudiosEdge({ edge }: { edge: "top" | "bottom" }) {
 
 function StudiosSection() {
   return (
-    <Section className="wl-studios" variant="muted" padding={0}>
-      <StudiosEdge edge="top" />
+    <Section className="wl-studios" variant="transparent" padding={0}>
+      <StudiosEdge edge="top" id="wl-studios" />
       <Container>
         <SectionIntro
           eyebrow="Idea, build, agent"
@@ -1256,10 +1268,15 @@ function MetaAiSection() {
           {META_MODELS.map((model, index) => (
             <Card
               key={model.name}
-              className="wl-feature wl-reveal"
-              variant={model.variant}
+              className="wl-feature wl-pastel wl-reveal"
+              variant="transparent"
               padding={6}
-              style={revealDelay(index + 1)}
+              style={
+                {
+                  ...revealDelay(index + 1),
+                  "--wl-pastel": `var(--color-brand-pastel-${model.pastel})`,
+                } as CSSProperties
+              }
             >
               <VStack gap={4}>
                 <Center
@@ -1409,7 +1426,12 @@ function HackathonSection() {
               <Grid columns={{ minWidth: 160, max: 3 }} gap={4}>
                 {TEAM.map((member) => (
                   <VStack key={member.name} gap={2} hAlign="center">
-                    <Avatar name={member.name} size={72} tooltip={false} />
+                    <Avatar
+                      src={member.photo}
+                      name={member.name}
+                      size={72}
+                      tooltip={false}
+                    />
                     <VStack gap={0.5} hAlign="center">
                       <Text weight="semibold" justify="center">
                         {member.name}
@@ -1478,7 +1500,7 @@ function IntegrationCard({
 
 function IntegrationsSection() {
   return (
-    <Section className="wl-integrations" variant="transparent" padding={0}>
+    <Section className="wl-dots" variant="transparent" padding={0}>
       <Container>
         <SectionIntro
           eyebrow="Integrations"
@@ -1544,7 +1566,8 @@ function MarqueeRow({
 
 function StackSection() {
   return (
-    <Section variant="muted" padding={0}>
+    <Section className="wl-stack" variant="transparent" padding={0}>
+      <StudiosEdge edge="top" id="wl-stack" />
       <Container gap={10}>
         <SectionIntro
           align="center"
@@ -1594,6 +1617,7 @@ function StackSection() {
           </VStack>
         </Grid>
       </Container>
+      <StudiosEdge edge="bottom" id="wl-stack" />
     </Section>
   );
 }

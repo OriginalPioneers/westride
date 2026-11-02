@@ -18,34 +18,47 @@ export function LinkedAgents({ agents }: { agents: AgentWithDetails[] }) {
         <StackItem size="fill">
           <Heading level={2}>Agents</Heading>
         </StackItem>
-        <Link href={agentsPath()} isStandalone>
-          Agent Studio
-        </Link>
+        <AgentStudioLink />
       </HStack>
-      <VStack gap={2}>
-        {agents.map((agent) => {
-          const open = totalTickets(agent.ticketCounts) - agent.ticketCounts.DONE;
-          return (
-            <HStack key={agent.id} gap={2} vAlign="center" wrap="wrap">
-              <Link href={agentPath(agent.id)} isStandalone>
-                {agent.name}
-              </Link>
-              <Text type="supporting">
-                {AGENT_STATUS_LABELS[agent.status]}
-                {agent.schedule !== "NONE" ? ` · ${describeSchedule(agent)}` : ""}
-                {agent.status === "ACTIVE" && agent.nextRunAt ? (
-                  <>
-                    {" · next "}
-                    <Timestamp value={agent.nextRunAt.toISOString()} format="relative" />
-                  </>
-                ) : null}
-                {` · ${open} open ${open === 1 ? "ticket" : "tickets"}`}
-                {agent.usage.jobs > 0 ? ` · ${formatMicrosAsUsd(agent.usage.estimatedCostMicros)} spent` : ""}
-              </Text>
-            </HStack>
-          );
-        })}
-      </VStack>
+      <LinkedAgentList agents={agents} />
+    </VStack>
+  );
+}
+
+export function AgentStudioLink() {
+  return (
+    <Link href={agentsPath()} isStandalone>
+      Agent Studio
+    </Link>
+  );
+}
+
+/** One row per agent: its name, status, schedule, open tickets, and spend. */
+export function LinkedAgentList({ agents }: { agents: AgentWithDetails[] }) {
+  return (
+    <VStack gap={2}>
+      {agents.map((agent) => {
+        const open = totalTickets(agent.ticketCounts) - agent.ticketCounts.DONE;
+        return (
+          <HStack key={agent.id} gap={2} vAlign="center" wrap="wrap">
+            <Link href={agentPath(agent.id)} isStandalone>
+              {agent.name}
+            </Link>
+            <Text type="supporting">
+              {AGENT_STATUS_LABELS[agent.status]}
+              {agent.schedule !== "NONE" ? ` · ${describeSchedule(agent)}` : ""}
+              {agent.status === "ACTIVE" && agent.nextRunAt ? (
+                <>
+                  {" · next "}
+                  <Timestamp value={agent.nextRunAt.toISOString()} format="relative" />
+                </>
+              ) : null}
+              {` · ${open} open ${open === 1 ? "ticket" : "tickets"}`}
+              {agent.usage.jobs > 0 ? ` · ${formatMicrosAsUsd(agent.usage.estimatedCostMicros)} spent` : ""}
+            </Text>
+          </HStack>
+        );
+      })}
     </VStack>
   );
 }

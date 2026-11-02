@@ -14,10 +14,34 @@ import { formatMicros, formatSeconds } from "@/lib/support/schema";
 import { CapitalLinks } from "./capital-links";
 import { PledgeComputeButton, PledgeTokensButton, SupportSettingsButton } from "./support-buttons";
 
+function wantsSupport(idea: IdeaWithDetails) {
+  return idea.wantsTokens || idea.wantsCompute || idea.wantsCapital;
+}
+
+/** Founders always see the section so they can turn support on. */
+export function showsSupportSection(idea: IdeaWithDetails, isFounder: boolean) {
+  return isFounder || wantsSupport(idea);
+}
+
+/** Opens the founder's editor for what the idea is looking for. */
+export function SupportSettings({ idea }: { idea: IdeaWithDetails }) {
+  return (
+    <SupportSettingsButton
+      ideaId={idea.id}
+      initial={{
+        wantsTokens: idea.wantsTokens,
+        wantsCompute: idea.wantsCompute,
+        wantsCapital: idea.wantsCapital,
+        capitalLinks: idea.capitalLinks.map((link) => ({ url: link.url, label: link.label })),
+      }}
+    />
+  );
+}
+
 /**
  * How people who are not on the team can help: pledge tokens, pledge
- * compute, or follow the team's own links to contribute capital. The
- * founder edits what the idea is looking for from here too.
+ * compute, or follow the team's own links to contribute capital. The page
+ * supplies the section heading and, for founders, SupportSettings.
  */
 export async function SupportSection({
   idea,
@@ -28,8 +52,8 @@ export async function SupportSection({
   viewerId: string | null;
   isFounder: boolean;
 }) {
-  const wantsAnything = idea.wantsTokens || idea.wantsCompute || idea.wantsCapital;
-  if (!wantsAnything && !isFounder) {
+  const wantsAnything = wantsSupport(idea);
+  if (!showsSupportSection(idea, isFounder)) {
     return null;
   }
 
@@ -52,29 +76,11 @@ export async function SupportSection({
 
   return (
     <VStack gap={4}>
-      <HStack gap={3} vAlign="center" wrap="wrap">
-        <StackItem size="fill">
-          <VStack gap={1}>
-            <Heading level={2}>Support this idea</Heading>
-            <Text type="supporting">
-              {wantsAnything
-                ? "Help the team without joining it. Supporters choose exactly what they give, and can stop any time."
-                : "You have not said what help this idea needs yet. Turn on tokens, compute, or capital to invite supporters."}
-            </Text>
-          </VStack>
-        </StackItem>
-        {isFounder ? (
-          <SupportSettingsButton
-            ideaId={idea.id}
-            initial={{
-              wantsTokens: idea.wantsTokens,
-              wantsCompute: idea.wantsCompute,
-              wantsCapital: idea.wantsCapital,
-              capitalLinks: idea.capitalLinks.map((link) => ({ url: link.url, label: link.label })),
-            }}
-          />
-        ) : null}
-      </HStack>
+      <Text>
+        {wantsAnything
+          ? "Help the team without joining it. Supporters choose exactly what they give, and can stop any time."
+          : "You have not said what help this idea needs yet. Turn on tokens, compute, or capital to invite supporters."}
+      </Text>
 
       {stats.length > 0 ? <Text type="supporting">{stats.join(" · ")}</Text> : null}
 

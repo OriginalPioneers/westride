@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Agent Studio: agents, their tickets, jobs, job events, and log.
 // ---------------------------------------------------------------------------
-import { and, asc, desc, eq, gt, inArray, isNotNull, lte, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gt, ilike, inArray, isNotNull, lte, ne, or, sql, type SQL } from "drizzle-orm";
 import {
   EMPTY_TICKET_COUNTS,
   EMPTY_USAGE_TOTALS,
@@ -31,6 +31,7 @@ import {
 } from "./agent-schema";
 import { projectMembers, projects, type AgentRunStatus, type TicketPriority, type TicketStatus } from "./build-schema";
 import { getDb } from "./client";
+import { collectionOrder, likePattern, type CollectionSort } from "./collection-filters";
 import { ideaMembers, ideas } from "./schema";
 
 export type AgentViewer = { clerkUserId: string | null };
@@ -49,6 +50,18 @@ export type AgentWithDetails = Agent & {
 
 /** What the viewer may do. Owners manage settings; collaborators work tickets and run jobs. */
 export type AgentRole = "OWNER" | "COLLABORATOR";
+
+export { COLLECTION_SORTS as AGENT_SORTS, isCollectionSort as isAgentSort } from "./collection-filters";
+export type { CollectionSort as AgentSort } from "./collection-filters";
+
+export type AgentFilters = {
+  /** Matches the name or description, case-insensitively. */
+  query?: string;
+  status?: AgentStatus;
+  /** Only agents the viewer owns. Nothing for a visitor. */
+  mineOnly?: boolean;
+  sort?: CollectionSort;
+};
 
 // ---------------------------------------------------------------------------
 // Visibility
@@ -81,6 +94,27 @@ function visibilityCondition(viewer: AgentViewer): SQL {
       inArray(agents.ideaId, memberIdeaIds(viewer.clerkUserId)),
     ) ?? isPublic
   );
+}
+
+function filterConditions(filters: AgentFilters, viewer: AgentViewer): SQL[] {
+  const conditions: SQL[] = [visibilityCondition(viewer)];
+  const query = filters.query?.trim();
+  if (query) {
+    const pattern = likePattern(query);
+    const match = or(ilike(agents.name, pattern), ilike(agents.description, pattern));
+    if (match) {
+      conditions.push(match);
+    }
+  }
+  if (filters.status) {
+    conditions.push(eq(agents.status, filters.status));
+  }
+  if (filters.mineOnly) {
+    conditions.push(
+      viewer.clerkUserId ? eq(agents.ownerClerkUserId, viewer.clerkUserId) : sql`false`,
+    );
+  }
+  return conditions;
 }
 
 export async function getAgentRole(
@@ -212,10 +246,16 @@ async function activeJobsByAgent(agentIds: string[]): Promise<Map<string, number
   return counts;
 }
 
-async function findAgents(where: SQL | undefined, limit?: number): Promise<AgentWithDetails[]> {
+const DEFAULT_ORDER: SQL[] = [desc(agents.updatedAt), asc(agents.name)];
+
+async function findAgents(
+  where: SQL | undefined,
+  limit?: number,
+  orderBy: SQL[] = DEFAULT_ORDER,
+): Promise<AgentWithDetails[]> {
   const rows = await getDb().query.agents.findMany({
     where,
-    orderBy: [desc(agents.updatedAt), asc(agents.name)],
+    orderBy,
     limit,
     with: {
       idea: { columns: { id: true, name: true } },
@@ -238,9 +278,26 @@ async function findAgents(where: SQL | undefined, limit?: number): Promise<Agent
   }));
 }
 
-/** Every agent the viewer may see, most recently updated first. Archived ones included. */
-export async function listAgents(viewer: AgentViewer = ANYONE): Promise<AgentWithDetails[]> {
-  return findAgents(visibilityCondition(viewer));
+/** Every agent the viewer may see that matches, most recently updated first. Archived ones included. */
+export async function listAgents(
+  viewer: AgentViewer = ANYONE,
+  filters: AgentFilters = {},
+): Promise<AgentWithDetails[]> {
+  return findAgents(
+    and(...filterConditions(filters, viewer)),
+    undefined,
+    collectionOrder(filters.sort ?? "updated", agents),
+  );
+}
+
+/** The statuses that at least one visible agent is in, in lifecycle order. */
+export async function listAgentStatusOptions(viewer: AgentViewer = ANYONE): Promise<AgentStatus[]> {
+  const rows = await getDb()
+    .selectDistinct({ status: agents.status })
+    .from(agents)
+    .where(visibilityCondition(viewer));
+  const present = new Set(rows.map((row) => row.status));
+  return agents.status.enumValues.filter((status) => present.has(status));
 }
 
 export async function listAgentsForProject(

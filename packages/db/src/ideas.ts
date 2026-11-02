@@ -14,6 +14,7 @@ import type { BatchItem } from "drizzle-orm/batch";
 import { getDb } from "./client";
 import {
   countries,
+  ideaFollows,
   ideaGeographies,
   ideaMembers,
   ideaBuilderEvents,
@@ -31,15 +32,35 @@ import {
   type Tag,
 } from "./schema";
 import { changedPitch, prototypeUrl } from "./builder-progress";
-import { tagSlug } from "./tag-catalog";
+import { tagCatalog, tagSlug } from "./tag-catalog";
 
 export type IdeaWithDetails = Idea & {
   members: IdeaMember[];
   countries: Country[];
+  /** Categories, in the order the team listed them. */
   tags: Tag[];
   githubRepo: IdeaGithubRepo | null;
   capitalLinks: IdeaCapitalLink[];
+  followerCount: number;
+  /** Whether the viewer the list was fetched for follows this idea. */
+  isFollowing: boolean;
 };
+
+/**
+ * A collection on the Idea Workshop page. `mine` is the ideas the viewer is
+ * on the team of, `following` the ones they follow, `featured` the ones the
+ * WeStride team picked as the best of WeStride.
+ */
+export const IDEA_VIEWS = ["mine", "following", "featured"] as const;
+
+export type IdeaView = (typeof IDEA_VIEWS)[number];
+
+export function isIdeaView(value: string): value is IdeaView {
+  return (IDEA_VIEWS as readonly string[]).includes(value);
+}
+
+/** A category someone can pick for an idea. */
+export type CategoryOption = { slug: string; name: string };
 
 /** A kind of support an idea can ask for. */
 export type SupportWant = "tokens" | "compute" | "capital";
@@ -91,8 +112,14 @@ export type IdeaFilters = {
   query?: string;
   type?: IdeaType;
   countryCode?: string;
+  /** Category slug. */
   tagSlug?: string;
   featuredOnly?: boolean;
+  /**
+   * Narrows to one collection. `mine` and `following` need a signed-in
+   * viewer and return nothing for a visitor.
+   */
+  view?: IdeaView;
   /** Only ideas asking supporters for this. */
   wants?: SupportWant;
   sort?: IdeaSort;
@@ -117,11 +144,10 @@ function visibilityCondition(viewer: IdeaViewer): SQL {
   if (!viewer.clerkUserId) {
     return isPublic;
   }
-  const memberOf = getDb()
-    .select({ id: ideaMembers.ideaId })
-    .from(ideaMembers)
-    .where(eq(ideaMembers.clerkUserId, viewer.clerkUserId));
-  return or(isPublic, inArray(ideas.id, memberOf)) ?? isPublic;
+  return (
+    or(isPublic, inArray(ideas.id, memberIdeaIds(viewer.clerkUserId))) ??
+    isPublic
+  );
 }
 
 function visibleIdeaIds(viewer: IdeaViewer) {
@@ -155,6 +181,7 @@ function likePattern(query: string): string {
 async function findIdeas(
   where: SQL | undefined,
   orderBy: SQL[],
+  viewer: IdeaViewer,
   limit?: number,
 ): Promise<IdeaWithDetails[]> {
   const rows = await getDb().query.ideas.findMany({
@@ -170,6 +197,9 @@ async function findIdeas(
           by(member.createdAt),
         ],
       },
+      follows: {
+        columns: { clerkUserId: true },
+      },
       geographies: {
         with: { country: true },
       },
@@ -184,13 +214,31 @@ async function findIdeas(
     },
   });
 
-  return rows.map(({ geographies, tags: tagRows, ...idea }) => ({
+  return rows.map(({ geographies, tags: tagRows, follows, ...idea }) => ({
     ...idea,
     countries: geographies
       .map((entry) => entry.country)
       .sort((a, b) => a.name.localeCompare(b.name, "en")),
     tags: tagRows.map((entry) => entry.tag),
+    followerCount: follows.length,
+    isFollowing:
+      viewer.clerkUserId !== null &&
+      follows.some((follow) => follow.clerkUserId === viewer.clerkUserId),
   }));
+}
+
+function memberIdeaIds(clerkUserId: string) {
+  return getDb()
+    .select({ id: ideaMembers.ideaId })
+    .from(ideaMembers)
+    .where(eq(ideaMembers.clerkUserId, clerkUserId));
+}
+
+function followedIdeaIds(clerkUserId: string) {
+  return getDb()
+    .select({ id: ideaFollows.ideaId })
+    .from(ideaFollows)
+    .where(eq(ideaFollows.clerkUserId, clerkUserId));
 }
 
 export async function listIdeas(
@@ -199,6 +247,22 @@ export async function listIdeas(
 ): Promise<IdeaWithDetails[]> {
   const db = getDb();
   const conditions: SQL[] = [visibilityCondition(viewer)];
+
+  if (filters.view === "mine" || filters.view === "following") {
+    if (!viewer.clerkUserId) {
+      return [];
+    }
+    conditions.push(
+      inArray(
+        ideas.id,
+        filters.view === "mine"
+          ? memberIdeaIds(viewer.clerkUserId)
+          : followedIdeaIds(viewer.clerkUserId),
+      ),
+    );
+  } else if (filters.view === "featured") {
+    conditions.push(eq(ideas.isFeatured, true));
+  }
 
   const query = filters.query?.trim();
   if (query) {
@@ -253,7 +317,11 @@ export async function listIdeas(
     );
   }
 
-  return findIdeas(and(...conditions), orderFor(filters.sort ?? "newest"));
+  return findIdeas(
+    and(...conditions),
+    orderFor(filters.sort ?? "newest"),
+    viewer,
+  );
 }
 
 /** Ideas this member belongs to, including private ones. Recently updated first. */
@@ -265,14 +333,9 @@ export async function listIdeasForMember(
   }
 
   return findIdeas(
-    inArray(
-      ideas.id,
-      getDb()
-        .select({ id: ideaMembers.ideaId })
-        .from(ideaMembers)
-        .where(eq(ideaMembers.clerkUserId, clerkUserId)),
-    ),
+    inArray(ideas.id, memberIdeaIds(clerkUserId)),
     orderFor("updated"),
+    { clerkUserId },
   );
 }
 
@@ -283,9 +346,49 @@ export async function getIdea(
   const [idea] = await findIdeas(
     and(eq(ideas.id, id), visibilityCondition(viewer)),
     orderFor("newest"),
+    viewer,
     1,
   );
   return idea ?? null;
+}
+
+/**
+ * Starts following an idea the viewer can see. Following your own idea is a
+ * no-op: the team already sees it under "Your Ideas". Returns false when the
+ * idea is not visible to the viewer.
+ */
+export async function followIdea(
+  ideaId: string,
+  clerkUserId: string,
+): Promise<boolean> {
+  const idea = await getIdea(ideaId, { clerkUserId });
+  if (!idea) {
+    return false;
+  }
+  if (idea.members.some((member) => member.clerkUserId === clerkUserId)) {
+    return true;
+  }
+  await getDb()
+    .insert(ideaFollows)
+    .values({ ideaId, clerkUserId })
+    .onConflictDoNothing({
+      target: [ideaFollows.ideaId, ideaFollows.clerkUserId],
+    });
+  return true;
+}
+
+export async function unfollowIdea(
+  ideaId: string,
+  clerkUserId: string,
+): Promise<void> {
+  await getDb()
+    .delete(ideaFollows)
+    .where(
+      and(
+        eq(ideaFollows.ideaId, ideaId),
+        eq(ideaFollows.clerkUserId, clerkUserId),
+      ),
+    );
 }
 
 /** Only values some visible idea has, so no filter choice comes back empty. */
@@ -327,6 +430,26 @@ export async function listIdeaFilterOptions(
 /** Every tag, for pickers. Users may also type a tag that is not listed. */
 export async function listTags(): Promise<Tag[]> {
   return getDb().query.tags.findMany({ orderBy: [asc(tags.name)] });
+}
+
+/**
+ * Every category someone can pick: the starter catalog plus anything a
+ * member has added, deduped by slug. The catalog spelling wins. Pickers also
+ * let people type a category that is not listed.
+ */
+export async function listCategoryOptions(): Promise<CategoryOption[]> {
+  const bySlug = new Map<string, string>();
+  for (const name of tagCatalog) {
+    bySlug.set(tagSlug(name), name);
+  }
+  for (const tag of await listTags()) {
+    if (!bySlug.has(tag.slug)) {
+      bySlug.set(tag.slug, tag.name);
+    }
+  }
+  return [...bySlug.entries()]
+    .map(([slug, name]) => ({ slug, name }))
+    .sort((a, b) => a.name.localeCompare(b.name, "en"));
 }
 
 export async function listCountries(): Promise<Country[]> {
@@ -505,14 +628,16 @@ export type IdeaDetailsPatch = {
   description: string;
   /** The full team after the edit. At least one founder is required. */
   members: IdeaMemberInput[];
+  /** Category names after the edit. Unknown names become new categories. */
+  categoryNames: string[];
 };
 
 const FOUNDER_REQUIRED = "Keep at least one founder.";
 const FOUNDER_ONLY = "Only a founder can edit this idea.";
 
 /**
- * Updates the name, description, and membership of an idea.
- * Type, visibility, tags, and geographies stay as they are.
+ * Updates the name, description, categories, and membership of an idea.
+ * Type, visibility, and geographies stay as they are.
  * `editorClerkUserId` must already be a founder. The saved team can omit
  * that person when another founder remains.
  */
@@ -548,10 +673,13 @@ export async function updateIdeaDetails(
     throw new Error(FOUNDER_ONLY);
   }
 
-  const currentTeam = await db
-    .select({ user: ideaMembers.clerkUserId })
-    .from(ideaMembers)
-    .where(eq(ideaMembers.ideaId, id));
+  const [currentTeam, tagIds] = await Promise.all([
+    db
+      .select({ user: ideaMembers.clerkUserId })
+      .from(ideaMembers)
+      .where(eq(ideaMembers.ideaId, id)),
+    resolveTagIds(input.categoryNames),
+  ]);
   const url = input.prototypeUrl.trim()
     ? prototypeUrl(input.prototypeUrl)
     : null;
@@ -609,7 +737,16 @@ export async function updateIdeaDetails(
         target: [ideaMembers.ideaId, ideaMembers.clerkUserId],
         set: { role: sql`excluded.role` },
       }),
+    db.delete(ideaTags).where(eq(ideaTags.ideaId, id)),
   ];
+
+  if (tagIds.length > 0) {
+    statements.push(
+      db.insert(ideaTags).values(
+        tagIds.map((tagId, index) => ({ ideaId: id, tagId, sortOrder: index })),
+      ),
+    );
+  }
 
   if (earned.length)
     statements.push(

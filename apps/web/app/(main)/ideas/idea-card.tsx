@@ -1,17 +1,14 @@
-import { Card } from "@astryxdesign/core/Card";
-import { Heading } from "@astryxdesign/core/Heading";
-import { Link } from "@astryxdesign/core/Link";
-import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
 import { isClaimableIdea } from "@westride/db/claim-rules";
 import type { IdeaWithDetails } from "@westride/db/ideas";
 import { markdownExcerpt } from "@/lib/ideas/excerpt";
 import { ideaPath, ideasPath } from "@/lib/ideas/filters";
-import { EntityImage } from "../entity-image";
+import { LibraryCard } from "../library-card";
+import { FollowButton } from "./follow-button";
 import { FeaturedBadge, IdeaTypeBadge, UnclaimedBadge } from "./idea-badges";
 
-const VISIBLE_TAGS = 4;
+const VISIBLE_CATEGORIES = 3;
 const VISIBLE_COUNTRIES = 3;
 
 export function summarizeCountries(names: string[]): string {
@@ -20,52 +17,55 @@ export function summarizeCountries(names: string[]): string {
   return hidden > 0 ? `${shown.join(", ")} +${hidden} more` : shown.join(", ");
 }
 
-export function IdeaCard({ idea }: { idea: IdeaWithDetails }) {
-  const shownTags = idea.tags.slice(0, VISIBLE_TAGS);
-  const hiddenTagCount = idea.tags.length - shownTags.length;
-  const excerpt = markdownExcerpt(idea.description);
-  const countries = summarizeCountries(idea.countries.map((c) => c.name));
+export function IdeaCard({
+  idea,
+  viewerId,
+}: {
+  idea: IdeaWithDetails;
+  /** Null for a visitor. Members of the idea see no Follow button. */
+  viewerId: string | null;
+}) {
+  const shownCategories = idea.tags.slice(0, VISIBLE_CATEGORIES);
+  const hiddenCategoryCount = idea.tags.length - shownCategories.length;
+  const isMember =
+    viewerId !== null &&
+    idea.members.some((member) => member.clerkUserId === viewerId);
 
   return (
-    <Card>
-      <VStack gap={3}>
-        <HStack gap={2} vAlign="center" wrap="wrap">
+    <LibraryCard
+      name={idea.name}
+      href={ideaPath(idea.id)}
+      imageUrl={idea.imageUrl}
+      description={markdownExcerpt(idea.description)}
+      meta={summarizeCountries(idea.countries.map((c) => c.name))}
+      action={
+        isMember ? null : (
+          <FollowButton
+            ideaId={idea.id}
+            isFollowing={idea.isFollowing}
+            viewerId={viewerId}
+            size="sm"
+          />
+        )
+      }
+      footer={
+        <>
           <IdeaTypeBadge type={idea.type} />
           {idea.isFeatured ? <FeaturedBadge /> : null}
           {isClaimableIdea(idea) ? <UnclaimedBadge /> : null}
-        </HStack>
-        <HStack gap={3} vAlign="center">
-          <EntityImage name={idea.name} imageUrl={idea.imageUrl} size={48} />
-          <StackItem size="fill">
-            <VStack gap={1}>
-              <Heading level={3} maxLines={2}>
-                <Link href={ideaPath(idea.id)}>{idea.name}</Link>
-              </Heading>
-              {countries ? (
-                <Text type="supporting" maxLines={1}>
-                  {countries}
-                </Text>
-              ) : null}
-            </VStack>
-          </StackItem>
-        </HStack>
-        {excerpt ? <Text maxLines={3}>{excerpt}</Text> : null}
-        {shownTags.length > 0 ? (
-          <HStack gap={1} wrap="wrap" vAlign="center">
-            {shownTags.map((tag) => (
-              <Token
-                key={tag.id}
-                label={tag.name}
-                size="sm"
-                href={ideasPath({ tag: tag.slug })}
-              />
-            ))}
-            {hiddenTagCount > 0 ? (
-              <Text type="supporting">+{hiddenTagCount} more</Text>
-            ) : null}
-          </HStack>
-        ) : null}
-      </VStack>
-    </Card>
+          {shownCategories.map((category) => (
+            <Token
+              key={category.id}
+              label={category.name}
+              size="sm"
+              href={ideasPath({ category: category.slug })}
+            />
+          ))}
+          {hiddenCategoryCount > 0 ? (
+            <Text type="supporting">+{hiddenCategoryCount} more</Text>
+          ) : null}
+        </>
+      }
+    />
   );
 }

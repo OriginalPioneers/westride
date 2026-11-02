@@ -6,6 +6,7 @@ import { Text } from "@astryxdesign/core/Text";
 import {
   brandColorRoleLabels,
   brandColors,
+  brandPastels,
   stampGradient,
 } from "@westride/theme";
 import { Page, Section } from "../../docs/Page";
@@ -57,6 +58,42 @@ export const Guide = {
                 key={color.token}
                 label={`${color.name} · ${brandColorRoleLabels[color.role]}`}
                 description={color.use}
+              />
+            ))}
+          </List>
+        </VStack>
+      </Section>
+
+      <Section title="Pastels">
+        <VStack gap={3}>
+          <Text>
+            Each chromatic brand color has one pastel: the same hue, lightened
+            to a shared lightness and saturation so any two sit evenly side
+            by side. Pastels are fields, not inks. Use them as the background
+            of a card, a band, or a tile that should feel like the brand
+            without shouting, and keep text on them in the theme&apos;s
+            primary color. Each one flips to a deep, muted version of itself
+            in dark mode.
+          </Text>
+          <Grid columns={{ minWidth: 180, max: 5 }} gap={4}>
+            {brandPastels.map((pastel) => (
+              <ColorSwatch
+                key={pastel.token}
+                name={pastel.name}
+                token={pastel.token}
+                detail={`${pastel.hex} · ${pastel.darkHex} dark`}
+              />
+            ))}
+          </Grid>
+          <List edge="flush" hasDividers>
+            {brandPastels.map((pastel) => (
+              <ListItem
+                key={pastel.token}
+                label={`${pastel.name} · tint of ${
+                  brandColors.find((color) => color.token === pastel.from)
+                    ?.name
+                }`}
+                description={pastel.use}
               />
             ))}
           </List>

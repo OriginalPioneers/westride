@@ -1,5 +1,11 @@
 import type { IdeaMemberRole, IdeaType } from "@westride/db";
-import { isIdeaSort, type IdeaFilters, type IdeaSort } from "@westride/db/ideas";
+import {
+  isIdeaSort,
+  isIdeaView,
+  type IdeaFilters,
+  type IdeaSort,
+  type IdeaView,
+} from "@westride/db/ideas";
 
 export const IDEA_TYPE_LABELS: Record<IdeaType, string> = {
   BUSINESS: "Business",
@@ -13,24 +19,11 @@ export const IDEA_ROLE_LABELS: Record<IdeaMemberRole, string> = {
   MEMBER: "Member",
 };
 
-/** URL-friendly spellings of the type enum. */
-const TYPE_PARAMS: Record<IdeaType, string> = {
-  BUSINESS: "business",
-  NON_PROFIT: "non-profit",
-  GAME: "game",
-  OPEN_SOURCE: "open-source",
+export const IDEA_VIEW_LABELS: Record<IdeaView, string> = {
+  mine: "Your Ideas",
+  following: "Following",
+  featured: "Best of WeStride",
 };
-
-export function ideaTypeParam(type: IdeaType): string {
-  return TYPE_PARAMS[type];
-}
-
-export function parseIdeaType(value: string): IdeaType | undefined {
-  const match = (Object.keys(TYPE_PARAMS) as IdeaType[]).find(
-    (type) => TYPE_PARAMS[type] === value,
-  );
-  return match;
-}
 
 export const IDEA_SORT_OPTIONS: { value: IdeaSort; label: string }[] = [
   { value: "newest", label: "Newest" },
@@ -42,20 +35,28 @@ export const IDEA_SORT_OPTIONS: { value: IdeaSort; label: string }[] = [
 
 export const DEFAULT_IDEA_SORT: IdeaSort = "newest";
 
-/** Raw values as they appear in the URL. Empty string means unset. */
+/**
+ * Raw values as they appear in the URL. Empty string means unset.
+ *
+ * `view` and `category` are the pills under the search bar; at most one of
+ * them applies, and `category` wins when both are present. `q` searches
+ * every idea the viewer can see, so while it is set the pills are ignored
+ * (they stay in the URL so clearing the search returns to the same pill).
+ * `country` is only reachable from an idea's geography links.
+ */
 export type IdeaFilterValues = {
   q: string;
-  type: string;
+  view: string;
+  category: string;
   country: string;
-  tag: string;
   sort: string;
 };
 
 export const EMPTY_IDEA_FILTERS: IdeaFilterValues = {
   q: "",
-  type: "",
+  view: "",
+  category: "",
   country: "",
-  tag: "",
   sort: "",
 };
 
@@ -69,26 +70,55 @@ function firstParam(params: SearchParams, key: string): string {
 export function readIdeaFilterValues(params: SearchParams): IdeaFilterValues {
   return {
     q: firstParam(params, "q"),
-    type: firstParam(params, "type"),
+    view: firstParam(params, "view"),
+    category: firstParam(params, "category"),
     country: firstParam(params, "country"),
-    tag: firstParam(params, "tag"),
     sort: firstParam(params, "sort"),
   };
 }
 
-export function toIdeaFilters(values: IdeaFilterValues): IdeaFilters {
+/**
+ * Which collection the page shows. Signed-in members land on their own
+ * ideas; visitors have none, so they land on the best of WeStride.
+ */
+export type IdeaCollection =
+  | { kind: "search"; query: string }
+  | { kind: "category"; slug: string }
+  | { kind: "view"; view: IdeaView };
+
+export function defaultIdeaView(isSignedIn: boolean): IdeaView {
+  return isSignedIn ? "mine" : "featured";
+}
+
+export function resolveIdeaCollection(
+  values: IdeaFilterValues,
+  isSignedIn: boolean,
+): IdeaCollection {
+  const query = values.q.trim();
+  if (query) {
+    return { kind: "search", query };
+  }
+  if (values.category) {
+    return { kind: "category", slug: values.category };
+  }
   return {
-    query: values.q || undefined,
-    type: parseIdeaType(values.type),
-    countryCode: values.country || undefined,
-    tagSlug: values.tag || undefined,
-    sort: isIdeaSort(values.sort) ? values.sort : DEFAULT_IDEA_SORT,
+    kind: "view",
+    view: isIdeaView(values.view) ? values.view : defaultIdeaView(isSignedIn),
   };
 }
 
-/** True when anything narrows the list. Sorting alone does not. */
-export function hasIdeaFilters(values: IdeaFilterValues): boolean {
-  return Boolean(values.q || values.type || values.country || values.tag);
+export function toIdeaFilters(
+  values: IdeaFilterValues,
+  isSignedIn: boolean,
+): IdeaFilters {
+  const collection = resolveIdeaCollection(values, isSignedIn);
+  return {
+    query: collection.kind === "search" ? collection.query : undefined,
+    tagSlug: collection.kind === "category" ? collection.slug : undefined,
+    view: collection.kind === "view" ? collection.view : undefined,
+    countryCode: values.country || undefined,
+    sort: isIdeaSort(values.sort) ? values.sort : DEFAULT_IDEA_SORT,
+  };
 }
 
 export function ideaFiltersQuery(values: IdeaFilterValues): string {

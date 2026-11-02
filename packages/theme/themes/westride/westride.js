@@ -203,7 +203,12 @@ export const westrideTheme = {
     "--color-brand-indigo": "#5B5BD6",
     "--color-brand-purple": "#885FF5",
     "--color-brand-teal": "#10B3A5",
-    "--color-brand-orange": "#FF694B"
+    "--color-brand-orange": "#FF694B",
+    "--color-brand-pastel-blue": "light-dark(#D3ECFD, #264152)",
+    "--color-brand-pastel-indigo": "light-dark(#E2E6FF, #383B55)",
+    "--color-brand-pastel-purple": "light-dark(#E7E4FE, #3D3953)",
+    "--color-brand-pastel-teal": "light-dark(#CFF0EB, #1E4540)",
+    "--color-brand-pastel-orange": "light-dark(#FEE0D9, #52342E)"
   },
   __localTokenOwners: {
     "--color-brand-navy": "westride",
@@ -212,7 +217,12 @@ export const westrideTheme = {
     "--color-brand-indigo": "westride",
     "--color-brand-purple": "westride",
     "--color-brand-teal": "westride",
-    "--color-brand-orange": "westride"
+    "--color-brand-orange": "westride",
+    "--color-brand-pastel-blue": "westride",
+    "--color-brand-pastel-indigo": "westride",
+    "--color-brand-pastel-purple": "westride",
+    "--color-brand-pastel-teal": "westride",
+    "--color-brand-pastel-orange": "westride"
   },
   __localTokenLineage: ["westride"],
   components: {

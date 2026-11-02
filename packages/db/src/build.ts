@@ -3,6 +3,7 @@ import {
   asc,
   desc,
   eq,
+  ilike,
   inArray,
   notInArray,
   or,
@@ -16,6 +17,11 @@ import {
   ticketStatusChange,
   type TicketCounts,
 } from "./build-rules";
+import {
+  collectionOrder,
+  likePattern,
+  type CollectionSort,
+} from "./collection-filters";
 import {
   projectMembers,
   projectMilestones,
@@ -64,16 +70,54 @@ const ANYONE: ProjectViewer = { clerkUserId: null };
 
 const OWNER_REQUIRED = "Keep at least one owner.";
 
+export { COLLECTION_SORTS as PROJECT_SORTS, isCollectionSort as isProjectSort } from "./collection-filters";
+export type { CollectionSort as ProjectSort } from "./collection-filters";
+
+export type ProjectFilters = {
+  /** Matches the name or description, case-insensitively. */
+  query?: string;
+  status?: ProjectStatus;
+  /** Only projects the viewer belongs to. Nothing for a visitor. */
+  mineOnly?: boolean;
+  sort?: CollectionSort;
+};
+
+function memberProjectIds(clerkUserId: string) {
+  return getDb()
+    .select({ id: projectMembers.projectId })
+    .from(projectMembers)
+    .where(eq(projectMembers.clerkUserId, clerkUserId));
+}
+
 function visibilityCondition(viewer: ProjectViewer): SQL {
   const isPublic = eq(projects.isPublic, true);
   if (!viewer.clerkUserId) {
     return isPublic;
   }
-  const memberOf = getDb()
-    .select({ id: projectMembers.projectId })
-    .from(projectMembers)
-    .where(eq(projectMembers.clerkUserId, viewer.clerkUserId));
-  return or(isPublic, inArray(projects.id, memberOf)) ?? isPublic;
+  return or(isPublic, inArray(projects.id, memberProjectIds(viewer.clerkUserId))) ?? isPublic;
+}
+
+function filterConditions(filters: ProjectFilters, viewer: ProjectViewer): SQL[] {
+  const conditions: SQL[] = [visibilityCondition(viewer)];
+  const query = filters.query?.trim();
+  if (query) {
+    const pattern = likePattern(query);
+    const match = or(ilike(projects.name, pattern), ilike(projects.description, pattern));
+    if (match) {
+      conditions.push(match);
+    }
+  }
+  if (filters.status) {
+    conditions.push(eq(projects.status, filters.status));
+  }
+  if (filters.mineOnly) {
+    conditions.push(
+      viewer.clerkUserId
+        ? inArray(projects.id, memberProjectIds(viewer.clerkUserId))
+        : sql`false`,
+    );
+  }
+  return conditions;
 }
 
 function dedupeMembers(members: ProjectMemberInput[]): ProjectMemberInput[] {
@@ -118,13 +162,16 @@ async function countTicketsByProject(
   return counts;
 }
 
+const DEFAULT_ORDER: SQL[] = [desc(projects.updatedAt), asc(projects.name)];
+
 async function findProjects(
   where: SQL | undefined,
   limit?: number,
+  orderBy: SQL[] = DEFAULT_ORDER,
 ): Promise<ProjectWithDetails[]> {
   const rows = await getDb().query.projects.findMany({
     where,
-    orderBy: [desc(projects.updatedAt), asc(projects.name)],
+    orderBy,
     limit,
     with: {
       members: {
@@ -149,11 +196,28 @@ async function findProjects(
   }));
 }
 
-/** Every project the viewer may see, most recently updated first. */
+/** Every project the viewer may see that matches, most recently updated first. */
 export async function listProjects(
   viewer: ProjectViewer = ANYONE,
+  filters: ProjectFilters = {},
 ): Promise<ProjectWithDetails[]> {
-  return findProjects(visibilityCondition(viewer));
+  return findProjects(
+    and(...filterConditions(filters, viewer)),
+    undefined,
+    collectionOrder(filters.sort ?? "updated", projects),
+  );
+}
+
+/** The statuses that at least one visible project is in, in lifecycle order. */
+export async function listProjectStatusOptions(
+  viewer: ProjectViewer = ANYONE,
+): Promise<ProjectStatus[]> {
+  const rows = await getDb()
+    .selectDistinct({ status: projects.status })
+    .from(projects)
+    .where(visibilityCondition(viewer));
+  const present = new Set(rows.map((row) => row.status));
+  return projects.status.enumValues.filter((status) => present.has(status));
 }
 
 /** Projects this member belongs to, including private ones. */

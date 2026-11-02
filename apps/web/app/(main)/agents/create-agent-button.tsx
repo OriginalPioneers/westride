@@ -5,6 +5,7 @@ import { Button } from "@astryxdesign/core/Button";
 import { Icon } from "@astryxdesign/core/Icon";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { signInPath } from "@/lib/auth-paths";
+import { CreateTile } from "../create-tile";
 import { CreateAgentDialog, type CreateAgentOptions } from "./create-agent-dialog";
 
 const CreateAgentContext = createContext<(() => void) | null>(null);
@@ -34,6 +35,22 @@ export function CreateAgentProvider({
   );
 }
 
+const SIGN_IN_HREF = `${signInPath}?redirect_url=/agents`;
+
+/** The first tile under "Your Agents": a whole card that starts a new agent. */
+export function CreateAgentCard() {
+  const open = useContext(CreateAgentContext);
+
+  return (
+    <CreateTile
+      label="New agent"
+      description="A standing Muse agent with its own backlog, schedule, and spend."
+      onClick={open}
+      signInHref={SIGN_IN_HREF}
+    />
+  );
+}
+
 export function CreateAgentButton({ variant = "primary" }: { variant?: "primary" | "secondary" }) {
   const open = useContext(CreateAgentContext);
 
@@ -43,7 +60,7 @@ export function CreateAgentButton({ variant = "primary" }: { variant?: "primary"
         label="New agent"
         variant={variant}
         icon={<Icon icon={PlusIcon} />}
-        href={`${signInPath}?redirect_url=/agents`}
+        href={SIGN_IN_HREF}
       />
     );
   }

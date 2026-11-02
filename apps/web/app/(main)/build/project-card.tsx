@@ -1,8 +1,5 @@
-import { Card } from "@astryxdesign/core/Card";
-import { Heading } from "@astryxdesign/core/Heading";
-import { Link } from "@astryxdesign/core/Link";
+import { Badge } from "@astryxdesign/core/Badge";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
-import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import {
   ticketProgressPercent,
@@ -12,51 +9,40 @@ import {
 import { isClaimableProject } from "@westride/db/claim-rules";
 import { projectPath } from "@/lib/build/labels";
 import { markdownExcerpt } from "@/lib/ideas/excerpt";
-import { EntityImage } from "../entity-image";
 import { UnclaimedBadge } from "../ideas/idea-badges";
+import { LibraryCard } from "../library-card";
 import { ProjectStatusBadge } from "./project-badges";
 
 export function ProjectCard({ project }: { project: ProjectWithDetails }) {
-  const excerpt = markdownExcerpt(project.description);
   const total = totalTickets(project.ticketCounts);
   const percent = ticketProgressPercent(project.ticketCounts);
   const repos = project.repos.map((repo) => `${repo.owner}/${repo.name}`);
 
   return (
-    <Card>
-      <VStack gap={3}>
-        <HStack gap={2} vAlign="center" wrap="wrap">
+    <LibraryCard
+      name={project.name}
+      href={projectPath(project.id)}
+      imageUrl={project.imageUrl}
+      description={markdownExcerpt(project.description)}
+      meta={repos.join(", ")}
+      footer={
+        <>
           <ProjectStatusBadge status={project.status} />
           {isClaimableProject(project) ? <UnclaimedBadge /> : null}
-          {!project.isPublic ? <Text type="supporting">Private</Text> : null}
-        </HStack>
-        <HStack gap={3} vAlign="center">
-          <EntityImage name={project.name} imageUrl={project.imageUrl} size={48} />
-          <StackItem size="fill">
-            <VStack gap={1}>
-              <Heading level={3} maxLines={2}>
-                <Link href={projectPath(project.id)}>{project.name}</Link>
-              </Heading>
-              {repos.length > 0 ? (
-                <Text type="supporting" maxLines={1}>
-                  {repos.join(", ")}
-                </Text>
-              ) : null}
-            </VStack>
-          </StackItem>
-        </HStack>
-        {excerpt ? <Text maxLines={3}>{excerpt}</Text> : null}
-        {total > 0 ? (
-          <ProgressBar
-            label={`${project.ticketCounts.DONE} of ${total} tickets done`}
-            value={percent}
-            hasValueLabel
-            variant={percent === 100 ? "success" : "accent"}
-          />
-        ) : (
-          <Text type="supporting">No tickets yet</Text>
-        )}
-      </VStack>
-    </Card>
+          {!project.isPublic ? <Badge variant="neutral" label="Private" /> : null}
+        </>
+      }
+    >
+      {total > 0 ? (
+        <ProgressBar
+          label={`${project.ticketCounts.DONE} of ${total} tickets done`}
+          value={percent}
+          hasValueLabel
+          variant={percent === 100 ? "success" : "accent"}
+        />
+      ) : (
+        <Text type="supporting">No tickets yet</Text>
+      )}
+    </LibraryCard>
   );
 }

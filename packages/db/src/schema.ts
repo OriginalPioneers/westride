@@ -511,6 +511,28 @@ export const ideaMembers = pgTable(
   ],
 );
 
+/**
+ * A member keeping an eye on an idea they are not on the team of. Following
+ * grants no access: a private idea stays visible to its members only.
+ */
+export const ideaFollows = pgTable(
+  "idea_follows",
+  {
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    /** Clerk user id. */
+    clerkUserId: text("clerk_user_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.ideaId, table.clerkUserId] }),
+    index("idea_follows_clerk_user_id_idx").on(table.clerkUserId),
+  ],
+);
+
 export const ideaGeographies = pgTable(
   "idea_geographies",
   {
@@ -527,6 +549,11 @@ export const ideaGeographies = pgTable(
   ],
 );
 
+/**
+ * Categories an idea belongs to, such as Education or Crypto. Shown as
+ * "categories" in the UI; the tables keep their original `tags` name.
+ * Seeded from `tag-catalog.ts`, and anyone can add a new one.
+ */
 export const tags = pgTable(
   "tags",
   {
@@ -612,10 +639,18 @@ export const countriesRelations = relations(countries, ({ many }) => ({
 
 export const ideasRelations = relations(ideas, ({ many, one }) => ({
   members: many(ideaMembers),
+  follows: many(ideaFollows),
   geographies: many(ideaGeographies),
   tags: many(ideaTags),
   githubRepo: one(ideaGithubRepos),
   capitalLinks: many(ideaCapitalLinks),
+}));
+
+export const ideaFollowsRelations = relations(ideaFollows, ({ one }) => ({
+  idea: one(ideas, {
+    fields: [ideaFollows.ideaId],
+    references: [ideas.id],
+  }),
 }));
 
 export const ideaCapitalLinksRelations = relations(ideaCapitalLinks, ({ one }) => ({
@@ -1267,6 +1302,8 @@ export type Idea = typeof ideas.$inferSelect;
 export type NewIdea = typeof ideas.$inferInsert;
 export type IdeaMember = typeof ideaMembers.$inferSelect;
 export type NewIdeaMember = typeof ideaMembers.$inferInsert;
+export type IdeaFollow = typeof ideaFollows.$inferSelect;
+export type NewIdeaFollow = typeof ideaFollows.$inferInsert;
 export type IdeaGeography = typeof ideaGeographies.$inferSelect;
 export type NewIdeaGeography = typeof ideaGeographies.$inferInsert;
 export type Tag = typeof tags.$inferSelect;

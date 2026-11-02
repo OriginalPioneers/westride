@@ -44,6 +44,7 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import type { IdeaMemberRole, IdeaType } from "@westride/db";
+import type { CategoryOption } from "@westride/db/ideas";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 import {
   MAX_IDEA_DESCRIPTION,
@@ -61,6 +62,7 @@ import {
   type GithubRepoPreview,
   type IdeaPersonHit,
 } from "./actions";
+import { CategoryPicker } from "./category-picker";
 
 export type IdeaFounder = {
   name: string;
@@ -78,7 +80,7 @@ const STEPS = [
 
 const STEP_FIELDS = [
   ["type"],
-  ["name", "description", "githubRepoUrl"],
+  ["name", "description", "categories", "githubRepoUrl"],
   ["isPublic"],
   ["invites"],
 ] as const;
@@ -243,10 +245,12 @@ export function CreateIdeaDialog({
   isOpen,
   onOpenChange,
   founder,
+  categoryOptions,
 }: {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   founder: IdeaFounder;
+  categoryOptions: CategoryOption[];
 }) {
   const router = useRouter();
   const [isSaving, startSaving] = useTransition();
@@ -255,6 +259,7 @@ export function CreateIdeaDialog({
   const [type, setType] = useState<IdeaType | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [categories, setCategories] = useState<string[]>([]);
   const [isPublic, setIsPublic] = useState<boolean | null>(null);
   const [invites, setInvites] = useState<Invitee[]>([]);
   const [picker, setPicker] = useState<IdeaPersonHit | null>(null);
@@ -269,6 +274,7 @@ export function CreateIdeaDialog({
     type,
     name,
     description,
+    categories,
     isPublic,
     invites: invites.map((person) => ({
       clerkUserId: person.id,
@@ -531,6 +537,15 @@ export function CreateIdeaDialog({
                         maxLength={MAX_IDEA_DESCRIPTION}
                         isRequired
                         status={fieldStatus(stepErrors.description)}
+                      />
+                      <CategoryPicker
+                        options={categoryOptions}
+                        value={categories}
+                        onChange={(next) => {
+                          setCategories(next);
+                          clearServer("categories");
+                        }}
+                        status={fieldStatus(stepErrors.categories)}
                       />
                     </FormLayout>
                   </VStack>

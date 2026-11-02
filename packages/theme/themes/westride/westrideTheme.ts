@@ -1,6 +1,6 @@
 import {defineTheme} from '@astryxdesign/core/theme';
 import {stoneTheme} from '@astryxdesign/theme-stone/built';
-import {brandColors} from './brand';
+import {brandColors, brandPastels} from './brand';
 
 const SANS_FALLBACKS =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
@@ -8,8 +8,9 @@ const SANS_FALLBACKS =
 /**
  * WeStride's product theme: Stone's surfaces and semantics, set in Figtree
  * (the brand's only typeface), with the identity palette published as
- * `--color-brand-*` tokens for the logo, marketing bands, and brand moments.
- * Product controls stay on Stone's semantic tokens.
+ * `--color-brand-*` tokens for the logo, marketing bands, and brand moments,
+ * and its pastel tints as `--color-brand-pastel-*` tokens that follow the
+ * light or dark mode. Product controls stay on Stone's semantic tokens.
  */
 export const westrideTheme = defineTheme({
   name: 'westride',
@@ -30,7 +31,11 @@ export const westrideTheme = defineTheme({
     },
   },
 
-  localTokens: Object.fromEntries(
-    brandColors.map((color) => [color.token, color.hex]),
-  ),
+  localTokens: Object.fromEntries([
+    ...brandColors.map((color) => [color.token, color.hex]),
+    ...brandPastels.map((pastel) => [
+      pastel.token,
+      `light-dark(${pastel.hex}, ${pastel.darkHex})`,
+    ]),
+  ]),
 });

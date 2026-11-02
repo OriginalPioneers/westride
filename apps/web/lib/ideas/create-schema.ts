@@ -1,11 +1,14 @@
 import type { IdeaMemberRole, IdeaType } from "@westride/db";
 import { z } from "zod";
 import { prototypeUrl } from "@westride/db/builder";
+import { tagSlug } from "@westride/db/categories";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 
 export const MAX_IDEA_NAME = 120;
 export const MAX_IDEA_DESCRIPTION = 8000;
 export const MAX_IDEA_INVITES = 20;
+export const MAX_IDEA_CATEGORIES = 6;
+export const MAX_CATEGORY_NAME = 40;
 
 const ideaTypes = [
   "BUSINESS",
@@ -38,6 +41,39 @@ const ideaDescriptionSchema = z
     `Keep the description under ${MAX_IDEA_DESCRIPTION} characters.`,
   );
 
+/**
+ * Category names as typed. Two spellings of one category count once, and
+ * names that slug to nothing (punctuation only) are dropped before the
+ * minimum is checked.
+ */
+const categoriesSchema = z
+  .array(
+    z
+      .string()
+      .trim()
+      .min(1)
+      .max(
+        MAX_CATEGORY_NAME,
+        `Keep each category under ${MAX_CATEGORY_NAME} characters.`,
+      ),
+  )
+  .transform((names) => {
+    const bySlug = new Map<string, string>();
+    for (const name of names) {
+      const slug = tagSlug(name);
+      if (slug && !bySlug.has(slug)) {
+        bySlug.set(slug, name);
+      }
+    }
+    return [...bySlug.values()];
+  })
+  .refine((names) => names.length > 0, {
+    error: "Pick at least one category.",
+  })
+  .refine((names) => names.length <= MAX_IDEA_CATEGORIES, {
+    error: `Pick up to ${MAX_IDEA_CATEGORIES} categories.`,
+  });
+
 /** One founder, plus the people they can invite while creating an idea. */
 export const MAX_IDEA_MEMBERS = MAX_IDEA_INVITES + 1;
 
@@ -58,6 +94,7 @@ export const createIdeaSchema = z.object({
   type: z.enum(ideaTypes, { error: "Choose a kind of idea." }),
   name: ideaNameSchema,
   description: ideaDescriptionSchema,
+  categories: categoriesSchema,
   isPublic: z
     .boolean({ error: "Choose who can see this idea." })
     .nullable()
@@ -95,6 +132,7 @@ export const updateIdeaSchema = z
     prototypeTested: z.boolean().default(false),
     name: ideaNameSchema,
     description: ideaDescriptionSchema,
+    categories: categoriesSchema,
     members: memberListSchema(
       MAX_IDEA_MEMBERS,
       `An idea can have up to ${MAX_IDEA_MEMBERS} people.`,
@@ -146,6 +184,8 @@ export type IdeaDraft = {
   type: IdeaType | null;
   name: string;
   description: string;
+  /** Category names as picked or typed. */
+  categories: string[];
   isPublic: boolean | null;
   invites: { clerkUserId: string; role: IdeaMemberRole }[];
   githubRepoUrl: string;
@@ -166,6 +206,7 @@ export type IdeaEditDraft = {
   prototypeTested: boolean;
   name: string;
   description: string;
+  categories: string[];
   members: { clerkUserId: string; role: IdeaMemberRole }[];
 };
 

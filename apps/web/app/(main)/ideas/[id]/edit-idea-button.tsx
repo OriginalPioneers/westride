@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Icon } from "@astryxdesign/core/Icon";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
+import type { CategoryOption } from "@westride/db/ideas";
 import { EditIdeaDialog, type EditableIdea } from "./edit-idea-dialog";
 
 export type { EditableIdea };
@@ -11,9 +12,11 @@ export type { EditableIdea };
 export function EditIdeaButton({
   idea,
   viewerId,
+  categoryOptions,
 }: {
   idea: EditableIdea;
   viewerId: string;
+  categoryOptions: CategoryOption[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [session, setSession] = useState(0);
@@ -35,6 +38,7 @@ export function EditIdeaButton({
         onOpenChange={setIsOpen}
         idea={idea}
         viewerId={viewerId}
+        categoryOptions={categoryOptions}
       />
     </>
   );
