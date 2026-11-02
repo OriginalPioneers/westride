@@ -4,7 +4,6 @@ import Image from "next/image";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
-import { Grid, GridSpan } from "@astryxdesign/core/Grid";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Link } from "@astryxdesign/core/Link";
 import { List, ListItem } from "@astryxdesign/core/List";
@@ -12,61 +11,16 @@ import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { proportional, Table } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { AGENTS } from "@/lib/idea-factory/agents";
+import { FOUNDER } from "../home/landing-content";
 import { DocPage, DocSection } from "../doc-page";
 import { OurStoryTabs } from "../section-tabs";
 
 const SOURCE_URL = "https://github.com/OriginalPioneers/westride";
 const HACKATHON_URL = "https://cerebralvalley.ai/e/meta-ai-developer-hackathon";
 
-type TeamMember = {
-  name: string;
-  role: string;
-  bio: string;
-  linkedinUrl: string | null;
-};
-
-/** People who appear together share one photo. A solo member can have their own. */
-type TeamGroup = {
-  id: string;
-  photo: string | null;
-  photoAlt: string | null;
-  members: TeamMember[];
-};
-
-const TEAM: TeamGroup[] = [
-  {
-    id: "hampton",
-    photo: "/team/garrett-lauren-hampton.jpg",
-    photoAlt: "Garrett and Lauren Hampton",
-    members: [
-      {
-        name: "Garrett Hampton",
-        role: "Technology, code, and AI",
-        bio: "Garrett architects and writes WeStride's code, and works out how each part of the platform puts Meta's models to work.",
-        linkedinUrl: "https://www.linkedin.com/in/garretthampton/",
-      },
-      {
-        name: "Lauren Hampton",
-        role: "Brand, marketing, and design",
-        bio: "Lauren shapes how WeStride looks, sounds, and reaches people, from the brand and the digital design to the marketing that brings new members in.",
-        linkedinUrl: "https://www.linkedin.com/in/pnw-lauren-hampton/",
-      },
-    ],
-  },
-  {
-    id: "jace",
-    photo: "/team/jace-whitten.jpg",
-    photoAlt: "Jace Whitten",
-    members: [
-      {
-        name: "Jace Whitten",
-        role: "Front end, achievements, and artifacts",
-        bio: "Jace makes WeStride fun. He builds the front end, the achievements members earn, and the artifacts they collect along the way.",
-        linkedinUrl: "https://www.linkedin.com/in/jacewhitten/",
-      },
-    ],
-  },
-];
+const FOUNDER_BIO =
+  "Garrett designed and wrote all of WeStride, from the brand and the front end to the data model, the agents, and the way each part of the platform puts Meta's models to work.";
+const FOUNDER_LINKEDIN_URL = "https://www.linkedin.com/in/garretthampton/";
 
 const OBSERVATIONS = [
   {
@@ -160,7 +114,7 @@ const META_AI = [
   {
     label: "Built with Muse, too",
     detail:
-      "We used Muse to vet the idea for WeStride, draft the first Academy tracks, and shape the prompt behind our logo. The prompts are in the repository.",
+      "I used Muse to vet the idea for WeStride, draft the first Academy tracks, and shape the prompt behind the logo. The prompts are in the repository.",
   },
 ];
 
@@ -218,12 +172,6 @@ const hackathonLogo = {
   borderRadius: "var(--radius-element)",
 };
 
-const sharedPhoto = {
-  width: "100%",
-  height: "auto",
-  borderRadius: "var(--radius-element)",
-};
-
 function NamedList({
   items,
 }: {
@@ -242,65 +190,29 @@ function NamedList({
   );
 }
 
-function MemberDetails({ member }: { member: TeamMember }) {
-  return (
-    <VStack gap={1}>
-      <Heading level={3}>{member.name}</Heading>
-      <Text type="supporting">{member.role}</Text>
-      <Text>{member.bio}</Text>
-      {member.linkedinUrl ? (
-        <Link href={member.linkedinUrl} isExternalLink isStandalone>
-          LinkedIn
-        </Link>
-      ) : null}
-    </VStack>
-  );
-}
-
-function TeamGroupCard({ group }: { group: TeamGroup }) {
-  const photo = group.photo;
-  const sharesPhoto = photo != null && group.members.length > 1;
-
-  if (sharesPhoto && photo) {
-    return (
-      <Card>
-        <Grid columns={{ minWidth: 200, max: 2 }} gap={4} align="center">
-          <Image
-            src={photo}
-            alt={group.photoAlt ?? ""}
-            width={500}
-            height={500}
-            // The optimizer fetches local files without a browser user agent,
-            // and this dev server refuses that request.
-            unoptimized
-            style={sharedPhoto}
-          />
-          <VStack gap={5}>
-            {group.members.map((person) => (
-              <MemberDetails key={person.name} member={person} />
-            ))}
-          </VStack>
-        </Grid>
-      </Card>
-    );
-  }
-
-  const member = group.members[0];
-  if (!member) return null;
-
+function FounderCard() {
   return (
     <Card>
-      <VStack gap={4}>
+      <HStack gap={4} vAlign="start" wrap="wrap">
         <Avatar
-          src={photo ?? undefined}
-          name={member.name}
-          alt={group.photoAlt ?? member.name}
+          src={FOUNDER.photo}
+          name={FOUNDER.name}
+          alt={FOUNDER.name}
           size={128}
-          shape={photo ? "rounded" : "circle"}
+          shape="rounded"
           tooltip={false}
         />
-        <MemberDetails member={member} />
-      </VStack>
+        <StackItem size="fill">
+          <VStack gap={1}>
+            <Heading level={3}>{FOUNDER.name}</Heading>
+            <Text type="supporting">{FOUNDER.role}</Text>
+            <Text>{FOUNDER_BIO}</Text>
+            <Link href={FOUNDER_LINKEDIN_URL} isExternalLink isStandalone>
+              LinkedIn
+            </Link>
+          </VStack>
+        </StackItem>
+      </HStack>
     </Card>
   );
 }
@@ -310,7 +222,7 @@ export function OurStoryOverview() {
     <DocPage
       tabs={<OurStoryTabs />}
       title="Our Story"
-      lede="Three friends, one hackathon, and a problem we kept seeing in the Discord."
+      lede="One builder, one hackathon, and a problem I kept seeing in the Discord."
       actions={
         <>
           <Button label="Start learning" variant="primary" href="/academy" />
@@ -318,22 +230,12 @@ export function OurStoryOverview() {
         </>
       }
     >
-      <DocSection id="team" title="The team">
+      <DocSection id="founder" title="Who built it">
         <Text>
-          WeStride was started by Garrett and Lauren Hampton, a husband and
-          wife team, and Jace Whitten, Garrett&apos;s friend of many years.
+          WeStride was built by Garrett Hampton, working solo, over the nine
+          days of the hackathon.
         </Text>
-        <Grid columns={{ minWidth: 240, max: 3 }} gap={4}>
-          {TEAM.map((group) =>
-            group.members.length > 1 ? (
-              <GridSpan key={group.id} columns="full">
-                <TeamGroupCard group={group} />
-              </GridSpan>
-            ) : (
-              <TeamGroupCard key={group.id} group={group} />
-            ),
-          )}
-        </Grid>
+        <FounderCard />
       </DocSection>
 
       <DocSection id="how-it-started" title="How it started">
@@ -364,28 +266,28 @@ export function OurStoryOverview() {
           </HStack>
         </Card>
         <Text>
-          When the three of us were accepted into the hackathon, we did what
-          every team does first: we traded ideas. Dozens went back and forth,
-          and we used Muse to vet them. We asked it to poke holes in our
-          assumptions, size up the market, and tell us what already existed.
+          When I was accepted into the hackathon, I did what everyone does
+          first: I traded ideas. Dozens went back and forth, and I used Muse to
+          vet them. I asked it to poke holes in my assumptions, size up the
+          market, and tell me what already existed.
         </Text>
       </DocSection>
 
-      <DocSection id="what-we-saw" title="What we saw">
+      <DocSection id="what-i-saw" title="What I saw">
         <Text>
-          We were not the only ones. In the hackathon Discord, team after team
+          I was not the only one. In the hackathon Discord, team after team
           was doing the same thing: ideating, vetting, and researching. The
           people doing it could not have been more different.
         </Text>
         <NamedList items={OBSERVATIONS} />
       </DocSection>
 
-      <DocSection id="the-idea" title="That's when it hit us">
+      <DocSection id="the-idea" title="That's when it hit me">
         <Text>
-          The project was not any one of our ideas. It was the path every team
+          The project was not any one of my ideas. It was the path every team
           was walking: learn enough AI to start, find someone who has done it
           before, check that the idea holds up, build it, and give it agents.
-          That path would be our project, and our contribution.
+          That path would be my project, and my contribution.
         </Text>
         <Text>
           WeStride.org is an open-source platform that walks the whole path
@@ -426,7 +328,7 @@ export function OurStoryOverview() {
 
       <DocSection id="who-its-for" title="Who it's for">
         <Text>
-          We built WeStride for the world we were in that week: a room full of
+          I built WeStride for the world I was in that week: a room full of
           people with good ideas and very different starting points. It is
           free to learn on, and the path is the same whether you are writing
           your first prompt or your thousandth pull request.
@@ -436,15 +338,15 @@ export function OurStoryOverview() {
 
       <DocSection id="built-during-the-hackathon" title="Built during the hackathon">
         <Text>
-          Every line of WeStride was written during the hackathon, starting at
-          kickoff. The full commit history is public.
+          Every line of WeStride was written by one person during the
+          hackathon, starting at kickoff. The full commit history is public.
         </Text>
         <Table
           data={MILESTONES}
           idKey="date"
           columns={[
             { key: "date", header: "Date", width: proportional(1) },
-            { key: "built", header: "What we built", width: proportional(4) },
+            { key: "built", header: "What shipped", width: proportional(4) },
           ]}
         />
       </DocSection>

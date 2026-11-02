@@ -48,3 +48,8 @@ Other root scripts: `bun run build`, `bun run lint`, `bun run start`, `bun run d
 - Bun
 - TypeScript
 - Drizzle
+
+## Thanks
+
+- Lauren Hampton, my wife, for advice on the brand, the colors, and how WeStride should look and feel.
+- Jace Whitten, my friend of many years, for advice on the achievement system.

@@ -344,23 +344,12 @@ export const MILESTONES: Milestone[] = [
   },
 ];
 
-export const TEAM = [
-  {
-    name: "Garrett Hampton",
-    role: "Technology, code, and AI",
-    photo: "/team/garrett-hampton.jpg",
-  },
-  {
-    name: "Lauren Hampton",
-    role: "Brand, marketing, and design",
-    photo: "/team/lauren-hampton.jpg",
-  },
-  {
-    name: "Jace Whitten",
-    role: "Front end, achievements, and artifacts",
-    photo: "/team/jace-whitten.jpg",
-  },
-] as const;
+/** The one person who built WeStride. */
+export const FOUNDER = {
+  name: "Garrett Hampton",
+  role: "Founder. Design, code, and AI",
+  photo: "/founder/garrett-hampton.jpg",
+} as const;
 
 export const CLONE_SNIPPET = `git clone ${SOURCE_URL}.git
 cd westride && bun install
