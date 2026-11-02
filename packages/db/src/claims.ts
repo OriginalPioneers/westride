@@ -6,7 +6,7 @@
 // project built from it, in one transaction. Someone who cannot prove it
 // through GitHub files a claim request that the team decides from an email.
 // ---------------------------------------------------------------------------
-import { and, desc, eq, exists, inArray, isNull, notExists, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, inArray, isNull, notExists, sql } from "drizzle-orm";
 import {
   claimRequests,
   projectMembers,
@@ -135,14 +135,18 @@ export async function claimIdea(
   return founder.length > 0;
 }
 
-/** The idea already linked to a GitHub repository, by GitHub's numeric id. */
-export async function findIdeaLinkedToGithubRepo(
+/**
+ * Every idea linked to a GitHub repository, by GitHub's numeric id, oldest
+ * first. Private ideas can share a repository, so the caller checks which
+ * ones the viewer may see.
+ */
+export async function listIdeasLinkedToGithubRepo(
   repoId: number,
-): Promise<IdeaGithubRepo | null> {
-  const row = await getDb().query.ideaGithubRepos.findFirst({
+): Promise<IdeaGithubRepo[]> {
+  return getDb().query.ideaGithubRepos.findMany({
     where: eq(ideaGithubRepos.repoId, repoId),
+    orderBy: [asc(ideaGithubRepos.createdAt)],
   });
-  return row ?? null;
 }
 
 // ---------------------------------------------------------------------------

@@ -66,7 +66,7 @@ import {
   type Tint,
 } from "./landing-content";
 import { HeroGlobe } from "./hero-globe";
-import { ImportRepoForm } from "./import-repo-form";
+import { ImportRepoForm, type ImportResume } from "./import-repo-form";
 import { LANDING_STYLES } from "./landing-styles";
 
 export type LandingStats = {
@@ -75,7 +75,8 @@ export type LandingStats = {
 
 type LandingProps = {
   firstName: string | null;
-  isSignedIn: boolean;
+  /** Set when someone comes back from sign-in or GitHub mid-import. Opens the importer. */
+  importResume: ImportResume | null;
   stats: LandingStats;
 };
 
@@ -316,22 +317,25 @@ function HeroSky() {
         <mask id="wl-grid-mask">
           <rect width="100%" height="100%" fill="url(#wl-fade)" />
         </mask>
-        <radialGradient id="wl-g-blue">
-          <stop offset="0" stopColor="var(--wl-indigo)" stopOpacity="0.5" />
-          <stop offset="1" stopColor="var(--wl-indigo)" stopOpacity="0" />
+        {/* The blobs take the active section's scene colors (set on .wl-hero
+            and eased there), kept well under full strength so a change of
+            section reads as a shift of light, not a new backdrop. */}
+        <radialGradient id="wl-g-scene-a">
+          <stop offset="0" stopColor="var(--wl-scene-a)" stopOpacity="0.38" />
+          <stop offset="1" stopColor="var(--wl-scene-a)" stopOpacity="0" />
         </radialGradient>
-        <radialGradient id="wl-g-purple">
-          <stop offset="0" stopColor="var(--wl-purple)" stopOpacity="0.45" />
-          <stop offset="1" stopColor="var(--wl-purple)" stopOpacity="0" />
+        <radialGradient id="wl-g-scene-b">
+          <stop offset="0" stopColor="var(--wl-scene-b)" stopOpacity="0.34" />
+          <stop offset="1" stopColor="var(--wl-scene-b)" stopOpacity="0" />
         </radialGradient>
-        <radialGradient id="wl-g-teal">
-          <stop offset="0" stopColor="var(--wl-teal)" stopOpacity="0.4" />
-          <stop offset="1" stopColor="var(--wl-teal)" stopOpacity="0" />
+        <radialGradient id="wl-g-scene-c">
+          <stop offset="0" stopColor="var(--wl-scene-c)" stopOpacity="0.3" />
+          <stop offset="1" stopColor="var(--wl-scene-c)" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="wl-stride-gradient" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0" stopColor="var(--wl-indigo)" />
-          <stop offset="0.5" stopColor="var(--wl-purple)" />
-          <stop offset="1" stopColor="var(--wl-teal)" />
+          <stop offset="0" stopColor="var(--wl-scene-a)" />
+          <stop offset="0.5" stopColor="var(--wl-scene-b)" />
+          <stop offset="1" stopColor="var(--wl-scene-c)" />
         </linearGradient>
         <linearGradient id="wl-star-trail" x1="1" y1="0" x2="0" y2="1">
           <stop
@@ -369,21 +373,21 @@ function HeroSky() {
         cx="300"
         cy="220"
         r="320"
-        fill="url(#wl-g-blue)"
+        fill="url(#wl-g-scene-a)"
       />
       <circle
         className="wl-blob wl-blob-b"
         cx="1130"
         cy="240"
         r="360"
-        fill="url(#wl-g-purple)"
+        fill="url(#wl-g-scene-b)"
       />
       <circle
         className="wl-blob wl-blob-c"
         cx="760"
         cy="680"
         r="300"
-        fill="url(#wl-g-teal)"
+        fill="url(#wl-g-scene-c)"
       />
 
       <path
@@ -555,7 +559,13 @@ type HeroSection = {
   description: ReactNode;
   ctas: HeroCta[];
   icon: ComponentType<SVGProps<SVGSVGElement>>;
+  /**
+   * The tab's accent, and the pair the hero's sky and globe halo take on.
+   * The globe's atmosphere glows in the second one.
+   */
   tints: [Tint, Tint];
+  /** How close the globe sits for this section; 1 is its resting size. */
+  globeScale: number;
 };
 
 const [IDEA_STUDIO, BUILD_STUDIO, AGENT_STUDIO] = STUDIOS;
@@ -564,6 +574,10 @@ const [IDEA_STUDIO, BUILD_STUDIO, AGENT_STUDIO] = STUDIOS;
  * What a visitor can do here, one panel each. The tab on the right picks
  * the panel; the panel's own copy and calls to action change with it.
  * Panels auto-advance until the visitor picks one.
+ *
+ * Each section also frames the hero: its tints wash the sky, and the globe
+ * pulls in or out. An idea sees the whole world; building moves in; a
+ * fleet of agents closer still; supporting steps back to take it all in.
  */
 const HERO_SECTIONS: HeroSection[] = [
   {
@@ -597,6 +611,7 @@ const HERO_SECTIONS: HeroSection[] = [
     ],
     icon: IDEA_STUDIO.icon,
     tints: IDEA_STUDIO.tints,
+    globeScale: 1,
   },
   {
     id: "build",
@@ -629,6 +644,7 @@ const HERO_SECTIONS: HeroSection[] = [
     ],
     icon: BUILD_STUDIO.icon,
     tints: BUILD_STUDIO.tints,
+    globeScale: 1.14,
   },
   {
     id: "agent",
@@ -661,6 +677,7 @@ const HERO_SECTIONS: HeroSection[] = [
     ],
     icon: AGENT_STUDIO.icon,
     tints: AGENT_STUDIO.tints,
+    globeScale: 1.3,
   },
   {
     id: "support",
@@ -683,8 +700,22 @@ const HERO_SECTIONS: HeroSection[] = [
     })),
     icon: HeartIcon,
     tints: ["teal", "green"],
+    globeScale: 0.86,
   },
 ];
+
+/**
+ * The active section's framing, set on the hero: the scene colors its sky,
+ * wave, and globe halo are painted in, and how close the globe sits. The
+ * styles ease each one when it changes.
+ */
+function sceneVars(section: HeroSection): CSSProperties {
+  return {
+    "--wl-scene-a": `var(--wl-${section.tints[0]})`,
+    "--wl-scene-b": `var(--wl-${section.tints[1]})`,
+    "--wl-globe-scale": section.globeScale,
+  } as CSSProperties;
+}
 
 const PROGRESS_ANIMATION = "wl-tab-progress";
 
@@ -734,7 +765,14 @@ function useHeroSections() {
     setActiveId(HERO_SECTIONS[(activeIndex + 1) % HERO_SECTIONS.length].id);
   }
 
-  return { activeId, isAutoplaying, pick, stop, onProgressEnd };
+  return {
+    activeId,
+    activeSection: HERO_SECTIONS[activeIndex],
+    isAutoplaying,
+    pick,
+    stop,
+    onProgressEnd,
+  };
 }
 
 function HeroPanel({
@@ -826,11 +864,11 @@ function HeroImportBar({ onOpen }: { onOpen: () => void }) {
  */
 function ImportGithubDialog({
   isOpen,
-  isSignedIn,
+  resume,
   onOpenChange,
 }: {
   isOpen: boolean;
-  isSignedIn: boolean;
+  resume: ImportResume | null;
   onOpenChange: (isOpen: boolean) => void;
 }) {
   return (
@@ -854,7 +892,7 @@ function ImportGithubDialog({
               <Text type="supporting">
                 Paste a repository link to create a connected idea and project.
               </Text>
-              <ImportRepoForm isSignedIn={isSignedIn} />
+              <ImportRepoForm resume={resume} />
             </VStack>
           </LayoutContent>
         }
@@ -935,9 +973,9 @@ function HeroWave() {
           y1="0"
           y2="0"
         >
-          <stop offset="0" stopColor="var(--wl-indigo)" />
-          <stop offset="0.5" stopColor="var(--wl-purple)" />
-          <stop offset="1" stopColor="var(--wl-teal)" />
+          <stop offset="0" stopColor="var(--wl-scene-a)" />
+          <stop offset="0.5" stopColor="var(--wl-scene-b)" />
+          <stop offset="1" stopColor="var(--wl-scene-c)" />
         </linearGradient>
       </defs>
       <path
@@ -992,10 +1030,10 @@ function CarryBar() {
   );
 }
 
-function Hero({ isSignedIn }: LandingProps) {
-  const { activeId, isAutoplaying, pick, stop, onProgressEnd } =
+function Hero({ importResume }: LandingProps) {
+  const { activeId, activeSection, isAutoplaying, pick, stop, onProgressEnd } =
     useHeroSections();
-  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(importResume !== null);
 
   function openImport() {
     setIsImportOpen(true);
@@ -1019,7 +1057,12 @@ function Hero({ isSignedIn }: LandingProps) {
     <>
       <Theme theme={themes[defaultThemeSlug]} mode="dark">
       <VStack className="wl-hero-frame" gap={0}>
-        <Section className="wl-hero" variant="transparent" padding={0}>
+        <Section
+          className="wl-hero"
+          variant="transparent"
+          padding={0}
+          style={sceneVars(activeSection)}
+        >
           <HeroSky />
           <HeroWave />
           <VStack
@@ -1064,7 +1107,7 @@ function Hero({ isSignedIn }: LandingProps) {
               </VStack>
 
               <Grid className="wl-hero-stage" columns={1} align="center">
-                <HeroGlobe />
+                <HeroGlobe glowToken={`--wl-${activeSection.tints[1]}`} />
                 <VStack
                   className="wl-hero-tabs"
                   gap={3}
@@ -1092,7 +1135,7 @@ function Hero({ isSignedIn }: LandingProps) {
     {isImportOpen ? (
       <ImportGithubDialog
         isOpen={isImportOpen}
-        isSignedIn={isSignedIn}
+        resume={importResume}
         onOpenChange={setIsImportOpen}
       />
     ) : null}

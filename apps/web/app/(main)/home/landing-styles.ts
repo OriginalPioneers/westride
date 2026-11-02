@@ -96,6 +96,22 @@ export const LANDING_STYLES = `
   to { transform: scaleX(1); }
 }
 
+/* The hero's scene colors are registered so a change of section eases from
+   one color to the next instead of cutting. Every gradient that reads them
+   (sky blobs, stride, wave, globe halo) follows the eased value. Where
+   @property is unsupported the colors still change, only at once. */
+@property --wl-scene-a {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --wl-scene-b {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
 /* The theme keeps its semantic colors earthy and publishes the brand palette
    as --color-brand-*. The stamp's hues alias those; the extra tints the
    landing needs come from the data-visualization ramp. */
@@ -165,7 +181,27 @@ export const LANDING_STYLES = `
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: var(--color-background-body);
+  /* The active section sets --wl-scene-a and -b inline (see sceneVars).
+     The third scene color stays anchored on teal, with a lean toward the
+     section, so the sky keeps one hue in common from section to section. */
+  --wl-scene-c: color-mix(in srgb, var(--wl-scene-b) 45%, var(--wl-teal));
+  /* A faint wash under the sky, so the whole field warms or cools with the
+     section rather than only the blobs. */
+  background:
+    radial-gradient(
+      ellipse 70% 60% at 22% 18%,
+      color-mix(in srgb, var(--wl-scene-a) 9%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 60% 70% at 82% 40%,
+      color-mix(in srgb, var(--wl-scene-b) 7%, transparent),
+      transparent 70%
+    ),
+    var(--color-background-body);
+  transition:
+    --wl-scene-a calc(var(--duration-slow-max) * 2) var(--ease-standard),
+    --wl-scene-b calc(var(--duration-slow-max) * 2) var(--ease-standard);
   --wl-wave-mask:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C120 50.67 240 50.67 360 24C480 -2.67 600 -2.67 720 24C840 50.67 960 50.67 1080 24C1200 -2.67 1320 -2.67 1440 24V0H0Z'/%3E%3C/svg%3E")
       bottom / 100% var(--wl-wave) no-repeat,
@@ -324,10 +360,15 @@ export const LANDING_STYLES = `
   top: 50%;
   left: 50%;
   translate: -50% -50%;
+  /* The active section sets how close the globe sits (see sceneVars). The
+     scale property composes with the translate above and the entry
+     animation's transform, so none of them fight. */
+  scale: var(--wl-globe-scale, 1);
   width: calc(var(--spacing-12) * 18);
   max-width: none;
   margin: 0;
   pointer-events: none;
+  transition: scale calc(var(--duration-slow-max) * 2) var(--ease-standard);
 }
 
 .wl-hero-stage .wl-globe-canvas {
@@ -624,7 +665,8 @@ export const LANDING_STYLES = `
   animation-delay: var(--duration-medium);
 }
 
-/* A soft halo behind the sphere; the canvas itself stays transparent. */
+/* A soft halo behind the sphere in the section's scene colors; the canvas
+   itself stays transparent. */
 .wl-globe::before {
   content: "";
   position: absolute;
@@ -633,8 +675,8 @@ export const LANDING_STYLES = `
   border-radius: var(--radius-full);
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--wl-purple) 40%, transparent),
-    color-mix(in srgb, var(--wl-indigo) 18%, transparent) 55%,
+    color-mix(in srgb, var(--wl-scene-b) 36%, transparent),
+    color-mix(in srgb, var(--wl-scene-a) 16%, transparent) 55%,
     transparent 72%
   );
   filter: blur(var(--spacing-10));
@@ -968,6 +1010,7 @@ export const LANDING_STYLES = `
     transition: none;
   }
 
+  .wl-hero,
   .wl-hero-sky .wl-blob,
   .wl-hero-sky .wl-node,
   .wl-hero-wave .wl-wave-swell,
