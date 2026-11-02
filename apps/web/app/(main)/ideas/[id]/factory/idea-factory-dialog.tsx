@@ -580,7 +580,13 @@ export function IdeaFactoryDialog({
           />
         }
         start={
-          <LayoutPanel width={RAIL_WIDTH} hasDivider padding={3} label="Advisory team">
+          <LayoutPanel
+            width={RAIL_WIDTH}
+            hasDivider
+            padding={3}
+            label="Advisory team"
+            style={{ userSelect: "none", WebkitUserSelect: "none" }}
+          >
             <AgentRail
               ideaType={idea.type}
               view={view}

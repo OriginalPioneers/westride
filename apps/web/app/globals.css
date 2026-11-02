@@ -7,6 +7,20 @@ body {
   font-family: var(--font-family-body);
 }
 
+/* Button labels are controls, not copy. Link-styled buttons share the
+   astryx-button class, so both native buttons and those anchors are covered. */
+button,
+.astryx-button {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* The top bar is a control strip: wordmark, studio links, and account. */
+.astryx-app-shell-header {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* Floating pill scrollbars in the Stone palette. scrollbar-width does not
    inherit, so the standard properties go on every element. Tokens follow
    light-dark() from data-theme on <html>. Components that hide a scrollbar
