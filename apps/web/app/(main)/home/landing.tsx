@@ -18,6 +18,7 @@ import { Card } from "@astryxdesign/core/Card";
 import { Center } from "@astryxdesign/core/Center";
 import { ClickableCard } from "@astryxdesign/core/ClickableCard";
 import { CodeBlock } from "@astryxdesign/core/CodeBlock";
+import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
 import { Grid } from "@astryxdesign/core/Grid";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Icon } from "@astryxdesign/core/Icon";
@@ -555,8 +556,6 @@ type HeroSection = {
   ctas: HeroCta[];
   icon: ComponentType<SVGProps<SVGSVGElement>>;
   tints: [Tint, Tint];
-  /** This panel's action is the GitHub import field, in place of buttons. */
-  hasImport?: boolean;
 };
 
 const [IDEA_STUDIO, BUILD_STUDIO, AGENT_STUDIO] = STUDIOS;
@@ -567,25 +566,6 @@ const [IDEA_STUDIO, BUILD_STUDIO, AGENT_STUDIO] = STUDIOS;
  * Panels auto-advance until the visitor picks one.
  */
 const HERO_SECTIONS: HeroSection[] = [
-  {
-    id: "import",
-    tab: "Import a GitHub",
-    where: "Importing",
-    title: (
-      <>
-        Import a{" "}
-        <Text type="inherit" display="inline" className="wl-gradient-text">
-          GitHub.
-        </Text>
-      </>
-    ),
-    description:
-      "Import any GitHub repository to instantly create a connected Idea and Project in WeStride. Explore new possibilities with AI advisors, collaborate on improvements, and bring your project to life.",
-    ctas: [],
-    icon: CodeBracketIcon,
-    tints: ["yellow", "orange"],
-    hasImport: true,
-  },
   {
     id: "idea",
     tab: IDEA_STUDIO.action,
@@ -685,7 +665,7 @@ const HERO_SECTIONS: HeroSection[] = [
   {
     id: "support",
     tab: "Support a project",
-    where: "Supporting",
+    where: "Pledge tokens, computer or capital",
     title: (
       <>
         Back an idea{" "}
@@ -745,22 +725,24 @@ function useHeroSections() {
     setIsAutoplaying(false);
   }
 
+  function stop() {
+    setIsAutoplaying(false);
+  }
+
   function onProgressEnd(event: AnimationEvent<HTMLElement>) {
     if (event.animationName !== PROGRESS_ANIMATION) return;
     setActiveId(HERO_SECTIONS[(activeIndex + 1) % HERO_SECTIONS.length].id);
   }
 
-  return { activeId, isAutoplaying, pick, onProgressEnd };
+  return { activeId, isAutoplaying, pick, stop, onProgressEnd };
 }
 
 function HeroPanel({
   section,
   isActive,
-  isSignedIn,
 }: {
   section: HeroSection;
   isActive: boolean;
-  isSignedIn: boolean;
 }) {
   return (
     <VStack
@@ -803,12 +785,81 @@ function HeroPanel({
           ))}
         </HStack>
       )}
-      {section.hasImport && (
-        <VStack gap={2} width="100%" className="wl-hero-import">
-          <ImportRepoForm isSignedIn={isSignedIn} />
-        </VStack>
-      )}
     </VStack>
+  );
+}
+
+/**
+ * A short bar under Support. It is not a carousel tab, and it never
+ * auto-advances. Clicking it opens the importer.
+ */
+function HeroImportBar({ onOpen }: { onOpen: () => void }) {
+  return (
+    <SelectableCard
+      className="wl-hero-tab wl-hero-import-bar"
+      label="Import a GitHub"
+      isSelected={false}
+      onChange={onOpen}
+      padding={2}
+      style={
+        {
+          ...tintVars(["yellow", "orange"]),
+          "--wl-i": HERO_SECTIONS.length,
+        } as CSSProperties
+      }
+    >
+      <HStack className="wl-hero-tab-body" gap={2} vAlign="center" wrap="nowrap">
+        <Center className="wl-hero-tab-icon">
+          <Icon icon={CodeBracketIcon} size="sm" color="inherit" />
+        </Center>
+        <Text size="sm" weight="semibold" textWrap="nowrap">
+          Import a GitHub
+        </Text>
+      </HStack>
+    </SelectableCard>
+  );
+}
+
+/**
+ * The repository field, mounted only while the dialog is open. It sits
+ * outside the hero's dark theme so it follows the page.
+ */
+function ImportGithubDialog({
+  isOpen,
+  isSignedIn,
+  onOpenChange,
+}: {
+  isOpen: boolean;
+  isSignedIn: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}) {
+  return (
+    <Dialog
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      purpose="form"
+      width={520}
+    >
+      <Layout
+        header={
+          <DialogHeader
+            title="Import a GitHub"
+            hasDivider
+            onOpenChange={onOpenChange}
+          />
+        }
+        content={
+          <LayoutContent>
+            <VStack gap={4}>
+              <Text type="supporting">
+                Paste a repository link to create a connected idea and project.
+              </Text>
+              <ImportRepoForm isSignedIn={isSignedIn} />
+            </VStack>
+          </LayoutContent>
+        }
+      />
+    </Dialog>
   );
 }
 
@@ -942,7 +993,14 @@ function CarryBar() {
 }
 
 function Hero({ isSignedIn }: LandingProps) {
-  const { activeId, isAutoplaying, pick, onProgressEnd } = useHeroSections();
+  const { activeId, isAutoplaying, pick, stop, onProgressEnd } =
+    useHeroSections();
+  const [isImportOpen, setIsImportOpen] = useState(false);
+
+  function openImport() {
+    setIsImportOpen(true);
+    stop();
+  }
 
   function tab(section: HeroSection) {
     return (
@@ -958,7 +1016,8 @@ function Hero({ isSignedIn }: LandingProps) {
   }
 
   return (
-    <Theme theme={themes[defaultThemeSlug]} mode="dark">
+    <>
+      <Theme theme={themes[defaultThemeSlug]} mode="dark">
       <VStack className="wl-hero-frame" gap={0}>
         <Section className="wl-hero" variant="transparent" padding={0}>
           <HeroSky />
@@ -992,7 +1051,6 @@ function Hero({ isSignedIn }: LandingProps) {
                       key={section.id}
                       section={section}
                       isActive={section.id === activeId}
-                      isSignedIn={isSignedIn}
                     />
                   ))}
                 </Grid>
@@ -1014,9 +1072,6 @@ function Hero({ isSignedIn }: LandingProps) {
                   aria-label="What would you like to do?"
                   data-autoplay={isAutoplaying ? "" : undefined}
                 >
-                  {HERO_SECTIONS.filter(
-                    (section) => section.id === "import"
-                  ).map(tab)}
                   <VStack className="wl-hero-tab-group" gap={0}>
                     {HERO_SECTIONS.filter((section) =>
                       STUDIO_TAB_IDS.has(section.id)
@@ -1025,6 +1080,7 @@ function Hero({ isSignedIn }: LandingProps) {
                   {HERO_SECTIONS.filter(
                     (section) => section.id === "support"
                   ).map(tab)}
+                  <HeroImportBar onOpen={openImport} />
                 </VStack>
               </Grid>
             </Grid>
@@ -1033,6 +1089,14 @@ function Hero({ isSignedIn }: LandingProps) {
         <CarryBar />
       </VStack>
     </Theme>
+    {isImportOpen ? (
+      <ImportGithubDialog
+        isOpen={isImportOpen}
+        isSignedIn={isSignedIn}
+        onOpenChange={setIsImportOpen}
+      />
+    ) : null}
+    </>
   );
 }
 

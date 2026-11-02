@@ -108,12 +108,25 @@ export const LANDING_STYLES = `
   --wl-green: var(--color-data-categorical-green);
   --wl-pink: var(--color-data-categorical-pink);
   --wl-yellow: var(--color-data-yellow-3);
-  --wl-accent: var(--color-data-categorical-purple);
+  /* Categorical purple is one deep hue in both schemes, so on a dark field
+     it drops under the contrast small text needs. Dark mode mixes Electric
+     Purple halfway toward the primary text color, which stays purple and
+     clears the body, cards, and pastel fields. */
+  --wl-accent: light-dark(
+    var(--color-data-categorical-purple),
+    color-mix(in srgb, var(--color-brand-purple) 50%, var(--color-text-primary))
+  );
 }
 
-[data-theme="dark"] .wl-root,
+/* A nested theme resolves its own scheme. The variable above is computed on
+   the page root, so a dark band inside a light page (and the reverse) sets
+   it again. */
 .wl-root [data-theme="dark"] {
-  --wl-accent: var(--wl-indigo);
+  --wl-accent: color-mix(in srgb, var(--color-brand-purple) 50%, var(--color-text-primary));
+}
+
+.wl-root [data-theme="light"] {
+  --wl-accent: var(--color-data-categorical-purple);
 }
 
 .wl-eyebrow {
@@ -365,10 +378,6 @@ export const LANDING_STYLES = `
   transition-delay: var(--duration-fast-min), var(--duration-fast-min), 0s;
 }
 
-.wl-hero-import {
-  padding-top: var(--spacing-2);
-}
-
 .wl-hero-copy > * {
   animation: wl-rise var(--duration-slow) var(--ease-standard) both;
 }
@@ -382,9 +391,9 @@ export const LANDING_STYLES = `
 
 /* ---------- Hero tabs ---------- */
 
-/* The section tabs stay one column in front of the globe. Import sits
-   above the studio stack, and Support sits below it, with the same gap
-   the tabs used to have between every card. */
+/* The section tabs stay one column in front of the globe. Support sits
+   under the studio stack, and the import bar sits under Support. Import
+   is not a carousel tab. */
 .wl-hero .wl-hero-tabs {
   --wl-hero-dwell: calc(var(--duration-slow-max) * 6);
   position: relative;
@@ -472,6 +481,21 @@ export const LANDING_STYLES = `
   background: linear-gradient(135deg, var(--wl-tint-a), var(--wl-tint-b));
   box-shadow: 0 var(--spacing-1) var(--spacing-3) color-mix(in srgb, var(--wl-tint-a) 45%, transparent);
   transform: scale(1.06) rotate(-3deg);
+}
+
+/* Import is one short row under Support: a smaller icon, no second line,
+   and no progress rail, because it never takes a turn in the rotation. */
+.wl-hero .wl-hero-import-bar .wl-hero-tab-icon {
+  width: var(--spacing-8);
+  height: var(--spacing-8);
+}
+
+.wl-hero .wl-hero-import-bar[data-active] .wl-hero-tab-icon {
+  transform: none;
+}
+
+.wl-hero-import-bar .wl-hero-tab-body::after {
+  content: none;
 }
 
 /* The progress rail along the bottom edge of the active tab. It belongs

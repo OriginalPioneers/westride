@@ -24,6 +24,7 @@ import {
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import { afterAuthPath, signInPath } from "@/lib/auth-paths";
+import { ThemeToggle } from "../theme-toggle";
 import { MuseDock } from "./muse-dock";
 import { SITE_CONTAINER_WIDTH, SiteFooter } from "../site-footer";
 
@@ -201,6 +202,7 @@ export function AppFrame({
           endContent={
             <>
               <SecondaryNav slot="end" pathname={pathname} />
+              <ThemeToggle />
               <Show when="signed-out">
                 <Button label="Sign In" variant="secondary" href={signInPath} />
               </Show>
