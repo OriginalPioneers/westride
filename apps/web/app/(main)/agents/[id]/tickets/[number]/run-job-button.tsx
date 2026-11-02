@@ -105,27 +105,29 @@ export function RunJobButton({
                 <FormLayout defaultOptionality="optional">
                   <Text type="supporting">
                     {runsCode
-                      ? `The agent clones ${repoFullName} into a disposable Vercel Sandbox on your own Vercel account, works the ticket on a new branch with ${model}, and opens a pull request when it is done. Your Meta key pays for the model and your Vercel plan for the sandbox; nothing runs on your machine.`
-                      : `The agent answers the ticket with ${model} and web search, and leaves the write-up on the ticket. Your own Meta key pays for the model; nothing runs on your machine.`}
+                      ? `The agent clones ${repoFullName} into a disposable sandbox, works the ticket on a new branch with ${model}, and opens a pull request when it is done. The model runs on your Meta account and the sandbox on your Vercel account, or both on WeStride Cloud from your balance; nothing runs on your machine.`
+                      : `The agent answers the ticket with ${model} and web search, and leaves the write-up on the ticket. The model runs on your Meta account, or on WeStride Cloud from your balance; nothing runs on your machine.`}
                   </Text>
                   {needs === "vercel" ? (
                     <Banner
                       status="info"
-                      title="Connect your Vercel account first"
-                      description={message ?? "The sandbox runs on your Vercel account, so Vercel bills you, not WeStride. Choose a team and project after connecting."}
+                      title="Connect your Vercel account, or add funds"
+                      description={message ?? "The sandbox runs on your Vercel account, so Vercel bills you, or on WeStride Cloud from your balance."}
                       collapsible={false}
                     >
                       <Button label="Open settings" href="/settings" variant="secondary" />
+                      <Button label="WeStride Cloud" href="/cloud" variant="ghost" />
                     </Banner>
                   ) : null}
                   {needs === "meta" ? (
                     <Banner
                       status="info"
-                      title="Connect your Meta account first"
-                      description="The job runs on your Meta API key."
+                      title="Connect your Meta account, or add funds"
+                      description={message ?? "The job needs a Meta API key: yours from Settings, or WeStride Cloud's from your balance."}
                       collapsible={false}
                     >
                       <Button label="Open settings" href="/settings" variant="secondary" />
+                      <Button label="WeStride Cloud" href="/cloud" variant="ghost" />
                     </Banner>
                   ) : null}
                   {needs === "github" ? (

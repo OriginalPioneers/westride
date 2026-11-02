@@ -23,8 +23,10 @@ const HACKATHON_EVENT_URL =
   "https://cerebralvalley.ai/e/meta-ai-developer-hackathon";
 const HACKATHON_BADGE_LABEL = `Built at the 2026 ${HACKATHON_EVENT_NAME}`;
 const META_AI_LOGO = "/logos/meta-ai.png";
+const META_AI_LOGO_LIGHT = "/logos/meta-ai-light.png";
 
 const LEGAL_LINKS = [
+  { label: "Pricing", href: "/pricing" },
   { label: "Terms of Service", href: "/terms" },
   { label: "Privacy", href: "/privacy" },
   { label: "Open Source", href: GITHUB_PROFILE_URL, isExternal: true },
@@ -79,9 +81,41 @@ const FOOTER_STYLES = `
   animation-duration: calc(var(--duration-slow-max) * 2);
 }
 
+/* Dark mark on light surfaces, light mark on dark. An explicit data-theme
+   wins over the operating system preference. */
 .westride-hackathon-logo {
   height: 11px;
   width: auto;
+  display: block;
+}
+
+.westride-hackathon-logo-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .westride-hackathon-logo-light {
+    display: none;
+  }
+
+  .westride-hackathon-logo-dark {
+    display: block;
+  }
+}
+
+[data-theme="light"] .westride-hackathon-logo-light {
+  display: block;
+}
+
+[data-theme="light"] .westride-hackathon-logo-dark {
+  display: none;
+}
+
+[data-theme="dark"] .westride-hackathon-logo-light {
+  display: none;
+}
+
+[data-theme="dark"] .westride-hackathon-logo-dark {
   display: block;
 }
 
@@ -138,8 +172,16 @@ function HackathonBadge() {
     >
       <HStack gap={2} vAlign="center" wrap="nowrap" paddingInline={2}>
         <Image
-          className="westride-hackathon-logo"
+          className="westride-hackathon-logo westride-hackathon-logo-light"
           src={META_AI_LOGO}
+          alt=""
+          width={1084}
+          height={209}
+          unoptimized
+        />
+        <Image
+          className="westride-hackathon-logo westride-hackathon-logo-dark"
+          src={META_AI_LOGO_LIGHT}
           alt=""
           width={1084}
           height={209}

@@ -15,6 +15,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import {
   ArrowTopRightOnSquareIcon,
+  CloudIcon,
   KeyIcon,
   LockClosedIcon,
   UserCircleIcon,
@@ -35,12 +36,18 @@ type DeviceState =
   | { phase: "waiting"; start: ConnectStart; intervalSeconds: number }
   | { phase: "error"; message: string };
 
-/** The two ways to connect Meta: sign in on Meta's site, or paste a Model API key. */
+/**
+ * The ways to get Muse running: sign in on Meta's site, paste a Model API
+ * key, or, when this server offers it, skip Meta and fund WeStride Cloud.
+ */
 export function MetaConnectOptions({
   canConnectMetaAccount,
+  cloudAvailable = false,
   onConnected,
 }: {
   canConnectMetaAccount: boolean;
+  /** Whether WeStride Cloud can run model calls on this server. */
+  cloudAvailable?: boolean;
   onConnected: (connection: MetaConnectionSummary) => void;
 }) {
   const [device, setDevice] = useState<DeviceState>({ phase: "idle" });
@@ -138,9 +145,11 @@ export function MetaConnectOptions({
     });
   }
 
+  const columns = (canConnectMetaAccount ? 2 : 1) + (cloudAvailable ? 1 : 0);
+
   return (
     <VStack gap={4}>
-      <Grid columns={{ minWidth: 320, max: 2 }} gap={4}>
+      <Grid columns={{ minWidth: 300, max: Math.max(1, Math.min(3, columns)) }} gap={4}>
         {canConnectMetaAccount ? (
           <Card padding={6} height="100%">
             <VStack gap={4}>
@@ -232,12 +241,35 @@ export function MetaConnectOptions({
             </HStack>
           </VStack>
         </Card>
+
+        {cloudAvailable ? (
+          <Card padding={6} height="100%">
+            <VStack gap={4}>
+              <Icon icon={CloudIcon} size="lg" color="accent" />
+              <VStack gap={1}>
+                <Heading level={3}>Or use WeStride Cloud</Heading>
+                <Text type="supporting">
+                  No Meta account needed. Add funds to your WeStride balance and
+                  Muse runs on WeStride&apos;s own Meta access, billed per call at
+                  a small margin over Meta&apos;s list price.
+                </Text>
+              </VStack>
+              <HStack gap={3} vAlign="center" wrap="wrap">
+                <Button label="Add funds" variant="secondary" href="/cloud" />
+                <Link href="/pricing" isStandalone>
+                  See pricing
+                </Link>
+              </HStack>
+            </VStack>
+          </Card>
+        ) : null}
       </Grid>
 
       <Text type="supporting">
         Pay-as-you-go pricing applies to your Meta account. Rate limits and
         billing are managed by Meta; a monthly spend alert can be set in the
         Meta dashboard under Billing.
+        {cloudAvailable ? " WeStride Cloud usage comes out of your WeStride balance instead." : ""}
       </Text>
     </VStack>
   );

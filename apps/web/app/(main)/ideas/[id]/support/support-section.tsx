@@ -9,7 +9,7 @@ import type { IdeaWithDetails } from "@westride/db/ideas";
 import { listPledgesForSupporterOnIdea, summarizeIdeaSupport } from "@westride/db/support";
 import { signInPath } from "@/lib/auth-paths";
 import { ideaPath } from "@/lib/ideas/filters";
-import { getMuseApiKey } from "@/lib/meta/connection";
+import { hasMuseAccess } from "@/lib/cloud/provider";
 import { formatMicros, formatSeconds } from "@/lib/support/schema";
 import { CapitalLinks } from "./capital-links";
 import { PledgeComputeButton, PledgeTokensButton, SupportSettingsButton } from "./support-buttons";
@@ -57,12 +57,12 @@ export async function SupportSection({
     return null;
   }
 
-  const [summary, mine, devices, onlineDevices, museKey] = await Promise.all([
+  const [summary, mine, devices, onlineDevices, hasMuse] = await Promise.all([
     summarizeIdeaSupport(idea.id),
     viewerId ? listPledgesForSupporterOnIdea(viewerId, idea.id) : Promise.resolve([] as Pledge[]),
     viewerId && idea.wantsCompute ? listDevicesForSupporter(viewerId) : Promise.resolve([]),
     idea.wantsCompute ? countOnlineDevicesForIdea(idea.id) : Promise.resolve(0),
-    viewerId && idea.wantsTokens ? getMuseApiKey(viewerId) : Promise.resolve(null),
+    viewerId && idea.wantsTokens ? hasMuseAccess(viewerId) : Promise.resolve(false),
   ]);
   const tokenPledge = mine.find((pledge) => pledge.kind === "TOKENS") ?? null;
   const computePledge = mine.find((pledge) => pledge.kind === "COMPUTE") ?? null;
@@ -105,7 +105,7 @@ export async function SupportSection({
                   ideaId={idea.id}
                   ideaName={idea.name}
                   existing={tokenPledge}
-                  hasMetaKey={museKey !== null}
+                  hasMetaKey={hasMuse}
                   signInHref={signInHref}
                 />
               </HStack>

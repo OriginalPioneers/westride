@@ -1,10 +1,13 @@
 import "server-only";
 
 import { Sandbox } from "@vercel/sandbox";
-import type { AgentRun } from "@westride/db";
+import type { AgentRun, RunnerKind } from "@westride/db";
 import { getProject, getTicketById, moveTicket } from "@westride/db/build";
 import { addTicketComment, isRunActive, updateAgentRun } from "@westride/db/build-agents";
 import { ticketKey } from "@westride/db/build-rules";
+import { usageFromMuseRun } from "@/lib/agents/usage";
+import { settleAgentRun } from "@/lib/cloud/billing";
+import { terminateModalSandbox } from "@/lib/cloud/sandbox";
 import { installationToken, repoInstallationId } from "@/lib/github/app";
 import { githubJson } from "@/lib/github/http";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
@@ -81,10 +84,27 @@ export function readFinishedPayload(value: unknown): FinishedPayload | null {
 const MAX_SUMMARY = 20_000;
 
 /**
- * Stops the sandbox on the account of the member who started the run. If
- * they have since disconnected Vercel, the sandbox stops at its timeout.
+ * Stops the sandbox. A Vercel sandbox lives on the account of the member who
+ * paid for the run, so it needs their credentials; if they have since
+ * disconnected Vercel, it stops at its timeout. A WeStride Cloud sandbox on
+ * Modal is stopped with WeStride's own credentials.
  */
-export async function stopSandboxFor(sandboxName: string, clerkUserId: string | null) {
+export async function stopSandboxFor(
+  sandboxName: string,
+  clerkUserId: string | null,
+  runnerKind: RunnerKind | null = "VERCEL_SANDBOX",
+) {
+  if (runnerKind === "MODAL_SANDBOX") {
+    try {
+      await terminateModalSandbox(sandboxName);
+    } catch (error) {
+      console.warn("Cloud sandbox stop skipped", sandboxName, error instanceof Error ? error.message : error);
+    }
+    return;
+  }
+  if (runnerKind !== "VERCEL_SANDBOX") {
+    return;
+  }
   const credentials = clerkUserId ? await getVercelSandboxCredentials(clerkUserId) : null;
   if (!credentials) {
     console.warn("Sandbox stop skipped: no Vercel connection for its owner", sandboxName);
@@ -103,7 +123,16 @@ async function stopSandbox(run: AgentRun) {
   if (!run.sandboxName) {
     return;
   }
-  await stopSandboxFor(run.sandboxName, run.startedByClerkUserId);
+  await stopSandboxFor(run.sandboxName, run.startedByClerkUserId, run.runnerKind);
+}
+
+/** Bills a WeStride Cloud run to the member's balance. No-op for runs on their own accounts. */
+async function settleCloudCharges(run: AgentRun, ticketTitle: string) {
+  if (run.museSource !== "WESTRIDE_CLOUD" && run.runnerKind !== "MODAL_SANDBOX") {
+    return;
+  }
+  const vcpus = getAgentRunnerConfig()?.vcpus ?? 2;
+  await settleAgentRun(run, vcpus, ticketTitle);
 }
 
 async function openPullRequest(run: AgentRun, title: string, body: string) {
@@ -172,7 +201,7 @@ export async function completeAgentRun(run: AgentRun, payload: FinishedPayload):
   }
 
   const status = succeeded && (!payload.pushed || prUrl) ? "SUCCEEDED" : "FAILED";
-  await updateAgentRun(run.id, {
+  const closed = await updateAgentRun(run.id, {
     status,
     exitCode: payload.exitCode,
     museSessionId: payload.museSessionId ?? null,
@@ -182,7 +211,11 @@ export async function completeAgentRun(run: AgentRun, payload: FinishedPayload):
     summary,
     error,
     finishedAt,
+    ...usageFromMuseRun(payload.usage),
   });
+  if (closed) {
+    await settleCloudCharges(closed, ticket?.title ?? run.branch);
+  }
 
   if (ticket && project) {
     const lines: string[] = [];
@@ -230,12 +263,16 @@ export async function cancelAgentRun(run: AgentRun, byClerkUserId: string): Prom
   if (!isRunActive(run.status)) {
     return;
   }
-  await updateAgentRun(run.id, {
+  const closed = await updateAgentRun(run.id, {
     status: "CANCELLED",
     error: "Cancelled by a team member.",
     finishedAt: new Date(),
   });
   const ticket = await getTicketById(run.ticketId);
+  if (closed) {
+    // A cancelled sandbox still ran; its time is billed. Model usage is unknown and not charged.
+    await settleCloudCharges(closed, ticket?.title ?? run.branch);
+  }
   if (ticket) {
     await addTicketComment({
       ticketId: ticket.id,
@@ -251,8 +288,8 @@ export async function cancelAgentRun(run: AgentRun, byClerkUserId: string): Prom
 }
 
 /**
- * A sandbox that hit Vercel's timeout never sends `finished`. Anything still
- * marked active well past the timeout is closed as failed.
+ * A sandbox that hit its host's timeout never sends `finished`. Anything
+ * still marked active well past the timeout is closed as failed.
  */
 export async function reconcileStaleRun(run: AgentRun): Promise<AgentRun> {
   if (!isRunActive(run.status)) {

@@ -19,6 +19,7 @@ import {
 } from "@astryxdesign/core/TopNav";
 import {
   ArrowRightStartOnRectangleIcon,
+  CloudIcon,
   Cog6ToothIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
@@ -31,12 +32,13 @@ type NavLink = {
   href: string;
 };
 
-/** The four studios: what the platform is about. Left of the bar. */
+/** The four studios, and what they cost. Left of the bar. */
 const PRIMARY_LINKS: NavLink[] = [
   { label: "Idea Workshop", href: "/ideas" },
   { label: "Build Studio", href: "/build" },
   { label: "AI Agent Fleet", href: "/agents" },
   { label: "Support A Project", href: "/supporting" },
+  { label: "Pricing", href: "/pricing" },
 ];
 
 /** Help along the way. Right of the bar, quieter than the studios. */
@@ -139,6 +141,7 @@ function AccountMenu() {
       )}
       items={[
         { label: "Profile", href: "/profile", icon: UserCircleIcon },
+        { label: "WeStride Cloud", href: "/cloud", icon: CloudIcon },
         { label: "Settings", href: "/settings", icon: Cog6ToothIcon },
         { type: "divider" },
         {

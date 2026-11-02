@@ -169,6 +169,13 @@
       "when": 1793596468982,
       "tag": "0023_idea_follows",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793639911924,
+      "tag": "0024_westride_cloud",
+      "breakpoints": true
     }
   ]
 }

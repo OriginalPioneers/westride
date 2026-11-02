@@ -2,8 +2,7 @@ import "server-only";
 
 import type { Agent, Pledge } from "@westride/db";
 import { listActivePledgesForIdea, refreshPledgePeriod, remainingMicros } from "@westride/db/support";
-import { getMuseApiKey } from "@/lib/meta/connection";
-import { hasVercelSandboxAccess } from "@/lib/vercel/connection";
+import { hasMuseAccess, hasSandboxAccess } from "@/lib/cloud/provider";
 
 /**
  * A TOKENS pledge is only chosen when it can plausibly cover one more job.
@@ -54,9 +53,10 @@ export async function resolveJobPayer(
       // Their own pledge; record the job against it so the idea's totals see it.
       return { clerkUserId: pledge.clerkUserId, pledgeId: pledge.id };
     }
+    // A sponsor's own accounts, or their WeStride Cloud balance, can pay.
     const [key, vercel] = await Promise.all([
-      getMuseApiKey(pledge.clerkUserId).catch(() => null),
-      options.needsVercel ? hasVercelSandboxAccess(pledge.clerkUserId) : Promise.resolve(true),
+      hasMuseAccess(pledge.clerkUserId),
+      options.needsVercel ? hasSandboxAccess(pledge.clerkUserId) : Promise.resolve(true),
     ]);
     if (key && vercel) {
       return { clerkUserId: pledge.clerkUserId, pledgeId: pledge.id };

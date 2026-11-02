@@ -15,6 +15,7 @@ import { VOLUNTEER_QUEUE_TIMEOUT_MS, clearDeviceJob } from "@westride/db/devices
 import type { ResultRequest } from "@westride/runner-protocol";
 import { getAgentRunnerConfig, getVolunteerRunnerConfig } from "@/lib/build/agent/config";
 import { stopSandboxFor, type FinishedPayload } from "@/lib/build/agent/finish";
+import { settleAgentJob } from "@/lib/cloud/billing";
 import { installationToken, repoInstallationId } from "@/lib/github/app";
 import { commitFilesToBranch } from "@/lib/github/commit-files";
 import { requireGithubAppConfig } from "@/lib/github/config";
@@ -27,12 +28,21 @@ export { readFinishedPayload, type FinishedPayload } from "@/lib/build/agent/fin
 
 const MAX_SUMMARY = 20_000;
 
-/** The sandbox lives on the payer's Vercel account, so it is stopped with their credentials. */
+/** A Vercel sandbox lives on the payer's account and is stopped with their credentials; a WeStride Cloud one with ours. */
 async function stopSandbox(job: AgentJob) {
   if (!job.sandboxName) {
     return;
   }
-  await stopSandboxFor(job.sandboxName, job.paidByClerkUserId);
+  await stopSandboxFor(job.sandboxName, job.paidByClerkUserId, job.runnerKind);
+}
+
+/** Bills a WeStride Cloud code job to the payer's balance. No-op for jobs on their own accounts. */
+async function settleCloudCharges(job: AgentJob) {
+  if (job.museSource !== "WESTRIDE_CLOUD" && job.runnerKind !== "MODAL_SANDBOX") {
+    return;
+  }
+  const vcpus = getAgentRunnerConfig()?.vcpus ?? 2;
+  await settleAgentJob(job, vcpus);
 }
 
 async function openPullRequest(job: AgentJob, title: string, body: string) {
@@ -112,6 +122,7 @@ export async function completeCodeJob(job: AgentJob, payload: FinishedPayload): 
   await settleTicket({ agent, job, ticketId: ticket?.id ?? null, status, prUrl, prNumber, error, exitCode: payload.exitCode });
   if (closed) {
     await creditJobToPledge(closed);
+    await settleCloudCharges(closed);
   }
   if (job.runnerKind === "VOLUNTEER_DEVICE") {
     if (job.deviceId) {
@@ -251,11 +262,15 @@ export async function cancelAgentJob(job: AgentJob, byClerkUserId: string): Prom
   if (!isJobActive(job.status)) {
     return;
   }
-  await updateAgentJob(job.id, {
+  const closed = await updateAgentJob(job.id, {
     status: "CANCELLED",
     error: "Cancelled by a team member.",
     finishedAt: new Date(),
   });
+  if (closed && closed.kind === "CODE") {
+    // A cancelled sandbox still ran; its time is billed. Model usage is unknown and not charged.
+    await settleCloudCharges(closed);
+  }
   const ticket = job.ticketId ? await getAgentTicketById(job.ticketId) : null;
   await addAgentLog(job.agentId, {
     kind: "job",

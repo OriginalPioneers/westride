@@ -1,8 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
+import { settleMuseUsage } from "@/lib/cloud/billing";
+import { resolveMuseAccess, type MuseAccess } from "@/lib/cloud/provider";
 import { transcribeMuseAudio } from "@/lib/idea-factory/muse";
-import { getMuseApiKey, isMetaConnectionConfigured } from "@/lib/meta/connection";
+import { MUSE_TRANSCRIBE_MODEL } from "@/lib/idea-factory/pricing";
 import {
   MAX_DICTATION_BYTES,
   MAX_DICTATION_KEYWORD_LENGTH,
@@ -15,8 +18,9 @@ import {
 /**
  * Voice entry for text fields. The browser records one take as a WAV clip
  * and posts it here; WeStride forwards it to Muse Voice Transcribe with the
- * member's own Meta key and returns the text. The key never leaves the
- * server, which is why the browser does not talk to Meta directly.
+ * member's own Meta key, or WeStride Cloud's when they use that, and returns
+ * the text. The key never leaves the server, which is why the browser does
+ * not talk to Meta directly.
  */
 
 export const maxDuration = 60;
@@ -33,13 +37,13 @@ function blocked(code: DictationBlocker) {
   const message =
     code === "sign-in"
       ? "Sign in to dictate."
-      : "Connect your Meta account in Settings to dictate. Muse Voice Transcribe is billed to your Meta account.";
+      : "Connect your Meta account in Settings, or add funds to WeStride Cloud, to dictate. Muse Voice Transcribe is billed per hour of audio.";
   return json(code === "sign-in" ? 401 : 412, { error: message, code });
 }
 
 type Member =
   | { blocker: DictationBlocker }
-  | { blocker: null; userId: string; apiKey: string };
+  | { blocker: null; userId: string; access: MuseAccess };
 
 /** Who is dictating and with which key, or why they cannot right now. */
 async function member(): Promise<Member> {
@@ -47,11 +51,11 @@ async function member(): Promise<Member> {
   if (!userId) {
     return { blocker: "sign-in" };
   }
-  const apiKey = isMetaConnectionConfigured() ? await getMuseApiKey(userId) : null;
-  if (!apiKey) {
+  const resolved = await resolveMuseAccess(userId).catch(() => null);
+  if (!resolved?.ok) {
     return { blocker: "connect-meta" };
   }
-  return { blocker: null, userId, apiKey };
+  return { blocker: null, userId, access: resolved.access };
 }
 
 /** Checked by the browser while the microphone warms up. */
@@ -106,7 +110,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const result = await transcribeMuseAudio({ apiKey: who.apiKey, audio, keywords });
+  const result = await transcribeMuseAudio({ apiKey: who.access.apiKey, audio, keywords });
   if (!result.ok) {
     if (result.status === 401) {
       return blocked("connect-meta");
@@ -114,5 +118,12 @@ export async function POST(request: NextRequest) {
     console.error("Dictation failed", { status: result.status, error: result.error });
     return json(result.status === 429 ? 429 : 502, { error: result.error, code: null });
   }
+  // Dictation is not logged to muse_requests, so it settles under its own reference.
+  await settleMuseUsage(who.access, {
+    reference: `transcribe:${randomUUID()}`,
+    model: MUSE_TRANSCRIBE_MODEL.id,
+    purpose: "dictation",
+    estimatedCostMicros: result.estimatedCostMicros,
+  });
   return json(200, { transcript: result.transcript, audioDurationMs: result.audioDurationMs });
 }

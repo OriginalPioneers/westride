@@ -10,14 +10,16 @@ import { MetaConnectOptions } from "../../../meta-connect-options";
 export function ConnectPanel({
   canConnectMeta,
   canConnectMetaAccount,
+  cloudAvailable = false,
   onConnected,
 }: {
   canConnectMeta: boolean;
   canConnectMetaAccount: boolean;
+  cloudAvailable?: boolean;
   onConnected: (connection: MetaConnectionSummary) => void;
 }) {
   return (
-    <VStack gap={6} maxWidth={880}>
+    <VStack gap={6} maxWidth={cloudAvailable ? 1100 : 880}>
       <VStack gap={2}>
         <Heading level={2}>Bring your own Muse</Heading>
         <Text>
@@ -26,12 +28,16 @@ export function ConnectPanel({
           request and what it cost. Your Meta connection is kept encrypted on
           your WeStride account and only used for requests you make. Manage it
           any time in Settings.
+          {cloudAvailable
+            ? " Or skip the Meta account and let WeStride Cloud run it from your WeStride balance."
+            : ""}
         </Text>
       </VStack>
 
       {canConnectMeta ? (
         <MetaConnectOptions
           canConnectMetaAccount={canConnectMetaAccount}
+          cloudAvailable={cloudAvailable}
           onConnected={onConnected}
         />
       ) : (

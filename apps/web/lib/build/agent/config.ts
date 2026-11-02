@@ -1,15 +1,16 @@
 import "server-only";
 
+import { isCloudComputeConfigured } from "@/lib/cloud/config";
 import { isGithubAppConfigured } from "@/lib/github/config";
 import { isVercelConnectionConfigured } from "@/lib/vercel/connection";
 
 /**
- * Muse Code agents run in Vercel Sandbox microVMs, never on the WeStride
- * server, and never on WeStride's Vercel account: each sandbox is created on
- * the account of the member who started the run, so Vercel bills them. The
- * server needs to be able to keep members' Vercel tokens encrypted, and it
- * needs a public URL the sandbox can report back to, because it cannot reach
- * localhost.
+ * Muse Code agents run in sandboxes, never on the WeStride server: either a
+ * Vercel Sandbox on the account of the member who started the run, so Vercel
+ * bills them, or a WeStride Cloud sandbox on Modal, billed to the member's
+ * WeStride balance. The server needs at least one of those routes (Vercel
+ * token encryption, or Modal credentials) and a public URL the sandbox can
+ * report back to, because it cannot reach localhost.
  */
 export type AgentRunnerConfig = {
   /** Public origin of this WeStride server, e.g. https://westride.org. */
@@ -31,7 +32,10 @@ const DEFAULT_VCPUS = 2;
 const DEFAULT_MAX_ACTIVE = 2;
 
 export function getAgentRunnerConfig(): AgentRunnerConfig | null {
-  if (!isGithubAppConfigured() || !isVercelConnectionConfigured()) {
+  if (!isGithubAppConfigured()) {
+    return null;
+  }
+  if (!isVercelConnectionConfigured() && !isCloudComputeConfigured()) {
     return null;
   }
   const callbackBaseUrl = env("BUILD_RUNNER_CALLBACK_URL").replace(/\/+$/, "");
@@ -93,4 +97,4 @@ export function isSandboxAuthError(error: unknown): boolean {
 
 /** What members see when a run is refused for a connection they can fix in Settings. */
 export const VERCEL_CONNECTION_MESSAGE =
-  "Connect your Vercel account in Settings so the sandbox runs on your Vercel plan.";
+  "Connect your Vercel account in Settings so the sandbox runs on your Vercel plan, or add funds to WeStride Cloud.";

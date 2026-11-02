@@ -48,9 +48,10 @@ import {
   type MuseAttempt,
 } from "@/lib/idea-factory/muse";
 import { isMuseModelId } from "@/lib/idea-factory/pricing";
+import { settleMuseRequest } from "@/lib/cloud/billing";
+import { getCloudStatus, resolveMuseAccess, type MuseAccess } from "@/lib/cloud/provider";
 import {
   getMetaConnectionSummary,
-  getMuseApiKey,
   isMetaConnectionConfigured,
   type MetaConnectionSummary,
 } from "@/lib/meta/connection";
@@ -84,20 +85,21 @@ function failure(message: string): Failure {
   return { status: "error", message };
 }
 
-/** The member's own Meta key, from their WeStride account. */
-async function museKeyFor(userId: string): Promise<string | Failure> {
+/** The member's own Meta key, or WeStride Cloud's when they are using that instead. */
+async function museKeyFor(userId: string): Promise<MuseAccess | Failure> {
+  let resolved: Awaited<ReturnType<typeof resolveMuseAccess>>;
   try {
-    const apiKey = await getMuseApiKey(userId);
-    if (apiKey) {
-      return apiKey;
-    }
+    resolved = await resolveMuseAccess(userId);
   } catch (error) {
     console.error("Meta key lookup failed", error);
     return failure("Your Meta key could not be refreshed. Try again in a moment.");
   }
+  if (resolved.ok) {
+    return resolved.access;
+  }
   return {
     status: "error",
-    message: "Connect your Meta account to use the Idea Factory.",
+    message: resolved.message,
     needsConnection: true,
   };
 }
@@ -140,7 +142,7 @@ function summarize(request: MuseRequest): MuseRequestSummary {
 
 async function record(input: {
   ideaId: string;
-  userId: string;
+  access: MuseAccess;
   agentSlug: string | null;
   purpose: string;
   model: string;
@@ -149,7 +151,7 @@ async function record(input: {
   try {
     const logged = await logMuseRequest({
       ideaId: input.ideaId,
-      clerkUserId: input.userId,
+      clerkUserId: input.access.clerkUserId,
       agentSlug: input.agentSlug,
       purpose: input.purpose,
       model: input.model,
@@ -169,6 +171,7 @@ async function record(input: {
       rateLimitRemainingRequests: input.attempt.rateLimit.remainingRequests,
       error: input.attempt.error,
     });
+    await settleMuseRequest(input.access, logged);
     return summarize(logged);
   } catch (error) {
     console.error("Muse request log failed", error);
@@ -196,6 +199,10 @@ export type FactoryData = {
   canConnectMeta: boolean;
   /** Whether "Connect Meta account" is configured on this deployment. */
   canConnectMetaAccount: boolean;
+  /** Whether this server offers WeStride Cloud for model calls. */
+  cloudAvailable: boolean;
+  /** Whether the viewer's WeStride Cloud balance can pay for calls right now. */
+  canUseCloud: boolean;
 };
 
 export async function loadFactory(
@@ -207,13 +214,14 @@ export async function loadFactory(
   }
   const { idea, userId } = context;
 
-  const [threads, evaluations, requests, usage, profiles, meta] = await Promise.all([
+  const [threads, evaluations, requests, usage, profiles, meta, cloud] = await Promise.all([
     listThreads(ideaId),
     listEvaluations(ideaId),
     listMuseRequests(ideaId),
     sumMuseUsage(ideaId, userId),
     resolveMemberProfiles(idea.members.map((member) => member.clerkUserId)),
     getMetaConnectionSummary(userId),
+    getCloudStatus(userId),
   ]);
 
   return {
@@ -227,6 +235,8 @@ export async function loadFactory(
       meta,
       canConnectMeta: isMetaConnectionConfigured(),
       canConnectMetaAccount: deviceClientId() !== null,
+      cloudAvailable: cloud.aiAvailable,
+      canUseCloud: cloud.canRunAi,
     },
   };
 }
@@ -302,9 +312,9 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
   if (!agent) {
     return failure("That advisor is not on this idea's team.");
   }
-  const apiKey = await museKeyFor(userId);
-  if (isFailure(apiKey)) {
-    return apiKey;
+  const access = await museKeyFor(userId);
+  if (isFailure(access)) {
+    return access;
   }
 
   const [thread, latestEvaluation] = await Promise.all([
@@ -314,7 +324,7 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
   const userMessage = await addUserMessage(thread.id, userId, content);
 
   const result = await callMuse({
-    apiKey,
+    apiKey: access.apiKey,
     model,
     instructions: buildAgentInstructions({
       agent,
@@ -330,7 +340,7 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
 
   const request = await record({
     ideaId,
-    userId,
+    access,
     agentSlug,
     purpose: "chat",
     model,
@@ -387,9 +397,9 @@ export async function startEvaluation(
     return failure("Pick at least one advisor from this idea's team.");
   }
   // Re-mints a lapsing key once here, before every advisor runs at once.
-  const apiKey = await museKeyFor(userId);
-  if (isFailure(apiKey)) {
-    return apiKey;
+  const access = await museKeyFor(userId);
+  if (isFailure(access)) {
+    return access;
   }
 
   const evaluation = await createEvaluation({
@@ -511,16 +521,16 @@ export async function runEvaluationAgent(input: unknown): Promise<RunAgentResult
   if (slot.status === "COMPLETED") {
     return { status: "ok", finding: slot, request: null };
   }
-  const apiKey = await museKeyFor(userId);
-  if (isFailure(apiKey)) {
-    return apiKey;
+  const access = await museKeyFor(userId);
+  if (isFailure(access)) {
+    return access;
   }
 
   await markFindingRunning(evaluationId, agentSlug);
   const previous = await getLatestCompletedEvaluation(idea.id);
 
   const result = await callMuse({
-    apiKey,
+    apiKey: access.apiKey,
     model: evaluation.model,
     instructions: buildAgentInstructions({
       agent,
@@ -539,7 +549,7 @@ export async function runEvaluationAgent(input: unknown): Promise<RunAgentResult
 
   const request = await record({
     ideaId: idea.id,
-    userId,
+    access,
     agentSlug,
     purpose: "evaluation",
     model: evaluation.model,
@@ -646,13 +656,13 @@ export async function synthesizeEvaluation(input: unknown): Promise<SynthesizeRe
     const failed = await getEvaluation(evaluationId);
     return { status: "error", message, evaluation: failed ?? evaluation, request: null };
   }
-  const apiKey = await museKeyFor(userId);
-  if (isFailure(apiKey)) {
-    return apiKey;
+  const access = await museKeyFor(userId);
+  if (isFailure(access)) {
+    return access;
   }
 
   const result = await callMuse({
-    apiKey,
+    apiKey: access.apiKey,
     model: evaluation.model,
     instructions: `${SYNTHESIS_INSTRUCTIONS}\n\nThe idea: "${idea.name}" (${IDEA_TYPE_LABELS[idea.type].toLowerCase()}).\n${idea.description.trim().slice(0, 3000)}`,
     input: buildSynthesisInput(evaluation),
@@ -664,7 +674,7 @@ export async function synthesizeEvaluation(input: unknown): Promise<SynthesizeRe
 
   const request = await record({
     ideaId: idea.id,
-    userId,
+    access,
     agentSlug: null,
     purpose: "synthesis",
     model: evaluation.model,

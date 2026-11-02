@@ -23,7 +23,13 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { agentRunStatus, ticketPriority, ticketStatus } from "./build-enums";
+import {
+  agentRunStatus,
+  museSource,
+  runnerKind,
+  ticketPriority,
+  ticketStatus,
+} from "./build-enums";
 import { contentOrigin } from "./origin-schema";
 import { ideas } from "./schema";
 
@@ -261,10 +267,14 @@ export const agentRuns = pgTable(
     repoId: uuid("repo_id").references(() => projectRepos.id, { onDelete: "set null" }),
     /** Snapshot of the repository in case the link is removed later. */
     repoFullName: text("repo_full_name").notNull(),
-    /** Clerk user id of the member who started the run; their Meta key pays for it. */
+    /** Clerk user id of the member who started the run; their Meta key or WeStride Cloud balance pays for it. */
     startedByClerkUserId: text("started_by_clerk_user_id").notNull(),
     status: agentRunStatus("status").notNull().default("QUEUED"),
-    /** The sandbox's name on Vercel, used to stop it. */
+    /** Where the sandbox ran. Rows from before WeStride Cloud read as Vercel. */
+    runnerKind: runnerKind("runner_kind").notNull().default("VERCEL_SANDBOX"),
+    /** Whose Meta key the model calls used. WESTRIDE_CLOUD bills the starter's balance. */
+    museSource: museSource("muse_source").notNull().default("OWN"),
+    /** The sandbox's name on Vercel, or its id on Modal, used to stop it. */
     sandboxName: text("sandbox_name"),
     branch: text("branch").notNull(),
     baseBranch: text("base_branch").notNull(),
@@ -282,6 +292,17 @@ export const agentRuns = pgTable(
     summary: text("summary"),
     error: text("error"),
     eventCount: integer("event_count").notNull().default(0),
+    // Usage, as Muse reported it. Zero until the run finishes.
+    modelCalls: integer("model_calls").notNull().default(0),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    cachedTokens: integer("cached_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    reasoningTokens: integer("reasoning_tokens").notNull().default(0),
+    totalTokens: integer("total_tokens").notNull().default(0),
+    /** USD in millionths, from the published price list. An estimate. */
+    estimatedCostMicros: bigint("estimated_cost_micros", { mode: "number" })
+      .notNull()
+      .default(0),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),

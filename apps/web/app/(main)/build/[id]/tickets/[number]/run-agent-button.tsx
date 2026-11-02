@@ -151,29 +151,31 @@ export function RunAgentButton({
               <LayoutContent>
                 <FormLayout defaultOptionality="optional">
                   <Text type="supporting">
-                    A Muse Code agent clones the repository into a disposable Vercel Sandbox on
-                    your own Vercel account, works the ticket on a new branch, and opens a pull
-                    request when it is done. Your Meta key pays for the model and your Vercel plan
-                    for the sandbox; nothing runs on your machine.
+                    A Muse Code agent clones the repository into a disposable sandbox, works the
+                    ticket on a new branch, and opens a pull request when it is done. The model
+                    runs on your Meta account and the sandbox on your Vercel account, or both on
+                    WeStride Cloud from your balance; nothing runs on your machine.
                   </Text>
                   {needs === "meta" ? (
                     <Banner
                       status="info"
-                      title="Connect your Meta account first"
-                      description="The agent runs on your Meta API key."
+                      title="Connect your Meta account, or add funds"
+                      description={message ?? "The agent needs a Meta API key: yours from Settings, or WeStride Cloud's from your balance."}
                       collapsible={false}
                     >
                       <Button label="Open settings" href="/settings" variant="secondary" />
+                      <Button label="WeStride Cloud" href="/cloud" variant="ghost" />
                     </Banner>
                   ) : null}
                   {needs === "vercel" ? (
                     <Banner
                       status="info"
-                      title="Connect your Vercel account first"
-                      description={message ?? "The sandbox runs on your Vercel account, so Vercel bills you, not WeStride. Choose a team and project after connecting."}
+                      title="Connect your Vercel account, or add funds"
+                      description={message ?? "The sandbox runs on your Vercel account, so Vercel bills you, or on WeStride Cloud from your balance."}
                       collapsible={false}
                     >
                       <Button label="Open settings" href="/settings" variant="secondary" />
+                      <Button label="WeStride Cloud" href="/cloud" variant="ghost" />
                     </Banner>
                   ) : null}
                   {needs === "github" ? (
