@@ -17,7 +17,7 @@ import {
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import {
   Typeahead,
@@ -183,7 +183,7 @@ export function ProjectDetailsForm({
           isRequired
           status={fieldStatus(errors.name)}
         />
-        <TextArea
+        <VoiceTextArea
           label="Description"
           description="What you are building, for whom, and what version one leaves out. Markdown is fine."
           value={description}

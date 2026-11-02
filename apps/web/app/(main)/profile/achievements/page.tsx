@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
+import { VStack } from "@astryxdesign/core/Stack";
 import { listAchievementsForUser } from "@westride/db/client";
 import {
   listLearningAttempts,
   syncLearningAwards,
 } from "@westride/db/learning";
 import { awardIfSignedIn } from "@/lib/achievements";
+import { ProfileTabs } from "../../section-tabs";
 import { AchievementTrack } from "./achievement-track";
 export const metadata: Metadata = { title: "Achievements" };
 export default async function AchievementsPage() {
@@ -23,7 +25,10 @@ export default async function AchievementsPage() {
       contentWidth={960}
       header={
         <LayoutHeader hasDivider>
-          <Heading level={1}>Achievements</Heading>
+          <VStack gap={4}>
+            <ProfileTabs />
+            <Heading level={1}>Achievements</Heading>
+          </VStack>
         </LayoutHeader>
       }
       content={

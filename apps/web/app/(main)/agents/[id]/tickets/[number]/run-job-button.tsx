@@ -10,7 +10,7 @@ import { Icon } from "@astryxdesign/core/Icon";
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { HStack, StackItem } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../../voice-text-area";
 import { BoltIcon } from "@heroicons/react/20/solid";
 import { MAX_JOB_INSTRUCTIONS } from "@/lib/agents/schema";
 import { runJobAction } from "../../../job-actions";
@@ -139,7 +139,7 @@ export function RunJobButton({
                     </Banner>
                   ) : null}
                   {message && !needs ? <Banner status="error" title={message} /> : null}
-                  <TextArea
+                  <VoiceTextArea
                     label="Extra guidance"
                     description="Anything beyond the ticket and the agent's standing instructions, for this run only."
                     value={instructions}

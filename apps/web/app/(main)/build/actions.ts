@@ -30,6 +30,7 @@ import {
   type Failure,
 } from "@/lib/build/access";
 import {
+  createProjectRepoSchema,
   createProjectSchema,
   fieldErrorsFrom,
   type CreateProjectInput,
@@ -238,7 +239,7 @@ export type GithubRepoOwnersResult =
   | { status: "unavailable" }
   | Failure;
 
-/** Where the new-project dialog can create a repository for the member. */
+/** Where the member can create a repository for a project. */
 export async function loadGithubRepoOwners(): Promise<GithubRepoOwnersResult> {
   const { userId } = await auth();
   if (!userId) {
@@ -419,6 +420,39 @@ export async function linkRepoToProject(projectId: string, url: string): Promise
   } catch (error) {
     console.error("Project repo link failed", error);
     return failure("The repository could not be linked. Try again.");
+  }
+}
+
+/** Creates a repository on GitHub as the member and links it to the project. */
+export async function createRepoForProjectAction(
+  projectId: string,
+  draft: unknown,
+): Promise<RepoResult> {
+  const context = await requireProjectMember(projectId);
+  if (isFailure(context)) {
+    return context;
+  }
+  const parsed = createProjectRepoSchema.safeParse(draft);
+  if (!parsed.success) {
+    return failure("Fix the highlighted fields.", fieldErrorsFrom(parsed.error));
+  }
+  const creation = await createRepoForProject(parsed.data.newGithubRepo, context.userId);
+  if (creation.status === "error") {
+    return creation;
+  }
+  const created = creation.repo;
+  try {
+    const repo = await linkProjectRepo(projectId, toRepoInput(created, context.userId));
+    if (parsed.data.makePrimary && !repo.isPrimary) {
+      await setPrimaryProjectRepo(projectId, repo.id);
+    }
+    revalidateProject(projectId);
+    return { status: "ok", repo };
+  } catch (error) {
+    console.error("Project repo link failed", error);
+    return failure(
+      `${created.fullName} was created on GitHub, but it could not be linked. Paste ${created.htmlUrl} to link it.`,
+    );
   }
 }
 

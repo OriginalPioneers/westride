@@ -9,7 +9,7 @@ import { FormLayout } from "@astryxdesign/core/FormLayout";
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem } from "@astryxdesign/core/Stack";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import type { AgentTicket, TicketPriority } from "@westride/db";
 import { TICKET_PRIORITY_LABELS, TICKET_PRIORITY_ORDER, agentTicketPath } from "@/lib/agents/labels";
@@ -132,7 +132,7 @@ export function AgentTicketDialog({
                 isRequired
                 status={fieldStatus(errors.title)}
               />
-              <TextArea
+              <VoiceTextArea
                 label="What does done look like?"
                 description={
                   runsCode

@@ -15,7 +15,7 @@ import { MultiSelector } from "@astryxdesign/core/MultiSelector";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Tokenizer } from "@astryxdesign/core/Tokenizer";
 import {
@@ -278,7 +278,7 @@ export function MentorProfileForm({
             isRequired
             status={errorStatus(fieldErrors.displayName)}
           />
-          <TextArea
+          <VoiceTextArea
             label="About"
             description="A paragraph on your background, what you can help with, and how you like to mentor."
             value={bio}

@@ -12,7 +12,7 @@ import { NumberInput } from "@astryxdesign/core/NumberInput";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../../voice-text-area";
 import { BoltIcon } from "@heroicons/react/20/solid";
 import type { ProjectRepo } from "@westride/db";
 import {
@@ -230,7 +230,7 @@ export function RunAgentButton({
                     max={MAX_AGENT_STEPS}
                     step={10}
                   />
-                  <TextArea
+                  <VoiceTextArea
                     label="Extra guidance"
                     description="Anything beyond the ticket: constraints, files to start from, what to avoid."
                     value={instructions}

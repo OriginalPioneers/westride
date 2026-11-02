@@ -12,7 +12,7 @@ import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/Segme
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import {
   MAX_AGENT_DESCRIPTION,
@@ -118,7 +118,7 @@ export function AgentDetailsForm({
           isRequired
           status={fieldStatus(errors.name)}
         />
-        <TextArea
+        <VoiceTextArea
           label="What it does"
           value={draft.description}
           onChange={(value) => patch({ description: value }, "description")}
@@ -127,7 +127,7 @@ export function AgentDetailsForm({
           isRequired
           status={fieldStatus(errors.description)}
         />
-        <TextArea
+        <VoiceTextArea
           label="Standing instructions"
           description="Rules it follows on every job. Markdown is fine."
           value={draft.instructions}

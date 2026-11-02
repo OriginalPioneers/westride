@@ -23,17 +23,11 @@ import {
   ArrowRightEndOnRectangleIcon,
   ArrowRightStartOnRectangleIcon,
   BookOpenIcon,
-  ChatBubbleLeftRightIcon,
-  CodeBracketIcon,
   Cog6ToothIcon,
-  CommandLineIcon,
   CpuChipIcon,
   HeartIcon,
   HomeIcon,
   LightBulbIcon,
-  PaintBrushIcon,
-  Square3Stack3DIcon,
-  TrophyIcon,
   UserCircleIcon,
   UserGroupIcon,
   UserPlusIcon,
@@ -45,17 +39,11 @@ import { SiteFooter } from "../site-footer";
 import {
   AcademicCapIcon as AcademicCapIconSolid,
   BookOpenIcon as BookOpenIconSolid,
-  ChatBubbleLeftRightIcon as ChatBubbleLeftRightIconSolid,
-  CodeBracketIcon as CodeBracketIconSolid,
   Cog6ToothIcon as Cog6ToothIconSolid,
-  CommandLineIcon as CommandLineIconSolid,
   CpuChipIcon as CpuChipIconSolid,
   HeartIcon as HeartIconSolid,
   HomeIcon as HomeIconSolid,
   LightBulbIcon as LightBulbIconSolid,
-  PaintBrushIcon as PaintBrushIconSolid,
-  Square3Stack3DIcon as Square3Stack3DIconSolid,
-  TrophyIcon as TrophyIconSolid,
   UserCircleIcon as UserCircleIconSolid,
   UserGroupIcon as UserGroupIconSolid,
   WrenchScrewdriverIcon as WrenchScrewdriverIconSolid,
@@ -120,12 +108,6 @@ const NAV_GROUPS: NavGroup[] = [
         icon: UserGroupIcon,
         selectedIcon: UserGroupIconSolid,
       },
-      {
-        label: "Community",
-        href: "/community",
-        icon: ChatBubbleLeftRightIcon,
-        selectedIcon: ChatBubbleLeftRightIconSolid,
-      },
     ],
   },
   {
@@ -140,17 +122,6 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: "Earn",
-    links: [
-      {
-        label: "Achievements",
-        href: "/achievements",
-        icon: TrophyIcon,
-        selectedIcon: TrophyIconSolid,
-      },
-    ],
-  },
-  {
     title: "About",
     links: [
       {
@@ -158,30 +129,6 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/our-story",
         icon: BookOpenIcon,
         selectedIcon: BookOpenIconSolid,
-      },
-      {
-        label: "Tech Stack",
-        href: "/tech-stack",
-        icon: Square3Stack3DIcon,
-        selectedIcon: Square3Stack3DIconSolid,
-      },
-      {
-        label: "Design",
-        href: "/design",
-        icon: PaintBrushIcon,
-        selectedIcon: PaintBrushIconSolid,
-      },
-      {
-        label: "API",
-        href: "/api",
-        icon: CodeBracketIcon,
-        selectedIcon: CodeBracketIconSolid,
-      },
-      {
-        label: "MCP",
-        href: "/mcp",
-        icon: CommandLineIcon,
-        selectedIcon: CommandLineIconSolid,
       },
     ],
   },
@@ -376,10 +323,12 @@ export function AppFrame({
           style={{ userSelect: "none", WebkitUserSelect: "none" }}
           collapsible={{ hasButton: false }}
           resizable={{
-            defaultWidth: 260,
-            minWidth: 220,
-            maxWidth: 360,
-            autoSaveId: "westride-side-nav",
+            defaultWidth: 200,
+            minWidth: 180,
+            maxWidth: 280,
+            // Width key bumped so browsers that saved the old 260px default
+            // pick up the tighter rail.
+            autoSaveId: "westride-side-nav-v2",
           }}
           header={<NavBrand />}
           footer={

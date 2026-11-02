@@ -2,8 +2,11 @@
 
 import Image from "next/image";
 import {
+  useEffect,
   useLayoutEffect,
   useRef,
+  useState,
+  type AnimationEvent,
   type ComponentType,
   type CSSProperties,
   type ReactNode,
@@ -21,16 +24,21 @@ import { Icon } from "@astryxdesign/core/Icon";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { Link } from "@astryxdesign/core/Link";
 import { Section } from "@astryxdesign/core/Section";
+import { SelectableCard } from "@astryxdesign/core/SelectableCard";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
-import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Step, Stepper } from "@astryxdesign/core/Stepper";
 import { Text } from "@astryxdesign/core/Text";
 import { Theme } from "@astryxdesign/core/theme";
 import {
   ArrowRightIcon,
   ArrowTopRightOnSquareIcon,
-  StarIcon,
 } from "@heroicons/react/20/solid";
+import {
+  AcademicCapIcon,
+  CodeBracketIcon,
+  HeartIcon,
+  UserGroupIcon,
+} from "@heroicons/react/24/outline";
 import { defaultThemeSlug, themes } from "@/astryx-themes";
 import { signUpPath } from "@/lib/auth-paths";
 import { STORE_LINKS } from "../../store-links";
@@ -40,7 +48,6 @@ import {
   HACKATHON_LOGO,
   HACKATHON_NAME,
   HACKATHON_URL,
-  HERO_CONNECTIONS,
   INTEGRATIONS,
   META_MODELS,
   MILESTONES,
@@ -52,13 +59,11 @@ import {
   SUPPORT,
   SUPPORTER_WAYS,
   TEAM,
-  type ConnectionStatus,
-  type ConnectionStatuses,
-  type HeroConnection,
   type Integration,
   type MobileApp,
   type PlatformSurface,
   type StackLogo,
+  type Tint,
 } from "./landing-content";
 import { HeroGlobe } from "./hero-globe";
 import { ImportRepoForm } from "./import-repo-form";
@@ -72,7 +77,6 @@ type LandingProps = {
   firstName: string | null;
   isSignedIn: boolean;
   stats: LandingStats;
-  connections: ConnectionStatuses;
 };
 
 const CONTENT_WIDTH = 1120;
@@ -330,7 +334,11 @@ function HeroSky() {
           <stop offset="1" stopColor="var(--wl-teal)" />
         </linearGradient>
         <linearGradient id="wl-star-trail" x1="1" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="var(--color-text-primary)" stopOpacity="0" />
+          <stop
+            offset="0"
+            stopColor="var(--color-text-primary)"
+            stopOpacity="0"
+          />
           <stop offset="0.7" stopColor="var(--wl-blue)" stopOpacity="0.5" />
           <stop offset="1" stopColor="var(--color-text-primary)" />
         </linearGradient>
@@ -427,7 +435,10 @@ function HeroSky() {
 
       <g>
         {SHOOTING_STARS.map((star) => (
-          <g key={`${star.x}-${star.y}`} transform={`translate(${star.x} ${star.y})`}>
+          <g
+            key={`${star.x}-${star.y}`}
+            transform={`translate(${star.x} ${star.y})`}
+          >
             <line
               className="wl-shooting-star"
               x1="150"
@@ -451,49 +462,6 @@ function HeroSky() {
   );
 }
 
-const CONNECTION_STATUS: Record<
-  ConnectionStatus,
-  { label: string; variant: "success" | "accent" | "neutral" }
-> = {
-  connected: { label: "Connected", variant: "success" },
-  disconnected: { label: "Not connected", variant: "accent" },
-  available: { label: "Available", variant: "accent" },
-  unavailable: { label: "Coming soon", variant: "neutral" },
-};
-
-function ConnectionTile({
-  connection,
-  status,
-}: {
-  connection: HeroConnection;
-  status: ConnectionStatus;
-}) {
-  const { label, variant } = CONNECTION_STATUS[status];
-  return (
-    <ClickableCard
-      className="wl-connect-tile"
-      href="/settings"
-      label={`${connection.name}: ${label}. Manage in settings.`}
-      padding={3}
-    >
-      <VStack gap={2}>
-        <LogoTile src={connection.logo} size="sm" />
-        <VStack gap={0.5}>
-          <Text size="sm" weight="semibold" textWrap="nowrap">
-            {connection.name}
-          </Text>
-          <HStack gap={1.5} vAlign="center" wrap="nowrap">
-            <StatusDot variant={variant} label={label} />
-            <Text type="supporting" size="xsm" textWrap="nowrap">
-              {label}
-            </Text>
-          </HStack>
-        </VStack>
-      </VStack>
-    </ClickableCard>
-  );
-}
-
 function MobileAppTile({ app }: { app: MobileApp }) {
   return (
     <ClickableCard
@@ -514,7 +482,11 @@ function MobileAppTile({ app }: { app: MobileApp }) {
             <Text type="supporting" size="xsm" textWrap="nowrap">
               {app.store}
             </Text>
-            <Icon icon={ArrowTopRightOnSquareIcon} size="xsm" color="secondary" />
+            <Icon
+              icon={ArrowTopRightOnSquareIcon}
+              size="xsm"
+              color="secondary"
+            />
           </HStack>
         </VStack>
       </HStack>
@@ -546,81 +518,10 @@ function PlatformTile({ surface }: { surface: PlatformSurface }) {
   );
 }
 
-function ConnectionStrip({
-  connections,
-  isSignedIn,
-}: {
-  connections: ConnectionStatuses;
-  isSignedIn: boolean;
-}) {
-  return (
-    <HStack className="wl-hero-connect" gap={4} wrap="wrap">
-      <VStack
-        className="wl-connect-group wl-connect-integrations"
-        gap={3}
-        padding={4}
-      >
-        <HStack gap={2} hAlign="between" vAlign="center" wrap="wrap">
-          <Eyebrow>{isSignedIn ? "WeStride integrations" : "Works with"}</Eyebrow>
-          <Link href="/settings" isStandalone size="sm">
-            {isSignedIn ? "Manage connections" : "Sign in to connect"}
-          </Link>
-        </HStack>
-        <Grid columns={{ minWidth: 120, max: 5 }} gap={2}>
-          {HERO_CONNECTIONS.map((connection) => (
-            <ConnectionTile
-              key={connection.id}
-              connection={connection}
-              status={connections[connection.id]}
-            />
-          ))}
-        </Grid>
-      </VStack>
-
-      <VStack
-        className="wl-connect-group wl-connect-apps wl-glow-border"
-        gap={3}
-        padding={4}
-      >
-        <Eyebrow>Take WeStride with you</Eyebrow>
-        <VStack gap={2}>
-          <Grid columns={{ minWidth: 150, max: 2 }} gap={2}>
-            {MOBILE_APPS.map((app) => (
-              <MobileAppTile key={app.href} app={app} />
-            ))}
-          </Grid>
-          <Grid columns={{ minWidth: 150, max: 2 }} gap={2}>
-            {PLATFORM_SURFACES.map((surface) => (
-              <PlatformTile key={surface.href} surface={surface} />
-            ))}
-          </Grid>
-        </VStack>
-      </VStack>
-    </HStack>
-  );
-}
-
 const META_AI_URL = "https://meta.ai";
 const MUSE_CODE_URL = "https://dev.meta.ai/lp/muse-code";
 const MUSE_URL = "https://ai.meta.com/muse/";
 const META_MODELS_URL = "https://ai.meta.com/";
-
-function StudioLink({ where }: { where: string }) {
-  const studio = STUDIOS.find((item) => item.where === where);
-  if (!studio) return where;
-  return (
-    <Link
-      className="wl-studio-link"
-      href={studio.href}
-      hasUnderline
-      weight="bold"
-      color="primary"
-      type="inherit"
-    >
-      {studio.where}
-    </Link>
-  );
-}
 
 function MetaLink({ href, children }: { href: string; children: string }) {
   return (
@@ -636,122 +537,502 @@ function MetaLink({ href, children }: { href: string; children: string }) {
   );
 }
 
-function Hero({ isSignedIn, stats, connections }: LandingProps) {
+/* -------------------------- Hero sections ----------------------- */
+
+type HeroCta = {
+  label: string;
+  href: string;
+  icon?: ComponentType<SVGProps<SVGSVGElement>>;
+};
+
+type HeroSection = {
+  id: string;
+  /** The tab label on the right. */
+  tab: string;
+  /** Where the tab leads, shown under its label and as the panel eyebrow. */
+  where: string;
+  title: ReactNode;
+  description: ReactNode;
+  ctas: HeroCta[];
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  tints: [Tint, Tint];
+  /** This panel's action is the GitHub import field, in place of buttons. */
+  hasImport?: boolean;
+};
+
+const [IDEA_STUDIO, BUILD_STUDIO, AGENT_STUDIO] = STUDIOS;
+
+/**
+ * What a visitor can do here, one panel each. The tab on the right picks
+ * the panel; the panel's own copy and calls to action change with it.
+ * Panels auto-advance until the visitor picks one.
+ */
+const HERO_SECTIONS: HeroSection[] = [
+  {
+    id: "import",
+    tab: "Import a GitHub",
+    where: "Importing",
+    title: (
+      <>
+        Import a{" "}
+        <Text type="inherit" display="inline" className="wl-gradient-text">
+          GitHub.
+        </Text>
+      </>
+    ),
+    description:
+      "Import any GitHub repository to instantly create a connected Idea and Project in WeStride. Explore new possibilities with AI advisors, collaborate on improvements, and bring your project to life.",
+    ctas: [],
+    icon: CodeBracketIcon,
+    tints: ["yellow", "orange"],
+    hasImport: true,
+  },
+  {
+    id: "idea",
+    tab: IDEA_STUDIO.action,
+    where: IDEA_STUDIO.where,
+    title: (
+      <>
+        Start with an idea{" "}
+        <Text type="inherit" display="inline" className="wl-gradient-text">
+          worth building.
+        </Text>
+      </>
+    ),
+    description: (
+      <>
+        Turn your business, nonprofit, game, or open-source idea into a plan
+        worth building. Collaborate with{" "}
+        <MetaLink href={META_AI_URL}>Meta AI</MetaLink> advisors to brainstorm,
+        research, challenge assumptions, and refine your vision before writing a
+        single line of code.
+      </>
+    ),
+    ctas: [
+      {
+        label: IDEA_STUDIO.action,
+        href: IDEA_STUDIO.href,
+        icon: IDEA_STUDIO.icon,
+      },
+      { label: "Learn the basics", href: "/academy", icon: AcademicCapIcon },
+    ],
+    icon: IDEA_STUDIO.icon,
+    tints: IDEA_STUDIO.tints,
+  },
+  {
+    id: "build",
+    tab: BUILD_STUDIO.action,
+    where: BUILD_STUDIO.where,
+    title: (
+      <>
+        Build it for real,{" "}
+        <Text type="inherit" display="inline" className="wl-gradient-text">
+          in GitHub.
+        </Text>
+      </>
+    ),
+    description: (
+      <>
+        {
+          "Projects, tickets, and a linked repository. Muse drafts the backlog and roadmap, then "
+        }
+        <MetaLink href={MUSE_CODE_URL}>Meta Muse Code</MetaLink>
+        {" agents work the tickets and open pull requests, directly in GitHub."}
+      </>
+    ),
+    ctas: [
+      {
+        label: BUILD_STUDIO.action,
+        href: BUILD_STUDIO.href,
+        icon: BUILD_STUDIO.icon,
+      },
+      { label: "Find a mentor", href: "/mentorship", icon: UserGroupIcon },
+    ],
+    icon: BUILD_STUDIO.icon,
+    tints: BUILD_STUDIO.tints,
+  },
+  {
+    id: "agent",
+    tab: AGENT_STUDIO.action,
+    where: AGENT_STUDIO.where,
+    title: (
+      <>
+        Give your project{" "}
+        <Text type="inherit" display="inline" className="wl-gradient-text">
+          agents of its own.
+        </Text>
+      </>
+    ),
+    description: (
+      <>
+        {"Design the "}
+        <MetaLink href={MUSE_URL}>Muse AI</MetaLink>
+        {
+          " agents a project needs, give each one a job, and run them as a fleet, so the product keeps working after you ship it."
+        }
+      </>
+    ),
+    ctas: [
+      {
+        label: AGENT_STUDIO.action,
+        href: AGENT_STUDIO.href,
+        icon: AGENT_STUDIO.icon,
+      },
+      { label: "Connect your Meta account", href: "/settings" },
+    ],
+    icon: AGENT_STUDIO.icon,
+    tints: AGENT_STUDIO.tints,
+  },
+  {
+    id: "support",
+    tab: "Support a project",
+    where: "Supporting",
+    title: (
+      <>
+        Back an idea{" "}
+        <Text type="inherit" display="inline" className="wl-gradient-text">
+          you believe in.
+        </Text>
+      </>
+    ),
+    description:
+      "Pledge tokens or compute to the ideas you choose, or contribute capital through a team's own links. WeStride never collects or holds money.",
+    ctas: SUPPORTER_WAYS.map((way) => ({
+      label: way.action,
+      href: way.href,
+      icon: way.icon,
+    })),
+    icon: HeartIcon,
+    tints: ["teal", "green"],
+  },
+];
+
+const PROGRESS_ANIMATION = "wl-tab-progress";
+
+function tintVars(tints: [Tint, Tint]): CSSProperties {
+  return {
+    "--wl-tint-a": `var(--wl-${tints[0]})`,
+    "--wl-tint-b": `var(--wl-${tints[1]})`,
+  } as CSSProperties;
+}
+
+/**
+ * Autoplay runs off the active tab's progress rail: the rail is a CSS
+ * animation, and when it ends the next section takes over. Hovering or
+ * focusing the tabs pauses the rail (and so the rotation), picking a tab
+ * stops it, and reduced motion never starts it.
+ */
+function useHeroSections() {
+  const [activeId, setActiveId] = useState(HERO_SECTIONS[0].id);
+  const [isAutoplaying, setIsAutoplaying] = useState(true);
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      if (query.matches) setIsAutoplaying(false);
+    };
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  const activeIndex = Math.max(
+    0,
+    HERO_SECTIONS.findIndex((section) => section.id === activeId)
+  );
+
+  function pick(id: string) {
+    setActiveId(id);
+    setIsAutoplaying(false);
+  }
+
+  function onProgressEnd(event: AnimationEvent<HTMLElement>) {
+    if (event.animationName !== PROGRESS_ANIMATION) return;
+    setActiveId(HERO_SECTIONS[(activeIndex + 1) % HERO_SECTIONS.length].id);
+  }
+
+  return { activeId, isAutoplaying, pick, onProgressEnd };
+}
+
+function HeroPanel({
+  section,
+  isActive,
+  isSignedIn,
+}: {
+  section: HeroSection;
+  isActive: boolean;
+  isSignedIn: boolean;
+}) {
+  return (
+    <VStack
+      className="wl-hero-panel"
+      gap={5}
+      hAlign="start"
+      id={`wl-hero-panel-${section.id}`}
+      data-active={isActive ? "" : undefined}
+      inert={!isActive}
+      aria-hidden={!isActive}
+    >
+      <VStack gap={3} hAlign="start">
+        <Heading
+          level={isActive ? 1 : 2}
+          type="display-1"
+          textWrap="balance"
+          className="wl-hero-title"
+        >
+          {section.title}
+        </Heading>
+      </VStack>
+      <Text type="large" color="secondary" textWrap="pretty" maxLines={0}>
+        {section.description}
+      </Text>
+      {section.ctas.length > 0 && (
+        <HStack gap={2} wrap="wrap">
+          {section.ctas.map((cta, index) => (
+            <Button
+              key={cta.href}
+              label={cta.label}
+              variant={index === 0 ? "primary" : undefined}
+              size="lg"
+              href={cta.href}
+              icon={
+                cta.icon != null ? (
+                  <Icon icon={cta.icon} color="inherit" />
+                ) : undefined
+              }
+            />
+          ))}
+        </HStack>
+      )}
+      {section.hasImport && (
+        <VStack gap={2} width="100%" className="wl-hero-import">
+          <ImportRepoForm isSignedIn={isSignedIn} />
+        </VStack>
+      )}
+    </VStack>
+  );
+}
+
+function HeroTab({
+  section,
+  index,
+  isActive,
+  onPick,
+  onProgressEnd,
+}: {
+  section: HeroSection;
+  index: number;
+  isActive: boolean;
+  onPick: (id: string) => void;
+  onProgressEnd: (event: AnimationEvent<HTMLElement>) => void;
+}) {
+  return (
+    <SelectableCard
+      className="wl-hero-tab"
+      label={`${section.tab}: ${section.where}`}
+      isSelected={isActive}
+      onChange={() => onPick(section.id)}
+      padding={3}
+      data-active={isActive ? "" : undefined}
+      aria-controls={`wl-hero-panel-${section.id}`}
+      onAnimationEnd={isActive ? onProgressEnd : undefined}
+      style={{ ...tintVars(section.tints), "--wl-i": index } as CSSProperties}
+    >
+      <HStack
+        className="wl-hero-tab-body"
+        gap={3}
+        vAlign="center"
+        wrap="nowrap"
+      >
+        <Center className="wl-hero-tab-icon">
+          <Icon icon={section.icon} size="md" color="inherit" />
+        </Center>
+        <VStack gap={0}>
+          <Text weight="semibold" textWrap="balance">
+            {section.tab}
+          </Text>
+          <Text type="supporting" size="xsm" textWrap="nowrap">
+            {section.where}
+          </Text>
+        </VStack>
+      </HStack>
+    </SelectableCard>
+  );
+}
+
+const STUDIO_TAB_IDS = new Set(["idea", "build", "agent"]);
+
+/**
+ * Tinted swells along the bottom of the hero. The last path traces the
+ * wave the hero's mask cuts (see `.wl-hero` in the styles), so the two must
+ * change together.
+ */
+function HeroWave() {
+  return (
+    <svg
+      className="wl-hero-wave"
+      viewBox="0 0 1440 144"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        <linearGradient
+          id="wl-wave-gradient"
+          gradientUnits="userSpaceOnUse"
+          x1="0"
+          x2="1440"
+          y1="0"
+          y2="0"
+        >
+          <stop offset="0" stopColor="var(--wl-indigo)" />
+          <stop offset="0.5" stopColor="var(--wl-purple)" />
+          <stop offset="1" stopColor="var(--wl-teal)" />
+        </linearGradient>
+      </defs>
+      <path
+        className="wl-wave-swell"
+        d="M0 76C160 49.33 320 49.33 480 76C640 102.67 800 102.67 960 76C1120 49.33 1280 49.33 1440 76V144H0Z"
+        fill="url(#wl-wave-gradient)"
+        opacity="0.16"
+      />
+      <path
+        className="wl-wave-swell"
+        d="M0 100C120 78.67 240 78.67 360 100C480 121.33 600 121.33 720 100C840 78.67 960 78.67 1080 100C1200 121.33 1320 121.33 1440 100V144H0Z"
+        fill="url(#wl-wave-gradient)"
+        opacity="0.24"
+      />
+      <path
+        d="M0 120C120 146.67 240 146.67 360 120C480 93.33 600 93.33 720 120C840 146.67 960 146.67 1080 120C1200 93.33 1320 93.33 1440 120"
+        fill="none"
+        stroke="url(#wl-wave-gradient)"
+        strokeWidth="3"
+        vectorEffect="non-scaling-stroke"
+        opacity="0.8"
+      />
+    </svg>
+  );
+}
+
+function CarryBar() {
+  return (
+    <HStack
+      className="wl-carry"
+      gap={4}
+      maxWidth={CONTENT_WIDTH}
+      vAlign="center"
+      wrap="wrap"
+      role="group"
+      aria-label="Take WeStride with you"
+    >
+      <StackItem className="wl-carry-label">
+        <Eyebrow>Take WeStride with you</Eyebrow>
+      </StackItem>
+      <StackItem size="fill">
+        <Grid columns={{ minWidth: 150, max: 4 }} gap={2}>
+          {MOBILE_APPS.map((app) => (
+            <MobileAppTile key={app.href} app={app} />
+          ))}
+          {PLATFORM_SURFACES.map((surface) => (
+            <PlatformTile key={surface.href} surface={surface} />
+          ))}
+        </Grid>
+      </StackItem>
+    </HStack>
+  );
+}
+
+function Hero({ isSignedIn }: LandingProps) {
+  const { activeId, isAutoplaying, pick, onProgressEnd } = useHeroSections();
+
+  function tab(section: HeroSection) {
+    return (
+      <HeroTab
+        key={section.id}
+        section={section}
+        index={HERO_SECTIONS.findIndex((item) => item.id === section.id)}
+        isActive={section.id === activeId}
+        onPick={pick}
+        onProgressEnd={onProgressEnd}
+      />
+    );
+  }
+
   return (
     <Theme theme={themes[defaultThemeSlug]} mode="dark">
-      <Section className="wl-hero" variant="transparent" padding={0}>
-        <HeroSky />
-        <VStack
-          className="wl-hero-content"
-          gap={10}
-          maxWidth={CONTENT_WIDTH}
-          style={centered}
-        >
-          <Grid className="wl-hero-split" columns={{ minWidth: 484, max: 2 }} gap={8} align="center">
-            <VStack className="wl-hero-copy" gap={6} hAlign="start">
-              <Image
-                className="wl-wordmark"
-                src="/logos/westride/WeStride_landscape_white.png"
-                alt="WeStride"
-                width={2582}
-                height={788}
-                preload
-                unoptimized
-              />
-
-              <Heading level={1} type="display-1" textWrap="nowrap" className="wl-hero-title">
-                Help build what&apos;s
-                <Text
-                  type="inherit"
-                  display="inline"
-                  className="wl-gradient-text"
-                >
-                   &nbsp;next.
-                </Text>
-              </Heading>
-
-              <Text
-                type="large"
-                color="secondary"
-                textWrap="pretty"
-                maxLines={0}
-              >
-                Interact with <MetaLink href={META_AI_URL}>Meta AI</MetaLink>{" "}
-                advisors in <StudioLink where="Idea Studio" /> to vet and
-                refine your idea, then fire up{" "}
-                <MetaLink href={MUSE_CODE_URL}>Meta Muse Code</MetaLink> agents
-                in <StudioLink where="Build Studio" /> to bring it to life
-                directly in your GitHub repository. Take it even further with{" "}
-                <StudioLink where="Agent Studio" />, where you can build,
-                deploy, and run your own fleet of{" "}
-                <MetaLink href={MUSE_URL}>Muse AI</MetaLink> agents. Open
-                source. Powered by{" "}
-                <MetaLink href={META_MODELS_URL}>Meta&apos;s AI models</MetaLink>.
-              </Text>
-
-              <HStack gap={2} wrap="wrap">
-                <Button
-                  label="Star on GitHub"
-                  variant="ghost"
-                  href={SOURCE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  icon={<Icon icon={StarIcon} color="inherit" />}
+      <VStack className="wl-hero-frame" gap={0}>
+        <Section className="wl-hero" variant="transparent" padding={0}>
+          <HeroSky />
+          <HeroWave />
+          <VStack
+            className="wl-hero-content"
+            gap={10}
+            maxWidth={CONTENT_WIDTH}
+            style={centered}
+          >
+            <Grid
+              className="wl-hero-split"
+              columns={{ minWidth: 484, max: 2 }}
+              gap={8}
+              align="center"
+            >
+              <VStack className="wl-hero-copy" gap={6} hAlign="start">
+                <Image
+                  className="wl-wordmark"
+                  src="/logos/westride/WeStride_landscape_white.png"
+                  alt="WeStride"
+                  width={2582}
+                  height={788}
+                  preload
+                  unoptimized
                 />
-                <Button label="Our Story" variant="ghost" href="/our-story" />
-                <Button label="Learn AI" variant="ghost" href="/academy" />
-                <Button label="Find a Mentor" variant="ghost" href="/mentorship" />
-              </HStack>
-            </VStack>
 
-            <Grid className="wl-hero-stage" columns={1} align="center">
-              <HeroGlobe />
-              <VStack className="wl-hero-cards" gap={4}>
-                <VStack className="wl-hero-card" gap={4} padding={4}>
-                  <VStack gap={1}>
-                    <Eyebrow>Builders</Eyebrow>
-                    <Text weight="semibold">Bring an idea, or import a GitHub project</Text>
-                  </VStack>
-                  <ImportRepoForm isSignedIn={isSignedIn} />
-                  <HStack gap={2} wrap="wrap">
-                    {STUDIOS.map((studio, index) => (
-                      <Button
-                        key={studio.href}
-                        label={studio.action}
-                        variant={index === 0 ? "primary" : undefined}
-                        href={studio.href}
-                        icon={<Icon icon={studio.icon} color="inherit" />}
-                      />
-                    ))}
-                  </HStack>
-                </VStack>
-                <VStack className="wl-hero-card wl-hero-card-support" gap={4} padding={4}>
-                  <VStack gap={1}>
-                    <Eyebrow>Supporters</Eyebrow>
-                    <Text weight="semibold">Back an idea you believe in</Text>
-                    <Text type="supporting">
-                      Pledge tokens or compute to the ideas you choose, or contribute capital through a team&apos;s
-                      own links. WeStride never collects or holds money.
-                    </Text>
-                  </VStack>
-                  <HStack gap={2} wrap="wrap">
-                    {SUPPORTER_WAYS.map((way) => (
-                      <Button
-                        key={way.href}
-                        label={way.action}
-                        href={way.href}
-                        icon={<Icon icon={way.icon} color="inherit" />}
-                      />
-                    ))}
-                  </HStack>
-                </VStack>
+                <Grid className="wl-hero-panels" columns={1} align="start">
+                  {HERO_SECTIONS.map((section) => (
+                    <HeroPanel
+                      key={section.id}
+                      section={section}
+                      isActive={section.id === activeId}
+                      isSignedIn={isSignedIn}
+                    />
+                  ))}
+                </Grid>
+
+                <Text type="supporting" textWrap="pretty">
+                  {"Open source. Powered by "}
+                  <MetaLink href={META_MODELS_URL}>
+                    Meta&apos;s AI models
+                  </MetaLink>
+                </Text>
               </VStack>
-            </Grid>
-          </Grid>
 
-          <ConnectionStrip connections={connections} isSignedIn={isSignedIn} />
-        </VStack>
-      </Section>
+              <Grid className="wl-hero-stage" columns={1} align="center">
+                <HeroGlobe />
+                <VStack
+                  className="wl-hero-tabs"
+                  gap={3}
+                  role="group"
+                  aria-label="What would you like to do?"
+                  data-autoplay={isAutoplaying ? "" : undefined}
+                >
+                  {HERO_SECTIONS.filter(
+                    (section) => section.id === "import"
+                  ).map(tab)}
+                  <VStack className="wl-hero-tab-group" gap={0}>
+                    {HERO_SECTIONS.filter((section) =>
+                      STUDIO_TAB_IDS.has(section.id)
+                    ).map(tab)}
+                  </VStack>
+                  {HERO_SECTIONS.filter(
+                    (section) => section.id === "support"
+                  ).map(tab)}
+                </VStack>
+              </Grid>
+            </Grid>
+          </VStack>
+        </Section>
+        <CarryBar />
+      </VStack>
     </Theme>
   );
 }
@@ -820,7 +1101,7 @@ function PathTrack() {
 
 function StudiosSection() {
   return (
-    <Section variant="transparent" padding={0}>
+    <Section variant="muted" padding={0}>
       <Container>
         <SectionIntro
           eyebrow="Idea, build, agent"
@@ -882,13 +1163,14 @@ function StudiosSection() {
                 href={step.href}
                 label={`${step.step} in ${step.where}`}
                 padding={4}
-                variant="muted"
               >
                 <HStack gap={3} vAlign="center">
                   <Center
                     className="wl-feature-icon"
                     style={
-                      { "--wl-tint": `var(--wl-${step.tints[0]})` } as CSSProperties
+                      {
+                        "--wl-tint": `var(--wl-${step.tints[0]})`,
+                      } as CSSProperties
                     }
                   >
                     <Icon icon={step.icon} size="md" color="inherit" />
@@ -918,7 +1200,7 @@ function StudiosSection() {
 
 function MetaAiSection() {
   return (
-    <Section variant="muted" padding={0}>
+    <Section variant="transparent" padding={0}>
       <Container>
         <SectionIntro
           eyebrow="Powered by Meta AI"
@@ -1211,9 +1493,9 @@ function StackSection() {
                   <Icon icon={ArrowTopRightOnSquareIcon} color="inherit" />
                 }
               />
-              <Button label="Tech stack" href="/tech-stack" />
-              <Button label="API" variant="ghost" href="/api" />
-              <Button label="MCP" variant="ghost" href="/mcp" />
+              <Button label="Tech stack" href="/our-story/tech-stack" />
+              <Button label="API" variant="ghost" href="/settings/api" />
+              <Button label="MCP" variant="ghost" href="/settings/mcp" />
             </HStack>
           </VStack>
           <VStack className="wl-reveal" style={revealDelay(2)}>
@@ -1352,10 +1634,10 @@ export function Landing(props: LandingProps) {
           <style>{LANDING_STYLES}</style>
           <VStack className="wl-root" gap={0} ref={rootRef}>
             <Hero {...props} />
-            <StudiosSection />
             <MetaAiSection />
-            <HackathonSection />
+            <StudiosSection />
             <IntegrationsSection />
+            <HackathonSection />
             <StackSection />
             <StorySection />
             <ClosingSection isSignedIn={props.isSignedIn} />

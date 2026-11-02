@@ -2,7 +2,7 @@
 
 import { Selector } from "@astryxdesign/core/Selector";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../voice-text-area";
 import type { AgentSchedule } from "@westride/db";
 import { describeSchedule, isAgentSchedule } from "@westride/db/agent-rules";
 import { AGENT_SCHEDULE_LABELS, AGENT_SCHEDULE_ORDER, WEEKDAY_LABELS } from "@/lib/agents/labels";
@@ -76,7 +76,7 @@ export function ScheduleFields({
       {draft.schedule !== "NONE" ? (
         <>
           <Text type="supporting">{describeSchedule(draft)}. Times are UTC.</Text>
-          <TextArea
+          <VoiceTextArea
             label="Standing task"
             description="What the agent does on schedule when nothing is queued. The first line becomes the ticket title. Leave empty to only work queued tickets."
             value={draft.standingTask}

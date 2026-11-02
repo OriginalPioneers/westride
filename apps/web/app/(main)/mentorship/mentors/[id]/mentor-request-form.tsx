@@ -7,7 +7,7 @@ import { Grid } from "@astryxdesign/core/Grid";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Token } from "@astryxdesign/core/Token";
 import {
@@ -176,7 +176,7 @@ export function MentorRequestForm({
         placeholder="Select a start time..."
         status={errorStatus(fieldErrors.timing)}
       />
-      <TextArea
+      <VoiceTextArea
         label="How can they help?"
         isLabelHidden
         isRequired

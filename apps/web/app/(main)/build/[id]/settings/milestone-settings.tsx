@@ -14,7 +14,7 @@ import { List, ListItem } from "@astryxdesign/core/List";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { PencilSquareIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import type { MilestoneStatus, ProjectMilestone } from "@westride/db";
@@ -117,7 +117,7 @@ function MilestoneDialog({
                 isRequired
                 status={fieldStatus(errors.title)}
               />
-              <TextArea
+              <VoiceTextArea
                 label="What it delivers"
                 value={description}
                 onChange={setDescription}

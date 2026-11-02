@@ -42,7 +42,7 @@ app.doc31("/openapi.json", {
     version: "1.0.0",
     description:
       "Public, read-only HTTP API for the WeStride platform. It serves the same data as the website, mobile app, and MCP server. No API key is required.",
-    contact: { name: "WeStride", url: "https://westride.org/api" },
+    contact: { name: "WeStride", url: "https://westride.org/settings/api" },
   },
   servers: [
     { url: WESTRIDE_API_PRODUCTION_URL, description: "Production" },

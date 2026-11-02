@@ -8,8 +8,8 @@ import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { TrophyIcon } from "@heroicons/react/24/outline";
-import { challengeMilestones } from "../achievements/track-progress";
-import { achievementIcons } from "../achievements/achievement-icons";
+import { challengeMilestones } from "./achievements/track-progress";
+import { achievementIcons } from "./achievements/achievement-icons";
 
 export function EditAccountButton() {
   const { openUserProfile } = useClerk();
@@ -64,7 +64,7 @@ export function EarnedAchievements({ items }: { items: EarnedAchievement[] }) {
       {items.map((item) => (
         <ListItem
           key={item.slug}
-          href="/achievements"
+          href="/profile/achievements"
           align="first-line"
           label={item.name}
           description={

@@ -26,7 +26,7 @@ import {
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Step, Stepper } from "@astryxdesign/core/Stepper";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import {
   Typeahead,
@@ -518,7 +518,7 @@ export function CreateIdeaDialog({
                         isRequired
                         status={fieldStatus(stepErrors.name)}
                       />
-                      <TextArea
+                      <VoiceTextArea
                         label="Description"
                         description="A short pitch. Markdown is fine."
                         value={description}

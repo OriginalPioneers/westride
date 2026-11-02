@@ -1,5 +1,5 @@
 import { awardIfSignedIn } from "@/lib/achievements";
-import { AchievementCelebration } from "./achievements/achievement-celebration";
+import { AchievementCelebration } from "./profile/achievements/achievement-celebration";
 import { AppFrame } from "./app-frame";
 
 export default async function MainLayout({

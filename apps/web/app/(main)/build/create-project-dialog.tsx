@@ -23,7 +23,7 @@ import {
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import {
   Typeahead,
@@ -355,7 +355,7 @@ export function CreateProjectDialog({
                   isRequired
                   status={fieldStatus(errors.name)}
                 />
-                <TextArea
+                <VoiceTextArea
                   label="What are you building?"
                   description="The product in a paragraph: who it is for, the core flows, and what version one leaves out. Muse reads this when it drafts tickets. Markdown is fine."
                   value={description}

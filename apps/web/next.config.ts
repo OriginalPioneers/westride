@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
   // The dev server allows localhost by default. 127.0.0.1 is a different
   // origin, and Next blocks its HMR socket, which prevents the page from hydrating.
   allowedDevOrigins: ["127.0.0.1"],
+  async redirects() {
+    return [
+      { source: "/achievements", destination: "/profile/achievements", permanent: true },
+      { source: "/tech-stack", destination: "/our-story/tech-stack", permanent: true },
+      { source: "/design", destination: "/our-story/design", permanent: true },
+      { source: "/api", destination: "/settings/api", permanent: true },
+      { source: "/mcp", destination: "/settings/mcp", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

@@ -16,7 +16,7 @@ import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import type { SocialPost } from "@westride/db/social";
 import {
@@ -211,7 +211,7 @@ export function SocialDialog({ onClose }: { onClose: () => void }) {
                 onChange={(value) => setPlatform(value as SocialPlatform)}
                 isDisabled={pending || Boolean(selected)}
               />
-              <TextArea
+              <VoiceTextArea
                 label="What would you like to share?"
                 value={brief}
                 onChange={setBrief}
@@ -238,7 +238,7 @@ export function SocialDialog({ onClose }: { onClose: () => void }) {
                   }
                 />
               ) : null}
-              <TextArea
+              <VoiceTextArea
                 label="Your post"
                 value={body}
                 onChange={setBody}
@@ -298,7 +298,7 @@ export function SocialDialog({ onClose }: { onClose: () => void }) {
                   <Text type="supporting">
                     Confirmed by you on {selected.sharedDay}.
                   </Text>
-                  <TextArea
+                  <VoiceTextArea
                     label="What did you learn from a reply?"
                     description="Summarize one useful response or piece of feedback. Leave out names and personal details."
                     value={note}

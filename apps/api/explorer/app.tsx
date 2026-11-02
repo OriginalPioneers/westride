@@ -30,7 +30,7 @@ import { OperationPage } from "./operation-page";
 import { OverviewPage } from "./overview-page";
 
 const SPEC_PATH = "/openapi.json";
-const WEBSITE_API_PAGE = "https://westride.org/api";
+const WEBSITE_API_PAGE = "https://westride.org/settings/api";
 
 function ExplorerNav({ state, route }: { state: DocumentState; route: Route }) {
   const groups = state.status === "ready" ? groupOperations(state.doc) : [];

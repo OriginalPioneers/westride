@@ -13,6 +13,7 @@ import { proportional, Table } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { AGENTS } from "@/lib/idea-factory/agents";
 import { DocPage, DocSection } from "../doc-page";
+import { OurStoryTabs } from "../section-tabs";
 
 const SOURCE_URL = "https://github.com/OriginalPioneers/westride";
 const HACKATHON_URL = "https://cerebralvalley.ai/e/meta-ai-developer-hackathon";
@@ -307,6 +308,7 @@ function TeamGroupCard({ group }: { group: TeamGroup }) {
 export function OurStoryOverview() {
   return (
     <DocPage
+      tabs={<OurStoryTabs />}
       title="Our Story"
       lede="Three friends, one hackathon, and a problem we kept seeing in the Discord."
       actions={
@@ -417,7 +419,7 @@ export function OurStoryOverview() {
         </Text>
         <NamedList items={META_AI} />
         <Text type="supporting">
-          The <Link href="/tech-stack">Tech Stack</Link> page covers the rest
+          The <Link href="/our-story/tech-stack">Tech Stack</Link> page covers the rest
           of the platform: the website, public API, MCP server, and mobile app.
         </Text>
       </DocSection>

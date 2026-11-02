@@ -11,7 +11,7 @@ import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../../voice-text-area";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
 import type { TicketStatus } from "@westride/db";
 import type { TicketWithDetails } from "@westride/db/build";
@@ -104,7 +104,7 @@ export function TicketStatusControl({
             <LayoutContent>
               <FormLayout>
                 {error ? <Banner status="error" title={error} /> : null}
-                <TextArea
+                <VoiceTextArea
                   label="Roadblock"
                   description="Say what has to change before work can continue. The team sees this on the ticket."
                   value={reason}

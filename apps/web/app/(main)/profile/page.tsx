@@ -33,8 +33,9 @@ import {
   challengeMilestones,
   milestoneHint,
   trackProgress,
-} from "../achievements/track-progress";
+} from "./achievements/track-progress";
 import { mentorPath, skillFilterPath } from "../mentorship/mentors/mentor-card";
+import { ProfileTabs } from "../section-tabs";
 import {
   ChallengeProgress,
   EarnedAchievements,
@@ -100,7 +101,7 @@ export default async function ProfilePage() {
     true,
   );
   const next = progress.next;
-  const nextHref = next.href ?? "/achievements";
+  const nextHref = next.href ?? "/profile/achievements";
   const challengeCount = challengeCatalog.length;
   const location = mentor
     ? summarizeLocations(mentor.locations, mentor.isGlobal)
@@ -113,26 +114,29 @@ export default async function ProfilePage() {
       contentWidth={960}
       header={
         <LayoutHeader hasDivider>
-          <HStack gap={5} vAlign="center" wrap="wrap">
-            <Avatar
-              src={account?.hasImage ? account.imageUrl : undefined}
-              name={name}
-              size="xl"
-              tooltip={false}
-            />
-            <StackItem size="fill">
-              <VStack gap={1}>
-                <Heading level={1}>{name}</Heading>
-                {username ? (
-                  <Text type="supporting">@{username}</Text>
-                ) : null}
-              </VStack>
-            </StackItem>
-            <HStack gap={2} wrap="wrap">
-              <EditAccountButton />
-              <Button label="Settings" href="/settings" />
+          <VStack gap={4}>
+            <ProfileTabs />
+            <HStack gap={5} vAlign="center" wrap="wrap">
+              <Avatar
+                src={account?.hasImage ? account.imageUrl : undefined}
+                name={name}
+                size="xl"
+                tooltip={false}
+              />
+              <StackItem size="fill">
+                <VStack gap={1}>
+                  <Heading level={1}>{name}</Heading>
+                  {username ? (
+                    <Text type="supporting">@{username}</Text>
+                  ) : null}
+                </VStack>
+              </StackItem>
+              <HStack gap={2} wrap="wrap">
+                <EditAccountButton />
+                <Button label="Settings" href="/settings" />
+              </HStack>
             </HStack>
-          </HStack>
+          </VStack>
         </LayoutHeader>
       }
       content={
@@ -158,7 +162,7 @@ export default async function ProfilePage() {
             <Grid columns={{ minWidth: 180, max: 4 }} gap={4}>
               <ClickableCard
                 label={`${earned.length} of ${achievements.length} achievements`}
-                href="/achievements"
+                href="/profile/achievements"
               >
                 <VStack gap={1}>
                   <Heading level={2}>{earned.length}</Heading>
@@ -182,7 +186,7 @@ export default async function ProfilePage() {
               </ClickableCard>
               <ClickableCard
                 label={`${progress.completed.size} of ${challengeCount} challenges`}
-                href="/achievements"
+                href="/profile/achievements"
               >
                 <VStack gap={1}>
                   <Heading level={2}>{progress.completed.size}</Heading>
@@ -265,7 +269,7 @@ export default async function ProfilePage() {
                 </StackItem>
                 <Button
                   label="View all"
-                  href="/achievements"
+                  href="/profile/achievements"
                   variant="ghost"
                   size="sm"
                 />
@@ -309,7 +313,7 @@ export default async function ProfilePage() {
                   actions={
                     <Button
                       label="View achievements"
-                      href="/achievements"
+                      href="/profile/achievements"
                       variant="primary"
                     />
                   }

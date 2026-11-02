@@ -20,7 +20,7 @@ import {
 } from "@astryxdesign/core/SegmentedControl";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import {
   Typeahead,
@@ -316,7 +316,7 @@ export function EditIdeaDialog({
                   isRequired
                   status={fieldStatus(errors.name)}
                 />
-                <TextArea
+                <VoiceTextArea
                   label="Description"
                   description="A short pitch. Markdown is fine."
                   value={description}
@@ -359,7 +359,7 @@ export function EditIdeaDialog({
                 />
                 {prototypeUrl.trim() ? (
                   <>
-                    <TextArea
+                    <VoiceTextArea
                       label="What should people try?"
                       value={prototypeInstructions}
                       rows={3}

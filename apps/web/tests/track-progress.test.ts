@@ -10,7 +10,7 @@ import {
   trackProgress,
   milestoneHint,
   challengeMilestones,
-} from "../app/(main)/achievements/track-progress";
+} from "../app/(main)/profile/achievements/track-progress";
 
 function attempt(slug: string, interest: Interest = "games") {
   return {

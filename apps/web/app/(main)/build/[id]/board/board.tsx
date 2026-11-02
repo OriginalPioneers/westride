@@ -13,7 +13,7 @@ import { Link } from "@astryxdesign/core/Link";
 import { MoreMenu } from "@astryxdesign/core/MoreMenu";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../voice-text-area";
 import type { TicketStatus } from "@westride/db";
 import type { TicketWithDetails } from "@westride/db/build";
 import { TICKET_STATUS_HINTS, TICKET_STATUS_LABELS, ticketPath } from "@/lib/build/labels";
@@ -209,7 +209,7 @@ export function Board({
             }
             content={
               <LayoutContent>
-                <TextArea
+                <VoiceTextArea
                   label="What is blocking it?"
                   value={reason}
                   onChange={setReason}

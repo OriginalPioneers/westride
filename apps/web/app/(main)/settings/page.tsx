@@ -16,6 +16,7 @@ import {
   getGithubAccountAccess,
   type GithubAccountAccess,
 } from "@/lib/github/repos";
+import { SettingsTabs } from "../section-tabs";
 import { ChatSection, MetaSection, VercelSection } from "./connection-sections";
 import { DisconnectGithubButton } from "./disconnect-github-button";
 import { GithubAccess } from "./github-access";
@@ -198,7 +199,10 @@ export default async function SettingsPage({
       contentWidth={960}
       header={
         <LayoutHeader hasDivider>
-          <Heading level={1}>Settings</Heading>
+          <VStack gap={4}>
+            <SettingsTabs />
+            <Heading level={1}>Settings</Heading>
+          </VStack>
         </LayoutHeader>
       }
       content={

@@ -9,7 +9,8 @@ import { List, ListItem } from "@astryxdesign/core/List";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Table } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
-import { DocPage, DocSection } from "../doc-page";
+import { DocPage, DocSection } from "../../doc-page";
+import { SettingsTabs } from "../../section-tabs";
 
 const API_URL = "https://api.westride.org";
 const EXPLORER_URL = `${API_URL}/docs`;
@@ -91,7 +92,7 @@ const BUILT_ON_IT = [
     label: "WeStride MCP server",
     detail:
       "Lets AI assistants such as Cursor and Claude browse the Academy catalog through the API.",
-    href: "/mcp",
+    href: "/settings/mcp",
   },
   {
     label: "API explorer",
@@ -115,6 +116,7 @@ const REQUEST_FLOW = [
 export function ApiOverview() {
   return (
     <DocPage
+      tabs={<SettingsTabs />}
       title="WeStride API"
       lede="Public, read-only access to the data behind WeStride, starting with the Academy catalog."
       actions={

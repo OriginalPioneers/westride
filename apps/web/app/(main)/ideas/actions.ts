@@ -302,7 +302,7 @@ export async function createIdeaFromStudio(
     }
     await syncLearningAwards(userId).catch(() => undefined);
     await awardAchievement(userId, "first-spark").catch(() => undefined);
-    revalidatePath("/achievements");
+    revalidatePath("/profile/achievements");
     revalidatePath("/ideas");
     return { status: "created", id: created.id };
   } catch (error) {
@@ -395,7 +395,7 @@ export async function updateIdeaFromStudio(
   revalidatePath("/ideas");
   revalidatePath(`/ideas/${ideaId}`);
   await syncLearningAwards(userId).catch(() => undefined);
-  revalidatePath("/achievements");
+  revalidatePath("/profile/achievements");
   const stillMember = parsed.data.members.some(
     (member) => member.clerkUserId === userId,
   );

@@ -12,7 +12,7 @@ import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { Link } from "@astryxdesign/core/Link";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../voice-text-area";
 import { CodeBracketIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
 import { signInPath } from "@/lib/auth-paths";
 import { MAX_CLAIM_MESSAGE } from "@/lib/claims/limits";
@@ -252,7 +252,7 @@ function RequestClaimDialog({
                 a contributor, or the person who wants to carry it forward.
                 They will email you with the decision.
               </Text>
-              <TextArea
+              <VoiceTextArea
                 label="Your message"
                 value={message}
                 onChange={(value) => {

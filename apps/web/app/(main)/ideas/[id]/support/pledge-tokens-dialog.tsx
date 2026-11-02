@@ -11,7 +11,7 @@ import { NumberInput } from "@astryxdesign/core/NumberInput";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../voice-text-area";
 import type { Pledge } from "@westride/db";
 import {
   MAX_CAP_DOLLARS,
@@ -173,7 +173,7 @@ export function PledgeTokensDialog({
                     description="Jobs keep using your key for as long as the pledge is active. Pause or end it any time from Supporting."
                   />
                 )}
-                <TextArea
+                <VoiceTextArea
                   label="Note to the team"
                   value={draft.note}
                   onChange={(value) => setDraft((current) => ({ ...current, note: value }))}

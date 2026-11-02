@@ -10,7 +10,7 @@ import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { Link } from "@astryxdesign/core/Link";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../voice-text-area";
 import type { Pledge } from "@westride/db";
 import { MAX_PLEDGE_NOTE, supportingPath } from "@/lib/support/schema";
 import { pledgeComputeAction, setPledgeStatusAction } from "../../../support-actions";
@@ -105,7 +105,7 @@ export function PledgeComputeDialog({
                 </Text>
               ) : null}
               <FormLayout defaultOptionality="optional">
-                <TextArea
+                <VoiceTextArea
                   label="Note to the team"
                   value={note}
                   onChange={(value) => {

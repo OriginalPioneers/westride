@@ -27,7 +27,7 @@ import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { QuestionMarkCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { signInPath } from "@/lib/auth-paths";
-import { ChallengeDialog } from "./achievements/challenge-dialog";
+import { ChallengeDialog } from "./profile/achievements/challenge-dialog";
 import { getMuseCompanionState, askMuseCompanion } from "./companion-actions";
 
 const reducedMotion = () =>
@@ -203,7 +203,7 @@ export function MuseDock({ viewerId }: { viewerId: string | null }) {
         : action === "academy"
           ? ["Explore Academy", "/academy"]
           : action === "achievements"
-            ? ["View achievements", "/achievements"]
+            ? ["View achievements", "/profile/achievements"]
             : null;
     return destination ? (
       <Button
@@ -462,7 +462,7 @@ export function MuseDock({ viewerId }: { viewerId: string | null }) {
                 />
                 <Button
                   label="My achievements"
-                  href="/achievements"
+                  href="/profile/achievements"
                   variant="ghost"
                   onClick={() => setOpen(false)}
                 />

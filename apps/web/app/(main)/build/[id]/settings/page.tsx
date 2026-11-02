@@ -50,6 +50,7 @@ export default async function ProjectSettingsPage({ params }: { params: Params }
               <Heading level={2}>Repositories</Heading>
               <RepoSettings
                 projectId={project.id}
+                projectName={project.name}
                 repos={project.repos}
                 canConnectGithub={isGithubAppConfigured()}
               />

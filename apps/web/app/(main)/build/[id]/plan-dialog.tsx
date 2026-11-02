@@ -14,7 +14,7 @@ import { Markdown } from "@astryxdesign/core/Markdown";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../voice-text-area";
 import { TICKET_PRIORITY_LABELS, ticketsPath } from "@/lib/build/labels";
 import type { BacklogDraft, PlanMode, RankingDraft } from "@/lib/build/planning";
 import { MAX_PLAN_NOTES } from "@/lib/build/schema";
@@ -221,7 +221,7 @@ export function PlanDialog({
                     description="The project brief and tickets sent to a Contributor model may be used to train future Meta models."
                   />
                 ) : null}
-                <TextArea
+                <VoiceTextArea
                   label="Anything Muse should know?"
                   description="Constraints, the stack you have settled on, what to leave out, how big tickets should be."
                   value={notes}

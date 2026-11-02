@@ -11,7 +11,12 @@ import { List, ListItem } from "@astryxdesign/core/List";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { TextInput } from "@astryxdesign/core/TextInput";
-import { ArrowTopRightOnSquareIcon, StarIcon, TrashIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowTopRightOnSquareIcon,
+  PlusIcon,
+  StarIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
 import type { ProjectRepo } from "@westride/db";
 import {
@@ -19,15 +24,19 @@ import {
   setProjectPrimaryRepo,
   unlinkRepoFromProject,
 } from "../../actions";
+import { CreateRepoDialog } from "./create-repo-dialog";
 
 const CONNECT_GITHUB_HREF = "/integrations/github/connect?returnTo=/settings";
 
 export function RepoSettings({
   projectId,
+  projectName,
   repos,
   canConnectGithub,
 }: {
   projectId: string;
+  /** Suggests the name of a new repository. */
+  projectName: string;
   repos: ProjectRepo[];
   /** Whether the WeStride GitHub App is configured on this deployment. */
   canConnectGithub: boolean;
@@ -36,6 +45,8 @@ export function RepoSettings({
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isWorking, startWorking] = useTransition();
+  const [isCreating, setIsCreating] = useState(false);
+  const [createSession, setCreateSession] = useState(0);
 
   function run(task: () => Promise<{ status: "ok" } | { status: "error"; message: string }>) {
     setError(null);
@@ -94,6 +105,18 @@ export function RepoSettings({
           isDisabled={!url.trim()}
           onClick={() => run(() => linkRepoToProject(projectId, url))}
         />
+        {canConnectGithub ? (
+          <Button
+            label="Create repository"
+            variant="secondary"
+            icon={<Icon icon={PlusIcon} />}
+            isDisabled={isWorking}
+            onClick={() => {
+              setCreateSession((current) => current + 1);
+              setIsCreating(true);
+            }}
+          />
+        ) : null}
       </HStack>
       {repos.length > 0 ? (
         <List>
@@ -142,6 +165,16 @@ export function RepoSettings({
       ) : (
         <Text type="supporting">No repositories linked yet.</Text>
       )}
+      {isCreating ? (
+        <CreateRepoDialog
+          key={createSession}
+          projectId={projectId}
+          projectName={projectName}
+          hasRepos={repos.length > 0}
+          isOpen
+          onOpenChange={setIsCreating}
+        />
+      ) : null}
     </VStack>
   );
 }

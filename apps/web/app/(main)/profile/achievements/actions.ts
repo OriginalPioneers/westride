@@ -42,7 +42,7 @@ async function run(
     const attempt = await operation(userId);
     if (!attempt)
       return { status: "error", message: "This challenge is unavailable." };
-    revalidatePath("/achievements");
+    revalidatePath("/profile/achievements");
     return { status: "ok", attempt };
   } catch {
     // Never log provider responses, user answers, credentials, or connection strings.

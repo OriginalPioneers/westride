@@ -61,11 +61,14 @@ function findScrollParent(node: HTMLElement): HTMLElement | null {
  * dividers. Wide screens get a sticky outline; narrow ones get a section picker.
  */
 export function DocPage({
+  tabs,
   title,
   lede,
   actions,
   children,
 }: {
+  /** Section tabs shown above the title. */
+  tabs?: ReactNode;
   title: string;
   lede: ReactNode;
   actions?: ReactNode;
@@ -127,6 +130,7 @@ export function DocPage({
         <LayoutContent padding={8}>
           <VStack gap={8} ref={bodyRef}>
             <VStack gap={4}>
+              {tabs}
               <VStack gap={2}>
                 <Heading level={1} type="display-1">
                   {title}

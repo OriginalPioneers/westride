@@ -66,10 +66,29 @@ export const MUSE_IMAGE_MODEL = {
   perImageMicros: 10_000,
 } as const;
 
+/**
+ * Speech to text is billed by the hour of audio processed, not by token, so
+ * it stays out of MUSE_MODELS as well.
+ */
+export const MUSE_TRANSCRIBE_MODEL = {
+  id: "muse-voice-transcribe-1.0",
+  label: "Muse Voice Transcribe 1.0",
+  description:
+    "Meta's speech-to-text model. $0.18 per hour of audio, billed to your Meta account.",
+  perHourMicros: 180_000,
+} as const;
+
 /** USD per web search query, billed on top of tokens. */
 const WEB_SEARCH_PER_QUERY = 2.5 / 1000;
 
 const MICROS_PER_DOLLAR = 1_000_000;
+const SECONDS_PER_HOUR = 3600;
+
+/** Meta meters audio in whole seconds, rounding down. */
+export function estimateTranscriptionCostMicros(audioDurationMs: number): number {
+  const seconds = Math.floor(Math.max(0, audioDurationMs) / 1000);
+  return Math.round((seconds / SECONDS_PER_HOUR) * MUSE_TRANSCRIBE_MODEL.perHourMicros);
+}
 
 export function isMuseModelId(value: string): value is MuseModelId {
   return MUSE_MODELS.some((model) => model.id === value);

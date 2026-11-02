@@ -8,7 +8,7 @@ import {
   reserveLearningCall,
 } from "@westride/db/learning";
 import { callMuse } from "@/lib/idea-factory/muse";
-import { trackProgress } from "./achievements/track-progress";
+import { trackProgress } from "./profile/achievements/track-progress";
 
 /** Read-only on open: no AI request, attempt creation, or award. */
 export async function getMuseCompanionState() {

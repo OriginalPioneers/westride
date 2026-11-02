@@ -55,7 +55,7 @@ export const STUDIOS: Studio[] = [
   {
     step: "Shape the idea",
     where: "Idea Studio",
-    action: "Work on an idea",
+    action: "Workshop an idea",
     href: "/ideas",
     how: "Bring a business, non-profit, game, or open-source idea. A team of Muse advisors pressure-tests it with live research and cited sources, so you know what holds up before you build.",
     icon: LightBulbIcon,
@@ -64,7 +64,7 @@ export const STUDIOS: Studio[] = [
   {
     step: "Build it for real",
     where: "Build Studio",
-    action: "Build a real project",
+    action: "Build a project",
     href: "/build",
     how: "Projects, tickets, and a linked GitHub repository. Muse drafts the backlog and roadmap, and Muse Code agents work the tickets and open pull requests.",
     icon: WrenchScrewdriverIcon,
@@ -73,7 +73,7 @@ export const STUDIOS: Studio[] = [
   {
     step: "Give it agents",
     where: "Agent Studio",
-    action: "Create an AI agent",
+    action: "Manage an AI agent fleet",
     href: "/agents",
     how: "Design the Muse agents a project needs, give each one a job, and add them to it, so the product keeps working after you ship it.",
     icon: CpuChipIcon,
@@ -135,31 +135,6 @@ export const SUPPORT: PathStep[] = [
   },
 ];
 
-export type ConnectionId = "meta" | "github" | "whatsapp" | "slack" | "discord";
-
-/**
- * `available` is for signed-out visitors, `disconnected` for members who have
- * not linked it yet, and `unavailable` when this server has it turned off.
- */
-export type ConnectionStatus =
-  | "connected"
-  | "disconnected"
-  | "available"
-  | "unavailable";
-
-export type ConnectionStatuses = Record<ConnectionId, ConnectionStatus>;
-
-export type HeroConnection = { id: ConnectionId; name: string; logo: string };
-
-/** The primary integrations, in the order the hero strip shows them. */
-export const HERO_CONNECTIONS: HeroConnection[] = [
-  { id: "meta", name: "Meta AI", logo: "/logos/meta.svg" },
-  { id: "github", name: "GitHub", logo: "/logos/github.svg" },
-  { id: "whatsapp", name: "WhatsApp", logo: "/logos/whatsapp.svg" },
-  { id: "slack", name: "Slack", logo: "/logos/slack-mark.svg" },
-  { id: "discord", name: "Discord", logo: "/logos/discord.svg" },
-];
-
 export type MobileApp = {
   name: string;
   store: string;
@@ -191,14 +166,14 @@ export const PLATFORM_SURFACES: PlatformSurface[] = [
   {
     name: "API",
     detail: "Public REST",
-    href: "/api",
+    href: "/settings/api",
     label: "WeStride public API",
     icon: CodeBracketSquareIcon,
   },
   {
     name: "MCP",
     detail: "AI assistants",
-    href: "/mcp",
+    href: "/settings/mcp",
     label: "WeStride MCP server",
     logo: "/logos/model-context-protocol.svg",
   },
@@ -287,13 +262,13 @@ export const INTEGRATIONS: Integration[] = [
   {
     name: "MCP server",
     detail: "Let ChatGPT, Claude, and Cursor read WeStride data through the Model Context Protocol.",
-    href: "/mcp",
+    href: "/settings/mcp",
     logo: "/logos/model-context-protocol.svg",
   },
   {
     name: "Public API",
     detail: "A read-only REST API with an OpenAPI document and an interactive explorer.",
-    href: "/api",
+    href: "/settings/api",
     icon: CodeBracketSquareIcon,
   },
   {

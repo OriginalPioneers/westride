@@ -38,7 +38,7 @@ export async function loadSocialProgress(timeZone: string) {
 }
 async function updated(user: string) {
   await syncLearningAwards(user);
-  revalidatePath("/achievements");
+  revalidatePath("/profile/achievements");
 }
 export async function draftSocialPost(input: unknown) {
   const { userId } = await auth();

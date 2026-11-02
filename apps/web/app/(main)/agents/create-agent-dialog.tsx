@@ -13,7 +13,7 @@ import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/Segme
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { agentPath } from "@/lib/agents/labels";
 import {
@@ -166,7 +166,7 @@ export function CreateAgentDialog({
                   isRequired
                   status={fieldStatus(errors.name)}
                 />
-                <TextArea
+                <VoiceTextArea
                   label="What it does"
                   description="One or two sentences. The agent reads this as who it is."
                   value={draft.description}
@@ -176,7 +176,7 @@ export function CreateAgentDialog({
                   isRequired
                   status={fieldStatus(errors.description)}
                 />
-                <TextArea
+                <VoiceTextArea
                   label="Standing instructions"
                   description="Rules it follows on every job: tone, files to respect, what never to touch. Markdown is fine."
                   value={draft.instructions}

@@ -12,8 +12,9 @@ import { Table } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { Theme } from "@astryxdesign/core/theme";
 import { defaultThemeSlug, themes } from "@/astryx-themes";
-import { STORE_LINKS } from "../../store-links";
-import { DocPage, DocSection } from "../doc-page";
+import { STORE_LINKS } from "../../../store-links";
+import { DocPage, DocSection } from "../../doc-page";
+import { OurStoryTabs } from "../../section-tabs";
 
 const SOURCE_URL = "https://github.com/WeStrideOrg";
 
@@ -350,6 +351,7 @@ function NamedList({ items }: { items: Project[] }) {
 export function TechStackOverview() {
   return (
     <DocPage
+      tabs={<OurStoryTabs />}
       title="Tech Stack"
       lede="What WeStride runs on, why, and how the pieces fit together. It is all open source, so you can read every line."
       actions={
@@ -360,7 +362,7 @@ export function TechStackOverview() {
             href={SOURCE_URL}
             target="_blank"
           />
-          <Button label="Read about the API" href="/api" />
+          <Button label="Read about the API" href="/settings/api" />
         </>
       }
     >

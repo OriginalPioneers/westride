@@ -14,7 +14,7 @@ import {
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Stepper, Step } from "@astryxdesign/core/Stepper";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../voice-text-area";
 import {
   challengeCatalog,
   interests,
@@ -238,7 +238,7 @@ export function ChallengeDialog({
               ) : (
                 <VStack gap={4}>
                   <Text>{attempt.prompt}</Text>
-                  <TextArea
+                  <VoiceTextArea
                     label="Your answer"
                     value={answer}
                     onChange={(value) => {
@@ -258,7 +258,7 @@ export function ChallengeDialog({
                       <Text>{attempt.feedback.observation}</Text>
                       <Heading level={3}>Try one improvement</Heading>
                       <Text>{attempt.feedback.suggestion}</Text>
-                      <TextArea
+                      <VoiceTextArea
                         label="Your revised answer (optional)"
                         value={revision}
                         onChange={(value) => {

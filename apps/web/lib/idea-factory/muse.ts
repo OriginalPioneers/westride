@@ -1,7 +1,11 @@
 import "server-only";
 
 import type { MuseSource } from "@westride/db";
-import { estimateCostMicros } from "./pricing";
+import {
+  estimateCostMicros,
+  estimateTranscriptionCostMicros,
+  MUSE_TRANSCRIBE_MODEL,
+} from "./pricing";
 
 /**
  * A thin client for Meta Model API (https://dev.meta.ai/docs). The member's
@@ -489,6 +493,133 @@ export async function generateMuseImage(options: MuseImageOptions): Promise<Muse
       null,
       null,
     );
+  }
+}
+
+const TRANSCRIBE_ENDPOINT = "/asr/transcribe";
+/** A two-minute clip transcribes in a few seconds; the rest is upload time. */
+const TRANSCRIBE_TIMEOUT_MS = 45_000;
+
+export type MuseTranscribeOptions = {
+  apiKey: string;
+  /** A RIFF/WAVE clip: mono, 16-bit PCM, 16 kHz or 24 kHz. */
+  audio: Blob;
+  /** Names and terms the model might otherwise mishear. */
+  keywords?: string[];
+  /** Languages to expect, by English name, such as "English" or "Spanish". */
+  languageBias?: string[];
+  timeoutMs?: number;
+};
+
+export type MuseTranscribeResult =
+  | { ok: true; transcript: string; audioDurationMs: number; estimatedCostMicros: number }
+  | { ok: false; status: number | null; error: string };
+
+type MultipartPart = {
+  name: string;
+  contentType: string;
+  data: Blob | string;
+  filename?: string;
+};
+
+/**
+ * Builds the body by hand so each part carries exactly the content type
+ * Meta's examples send: the JSON part has no filename, and the audio does.
+ * FormData gives Blob parts a filename whether we want one or not.
+ */
+function multipartBody(parts: MultipartPart[]): { body: Blob; contentType: string } {
+  const boundary = `----westride-${crypto.randomUUID()}`;
+  const chunks: BlobPart[] = [];
+  for (const part of parts) {
+    const disposition = part.filename
+      ? `form-data; name="${part.name}"; filename="${part.filename}"`
+      : `form-data; name="${part.name}"`;
+    chunks.push(
+      `--${boundary}\r\nContent-Disposition: ${disposition}\r\nContent-Type: ${part.contentType}\r\n\r\n`,
+      part.data,
+      "\r\n",
+    );
+  }
+  chunks.push(`--${boundary}--\r\n`);
+  return {
+    body: new Blob(chunks),
+    contentType: `multipart/form-data; boundary=${boundary}`,
+  };
+}
+
+function transcribeErrorMessage(status: number, body: unknown): string {
+  switch (status) {
+    case 400:
+      return "Meta could not read that recording. Try again.";
+    case 413:
+      return "That recording is too long for one take. Dictate it in shorter pieces.";
+    default:
+      return errorMessage(status, body);
+  }
+}
+
+/**
+ * One call to `POST /v1/asr/transcribe` for a single take. The member pressed
+ * the mic to start and stop, so the whole clip is one `PUSH_TO_TALK` turn.
+ * Like callMuse, it never throws for an API or network failure.
+ */
+export async function transcribeMuseAudio(
+  options: MuseTranscribeOptions,
+): Promise<MuseTranscribeResult> {
+  const settings: Record<string, unknown> = {
+    model: MUSE_TRANSCRIBE_MODEL.id,
+    audioEncoding: "WAV",
+    mode: "PUSH_TO_TALK",
+  };
+  if (options.keywords?.length) {
+    settings.keywords = options.keywords;
+  }
+  if (options.languageBias?.length) {
+    settings.languageBias = options.languageBias;
+  }
+  const { body, contentType } = multipartBody([
+    { name: "request", contentType: "application/json", data: JSON.stringify(settings) },
+    { name: "audio", contentType: "audio/wav", data: options.audio, filename: "dictation.wav" },
+  ]);
+
+  try {
+    const response = await fetch(`${MUSE_API_BASE}${TRANSCRIBE_ENDPOINT}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${options.apiKey}`,
+        "Content-Type": contentType,
+        Accept: "application/json",
+      },
+      body,
+      signal: AbortSignal.timeout(options.timeoutMs ?? TRANSCRIBE_TIMEOUT_MS),
+    });
+    const responseBody = await readBody(response);
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: response.status,
+        error: transcribeErrorMessage(response.status, responseBody),
+      };
+    }
+    const record = asRecord(responseBody);
+    const transcript = typeof record?.transcript === "string" ? record.transcript.trim() : "";
+    const audioDurationMs = asNumber(record?.audioDurationMs);
+    return {
+      ok: true,
+      transcript,
+      audioDurationMs,
+      estimatedCostMicros: estimateTranscriptionCostMicros(audioDurationMs),
+    };
+  } catch (error) {
+    const timedOut =
+      error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+    return {
+      ok: false,
+      status: null,
+      error: timedOut
+        ? "Muse took too long to transcribe that. Try again, or dictate a shorter piece."
+        : "Meta Model API could not be reached.",
+    };
   }
 }
 

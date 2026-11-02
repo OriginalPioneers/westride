@@ -9,7 +9,7 @@ import { FormLayout } from "@astryxdesign/core/FormLayout";
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem } from "@astryxdesign/core/Stack";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import type { ProjectMilestone, ProjectRepo, TicketPriority } from "@westride/db";
 import type { TicketWithDetails } from "@westride/db/build";
@@ -170,7 +170,7 @@ export function TicketDialog({
                 isRequired
                 status={fieldStatus(errors.title)}
               />
-              <TextArea
+              <VoiceTextArea
                 label="What does done look like?"
                 description="Write it as the brief you would hand a developer: the behaviour, where it lives, and how to check it. A Muse Code agent works from exactly this text. Markdown is fine."
                 value={description}

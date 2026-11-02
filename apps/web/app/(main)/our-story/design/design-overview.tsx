@@ -12,7 +12,8 @@ import { List, ListItem } from "@astryxdesign/core/List";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Table } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
-import { DocPage, DocSection } from "../doc-page";
+import { DocPage, DocSection } from "../../doc-page";
+import { OurStoryTabs } from "../../section-tabs";
 
 const DESIGN_URL = "https://design.westride.org";
 
@@ -176,6 +177,7 @@ function Swatch({ name, token }: { name: string; token: string }) {
 export function DesignOverview() {
   return (
     <DocPage
+      tabs={<OurStoryTabs />}
       title="WeStride Design"
       lede="How WeStride looks and why: the brand, the design system every screen is built from, and the few rules that keep it consistent."
       actions={

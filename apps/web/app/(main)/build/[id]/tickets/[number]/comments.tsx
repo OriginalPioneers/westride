@@ -11,7 +11,7 @@ import { IconButton } from "@astryxdesign/core/IconButton";
 import { Markdown } from "@astryxdesign/core/Markdown";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { TextArea } from "@astryxdesign/core/TextArea";
+import { VoiceTextArea } from "../../../../voice-text-area";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { SparklesIcon, TrashIcon } from "@heroicons/react/20/solid";
 import { MAX_COMMENT } from "@/lib/build/schema";
@@ -124,7 +124,7 @@ export function TicketComments({
       {canComment ? (
         <VStack gap={2}>
           {message ? <Banner status="error" title={message} /> : null}
-          <TextArea
+          <VoiceTextArea
             label="Add a comment"
             isLabelHidden
             placeholder="Leave a note for the team or the next agent run. Markdown is fine."

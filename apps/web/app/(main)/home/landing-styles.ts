@@ -4,12 +4,6 @@
  * prefers-reduced-motion. Rendered once through a <style> element.
  */
 export const LANDING_STYLES = `
-@property --wl-angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
 @keyframes wl-rise {
   from {
     opacity: 0;
@@ -34,10 +28,6 @@ export const LANDING_STYLES = `
 @keyframes wl-drift-c {
   0%, 100% { transform: translate(0, 0) scale(0.95); }
   50% { transform: translate(6%, 9%) scale(1.1); }
-}
-
-@keyframes wl-spin {
-  to { --wl-angle: 360deg; }
 }
 
 @keyframes wl-shimmer {
@@ -84,9 +74,21 @@ export const LANDING_STYLES = `
   7%, 100% { opacity: 0; transform: translate(-260%, 260%); }
 }
 
+@keyframes wl-swell {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.25); }
+}
+
 @keyframes wl-globe-in {
   from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: none; }
+}
+
+/* The active hero tab's rail fills over one dwell; when it ends the next
+   section takes over, so the rail and the rotation can never drift apart. */
+@keyframes wl-tab-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 /* Stone keeps its semantic colors earthy. The brand stamp's hues live in the
@@ -130,11 +132,42 @@ export const LANDING_STYLES = `
 
 /* ---------- Hero ---------- */
 
+/* The bottom edge is a wave rather than a straight line: the mask keeps
+   everything above a curve that swings either side of a midline half a
+   wave height above the box's bottom. HeroWave traces the same curve. */
 .wl-hero {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   background: var(--color-background-body);
+  --wl-wave-mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C120 50.67 240 50.67 360 24C480 -2.67 600 -2.67 720 24C840 50.67 960 50.67 1080 24C1200 -2.67 1320 -2.67 1440 24V0H0Z'/%3E%3C/svg%3E")
+      bottom / 100% var(--wl-wave) no-repeat,
+    linear-gradient(black, black)
+      top / 100% calc(100% - var(--wl-wave) + var(--border-width)) no-repeat;
+  -webkit-mask: var(--wl-wave-mask);
+  mask: var(--wl-wave-mask);
+}
+
+.wl-hero-wave {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 0;
+  width: 100%;
+  height: calc(var(--wl-wave) * 3);
+  pointer-events: none;
+}
+
+.wl-hero-wave .wl-wave-swell {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: wl-swell calc(var(--duration-slow-max) * 8) var(--ease-standard) infinite;
+}
+
+.wl-hero-wave .wl-wave-swell + .wl-wave-swell {
+  animation-duration: calc(var(--duration-slow-max) * 11);
+  animation-direction: reverse;
 }
 
 .wl-hero-sky {
@@ -192,19 +225,23 @@ export const LANDING_STYLES = `
   position: relative;
   z-index: 1;
   padding-inline: var(--spacing-6);
-  padding-block: calc(var(--spacing-12) * 2.25) calc(var(--spacing-12) * 2);
+  padding-block: calc(var(--spacing-12) * 2.25) calc(var(--spacing-12) * 3);
 }
 
 /* On a large screen the hero fills what the scroll area shows (the viewport
-   less the one-row site footer), and the globe shrinks on shorter windows so
-   the connection strip still fits above the fold. */
+   less the one-row site footer), less the lower half of the carry bar, so
+   the whole bar is on screen. The bar's upper half covers extra bottom
+   padding. The globe shrinks on shorter windows so the cards still fit. */
 @media (min-width: 64rem) and (min-height: 40rem) {
   .wl-hero .wl-hero-content {
     --wl-hero-pad: var(--spacing-10);
+    --wl-carry-half: var(--spacing-10);
     justify-content: center;
-    padding-block: var(--wl-hero-pad);
+    padding-block: var(--wl-hero-pad)
+      calc(var(--wl-hero-pad) + var(--wl-carry-half));
     min-height: calc(
-      100dvh - var(--spacing-12) - var(--border-width) - var(--wl-hero-pad) * 2
+      100dvh - var(--spacing-12) - var(--border-width) - var(--wl-hero-pad) * 2 -
+        var(--wl-carry-half) * 2
     );
   }
 
@@ -218,8 +255,8 @@ export const LANDING_STYLES = `
 }
 
 /* Side by side (the Grid goes to two columns once both fit 484px), the
-   card column is at least wide enough for the Builders row of three
-   buttons to sit on one line; the copy takes the rest. Grid exposes its
+   stage column is at least wide enough for the tab column plus the globe
+   peeking out beside it; the copy takes the rest. Grid exposes its
    template through this variable, set inline, so the override has to be
    important. */
 .wl-hero .wl-hero-content {
@@ -251,12 +288,15 @@ export const LANDING_STYLES = `
 
 .wl-hero-stage > * {
   grid-area: 1 / 1;
+  /* Grid items default to min-width auto, which would let the tab grid's
+     two-column minimum widen the stage past a phone screen. */
+  min-width: 0;
 }
 
 .wl-hero-stage .wl-globe {
   position: absolute;
   top: 50%;
-  left: 62%;
+  left: 50%;
   translate: -50% -50%;
   width: calc(var(--spacing-12) * 18);
   max-width: none;
@@ -268,8 +308,8 @@ export const LANDING_STYLES = `
   pointer-events: auto;
 }
 
-/* One line at any width: the title is sized from its own column, so it
-   never runs under the cards beside it. */
+/* The title is sized from its own column, so it wraps to two balanced
+   lines at most and never runs under the tabs beside it. */
 .wl-hero .wl-hero-copy {
   container-type: inline-size;
   /* Above the globe, which can spill under this column, so links stay clickable. */
@@ -278,11 +318,45 @@ export const LANDING_STYLES = `
 }
 
 .wl-hero .wl-hero-copy .wl-hero-title {
-  font-size: clamp(var(--font-size-2xl), 8.4cqw, var(--font-size-5xl));
+  font-size: clamp(var(--font-size-3xl), 7.4cqw, var(--font-size-5xl));
 }
 
-.wl-hero-copy > *,
-.wl-hero-connect {
+/* ---------- Hero panels ---------- */
+
+/* Every panel shares one grid cell, so the column is as tall as the
+   tallest panel and nothing below it jumps when the section changes. The
+   outgoing panel fades first; the incoming one rises in behind it. */
+.wl-hero-panels {
+  width: 100%;
+  max-width: calc(var(--spacing-12) * 14);
+}
+
+.wl-hero-panels > .wl-hero-panel {
+  grid-area: 1 / 1;
+  align-self: start;
+  width: 100%;
+  box-sizing: border-box;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(var(--spacing-3));
+  transition:
+    opacity var(--duration-medium) var(--ease-standard),
+    transform var(--duration-medium) var(--ease-standard),
+    visibility 0s linear var(--duration-medium);
+}
+
+.wl-hero-panels > .wl-hero-panel[data-active] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition-delay: var(--duration-fast-min), var(--duration-fast-min), 0s;
+}
+
+.wl-hero-import {
+  padding-top: var(--spacing-2);
+}
+
+.wl-hero-copy > * {
   animation: wl-rise var(--duration-slow) var(--ease-standard) both;
 }
 
@@ -292,91 +366,205 @@ export const LANDING_STYLES = `
 .wl-hero-copy > :nth-child(4) { animation-delay: var(--duration-medium-min); }
 .wl-hero-copy > :nth-child(5) { animation-delay: var(--duration-medium-max); }
 .wl-hero-copy > :nth-child(6) { animation-delay: var(--duration-slow-min); }
-.wl-hero-connect { animation-delay: var(--duration-slow); }
 
-/* The two hero cards (Builders, Supporters) stack in front of the globe. */
-.wl-hero-cards {
+/* ---------- Hero tabs ---------- */
+
+/* The section tabs stay one column in front of the globe. Import sits
+   above the studio stack, and Support sits below it, with the same gap
+   the tabs used to have between every card. */
+.wl-hero .wl-hero-tabs {
+  --wl-hero-dwell: calc(var(--duration-slow-max) * 6);
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: calc(var(--spacing-12) * 20);
+  max-width: calc(var(--spacing-12) * 12);
   margin-inline: auto;
 }
 
-.wl-hero-card {
+.wl-hero-tab-group {
+  width: 100%;
+}
+
+.wl-hero .wl-hero-tab {
+  position: relative;
   width: 100%;
   box-sizing: border-box;
-  box-shadow: 0 0 var(--spacing-8) color-mix(in srgb, var(--wl-indigo) 35%, transparent);
+  overflow: hidden;
+  border-radius: var(--radius-container);
+  border-color: var(--color-border);
+  background: color-mix(in srgb, var(--color-background-surface) 72%, transparent);
+  -webkit-backdrop-filter: blur(var(--spacing-3));
+  backdrop-filter: blur(var(--spacing-3));
   animation: wl-rise var(--duration-slow) var(--ease-standard) both;
-  animation-delay: var(--duration-medium-max);
-  border-radius: var(--radius-container);
-  border: var(--border-width) solid var(--color-border);
-  background: color-mix(in srgb, var(--color-background-surface) 72%, transparent);
-  -webkit-backdrop-filter: blur(var(--spacing-3));
-  backdrop-filter: blur(var(--spacing-3));
+  animation-delay: calc(var(--duration-medium-max) + var(--duration-fast-min) * var(--wl-i, 0));
+  transition:
+    background-color var(--duration-medium) var(--ease-standard),
+    border-color var(--duration-medium) var(--ease-standard),
+    box-shadow var(--duration-medium) var(--ease-standard);
 }
 
-.wl-hero-card-support {
+.wl-hero .wl-hero-tab:hover {
+  border-color: color-mix(in srgb, var(--wl-tint-a) 45%, var(--color-border));
+}
+
+.wl-hero .wl-hero-tab[data-active] {
+  --_card-ring: inset 0 0 0 var(--border-width) color-mix(in srgb, var(--wl-tint-a) 70%, transparent);
+  border-color: color-mix(in srgb, var(--wl-tint-a) 70%, var(--color-border));
+  background: color-mix(in srgb, var(--wl-tint-a) 22%, var(--color-background-surface));
+  box-shadow: 0 0 var(--spacing-8) color-mix(in srgb, var(--wl-tint-a) 35%, transparent);
+}
+
+/* Idea, Build, and Agent share one outline: square inner corners, and
+   each seam is a single border instead of two cards sitting flush. */
+.wl-hero .wl-hero-tab-group > .wl-hero-tab {
+  border-radius: 0;
+}
+
+.wl-hero .wl-hero-tab-group > .wl-hero-tab:first-child {
+  border-start-start-radius: var(--radius-container);
+  border-start-end-radius: var(--radius-container);
+}
+
+.wl-hero .wl-hero-tab-group > .wl-hero-tab:last-child {
+  border-end-start-radius: var(--radius-container);
+  border-end-end-radius: var(--radius-container);
+}
+
+.wl-hero .wl-hero-tab-group > .wl-hero-tab + .wl-hero-tab {
+  margin-top: calc(var(--border-width) * -1);
+}
+
+.wl-hero .wl-hero-tab-group > .wl-hero-tab[data-active] {
+  z-index: 1;
+}
+
+.wl-hero-tab-icon {
+  flex-shrink: 0;
+  width: var(--spacing-10);
+  height: var(--spacing-10);
+  border-radius: var(--radius-element);
+  color: var(--wl-tint-a);
+  background: var(--color-background-surface);
+  box-shadow: var(--shadow-low);
+  transition:
+    background var(--duration-medium) var(--ease-standard),
+    color var(--duration-medium) var(--ease-standard),
+    transform var(--duration-medium) var(--ease-standard);
+}
+
+.wl-hero .wl-hero-tab[data-active] .wl-hero-tab-icon {
+  color: var(--color-on-accent);
+  background: linear-gradient(135deg, var(--wl-tint-a), var(--wl-tint-b));
+  box-shadow: 0 var(--spacing-1) var(--spacing-3) color-mix(in srgb, var(--wl-tint-a) 45%, transparent);
+  transform: scale(1.06) rotate(-3deg);
+}
+
+/* The progress rail along the bottom edge of the active tab. It belongs
+   to the body, not the card: the card's own pseudo-element paints press
+   feedback. */
+.wl-hero-tab-body {
+  position: static;
+}
+
+.wl-hero-tab-body::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: var(--spacing-0-5);
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--wl-tint-a), var(--wl-tint-b));
+  pointer-events: none;
+}
+
+.wl-hero-tabs[data-autoplay] .wl-hero-tab[data-active] .wl-hero-tab-body::after {
+  animation: wl-tab-progress var(--wl-hero-dwell) linear forwards;
+}
+
+/* Hovering or focusing the tabs holds the rail, and with it the rotation. */
+.wl-hero-tabs[data-autoplay]:hover .wl-hero-tab[data-active] .wl-hero-tab-body::after,
+.wl-hero-tabs[data-autoplay]:focus-within .wl-hero-tab[data-active] .wl-hero-tab-body::after {
+  animation-play-state: paused;
+}
+
+/* Side by side, the tabs hug the stage's far edge and the globe sits
+   behind its near side, spilling under the tabs like a photo tucked
+   behind a panel. After the base rules above so it wins on order. */
+@container (min-width: 62.5rem) {
+  .wl-hero .wl-hero-tabs {
+    max-width: calc(var(--spacing-12) * 7.5);
+    margin-inline-end: 0;
+  }
+
+  .wl-hero-stage .wl-globe {
+    left: 36%;
+  }
+}
+
+/* ---------- Carry bar ---------- */
+
+/* The bar sits outside the hero, which clips its overflow, and is centred
+   on the midline of the hero's wavy bottom edge, half over the hero and
+   half over the section below. Frosted like the hero tabs so the sky shows
+   through it. */
+.wl-hero-frame {
+  --wl-wave: var(--spacing-12);
+  position: relative;
+}
+
+.wl-hero-frame > .wl-carry {
+  position: absolute;
+  top: calc(100% - var(--wl-wave) / 2);
+  left: 50%;
+  translate: -50% -50%;
+  z-index: 2;
+  width: calc(100% - var(--spacing-6) * 2);
+  box-sizing: border-box;
+  padding: var(--spacing-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-container);
+  background: color-mix(in srgb, var(--color-background-surface) 90%, transparent);
+  -webkit-backdrop-filter: blur(var(--spacing-3));
+  backdrop-filter: blur(var(--spacing-3));
+  box-shadow: var(--shadow-high);
+  animation: wl-rise var(--duration-slow) var(--ease-standard) both;
   animation-delay: var(--duration-slow-min);
-  box-shadow: 0 0 var(--spacing-8) color-mix(in srgb, var(--wl-teal) 30%, transparent);
 }
 
-/* ---------- Connection strip ---------- */
-
-.wl-connect-group {
-  min-width: 0;
-  border-radius: var(--radius-container);
+/* The label takes its own line until the row is wide enough to sit beside
+   the tiles, so a phone does not get a tall stack next to a short label. */
+.wl-carry-label {
+  flex: 1 0 100%;
 }
 
-.wl-connect-integrations {
-  flex: 3 1 calc(var(--spacing-12) * 10);
-  border: var(--border-width) solid var(--color-border);
-  background: color-mix(in srgb, var(--color-background-surface) 72%, transparent);
-  -webkit-backdrop-filter: blur(var(--spacing-3));
-  backdrop-filter: blur(var(--spacing-3));
+/* On one row the bar becomes a pill, and its tiles follow its curve. */
+@media (min-width: 64rem) {
+  .wl-carry-label {
+    flex: 0 1 auto;
+  }
+  .wl-hero-frame > .wl-carry {
+    padding: var(--spacing-2) var(--spacing-2) var(--spacing-2) var(--spacing-6);
+    border-radius: var(--radius-full);
+  }
+
+  .wl-carry .wl-app-tile,
+  .wl-carry .wl-platform-tile {
+    --_card-radius: var(--radius-full);
+  }
 }
 
-/* The apps sit apart from the integrations: a tinted panel inside an
-   animated border. */
-.wl-connect-apps {
-  flex: 1 1 calc(var(--spacing-12) * 6);
-  box-shadow: 0 0 var(--spacing-6) color-mix(in srgb, var(--wl-purple) 30%, transparent);
-}
+/* ---------- Carry tiles ---------- */
 
-.wl-connect-apps.wl-glow-border {
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--wl-indigo) 24%, var(--color-background-surface)),
-      color-mix(in srgb, var(--wl-teal) 16%, var(--color-background-surface))
-    ) padding-box,
-    conic-gradient(
-      from var(--wl-angle),
-      var(--wl-indigo),
-      var(--wl-purple),
-      var(--wl-blue),
-      var(--wl-teal),
-      var(--wl-orange),
-      var(--wl-indigo)
-    ) border-box;
-}
-
-.wl-connect-tile,
 .wl-app-tile,
 .wl-platform-tile {
   height: 100%;
+  background: var(--color-background-surface);
   transition:
     transform var(--duration-medium) var(--ease-standard),
     box-shadow var(--duration-medium) var(--ease-standard);
 }
 
-.wl-app-tile,
-.wl-platform-tile {
-  background: color-mix(in srgb, var(--color-background-body) 45%, transparent);
-}
-
-.wl-connect-tile:hover,
-.wl-connect-tile:focus-within,
 .wl-app-tile:hover,
 .wl-app-tile:focus-within,
 .wl-platform-tile:hover,
@@ -431,8 +619,7 @@ export const LANDING_STYLES = `
   filter: drop-shadow(0 var(--spacing-2) var(--spacing-6) color-mix(in srgb, var(--wl-purple) 45%, transparent));
 }
 
-.wl-gradient-text,
-.wl-studio-link .astryx-text {
+.wl-gradient-text {
   background-image: linear-gradient(
     90deg,
     var(--wl-indigo),
@@ -447,12 +634,6 @@ export const LANDING_STYLES = `
   color: transparent;
   -webkit-text-fill-color: transparent;
   animation: wl-shimmer calc(var(--duration-slow-max) * 6) linear infinite;
-}
-
-/* The underline stays on the anchor so the text fill does not clip it away. */
-.wl-studio-link {
-  color: var(--wl-indigo);
-  text-decoration-color: var(--wl-indigo);
 }
 
 /* Meta product names: Facebook blue gradient, underline on hover only. */
@@ -480,28 +661,6 @@ export const LANDING_STYLES = `
   color: transparent;
   -webkit-text-fill-color: transparent;
   animation: wl-shimmer calc(var(--duration-slow-max) * 6) linear infinite;
-}
-
-/* Animated conic border for framed panels. */
-.wl-glow-border {
-  position: relative;
-  border: var(--border-width) solid transparent;
-  background:
-    linear-gradient(var(--color-background-surface), var(--color-background-surface)) padding-box,
-    conic-gradient(
-      from var(--wl-angle),
-      var(--wl-indigo),
-      var(--wl-purple),
-      var(--wl-blue),
-      var(--wl-teal),
-      var(--wl-orange),
-      var(--wl-indigo)
-    ) border-box;
-  animation: wl-spin calc(var(--duration-slow-max) * 6) linear infinite;
-}
-
-.wl-glow-border:hover {
-  animation-duration: calc(var(--duration-slow-max) * 2);
 }
 
 /* ---------- Path ---------- */
@@ -676,18 +835,19 @@ export const LANDING_STYLES = `
 
   .wl-hero-sky .wl-blob,
   .wl-hero-sky .wl-node,
+  .wl-hero-wave .wl-wave-swell,
   .wl-hero-copy > *,
-  .wl-hero-connect,
-  .wl-hero-card,
-  .wl-connect-tile,
+  .wl-hero-panels > .wl-hero-panel,
+  .wl-hero-tab,
+  .wl-hero-tab-icon,
+  .wl-hero-tab-body::after,
+  .wl-carry,
   .wl-app-tile,
   .wl-platform-tile,
   .wl-globe,
   .wl-wordmark,
   .wl-gradient-text,
-  .wl-studio-link .astryx-text,
   .wl-meta-link .astryx-text,
-  .wl-glow-border,
   .wl-track .wl-runner,
   .wl-marquee-track,
   .wl-step,
@@ -709,12 +869,6 @@ export const LANDING_STYLES = `
   .wl-hero-sky .wl-shooting-star {
     animation: none;
     opacity: 0;
-  }
-
-  .wl-glow-border {
-    background:
-      linear-gradient(var(--color-background-surface), var(--color-background-surface)) padding-box,
-      linear-gradient(120deg, var(--wl-indigo), var(--wl-purple), var(--wl-teal)) border-box;
   }
 }
 `;

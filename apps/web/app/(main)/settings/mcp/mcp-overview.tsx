@@ -10,7 +10,8 @@ import { VStack } from "@astryxdesign/core/Stack";
 import { Tab, TabList } from "@astryxdesign/core/TabList";
 import { Table } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
-import { DocPage, DocSection } from "../doc-page";
+import { DocPage, DocSection } from "../../doc-page";
+import { SettingsTabs } from "../../section-tabs";
 
 const MCP_HOME_URL = "https://mcp.westride.org";
 const MCP_URL = `${MCP_HOME_URL}/mcp`;
@@ -278,7 +279,7 @@ const RELATED = [
   {
     label: "WeStride API",
     detail: "The public API every MCP tool reads from.",
-    href: "/api",
+    href: "/settings/api",
   },
   {
     label: "Source code",
@@ -323,6 +324,7 @@ function ClientSetup() {
 export function McpOverview() {
   return (
     <DocPage
+      tabs={<SettingsTabs />}
       title="WeStride MCP"
       lede="Connect ChatGPT, Claude, Cursor, and other AI assistants to WeStride, so they answer from the real Academy catalog."
       actions={
@@ -333,7 +335,7 @@ export function McpOverview() {
             href={MCP_HOME_URL}
             target="_blank"
           />
-          <Button label="Read about the API" href="/api" />
+          <Button label="Read about the API" href="/settings/api" />
         </>
       }
     >

@@ -134,10 +134,7 @@ export function ImportRepoForm({ isSignedIn }: { isSignedIn: boolean }) {
           }
         />
       ) : (
-        <Text type="supporting" size="sm">
-          Import a GitHub repository to instantly create an &quot;Idea&quot; and a
-          &quot;Project&quot; for it in WeStride.org
-        </Text>
+        <></>
       )}
     </VStack>
   );

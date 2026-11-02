@@ -116,6 +116,12 @@ export const createProjectSchema = z.object({
 
 export type CreateProjectInput = z.output<typeof createProjectSchema>;
 
+/** A repository created on GitHub from an existing project's settings. */
+export const createProjectRepoSchema = z.object({
+  newGithubRepo: newGithubRepoSchema,
+  makePrimary: z.boolean().default(false),
+});
+
 export const updateProjectSchema = z
   .object({
     name: projectNameSchema,
