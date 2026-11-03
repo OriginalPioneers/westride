@@ -1,7 +1,7 @@
 #!/bin/sh
 # WeStride supporter runner installer (macOS / Linux).
 #
-#   curl -fsSL https://westride.org/install.sh | sh -s -- --code XXXX-XXXX
+#   curl -fsSL https://www.westride.org/install.sh | sh -s -- --code XXXX-XXXX --url https://www.westride.org
 #
 # Installs nothing on the host besides a Docker container. The runner only
 # takes agent jobs for ideas you pledged compute to, clones public
@@ -12,7 +12,7 @@ set -eu
 IMAGE="${WESTRIDE_RUNNER_IMAGE:-ghcr.io/westrideorg/westride-runner:latest}"
 CONTAINER="westride-runner"
 VOLUME="westride-runner-state"
-WESTRIDE_URL="${WESTRIDE_URL:-https://westride.org}"
+WESTRIDE_URL="${WESTRIDE_URL:-https://www.westride.org}"
 CODE=""
 NAME=""
 META_KEY="${META_API_KEY:-}"
@@ -27,7 +27,7 @@ while [ $# -gt 0 ]; do
     --meta-key) META_KEY="$2"; shift 2 ;;
     --image) IMAGE="$2"; shift 2 ;;
     -h|--help)
-      echo "Usage: install.sh --code XXXX-XXXX [--name \"My laptop\"] [--meta-key KEY] [--url https://westride.org]"
+      echo "Usage: install.sh --code XXXX-XXXX [--name \"My laptop\"] [--meta-key KEY] [--url https://www.westride.org] [--image NAME]"
       exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
@@ -38,12 +38,10 @@ fail() { printf 'Error: %s\n' "$*" >&2; exit 1; }
 
 # Read from the terminal even when piped through sh.
 ask() {
-  prompt="$1"; default="$2"
-  if [ -r /dev/tty ]; then
-    printf '%s' "$prompt" > /dev/tty
-    IFS= read -r answer < /dev/tty || answer=""
-  else
-    answer=""
+  prompt="$1"; default="$2"; answer=""
+  # Without a usable terminal (CI, piped without a console) fall back to the default.
+  if { printf '%s' "$prompt" > /dev/tty; } 2>/dev/null; then
+    { IFS= read -r answer < /dev/tty; } 2>/dev/null || answer=""
   fi
   [ -n "$answer" ] && printf '%s' "$answer" || printf '%s' "$default"
 }
@@ -98,8 +96,20 @@ else
 fi
 
 say ""
-say "Pulling $IMAGE…"
-docker pull "$IMAGE" >/dev/null
+if docker image inspect "$IMAGE" >/dev/null 2>&1; then
+  # A local copy (pulled earlier or built from apps/runner) is enough; refresh it when we can.
+  if docker pull "$IMAGE" >/dev/null 2>&1; then
+    say "Using the latest $IMAGE."
+  else
+    say "Could not check for a newer image; using the local copy of $IMAGE."
+  fi
+else
+  say "Pulling $IMAGE…"
+  if ! pull_output=$(docker pull "$IMAGE" 2>&1); then
+    printf '%s\n' "$pull_output" >&2
+    fail "The runner image could not be pulled. If you built it yourself, tag it as $IMAGE or pass --image <name>."
+  fi
+fi
 docker volume create "$VOLUME" >/dev/null
 
 set -- \

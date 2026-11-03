@@ -3,7 +3,7 @@
   WeStride supporter runner installer (Windows).
 
 .DESCRIPTION
-  & ([scriptblock]::Create((irm https://westride.org/install.ps1))) -Code XXXX-XXXX
+  & ([scriptblock]::Create((irm https://www.westride.org/install.ps1))) -Code XXXX-XXXX -Url https://www.westride.org
 
   Installs nothing on the host besides a Docker container. The runner only
   takes agent jobs for ideas you pledged compute to, clones public
@@ -14,7 +14,7 @@
 param(
   [string]$Code = "",
   [string]$Name = "",
-  [string]$Url = $(if ($env:WESTRIDE_URL) { $env:WESTRIDE_URL } else { "https://westride.org" }),
+  [string]$Url = $(if ($env:WESTRIDE_URL) { $env:WESTRIDE_URL } else { "https://www.westride.org" }),
   [string]$MetaKey = $(if ($env:META_API_KEY) { $env:META_API_KEY } else { "" }),
   [string]$Image = $(if ($env:WESTRIDE_RUNNER_IMAGE) { $env:WESTRIDE_RUNNER_IMAGE } else { "ghcr.io/westrideorg/westride-runner:latest" }),
   [string]$Memory = "6g",
@@ -27,6 +27,22 @@ $Volume = "westride-runner-state"
 
 function Fail($message) { Write-Host "Error: $message" -ForegroundColor Red; exit 1 }
 
+# Runs docker quietly and returns its exit code; everything it printed is left
+# in $script:DockerOutput so a failure can be shown. Windows PowerShell 5.1
+# turns redirected native stderr into a terminating error while
+# $ErrorActionPreference is "Stop", so it is relaxed for the call only.
+function Invoke-Docker {
+  # No param block: docker flags such as -a or -e must not bind to a parameter.
+  $previous = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    $script:DockerOutput = (& docker @args 2>&1 | ForEach-Object { "$_" }) -join "`n"
+    return $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $previous
+  }
+}
+
 Write-Host ""
 Write-Host "WeStride supporter runner"
 Write-Host "========================="
@@ -34,14 +50,14 @@ Write-Host "========================="
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
   Fail "Docker is not installed. Get Docker Desktop from https://docs.docker.com/get-docker/ and run this again."
 }
-docker info *> $null
-if ($LASTEXITCODE -ne 0) { Fail "Docker is installed but not running. Start Docker Desktop and run this again." }
+if ((Invoke-Docker info) -ne 0) { Fail "Docker is installed but not running. Start Docker Desktop and run this again." }
 
-$existing = docker ps -a --format '{{.Names}}' | Where-Object { $_ -eq $Container }
+Invoke-Docker ps -a --format '{{.Names}}' | Out-Null
+$existing = ($script:DockerOutput -split "`n") | Where-Object { $_ -eq $Container }
 if ($existing) {
   $answer = Read-Host "A runner container already exists. Replace it? [y/N]"
   if ($answer -match '^(y|yes)$') {
-    docker rm -f $Container *> $null
+    Invoke-Docker rm -f $Container | Out-Null
   } else {
     Write-Host "Leaving the existing runner alone. Logs: docker logs -f $Container"
     exit 0
@@ -49,10 +65,10 @@ if ($existing) {
 }
 
 $hasToken = $false
-docker volume inspect $Volume *> $null
-if ($LASTEXITCODE -eq 0) {
-  docker run --rm -v "${Volume}:/state:ro" alpine:3 sh -c 'test -s /state/device-token' *> $null
-  if ($LASTEXITCODE -eq 0) { $hasToken = $true }
+if ((Invoke-Docker volume inspect $Volume) -eq 0) {
+  if ((Invoke-Docker run --rm -v "${Volume}:/state:ro" alpine:3 sh -c 'test -s /state/device-token') -eq 0) {
+    $hasToken = $true
+  }
 }
 
 if (-not $Code -and -not $hasToken) {
@@ -83,12 +99,23 @@ try {
 }
 
 Write-Host ""
-Write-Host "Pulling $Image..."
-docker pull $Image *> $null
-if ($LASTEXITCODE -ne 0) { Fail "The runner image could not be pulled." }
-docker volume create $Volume *> $null
+if ((Invoke-Docker image inspect $Image) -eq 0) {
+  # A local copy (pulled earlier or built from apps/runner) is enough; refresh it when we can.
+  if ((Invoke-Docker pull $Image) -eq 0) {
+    Write-Host "Using the latest $Image."
+  } else {
+    Write-Host "Could not check for a newer image; using the local copy of $Image."
+  }
+} else {
+  Write-Host "Pulling $Image..."
+  if ((Invoke-Docker pull $Image) -ne 0) {
+    Write-Host $script:DockerOutput
+    Fail "The runner image could not be pulled. If you built it yourself, tag it as $Image or pass -Image <name>."
+  }
+}
+Invoke-Docker volume create $Volume | Out-Null
 
-$args = @(
+$runArgs = @(
   "run", "-d", "--name", $Container, "--restart", "unless-stopped",
   "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "512",
   "--memory", $Memory, "--cpus", $Cpus,
@@ -97,12 +124,14 @@ $args = @(
   "-e", "WESTRIDE_URL=$Url",
   "-e", "WESTRIDE_DEVICE_NAME=$Name"
 )
-if ($Code) { $args += @("-e", "WESTRIDE_PAIRING_CODE=$Code") }
-if ($MetaKey) { $args += @("-e", "META_API_KEY=$MetaKey") }
-$args += $Image
+if ($Code) { $runArgs += @("-e", "WESTRIDE_PAIRING_CODE=$Code") }
+if ($MetaKey) { $runArgs += @("-e", "META_API_KEY=$MetaKey") }
+$runArgs += $Image
 
-& docker @args *> $null
-if ($LASTEXITCODE -ne 0) { Fail "The runner container could not be started." }
+if ((Invoke-Docker @runArgs) -ne 0) {
+  Write-Host $script:DockerOutput
+  Fail "The runner container could not be started."
+}
 
 Write-Host ""
 Write-Host "The runner is starting. It shows up on your Supporting page within a minute."

@@ -27,11 +27,15 @@ export class ApiError extends Error {
   }
 }
 
+const REDIRECT_STATUSES = new Set([301, 302, 307, 308]);
+const MAX_REDIRECTS = 3;
+
 /** Talks to WeStride with the device token. Every call carries the runner's user agent. */
 export class WeStrideApi {
   constructor(
-    private readonly baseUrl: string,
+    private baseUrl: string,
     private token: string | null,
+    private readonly onBaseUrlChange: (baseUrl: string) => void = () => {},
   ) {}
 
   setToken(token: string) {
@@ -47,12 +51,32 @@ export class WeStrideApi {
       if (!this.token) throw new ApiError(401, "This runner is not paired.");
       headers.Authorization = `Bearer ${this.token}`;
     }
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(options.timeoutMs),
-    });
+    const payload = JSON.stringify(body);
+    // Redirects are followed by hand: fetch drops the Authorization header when a
+    // redirect crosses origins (for example westride.org -> www.westride.org), which
+    // would turn every authenticated call into a 401 after a successful pairing.
+    let url = `${this.baseUrl}${path}`;
+    let response: Response | undefined;
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+      response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: payload,
+        redirect: "manual",
+        signal: AbortSignal.timeout(options.timeoutMs),
+      });
+      if (!REDIRECT_STATUSES.has(response.status)) break;
+      const location = response.headers.get("location");
+      if (!location) break;
+      const target = new URL(location, url);
+      url = target.href;
+      if (target.origin !== this.baseUrl) {
+        // Remember the origin WeStride actually lives at so later calls go straight there.
+        this.baseUrl = target.origin;
+        this.onBaseUrlChange(this.baseUrl);
+      }
+    }
+    if (!response) throw new ApiError(0, "No response from WeStride.");
     if (!response.ok) {
       let message = `${response.status} ${response.statusText}`;
       try {

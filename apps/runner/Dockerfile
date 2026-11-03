@@ -16,7 +16,7 @@ RUN apt-get update \
 # Muse Code CLI, pinned to the image build rather than fetched per job.
 ENV MUSE_INSTALL_DIR=/opt/muse/bin
 RUN mkdir -p "$MUSE_INSTALL_DIR" \
- && curl -fsSL https://dev.meta.ai/install.sh | MUSE_INSTALL_DIR="$MUSE_INSTALL_DIR" MUSE_NO_MODIFY_PATH=1 sh \
+ && curl -fsSL https://dev.meta.ai/install.sh | MUSE_INSTALL_DIR="$MUSE_INSTALL_DIR" MUSE_NO_MODIFY_PATH=1 bash \
  && "$MUSE_INSTALL_DIR/muse" --version
 
 WORKDIR /app

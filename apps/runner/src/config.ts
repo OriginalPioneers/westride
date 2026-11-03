@@ -5,7 +5,7 @@ export const RUNNER_VERSION = "0.1.0";
 
 /** Everything the runner reads from its environment, with the defaults the installer relies on. */
 export type RunnerConfig = {
-  /** The WeStride origin, e.g. https://westride.org */
+  /** The WeStride origin, e.g. https://www.westride.org */
   baseUrl: string;
   /** Where the device token lives between restarts. */
   stateDir: string;
@@ -29,7 +29,7 @@ function env(name: string, fallback: string): string {
 }
 
 export function loadConfig(): RunnerConfig {
-  const baseUrl = env("WESTRIDE_URL", "https://westride.org").replace(/\/+$/, "");
+  const baseUrl = env("WESTRIDE_URL", "https://www.westride.org").replace(/\/+$/, "");
   return {
     baseUrl,
     stateDir: env("WESTRIDE_STATE_DIR", "/state"),
