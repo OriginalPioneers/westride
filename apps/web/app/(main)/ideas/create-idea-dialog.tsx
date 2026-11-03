@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
+import { ChatComposer, ChatComposerInput } from "@astryxdesign/core/Chat";
 import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
 import { Divider } from "@astryxdesign/core/Divider";
 import { FieldStatus } from "@astryxdesign/core/FieldStatus";
@@ -26,7 +27,8 @@ import {
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Step, Stepper } from "@astryxdesign/core/Stepper";
 import { Text } from "@astryxdesign/core/Text";
-import { VoiceTextArea } from "../voice-text-area";
+import { ToggleButton, ToggleButtonGroup } from "@astryxdesign/core/ToggleButton";
+import { insertDictation, VoiceTextArea } from "../voice-text-area";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import {
   Typeahead,
@@ -35,12 +37,12 @@ import {
 } from "@astryxdesign/core/Typeahead";
 import {
   ArrowTopRightOnSquareIcon,
-  BuildingOffice2Icon,
   CodeBracketIcon,
   GlobeAltIcon,
-  HeartIcon,
   LockClosedIcon,
-  PuzzlePieceIcon,
+  MicrophoneIcon,
+  SparklesIcon,
+  StopIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import type { IdeaMemberRole, IdeaType } from "@westride/db";
@@ -49,15 +51,19 @@ import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 import {
   MAX_IDEA_DESCRIPTION,
   MAX_IDEA_NAME,
+  MAX_IDEA_PROMPT,
   validateIdeaDraft,
   type CreateIdeaFieldErrors,
   type IdeaDraft,
 } from "@/lib/ideas/create-schema";
 import { IDEA_ROLE_LABELS, IDEA_TYPE_LABELS, ideaPath } from "@/lib/ideas/filters";
+import { useDictation } from "@/lib/voice/use-dictation";
 import {
   createIdeaFromStudio,
+  draftIdeaFromPrompt,
   importIdeaFromGithub,
   searchIdeaPeople,
+  type DraftIdeaResult,
   type GithubImportResult,
   type GithubRepoPreview,
   type IdeaPersonHit,
@@ -71,16 +77,17 @@ export type IdeaFounder = {
 
 type Invitee = IdeaPersonHit & { role: IdeaMemberRole };
 
+/** Step 0 is the opening prompt; the stepper covers the steps after it. */
 const STEPS = [
-  { label: "Kind", question: "What kind of idea is this?" },
-  { label: "Idea", question: "What is the idea?" },
+  { label: "Start", question: "" },
+  { label: "Details", question: "Does this look right?" },
   { label: "Sharing", question: "Who can see it?" },
   { label: "Team", question: "Who is building it?" },
 ] as const;
 
 const STEP_FIELDS = [
-  ["type"],
-  ["name", "description", "categories", "githubRepoUrl"],
+  [],
+  ["type", "name", "description", "categories", "githubRepoUrl"],
   ["isPublic"],
   ["invites"],
 ] as const;
@@ -89,8 +96,10 @@ const STEP_FIELDS = [
 const CONNECT_GITHUB_HREF = "/integrations/github/connect?returnTo=/settings";
 const CHOOSE_REPOS_HREF =
   "/integrations/github/connect?intent=install&returnTo=/settings";
+const SETTINGS_HREF = "/settings";
 
 type ImportNotice = Exclude<GithubImportResult, { status: "imported" }>;
+type DraftNotice = Exclude<DraftIdeaResult, { status: "drafted" }>;
 
 function ImportNoticeBanner({ notice }: { notice: ImportNotice }) {
   if (notice.status === "error") {
@@ -118,44 +127,58 @@ function ImportNoticeBanner({ notice }: { notice: ImportNotice }) {
   );
 }
 
+function DraftNoticeBanner({ notice }: { notice: DraftNotice }) {
+  if (notice.status === "needs-ai") {
+    return (
+      <Banner
+        status="info"
+        title="Fill in the details yourself"
+        description={`${notice.message} What you wrote is in the description.`}
+        endContent={
+          <Button
+            label="Open Settings"
+            href={SETTINGS_HREF}
+            target="_blank"
+            icon={<Icon icon={ArrowTopRightOnSquareIcon} />}
+          />
+        }
+      />
+    );
+  }
+  return (
+    <Banner
+      status="warning"
+      title="Muse could not draft this idea"
+      description={`${notice.message} What you wrote is in the description; fill in the rest below.`}
+    />
+  );
+}
+
 /**
  * Nearly the whole viewport. Dialog clamps a standard surface to the same
  * spacing-4 gutter, which leaves the darkened scrim visible around the edge.
  * The fullscreen variant would cover that scrim.
  */
 const DIALOG_SIZE = "calc(100dvh - (2 * var(--spacing-4)))";
-const DIALOG_WIDTH = "calc(100dvw - (2 * var(--spacing-4)))";
+const DIALOG_WIDTH = 880;
+const composerInput: CSSProperties = { minHeight: "calc(2 * var(--spacing-10))" };
 
-const KIND_OPTIONS: {
-  type: IdeaType;
-  description: string;
-  icon: typeof BuildingOffice2Icon;
-}[] = [
-  {
-    type: "BUSINESS",
-    description:
-      "A product, service, or company. Something you want to build and grow.",
-    icon: BuildingOffice2Icon,
-  },
-  {
-    type: "NON_PROFIT",
-    description:
-      "A cause, charity, or community organization built to serve people.",
-    icon: HeartIcon,
-  },
-  {
-    type: "GAME",
-    description:
-      "A video game, tabletop game, or playable experience you want to design and ship.",
-    icon: PuzzlePieceIcon,
-  },
-  {
-    type: "OPEN_SOURCE",
-    description:
-      "A library, tool, or project released under an open license and grown with contributors.",
-    icon: CodeBracketIcon,
-  },
-];
+const IDEA_TYPES: IdeaType[] = ["BUSINESS", "NON_PROFIT", "GAME", "OPEN_SOURCE"];
+/** The landing chip for "no kind yet": Muse picks one from the description. */
+const EXPLORING = "EXPLORING";
+
+function isIdeaType(value: string | null): value is IdeaType {
+  return IDEA_TYPES.some((type) => type === value);
+}
+
+/** A pasted repository link, as opposed to a sentence that happens to mention GitHub. */
+function looksLikeGithubLink(text: string): boolean {
+  return (
+    !/\s/.test(text) &&
+    /^(?:https?:\/\/)?(?:www\.)?github\.com\/|^git@github\.com:/i.test(text) &&
+    parseGithubRepoRef(text) !== null
+  );
+}
 
 const SHARING_OPTIONS: {
   isPublic: boolean;
@@ -181,7 +204,7 @@ function errorsForStep(
   errors: CreateIdeaFieldErrors,
   step: number,
 ): CreateIdeaFieldErrors {
-  const fields = STEP_FIELDS[step] ?? [];
+  const fields: readonly string[] = STEP_FIELDS[step] ?? [];
   const picked: CreateIdeaFieldErrors = {};
   for (const [key, message] of Object.entries(errors)) {
     if (
@@ -213,7 +236,7 @@ function ChoiceTile({
 }: {
   label: string;
   description: string;
-  icon: typeof BuildingOffice2Icon;
+  icon: typeof GlobeAltIcon;
   isSelected: boolean;
   onSelect: () => void;
 }) {
@@ -241,6 +264,12 @@ function ChoiceTile({
   );
 }
 
+function formatClock(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 export function CreateIdeaDialog({
   isOpen,
   onOpenChange,
@@ -257,6 +286,7 @@ export function CreateIdeaDialog({
   const [step, setStep] = useState(0);
   const [attempted, setAttempted] = useState<ReadonlySet<number>>(new Set());
   const [type, setType] = useState<IdeaType | null>(null);
+  const [isExploring, setIsExploring] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
@@ -265,10 +295,19 @@ export function CreateIdeaDialog({
   const [picker, setPicker] = useState<IdeaPersonHit | null>(null);
   const [serverErrors, setServerErrors] = useState<CreateIdeaFieldErrors>({});
   const [formMessage, setFormMessage] = useState<string | null>(null);
-  const [repoUrl, setRepoUrl] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [isGithubMode, setIsGithubMode] = useState(false);
+  const [promptError, setPromptError] = useState<string | null>(null);
+  const [draftNotice, setDraftNotice] = useState<DraftNotice | null>(null);
+  const [isDrafting, startDrafting] = useTransition();
   const [linkedRepo, setLinkedRepo] = useState<GithubRepoPreview | null>(null);
   const [importNotice, setImportNotice] = useState<ImportNotice | null>(null);
   const [isImporting, startImporting] = useTransition();
+
+  const handleTranscript = useCallback((text: string) => {
+    setPrompt((current) => insertDictation(current, text, null).value);
+  }, []);
+  const dictation = useDictation({ onTranscript: handleTranscript });
 
   const draft: IdeaDraft = {
     type,
@@ -315,8 +354,19 @@ export function CreateIdeaDialog({
     setFormMessage(null);
   }
 
+  function clearDetailErrors() {
+    for (const key of STEP_FIELDS[1]) {
+      clearServer(key);
+    }
+    setAttempted((current) => {
+      const next = new Set(current);
+      next.delete(1);
+      return next;
+    });
+  }
+
   function handleOpenChange(next: boolean) {
-    if (!next && isSaving) {
+    if (!next && (isSaving || isDrafting || isImporting)) {
       return;
     }
     onOpenChange(next);
@@ -355,8 +405,13 @@ export function CreateIdeaDialog({
     });
   }
 
-  function importRepo() {
-    const url = repoUrl.trim();
+  function chooseKind(value: string | null) {
+    setIsExploring(value === EXPLORING);
+    setType(isIdeaType(value) ? value : null);
+    clearServer("type");
+  }
+
+  function importRepo(url: string) {
     if (!parseGithubRepoRef(url)) {
       setImportNotice({
         status: "error",
@@ -366,7 +421,7 @@ export function CreateIdeaDialog({
     }
     setImportNotice(null);
     startImporting(async () => {
-      const result = await importIdeaFromGithub(url);
+      const result = await importIdeaFromGithub(url, type);
       if (result.status !== "imported") {
         setImportNotice(result);
         return;
@@ -374,10 +429,48 @@ export function CreateIdeaDialog({
       setLinkedRepo(result.repo);
       setName(result.name);
       setDescription(result.description);
-      setRepoUrl("");
-      clearServer("githubRepoUrl");
-      clearServer("name");
-      clearServer("description");
+      setType((current) => current ?? result.type);
+      if (result.categories.length > 0) {
+        setCategories(result.categories);
+      }
+      setPrompt("");
+      setIsGithubMode(false);
+      setDraftNotice(null);
+      clearDetailErrors();
+      setStep(1);
+    });
+  }
+
+  function submitPrompt(value: string) {
+    const text = value.trim();
+    if (!text || isDrafting || isImporting) {
+      return;
+    }
+    if (isGithubMode || looksLikeGithubLink(text)) {
+      importRepo(text);
+      return;
+    }
+    if (text.length > MAX_IDEA_PROMPT) {
+      setPromptError(`Keep it under ${MAX_IDEA_PROMPT} characters. You can add more detail on the next step.`);
+      return;
+    }
+    setPromptError(null);
+    setImportNotice(null);
+    startDrafting(async () => {
+      const result = await draftIdeaFromPrompt(text, type);
+      if (result.status === "drafted") {
+        const { suggestion } = result;
+        setName(suggestion.name);
+        setDescription(suggestion.description || text);
+        setType((current) => current ?? suggestion.type);
+        setCategories(suggestion.categories);
+        setDraftNotice(null);
+      } else {
+        setDescription(text.slice(0, MAX_IDEA_DESCRIPTION));
+        setDraftNotice(result);
+      }
+      clearDetailErrors();
+      setStep(1);
     });
   }
 
@@ -401,8 +494,428 @@ export function CreateIdeaDialog({
     );
   }
 
+  const isLanding = step === 0;
   const isLastStep = step === STEPS.length - 1;
   const question = STEPS[step]?.question ?? "New idea";
+  const isWorking = isDrafting || isImporting;
+  const isListening = dictation.state.phase === "listening";
+  const isDictationBusy =
+    dictation.state.phase === "starting" ||
+    dictation.state.phase === "transcribing";
+
+  const composerError =
+    promptError ??
+    (dictation.state.phase === "error" ? dictation.state.message : null);
+
+  const footnote = isDrafting
+    ? "Muse is drafting a name, description, and categories…"
+    : isImporting
+      ? "Reading the repository…"
+      : isListening
+        ? `Listening… ${formatClock(dictation.elapsedSeconds)}`
+        : dictation.state.phase === "transcribing"
+          ? "Transcribing with Muse…"
+          : isGithubMode
+            ? "Paste a repository link. Its README fills in the details."
+            : "Describe it in your own words, or import a GitHub repository.";
+
+  const landing = (
+    <Layout
+      height="auto"
+      contentWidth={720}
+      header={
+        <DialogHeader
+          title="New idea"
+          onOpenChange={handleOpenChange}
+          hasDivider={false}
+        />
+      }
+      content={
+        <LayoutContent>
+          <VStack gap={6} paddingBlock={8}>
+            <VStack gap={3} hAlign="center">
+              <Icon icon={SparklesIcon} size="md" color="accent" />
+              <Text type="display-3" as="p" justify="center">
+                Every idea starts somewhere.
+              </Text>
+              <Text type="large" color="secondary" as="p" justify="center">
+                What are you thinking about creating?
+              </Text>
+            </VStack>
+
+            <HStack gap={2} wrap="wrap" justify="center">
+              <ToggleButtonGroup
+                label="Kind of idea"
+                value={type ?? (isExploring ? EXPLORING : null)}
+                onChange={(value) =>
+                  chooseKind(typeof value === "string" ? value : null)
+                }
+                size="lg"
+                isDisabled={isWorking}
+              >
+                {IDEA_TYPES.map((option) => (
+                  <ToggleButton
+                    key={option}
+                    value={option}
+                    label={IDEA_TYPE_LABELS[option]}
+                  />
+                ))}
+                <ToggleButton value={EXPLORING} label="Just exploring" />
+              </ToggleButtonGroup>
+            </HStack>
+
+            <ChatComposer
+              value={prompt}
+              onChange={(value) => {
+                setPrompt(value);
+                setPromptError(null);
+                setImportNotice(null);
+                dictation.dismissError();
+              }}
+              onSubmit={submitPrompt}
+              isDisabled={isWorking}
+              placeholder={
+                isGithubMode
+                  ? "https://github.com/owner/repo"
+                  : "Describe your idea, or ask me anything…"
+              }
+              input={
+                <ChatComposerInput
+                  label={isGithubMode ? "GitHub repository link" : "Describe your idea"}
+                  style={composerInput}
+                  pasteAsToken={false}
+                  hasHistory={false}
+                />
+              }
+              footerActions={
+                <ToggleButton
+                  label="Import from GitHub"
+                  icon={<Icon icon={CodeBracketIcon} size="sm" />}
+                  isPressed={isGithubMode}
+                  onPressedChange={(pressed) => {
+                    setIsGithubMode(pressed);
+                    setImportNotice(null);
+                  }}
+                  isDisabled={isWorking}
+                />
+              }
+              sendActions={
+                <IconButton
+                  label={isListening ? "Stop dictating" : "Dictate your idea"}
+                  tooltip={isListening ? "Stop and transcribe" : "Dictate with your voice"}
+                  icon={<Icon icon={isListening ? StopIcon : MicrophoneIcon} />}
+                  variant={isListening ? "primary" : "ghost"}
+                  isLoading={isDictationBusy}
+                  isDisabled={isWorking}
+                  onClick={dictation.toggle}
+                />
+              }
+              status={
+                composerError ? { type: "error", message: composerError } : undefined
+              }
+            />
+
+            {importNotice ? <ImportNoticeBanner notice={importNotice} /> : null}
+
+            <Text type="supporting" as="p" justify="center" aria-live="polite">
+              {footnote}
+            </Text>
+          </VStack>
+        </LayoutContent>
+      }
+    />
+  );
+
+  const steps = (
+    <Layout
+      height="fill"
+      contentWidth={720}
+      header={
+        <DialogHeader title="New idea" onOpenChange={handleOpenChange} />
+      }
+      content={
+        <LayoutContent>
+          <VStack gap={8}>
+            {formMessage ? (
+              <Banner status="error" title={formMessage} />
+            ) : null}
+            <Stepper activeStep={step - 1} label="Create an idea">
+              {STEPS.slice(1).map((item, index) => (
+                <Step key={item.label} step={index} label={item.label} />
+              ))}
+            </Stepper>
+
+            <VStack gap={5}>
+              <Heading level={2} accessibilityLevel={3}>
+                {question}
+              </Heading>
+
+              {step === 1 ? (
+                <VStack gap={6}>
+                  {draftNotice ? <DraftNoticeBanner notice={draftNotice} /> : null}
+                  {linkedRepo ? (
+                    <Banner
+                      status="success"
+                      title={`Filled in from ${linkedRepo.fullName}`}
+                      description="The idea will link to this repository. Edit anything below before you continue."
+                      endContent={
+                        <Button
+                          label="Unlink"
+                          variant="ghost"
+                          onClick={() => {
+                            setLinkedRepo(null);
+                            clearServer("githubRepoUrl");
+                          }}
+                        />
+                      }
+                    />
+                  ) : null}
+                  {stepErrors.githubRepoUrl ? (
+                    <FieldStatus
+                      type="error"
+                      variant="detached"
+                      message={stepErrors.githubRepoUrl}
+                    />
+                  ) : null}
+                  <FormLayout defaultOptionality="required">
+                    <TextInput
+                      label="Name"
+                      value={name}
+                      onChange={(value) => {
+                        setName(value);
+                        clearServer("name");
+                      }}
+                      placeholder="Neighborhood tool library"
+                      description={`Up to ${MAX_IDEA_NAME} characters.`}
+                      isRequired
+                      status={fieldStatus(stepErrors.name)}
+                    />
+                    <VoiceTextArea
+                      label="Description"
+                      description="A short pitch. Markdown is fine."
+                      value={description}
+                      onChange={(value) => {
+                        setDescription(value);
+                        clearServer("description");
+                      }}
+                      placeholder="What it is, who it is for, and why it should exist."
+                      rows={8}
+                      maxLength={MAX_IDEA_DESCRIPTION}
+                      isRequired
+                      status={fieldStatus(stepErrors.description)}
+                    />
+                    <VStack gap={2}>
+                      <Text type="label">Kind</Text>
+                      <ToggleButtonGroup
+                        label="Kind"
+                        value={type}
+                        onChange={(value) =>
+                          chooseKind(typeof value === "string" ? value : null)
+                        }
+                      >
+                        {IDEA_TYPES.map((option) => (
+                          <ToggleButton
+                            key={option}
+                            value={option}
+                            label={IDEA_TYPE_LABELS[option]}
+                          />
+                        ))}
+                      </ToggleButtonGroup>
+                      {stepErrors.type ? (
+                        <FieldStatus
+                          type="error"
+                          variant="detached"
+                          message={stepErrors.type}
+                        />
+                      ) : null}
+                    </VStack>
+                    <CategoryPicker
+                      options={categoryOptions}
+                      value={categories}
+                      onChange={(next) => {
+                        setCategories(next);
+                        clearServer("categories");
+                      }}
+                      status={fieldStatus(stepErrors.categories)}
+                    />
+                  </FormLayout>
+                </VStack>
+              ) : null}
+
+              {step === 2 ? (
+                <VStack gap={4}>
+                  <Grid columns={{ minWidth: 280, max: 2 }} gap={4}>
+                    {SHARING_OPTIONS.map((option) => (
+                      <ChoiceTile
+                        key={option.label}
+                        label={option.label}
+                        description={option.description}
+                        icon={option.icon}
+                        isSelected={isPublic === option.isPublic}
+                        onSelect={() => {
+                          setIsPublic(option.isPublic);
+                          clearServer("isPublic");
+                        }}
+                      />
+                    ))}
+                  </Grid>
+                  {stepErrors.isPublic ? (
+                    <FieldStatus
+                      type="error"
+                      variant="detached"
+                      message={stepErrors.isPublic}
+                    />
+                  ) : null}
+                  {linkedRepo?.isPrivate && isPublic ? (
+                    <Banner
+                      status="warning"
+                      title="The imported description will be public"
+                      description={`${linkedRepo.fullName} is private on GitHub. Anyone on WeStride can read a Community idea, including what was imported from its README. The repository itself stays private.`}
+                    />
+                  ) : null}
+                </VStack>
+              ) : null}
+
+              {step === 3 ? (
+                <VStack gap={5}>
+                  <Text type="supporting">
+                    You start as the founder. Invite other WeStride members
+                    if you want them on the team. You can skip this and
+                    invite people later.
+                  </Text>
+                  <HStack gap={3} vAlign="center">
+                    <Avatar
+                      name={founder.name}
+                      src={founder.imageUrl ?? undefined}
+                      size="md"
+                      tooltip={false}
+                    />
+                    <VStack gap={0}>
+                      <Text>{founder.name}</Text>
+                      <Text type="supporting">
+                        {IDEA_ROLE_LABELS.FOUNDER}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                  <Divider />
+                  <Typeahead
+                    label="Invite people"
+                    description="Search by name or email. They need a WeStride account."
+                    placeholder="Search members"
+                    searchSource={memberSource}
+                    value={picker}
+                    onChange={(item) => {
+                      if (item) {
+                        addInvite(item);
+                      } else {
+                        setPicker(null);
+                      }
+                    }}
+                    isOptional
+                    minQueryLength={2}
+                    debounceMs={300}
+                    emptySearchText="No WeStride members match that search."
+                    renderItem={(item) => (
+                      <TypeaheadItem
+                        item={item}
+                        description={item.auxiliaryData.detail ?? undefined}
+                        icon={
+                          <Avatar
+                            name={item.label}
+                            src={item.auxiliaryData.imageUrl ?? undefined}
+                            size="sm"
+                            tooltip={false}
+                          />
+                        }
+                      />
+                    )}
+                    status={fieldStatus(stepErrors.invites)}
+                  />
+                  {invites.length > 0 ? (
+                    <VStack gap={4}>
+                      {invites.map((person) => (
+                        <HStack
+                          key={person.id}
+                          gap={3}
+                          vAlign="center"
+                          wrap="wrap"
+                        >
+                          <Avatar
+                            name={person.label}
+                            src={person.auxiliaryData.imageUrl ?? undefined}
+                            size="md"
+                            tooltip={false}
+                          />
+                          <StackItem size="fill">
+                            <VStack gap={0}>
+                              <Text>{person.label}</Text>
+                              {person.auxiliaryData.detail ? (
+                                <Text type="supporting">
+                                  {person.auxiliaryData.detail}
+                                </Text>
+                              ) : null}
+                            </VStack>
+                          </StackItem>
+                          <SegmentedControl
+                            label={`Role for ${person.label}`}
+                            value={person.role}
+                            onChange={(role) => setInviteRole(person.id, role)}
+                            size="lg"
+                          >
+                            <SegmentedControlItem
+                              value="MEMBER"
+                              label={IDEA_ROLE_LABELS.MEMBER}
+                            />
+                            <SegmentedControlItem
+                              value="FOUNDER"
+                              label={IDEA_ROLE_LABELS.FOUNDER}
+                            />
+                          </SegmentedControl>
+                          <IconButton
+                            label={`Remove ${person.label}`}
+                            tooltip="Remove"
+                            icon={<Icon icon={TrashIcon} />}
+                            variant="ghost"
+                            onClick={() => {
+                              setInvites((current) =>
+                                current.filter(
+                                  (invite) => invite.id !== person.id,
+                                ),
+                              );
+                              clearServer("invites");
+                            }}
+                          />
+                        </HStack>
+                      ))}
+                    </VStack>
+                  ) : null}
+                </VStack>
+              ) : null}
+            </VStack>
+          </VStack>
+        </LayoutContent>
+      }
+      footer={
+        <LayoutFooter>
+          <HStack gap={2} vAlign="center">
+            <Button
+              label={step === 1 ? "Start over" : "Back"}
+              variant="secondary"
+              isDisabled={isSaving}
+              onClick={() => setStep((current) => Math.max(0, current - 1))}
+            />
+            <StackItem size="fill" />
+            <Button
+              label={isLastStep ? "Create idea" : "Continue"}
+              variant="primary"
+              isLoading={isSaving}
+              onClick={isLastStep ? create : goNext}
+            />
+          </HStack>
+        </LayoutFooter>
+      }
+    />
+  );
 
   return (
     <Dialog
@@ -411,318 +924,9 @@ export function CreateIdeaDialog({
       purpose="form"
       width={DIALOG_WIDTH}
       maxHeight={DIALOG_SIZE}
-      style={{ height: DIALOG_SIZE }}
+      style={isLanding ? undefined : { height: DIALOG_SIZE }}
     >
-      <Layout
-        height="fill"
-        contentWidth={880}
-        header={
-          <DialogHeader title="New idea" onOpenChange={handleOpenChange} />
-        }
-        content={
-          <LayoutContent>
-            <VStack gap={8}>
-              {formMessage ? (
-                <Banner status="error" title={formMessage} />
-              ) : null}
-              <Stepper activeStep={step} label="Create an idea">
-                {STEPS.map((item, index) => (
-                  <Step key={item.label} step={index} label={item.label} />
-                ))}
-              </Stepper>
-
-              <VStack gap={5}>
-                <Heading level={2} accessibilityLevel={3}>
-                  {question}
-                </Heading>
-
-                {step === 0 ? (
-                  <VStack gap={4}>
-                    <Grid columns={{ minWidth: 280, max: 2 }} gap={4}>
-                      {KIND_OPTIONS.map((option) => (
-                        <ChoiceTile
-                          key={option.type}
-                          label={IDEA_TYPE_LABELS[option.type]}
-                          description={option.description}
-                          icon={option.icon}
-                          isSelected={type === option.type}
-                          onSelect={() => {
-                            setType(option.type);
-                            clearServer("type");
-                          }}
-                        />
-                      ))}
-                    </Grid>
-                    {stepErrors.type ? (
-                      <FieldStatus
-                        type="error"
-                        variant="detached"
-                        message={stepErrors.type}
-                      />
-                    ) : null}
-                  </VStack>
-                ) : null}
-
-                {step === 1 ? (
-                  <VStack gap={6}>
-                    <VStack gap={3}>
-                      <HStack gap={2} vAlign="end" wrap="wrap">
-                        <StackItem size="fill">
-                          <TextInput
-                            label="Import from GitHub"
-                            description="Paste a repository link to fill in the name and description from its README."
-                            value={repoUrl}
-                            onChange={(value) => {
-                              setRepoUrl(value);
-                              setImportNotice(null);
-                            }}
-                            onEnter={importRepo}
-                            placeholder="https://github.com/owner/repo"
-                            startIcon={CodeBracketIcon}
-                            isOptional
-                            status={fieldStatus(stepErrors.githubRepoUrl)}
-                          />
-                        </StackItem>
-                        <Button
-                          label="Import"
-                          isLoading={isImporting}
-                          onClick={importRepo}
-                        />
-                      </HStack>
-                      {importNotice ? (
-                        <ImportNoticeBanner notice={importNotice} />
-                      ) : null}
-                      {linkedRepo ? (
-                        <Banner
-                          status="success"
-                          title={`Filled in from ${linkedRepo.fullName}`}
-                          description="The idea will link to this repository. Edit anything below before you continue."
-                          endContent={
-                            <Button
-                              label="Unlink"
-                              variant="ghost"
-                              onClick={() => {
-                                setLinkedRepo(null);
-                                clearServer("githubRepoUrl");
-                              }}
-                            />
-                          }
-                        />
-                      ) : null}
-                    </VStack>
-                    <Divider />
-                    <FormLayout defaultOptionality="required">
-                      <TextInput
-                        label="Name"
-                        value={name}
-                        onChange={(value) => {
-                          setName(value);
-                          clearServer("name");
-                        }}
-                        placeholder="Neighborhood tool library"
-                        description={`Up to ${MAX_IDEA_NAME} characters.`}
-                        isRequired
-                        status={fieldStatus(stepErrors.name)}
-                      />
-                      <VoiceTextArea
-                        label="Description"
-                        description="A short pitch. Markdown is fine."
-                        value={description}
-                        onChange={(value) => {
-                          setDescription(value);
-                          clearServer("description");
-                        }}
-                        placeholder="What it is, who it is for, and why it should exist."
-                        rows={8}
-                        maxLength={MAX_IDEA_DESCRIPTION}
-                        isRequired
-                        status={fieldStatus(stepErrors.description)}
-                      />
-                      <CategoryPicker
-                        options={categoryOptions}
-                        value={categories}
-                        onChange={(next) => {
-                          setCategories(next);
-                          clearServer("categories");
-                        }}
-                        status={fieldStatus(stepErrors.categories)}
-                      />
-                    </FormLayout>
-                  </VStack>
-                ) : null}
-
-                {step === 2 ? (
-                  <VStack gap={4}>
-                    <Grid columns={{ minWidth: 280, max: 2 }} gap={4}>
-                      {SHARING_OPTIONS.map((option) => (
-                        <ChoiceTile
-                          key={option.label}
-                          label={option.label}
-                          description={option.description}
-                          icon={option.icon}
-                          isSelected={isPublic === option.isPublic}
-                          onSelect={() => {
-                            setIsPublic(option.isPublic);
-                            clearServer("isPublic");
-                          }}
-                        />
-                      ))}
-                    </Grid>
-                    {stepErrors.isPublic ? (
-                      <FieldStatus
-                        type="error"
-                        variant="detached"
-                        message={stepErrors.isPublic}
-                      />
-                    ) : null}
-                    {linkedRepo?.isPrivate && isPublic ? (
-                      <Banner
-                        status="warning"
-                        title="The imported description will be public"
-                        description={`${linkedRepo.fullName} is private on GitHub. Anyone on WeStride can read a Community idea, including what was imported from its README. The repository itself stays private.`}
-                      />
-                    ) : null}
-                  </VStack>
-                ) : null}
-
-                {step === 3 ? (
-                  <VStack gap={5}>
-                    <Text type="supporting">
-                      You start as the founder. Invite other WeStride members
-                      if you want them on the team.
-                    </Text>
-                    <HStack gap={3} vAlign="center">
-                      <Avatar
-                        name={founder.name}
-                        src={founder.imageUrl ?? undefined}
-                        size="md"
-                        tooltip={false}
-                      />
-                      <VStack gap={0}>
-                        <Text>{founder.name}</Text>
-                        <Text type="supporting">
-                          {IDEA_ROLE_LABELS.FOUNDER}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                    <Divider />
-                    <Typeahead
-                      label="Invite people"
-                      description="Search by name or email. They need a WeStride account."
-                      placeholder="Search members"
-                      searchSource={memberSource}
-                      value={picker}
-                      onChange={(item) => {
-                        if (item) {
-                          addInvite(item);
-                        } else {
-                          setPicker(null);
-                        }
-                      }}
-                      isOptional
-                      minQueryLength={2}
-                      debounceMs={300}
-                      emptySearchText="No WeStride members match that search."
-                      renderItem={(item) => (
-                        <TypeaheadItem
-                          item={item}
-                          description={item.auxiliaryData.detail ?? undefined}
-                          icon={
-                            <Avatar
-                              name={item.label}
-                              src={item.auxiliaryData.imageUrl ?? undefined}
-                              size="sm"
-                              tooltip={false}
-                            />
-                          }
-                        />
-                      )}
-                      status={fieldStatus(stepErrors.invites)}
-                    />
-                    {invites.length > 0 ? (
-                      <VStack gap={4}>
-                        {invites.map((person) => (
-                          <HStack
-                            key={person.id}
-                            gap={3}
-                            vAlign="center"
-                            wrap="wrap"
-                          >
-                            <Avatar
-                              name={person.label}
-                              src={person.auxiliaryData.imageUrl ?? undefined}
-                              size="md"
-                              tooltip={false}
-                            />
-                            <StackItem size="fill">
-                              <VStack gap={0}>
-                                <Text>{person.label}</Text>
-                                {person.auxiliaryData.detail ? (
-                                  <Text type="supporting">
-                                    {person.auxiliaryData.detail}
-                                  </Text>
-                                ) : null}
-                              </VStack>
-                            </StackItem>
-                            <SegmentedControl
-                              label={`Role for ${person.label}`}
-                              value={person.role}
-                              onChange={(role) => setInviteRole(person.id, role)}
-                              size="lg"
-                            >
-                              <SegmentedControlItem
-                                value="MEMBER"
-                                label={IDEA_ROLE_LABELS.MEMBER}
-                              />
-                              <SegmentedControlItem
-                                value="FOUNDER"
-                                label={IDEA_ROLE_LABELS.FOUNDER}
-                              />
-                            </SegmentedControl>
-                            <IconButton
-                              label={`Remove ${person.label}`}
-                              tooltip="Remove"
-                              icon={<Icon icon={TrashIcon} />}
-                              variant="ghost"
-                              onClick={() => {
-                                setInvites((current) =>
-                                  current.filter(
-                                    (invite) => invite.id !== person.id,
-                                  ),
-                                );
-                                clearServer("invites");
-                              }}
-                            />
-                          </HStack>
-                        ))}
-                      </VStack>
-                    ) : null}
-                  </VStack>
-                ) : null}
-              </VStack>
-            </VStack>
-          </LayoutContent>
-        }
-        footer={
-          <LayoutFooter>
-            <HStack gap={2} vAlign="center">
-              <Button
-                label="Back"
-                variant="secondary"
-                isDisabled={step === 0 || isSaving}
-                onClick={() => setStep((current) => Math.max(0, current - 1))}
-              />
-              <StackItem size="fill" />
-              <Button
-                label={isLastStep ? "Create idea" : "Continue"}
-                variant="primary"
-                isLoading={isSaving}
-                onClick={isLastStep ? create : goNext}
-              />
-            </HStack>
-          </LayoutFooter>
-        }
-      />
+      {isLanding ? landing : steps}
     </Dialog>
   );
 }

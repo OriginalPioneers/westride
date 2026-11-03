@@ -12,6 +12,9 @@ import {
 } from "@westride/db/limits";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 
+/** What a member can type into the opening prompt before Muse drafts the idea. */
+export const MAX_IDEA_PROMPT = 4000;
+
 export {
   MAX_CATEGORY_NAME,
   MAX_IDEA_CATEGORIES,
