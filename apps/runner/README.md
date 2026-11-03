@@ -40,7 +40,7 @@ docker run -d --name westride-runner --restart unless-stopped \
   -e WESTRIDE_URL=https://westride.org \
   -e WESTRIDE_PAIRING_CODE=XXXX-XXXX \
   -e WESTRIDE_DEVICE_NAME="My laptop" \
-  ghcr.io/originalpioneers/westride-runner:latest
+  ghcr.io/westrideorg/westride-runner:latest
 ```
 
 Logs: `docker logs -f westride-runner`. Stop: `docker rm -f westride-runner`.

@@ -1,5 +1,5 @@
 import { StyleSheet, View } from "react-native";
-import { colors, fontSize, radius, spacing, type Tone } from "@/theme";
+import { colors, fonts, fontSize, radius, spacing, type Tone } from "@/theme";
 import { Text } from "./text";
 
 export function Tag({ tone = "gray", label }: { tone?: Tone; label: string }) {
@@ -26,8 +26,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing(0.5),
   },
   label: {
+    fontFamily: fonts.semibold,
     fontSize: fontSize.small,
-    fontWeight: "600",
     lineHeight: 16,
   },
 });

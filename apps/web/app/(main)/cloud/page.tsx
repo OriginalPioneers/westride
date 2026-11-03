@@ -10,6 +10,7 @@ import { getCloudAvailability } from "@/lib/cloud/config";
 import { formatUsd, microsToDollars } from "@/lib/cloud/pricing";
 import { getCloudStatus } from "@/lib/cloud/provider";
 import { confirmCheckoutSession, type CreditOutcome } from "@/lib/cloud/stripe";
+import { AccountTabs } from "../section-tabs";
 import { CloudPanel, type LedgerRow } from "./cloud-panel";
 
 export const metadata: Metadata = {
@@ -98,12 +99,16 @@ export default async function CloudPage({
       contentWidth={960}
       header={
         <LayoutHeader hasDivider>
-          <VStack gap={2}>
-            <Heading level={1}>WeStride Cloud</Heading>
-            <Text type="supporting">
-              Meta AI models and sandbox compute on WeStride&apos;s accounts, paid from a balance you
-              top up. Bring your own Meta and Vercel accounts instead and WeStride stays free.
-            </Text>
+          <VStack gap={4}>
+            <AccountTabs />
+            <VStack gap={2}>
+              <Heading level={1}>WeStride Cloud</Heading>
+              <Text type="supporting">
+                Meta AI models and sandbox compute on WeStride&apos;s accounts, paid from a balance
+                you top up. Bring your own Meta and Vercel or Modal accounts instead and WeStride stays
+                free.
+              </Text>
+            </VStack>
           </VStack>
         </LayoutHeader>
       }

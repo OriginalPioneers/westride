@@ -97,7 +97,7 @@ export default function TermsPage() {
           Questions about these terms can go to the public project repository
           at{" "}
           <Link href={PROJECT_REPOSITORY} isExternalLink>
-            github.com/OriginalPioneers/westride
+            github.com/WeStrideOrg/westride
           </Link>
           .
         </LegalParagraph>

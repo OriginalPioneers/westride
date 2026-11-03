@@ -13,6 +13,7 @@ export const colors = {
   textOnInverted: "#f0f0f9",
   accent: "#25252a",
   border: "#e2e2e8",
+  danger: "#9b2c2c",
   green: { background: "#d2eccf", border: "#bfdfbb", text: "#354f31" },
   blue: { background: "#d3e4fc", border: "#c2d6f1", text: "#344861" },
   purple: { background: "#e7def5", border: "#d9cfea", text: "#4c405b" },
@@ -32,6 +33,21 @@ export const brand = {
   purple: "#885FF5",
   teal: "#10B3A5",
   orange: "#FF694B",
+} as const;
+
+export const brandPastel = {
+  blue: "#D3ECFD",
+  indigo: "#E2E6FF",
+  purple: "#E7E4FE",
+  teal: "#CFF0EB",
+  orange: "#FEE0D9",
+} as const;
+
+export const fonts = {
+  regular: "Figtree_400Regular",
+  medium: "Figtree_500Medium",
+  semibold: "Figtree_600SemiBold",
+  bold: "Figtree_700Bold",
 } as const;
 
 export type Tone = "green" | "blue" | "purple" | "gray";
@@ -55,4 +71,5 @@ export const fontSize = {
   medium: 17,
   large: 20,
   xlarge: 24,
+  display: 32,
 } as const;

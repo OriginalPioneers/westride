@@ -13,7 +13,7 @@ import {
   UserGroupIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
-import { APP_STORE_URL, PLAY_STORE_URL, STORE_LINKS } from "../../store-links";
+import { PLAY_TESTING_URL, STORE_LINKS, TESTFLIGHT_URL } from "../../store-links";
 import { PROJECT_REPOSITORY } from "../legal-document";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
@@ -60,7 +60,7 @@ export const STUDIOS: Studio[] = [
     where: "Idea Studio",
     action: "Workshop an idea",
     href: "/ideas",
-    how: "Bring a business, non-profit, game, or open-source idea. A team of Muse advisors pressure-tests it with live research and cited sources, so you know what holds up before you build.",
+    how: "Bring a business, non-profit, game, open-source, website, or mobile app idea. A team of Muse advisors pressure-tests it with live research and cited sources, so you know what holds up before you build.",
     icon: LightBulbIcon,
     tints: ["indigo", "purple"],
   },
@@ -146,11 +146,11 @@ export type MobileApp = {
 };
 
 export const MOBILE_APPS: MobileApp[] = [
-  { name: "iOS app", store: "App Store", href: APP_STORE_URL, logo: "/logos/apple.svg" },
+  { name: "iOS app", store: "TestFlight", href: TESTFLIGHT_URL, logo: "/logos/apple.svg" },
   {
     name: "Android app",
     store: "Google Play",
-    href: PLAY_STORE_URL,
+    href: PLAY_TESTING_URL,
     logo: "/logos/android.svg",
   },
 ];

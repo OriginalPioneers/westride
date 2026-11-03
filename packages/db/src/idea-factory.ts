@@ -1,12 +1,17 @@
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { getDb } from "./client";
 import {
+  ideaBuildSuggestions,
+  ideaFactoryArtifacts,
   ideaFactoryEvaluations,
   ideaFactoryFindings,
   ideaFactoryMessages,
   ideaFactoryThreads,
   ideaMembers,
   museRequests,
+  type BuildSuggestion,
+  type IdeaBuildSuggestion,
+  type IdeaFactoryArtifact,
   type IdeaFactoryEvaluation,
   type IdeaFactoryFinding,
   type IdeaFactoryMessage,
@@ -16,6 +21,7 @@ import {
   type MuseRequest,
   type MuseSource,
   type MuseSynthesis,
+  type NewIdeaFactoryArtifact,
   type NewMuseRequest,
 } from "./schema";
 
@@ -344,6 +350,179 @@ export async function failEvaluation(input: {
       completedAt: new Date(),
     })
     .where(eq(ideaFactoryEvaluations.id, input.evaluationId));
+}
+
+// ---------------------------------------------------------------------------
+// Artifacts: files the advisory team made
+// ---------------------------------------------------------------------------
+
+const ARTIFACT_LIMIT = 300;
+
+/** Every file for an idea, newest first, archived ones included. */
+export async function listArtifacts(ideaId: string): Promise<IdeaFactoryArtifact[]> {
+  return getDb().query.ideaFactoryArtifacts.findMany({
+    where: eq(ideaFactoryArtifacts.ideaId, ideaId),
+    orderBy: [desc(ideaFactoryArtifacts.createdAt)],
+    limit: ARTIFACT_LIMIT,
+  });
+}
+
+/** The files advisors should still take into account: everything not archived. */
+export async function listActiveArtifacts(ideaId: string): Promise<IdeaFactoryArtifact[]> {
+  return getDb().query.ideaFactoryArtifacts.findMany({
+    where: and(
+      eq(ideaFactoryArtifacts.ideaId, ideaId),
+      isNull(ideaFactoryArtifacts.archivedAt),
+    ),
+    orderBy: [desc(ideaFactoryArtifacts.createdAt)],
+    limit: ARTIFACT_LIMIT,
+  });
+}
+
+export async function getArtifact(
+  id: string,
+  ideaId: string,
+): Promise<IdeaFactoryArtifact | null> {
+  const artifact = await getDb().query.ideaFactoryArtifacts.findFirst({
+    where: and(eq(ideaFactoryArtifacts.id, id), eq(ideaFactoryArtifacts.ideaId, ideaId)),
+  });
+  return artifact ?? null;
+}
+
+export async function createArtifact(
+  input: NewIdeaFactoryArtifact,
+): Promise<IdeaFactoryArtifact> {
+  const [artifact] = await getDb().insert(ideaFactoryArtifacts).values(input).returning();
+  if (!artifact) {
+    throw new Error("The file could not be saved.");
+  }
+  return artifact;
+}
+
+/** Archives or restores a file. Archiving also drops its "chosen" mark. */
+export async function setArtifactArchived(
+  id: string,
+  ideaId: string,
+  isArchived: boolean,
+): Promise<IdeaFactoryArtifact | null> {
+  const [artifact] = await getDb()
+    .update(ideaFactoryArtifacts)
+    .set(
+      isArchived
+        ? { archivedAt: new Date(), chosenAt: null }
+        : { archivedAt: null },
+    )
+    .where(and(eq(ideaFactoryArtifacts.id, id), eq(ideaFactoryArtifacts.ideaId, ideaId)))
+    .returning();
+  return artifact ?? null;
+}
+
+/**
+ * Marks one file as the keeper for its collection, clearing the mark from the
+ * others in that collection. Passing `false` just clears this file's mark.
+ */
+export async function setArtifactChosen(
+  id: string,
+  ideaId: string,
+  isChosen: boolean,
+): Promise<IdeaFactoryArtifact[]> {
+  const db = getDb();
+  const target = await getArtifact(id, ideaId);
+  if (!target) {
+    return [];
+  }
+  if (!isChosen) {
+    return db
+      .update(ideaFactoryArtifacts)
+      .set({ chosenAt: null })
+      .where(eq(ideaFactoryArtifacts.id, id))
+      .returning();
+  }
+  const cleared =
+    target.collection.length > 0
+      ? await db
+          .update(ideaFactoryArtifacts)
+          .set({ chosenAt: null })
+          .where(
+            and(
+              eq(ideaFactoryArtifacts.ideaId, ideaId),
+              eq(ideaFactoryArtifacts.collection, target.collection),
+              sql`${ideaFactoryArtifacts.id} <> ${id}`,
+            ),
+          )
+          .returning()
+      : [];
+  const chosen = await db
+    .update(ideaFactoryArtifacts)
+    .set({ chosenAt: new Date(), archivedAt: null })
+    .where(eq(ideaFactoryArtifacts.id, id))
+    .returning();
+  return [...chosen, ...cleared];
+}
+
+export async function deleteArtifactRow(id: string, ideaId: string): Promise<IdeaFactoryArtifact | null> {
+  const [artifact] = await getDb()
+    .delete(ideaFactoryArtifacts)
+    .where(and(eq(ideaFactoryArtifacts.id, id), eq(ideaFactoryArtifacts.ideaId, ideaId)))
+    .returning();
+  return artifact ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Suggested Build Studio projects
+// ---------------------------------------------------------------------------
+
+export async function getLatestBuildSuggestion(
+  ideaId: string,
+): Promise<IdeaBuildSuggestion | null> {
+  const suggestion = await getDb().query.ideaBuildSuggestions.findFirst({
+    where: eq(ideaBuildSuggestions.ideaId, ideaId),
+    orderBy: [desc(ideaBuildSuggestions.createdAt)],
+  });
+  return suggestion ?? null;
+}
+
+export async function createBuildSuggestion(input: {
+  ideaId: string;
+  clerkUserId: string;
+  model: string;
+  summary: string;
+  projects: BuildSuggestion[];
+  requestId: string | null;
+}): Promise<IdeaBuildSuggestion> {
+  const [suggestion] = await getDb().insert(ideaBuildSuggestions).values(input).returning();
+  if (!suggestion) {
+    throw new Error("The suggestions could not be saved.");
+  }
+  return suggestion;
+}
+
+/** Records which Build Studio project a suggestion turned into. */
+export async function linkBuildSuggestionProject(input: {
+  suggestionId: string;
+  ideaId: string;
+  key: string;
+  projectId: string;
+}): Promise<IdeaBuildSuggestion | null> {
+  const db = getDb();
+  const current = await db.query.ideaBuildSuggestions.findFirst({
+    where: and(
+      eq(ideaBuildSuggestions.id, input.suggestionId),
+      eq(ideaBuildSuggestions.ideaId, input.ideaId),
+    ),
+  });
+  if (!current) {
+    return null;
+  }
+  const projects = current.projects.map((project) =>
+    project.key === input.key ? { ...project, projectId: input.projectId } : project,
+  );
+  const [updated] = await db
+    .update(ideaBuildSuggestions)
+    .set({ projects })
+    .where(eq(ideaBuildSuggestions.id, current.id))
+    .returning();
+  return updated ?? null;
 }
 
 // ---------------------------------------------------------------------------

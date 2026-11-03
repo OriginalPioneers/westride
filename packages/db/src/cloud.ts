@@ -18,6 +18,7 @@ import {
   type CloudLedgerKind,
   type CloudProviderPreference,
   type CloudRedemptionCode,
+  type OwnSandboxProvider,
 } from "./cloud-schema";
 
 // ---------------------------------------------------------------------------
@@ -63,6 +64,25 @@ export async function setProviderPreference(
     throw new Error("The provider preference could not be saved.");
   }
   return account;
+}
+
+/** Which of the member's own accounts hosts sandboxes when both are connected. Null until they connect one. */
+export async function getSandboxProvider(clerkUserId: string): Promise<OwnSandboxProvider | null> {
+  const account = await getCloudAccount(clerkUserId);
+  return account?.sandboxProvider ?? null;
+}
+
+export async function setSandboxProvider(
+  clerkUserId: string,
+  provider: OwnSandboxProvider,
+): Promise<void> {
+  await getDb()
+    .insert(cloudAccounts)
+    .values({ clerkUserId, sandboxProvider: provider })
+    .onConflictDoUpdate({
+      target: cloudAccounts.clerkUserId,
+      set: { sandboxProvider: provider, updatedAt: new Date() },
+    });
 }
 
 export async function setStripeCustomerId(clerkUserId: string, stripeCustomerId: string): Promise<void> {

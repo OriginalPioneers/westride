@@ -26,7 +26,7 @@ export type JobPayer = {
 export async function resolveJobPayer(
   agent: Agent,
   fallbackClerkUserId: string,
-  options: { needsVercel: boolean },
+  options: { needsCompute: boolean },
 ): Promise<JobPayer> {
   const fallback: JobPayer = { clerkUserId: fallbackClerkUserId, pledgeId: null };
   if (!agent.allowSponsorTokens || !agent.ideaId) {
@@ -54,11 +54,11 @@ export async function resolveJobPayer(
       return { clerkUserId: pledge.clerkUserId, pledgeId: pledge.id };
     }
     // A sponsor's own accounts, or their WeStride Cloud balance, can pay.
-    const [key, vercel] = await Promise.all([
+    const [key, compute] = await Promise.all([
       hasMuseAccess(pledge.clerkUserId),
-      options.needsVercel ? hasSandboxAccess(pledge.clerkUserId) : Promise.resolve(true),
+      options.needsCompute ? hasSandboxAccess(pledge.clerkUserId) : Promise.resolve(true),
     ]);
-    if (key && vercel) {
+    if (key && compute) {
       return { clerkUserId: pledge.clerkUserId, pledgeId: pledge.id };
     }
   }

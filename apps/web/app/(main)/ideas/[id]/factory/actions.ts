@@ -2,31 +2,46 @@
 
 import { auth } from "@clerk/nextjs/server";
 import type {
+  BuildSuggestion,
+  BuildSuggestionKind,
+  IdeaBuildSuggestion,
+  IdeaFactoryArtifact,
   IdeaFactoryFinding,
   IdeaFactoryMessage,
   MuseFinding,
   MuseFindingVerdict,
   MuseRequest,
   MuseSynthesis,
+  ProjectStatus,
 } from "@westride/db";
+import { listProjectsForIdea } from "@westride/db/build";
+import type { TicketCounts } from "@westride/db/build-rules";
 import {
   addAgentMessage,
   addUserMessage,
   completeEvaluation,
   completeFinding,
+  createArtifact,
+  createBuildSuggestion,
   createEvaluation,
   failEvaluation,
   failFinding,
   getEvaluation,
+  getLatestBuildSuggestion,
   getLatestCompletedEvaluation,
   getMuseRequest,
   getOrCreateThread,
   isIdeaMember,
+  linkBuildSuggestionProject,
+  listActiveArtifacts,
+  listArtifacts,
   listEvaluations,
   listMuseRequests,
   listThreads,
   logMuseRequest,
   markFindingRunning,
+  setArtifactArchived,
+  setArtifactChosen,
   sumMuseUsage,
   type EvaluationWithFindings,
   type MuseRequestSummary,
@@ -34,6 +49,8 @@ import {
   type ThreadWithMessages,
 } from "@westride/db/idea-factory";
 import { getIdea, type IdeaWithDetails } from "@westride/db/ideas";
+import { MAX_PROJECT_DESCRIPTION } from "@westride/db/limits";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
   agentsForIdea,
@@ -41,13 +58,17 @@ import {
   IDEA_COACH_SLUG,
   type AgentDefinition,
 } from "@/lib/idea-factory/agents";
+import { produceArtifacts } from "@/lib/idea-factory/artifact-producer";
+import { isArtifactStorageConfigured, storeArtifact } from "@/lib/idea-factory/artifact-storage";
+import { extractArtifactBlocks, slugifyCollection } from "@/lib/idea-factory/artifacts";
 import {
   callMuse,
   deviceClientId,
   parseJsonOutput,
   type MuseAttempt,
 } from "@/lib/idea-factory/muse";
-import { isMuseModelId } from "@/lib/idea-factory/pricing";
+import { isMuseModelId, MUSE_IMAGE_MODEL } from "@/lib/idea-factory/pricing";
+import { renderEvaluationReport } from "@/lib/idea-factory/report-pdf";
 import { settleMuseRequest } from "@/lib/cloud/billing";
 import { getCloudStatus, resolveMuseAccess, type MuseAccess } from "@/lib/cloud/provider";
 import {
@@ -56,8 +77,12 @@ import {
   type MetaConnectionSummary,
 } from "@/lib/meta/connection";
 import {
+  BUILD_SUGGESTION_KINDS,
+  BUILD_SUGGESTIONS_INSTRUCTIONS,
+  BUILD_SUGGESTIONS_SCHEMA,
   buildAgentInstructions,
   buildChatInput,
+  buildSuggestionsInput,
   buildSynthesisInput,
   EVALUATION_PROMPT,
   EVALUATION_SCHEMA,
@@ -66,6 +91,7 @@ import {
 } from "@/lib/idea-factory/prompts";
 import { IDEA_TYPE_LABELS } from "@/lib/ideas/filters";
 import { resolveMemberProfiles, type MemberProfile } from "@/lib/ideas/members";
+import type { ProjectPrefill } from "../../../build/actions";
 
 // ---------------------------------------------------------------------------
 // Shared
@@ -187,12 +213,28 @@ function today(): string {
 // Loading
 // ---------------------------------------------------------------------------
 
+/** A Build Studio project linked to the idea, as the factory shows it. */
+export type LinkedProject = {
+  id: string;
+  name: string;
+  status: ProjectStatus;
+  ticketCounts: TicketCounts;
+  repos: { fullName: string; htmlUrl: string }[];
+  updatedAt: Date;
+};
+
 export type FactoryData = {
   threads: ThreadWithMessages[];
   evaluations: EvaluationWithFindings[];
   requests: MuseRequestSummary[];
   usage: MuseUsageTotals;
   members: MemberProfile[];
+  /** Every file the team made, archived ones included. */
+  artifacts: IdeaFactoryArtifact[];
+  /** Build Studio projects already linked to this idea. */
+  projects: LinkedProject[];
+  /** The newest set of suggested projects, if Muse has drafted one. */
+  buildSuggestion: IdeaBuildSuggestion | null;
   /** The viewer's Meta connection, if they have one. */
   meta: MetaConnectionSummary | null;
   /** Whether Meta credentials can be kept on this deployment at all. */
@@ -203,7 +245,23 @@ export type FactoryData = {
   cloudAvailable: boolean;
   /** Whether the viewer's WeStride Cloud balance can pay for calls right now. */
   canUseCloud: boolean;
+  /** Whether this deployment can keep files advisors make. */
+  canStoreFiles: boolean;
 };
+
+function toLinkedProject(project: Awaited<ReturnType<typeof listProjectsForIdea>>[number]): LinkedProject {
+  return {
+    id: project.id,
+    name: project.name,
+    status: project.status,
+    ticketCounts: project.ticketCounts,
+    repos: project.repos.map((repo) => ({
+      fullName: `${repo.owner}/${repo.name}`,
+      htmlUrl: repo.htmlUrl,
+    })),
+    updatedAt: project.updatedAt,
+  };
+}
 
 export async function loadFactory(
   ideaId: string,
@@ -214,12 +272,26 @@ export async function loadFactory(
   }
   const { idea, userId } = context;
 
-  const [threads, evaluations, requests, usage, profiles, meta, cloud] = await Promise.all([
+  const [
+    threads,
+    evaluations,
+    requests,
+    usage,
+    profiles,
+    artifacts,
+    projects,
+    buildSuggestion,
+    meta,
+    cloud,
+  ] = await Promise.all([
     listThreads(ideaId),
     listEvaluations(ideaId),
     listMuseRequests(ideaId),
     sumMuseUsage(ideaId, userId),
     resolveMemberProfiles(idea.members.map((member) => member.clerkUserId)),
+    listArtifacts(ideaId),
+    listProjectsForIdea(ideaId, { clerkUserId: userId }),
+    getLatestBuildSuggestion(ideaId),
     getMetaConnectionSummary(userId),
     getCloudStatus(userId),
   ]);
@@ -232,11 +304,15 @@ export async function loadFactory(
       requests,
       usage,
       members: [...profiles.values()],
+      artifacts,
+      projects: projects.map(toLinkedProject),
+      buildSuggestion,
       meta,
       canConnectMeta: isMetaConnectionConfigured(),
       canConnectMetaAccount: deviceClientId() !== null,
       cloudAvailable: cloud.aiAvailable,
       canUseCloud: cloud.canRunAi,
+      canStoreFiles: isArtifactStorageConfigured(),
     },
   };
 }
@@ -274,7 +350,12 @@ export type SendResult =
       threadId: string;
       userMessage: IdeaFactoryMessage;
       agentMessage: IdeaFactoryMessage;
-      request: MuseRequestSummary | null;
+      /** Files the advisor made with this reply. */
+      artifacts: IdeaFactoryArtifact[];
+      /** Files the advisor tried to make but could not. */
+      artifactErrors: string[];
+      /** The chat call first, then one entry per image rendered. */
+      requests: MuseRequestSummary[];
     }
   | {
       status: "error";
@@ -317,9 +398,11 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
     return access;
   }
 
-  const [thread, latestEvaluation] = await Promise.all([
+  const canStoreFiles = isArtifactStorageConfigured();
+  const [thread, latestEvaluation, activeArtifacts] = await Promise.all([
     getOrCreateThread(ideaId, agentSlug),
     getLatestCompletedEvaluation(ideaId),
+    canStoreFiles ? listActiveArtifacts(ideaId) : Promise.resolve(null),
   ]);
   const userMessage = await addUserMessage(thread.id, userId, content);
 
@@ -330,12 +413,14 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
       agent,
       idea,
       latestEvaluation,
+      artifacts: activeArtifacts,
       today: today(),
     }),
     input: buildChatInput([...thread.messages, userMessage]),
     webSearch: webSearch && agent.usesWebSearch,
     reasoningEffort: "medium",
-    maxOutputTokens: 4000,
+    // Documents the advisor writes ride along in the reply, so leave room.
+    maxOutputTokens: 8000,
   });
 
   const request = await record({
@@ -357,14 +442,415 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
     };
   }
 
+  // Files the advisor asked for come out of the text and become artifacts
+  // attached to the reply. The reply is saved first so a slow image render
+  // cannot lose the words.
+  const extracted = extractArtifactBlocks(result.text);
   const agentMessage = await addAgentMessage({
     threadId: thread.id,
-    content: result.text,
+    content: extracted.text || result.text,
     sources: result.sources,
     requestId: request?.id ?? null,
   });
 
-  return { status: "ok", threadId: thread.id, userMessage, agentMessage, request };
+  const requests: MuseRequestSummary[] = request ? [request] : [];
+  const artifactErrors: string[] = [];
+  if (extracted.rejected > 0) {
+    artifactErrors.push(
+      extracted.rejected === 1
+        ? "One file the advisor described could not be read."
+        : `${extracted.rejected} files the advisor described could not be read.`,
+    );
+  }
+  const blocks = agent.createsImages
+    ? extracted.blocks
+    : extracted.blocks.filter((block) => block.kind !== "image");
+  if (blocks.length < extracted.blocks.length) {
+    artifactErrors.push(`${agent.name} cannot draw images; ask the Creative Director.`);
+  }
+  const produced = await produceArtifacts({
+    target: { ideaId, clerkUserId: userId, agentSlug, messageId: agentMessage.id },
+    blocks,
+    access,
+  });
+  for (const item of [...produced.produced, ...produced.failed]) {
+    if (item.attempt) {
+      const logged = await record({
+        ideaId,
+        access,
+        agentSlug,
+        purpose: "image",
+        model: MUSE_IMAGE_MODEL.id,
+        attempt: item.attempt,
+      });
+      if (logged) {
+        requests.push(logged);
+      }
+    }
+  }
+  for (const failed of produced.failed) {
+    artifactErrors.push(failed.message);
+  }
+
+  return {
+    status: "ok",
+    threadId: thread.id,
+    userMessage,
+    agentMessage,
+    artifacts: produced.produced.map((item) => item.artifact),
+    artifactErrors,
+    requests,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Files the team keeps
+// ---------------------------------------------------------------------------
+
+const artifactSchema = z.object({
+  ideaId: uuid,
+  artifactId: uuid,
+});
+
+export type ArtifactResult = { status: "ok"; artifacts: IdeaFactoryArtifact[] } | Failure;
+
+/** Archives a file so advisors stop considering it, or brings it back. */
+export async function setArtifactArchivedAction(
+  input: unknown,
+  isArchived: boolean,
+): Promise<ArtifactResult> {
+  const parsed = artifactSchema.safeParse(input);
+  if (!parsed.success) {
+    return failure("That file does not exist.");
+  }
+  const context = await requireMember(parsed.data.ideaId);
+  if (isFailure(context)) {
+    return context;
+  }
+  const artifact = await setArtifactArchived(parsed.data.artifactId, parsed.data.ideaId, isArchived);
+  return artifact ? { status: "ok", artifacts: [artifact] } : failure("That file does not exist.");
+}
+
+/** Marks a file as the one the team is going with, or clears that mark. */
+export async function setArtifactChosenAction(
+  input: unknown,
+  isChosen: boolean,
+): Promise<ArtifactResult> {
+  const parsed = artifactSchema.safeParse(input);
+  if (!parsed.success) {
+    return failure("That file does not exist.");
+  }
+  const context = await requireMember(parsed.data.ideaId);
+  if (isFailure(context)) {
+    return context;
+  }
+  const artifacts = await setArtifactChosen(parsed.data.artifactId, parsed.data.ideaId, isChosen);
+  return artifacts.length > 0 ? { status: "ok", artifacts } : failure("That file does not exist.");
+}
+
+const reportSchema = z.object({
+  evaluationId: uuid,
+});
+
+export type ReportResult = { status: "ok"; artifact: IdeaFactoryArtifact } | Failure;
+
+/**
+ * Renders the evaluation as a US Letter PDF and keeps it with the idea's
+ * files. Rendering again for the same evaluation returns the existing report.
+ */
+export async function generateEvaluationReport(input: unknown): Promise<ReportResult> {
+  const parsed = reportSchema.safeParse(input);
+  if (!parsed.success) {
+    return failure("That evaluation does not exist.");
+  }
+  const evaluation = await getEvaluation(parsed.data.evaluationId);
+  if (!evaluation) {
+    return failure("That evaluation does not exist.");
+  }
+  const context = await requireMember(evaluation.ideaId);
+  if (isFailure(context)) {
+    return context;
+  }
+  if (evaluation.status === "RUNNING") {
+    return failure("Wait for the evaluation to finish before making the report.");
+  }
+  if (!isArtifactStorageConfigured()) {
+    return failure("File storage is not set up on this server, so reports cannot be kept.");
+  }
+  const { idea, userId } = context;
+
+  const existing = (await listActiveArtifacts(idea.id)).find(
+    (artifact) => artifact.kind === "REPORT" && artifact.evaluationId === evaluation.id,
+  );
+  if (existing) {
+    return { status: "ok", artifact: existing };
+  }
+
+  try {
+    const pdf = await renderEvaluationReport({ idea, evaluation });
+    const stored = await storeArtifact({
+      ideaId: idea.id,
+      kind: "REPORT",
+      bytes: pdf,
+      contentType: "application/pdf",
+    });
+    const when = (evaluation.completedAt ?? evaluation.createdAt).toISOString().slice(0, 10);
+    const artifact = await createArtifact({
+      ideaId: idea.id,
+      clerkUserId: userId,
+      agentSlug: null,
+      messageId: null,
+      evaluationId: evaluation.id,
+      kind: "REPORT",
+      collection: "evaluation-reports",
+      title: `${idea.name} — Idea Workshop report (${when})`,
+      description: `Evaluation by ${evaluation.findings.length} advisors, ${when}.`,
+      pathname: stored.pathname,
+      contentType: stored.contentType,
+      sizeBytes: stored.sizeBytes,
+    });
+    return { status: "ok", artifact };
+  } catch (error) {
+    console.error("Evaluation report failed", error);
+    return failure("The report could not be made. Try again.");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Suggested Build Studio projects
+// ---------------------------------------------------------------------------
+
+const suggestSchema = z.object({
+  ideaId: uuid,
+  model: modelSchema,
+});
+
+const MAX_SUGGESTED_PROJECTS = 8;
+
+function cleanSuggestions(raw: unknown): { summary: string; projects: BuildSuggestion[] } | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const value = raw as { summary?: unknown; projects?: unknown };
+  if (typeof value.summary !== "string" || !Array.isArray(value.projects)) {
+    return null;
+  }
+  const strings = (list: unknown): string[] =>
+    Array.isArray(list)
+      ? list.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      : [];
+  const seen = new Set<string>();
+  const projects = value.projects.flatMap((item): BuildSuggestion[] => {
+    if (!item || typeof item !== "object") {
+      return [];
+    }
+    const entry = item as Partial<BuildSuggestion>;
+    if (typeof entry.name !== "string" || !entry.name.trim()) {
+      return [];
+    }
+    const name = entry.name.trim().slice(0, 60);
+    let key = slugifyCollection(typeof entry.key === "string" && entry.key ? entry.key : name);
+    while (!key || seen.has(key)) {
+      key = `${key || "project"}-${seen.size + 1}`;
+    }
+    seen.add(key);
+    const kind = (BUILD_SUGGESTION_KINDS as readonly string[]).includes(entry.kind ?? "")
+      ? (entry.kind as BuildSuggestionKind)
+      : "other";
+    return [
+      {
+        key,
+        name,
+        repoName:
+          slugifyCollection(typeof entry.repoName === "string" ? entry.repoName : name) || key,
+        kind,
+        summary: typeof entry.summary === "string" ? entry.summary.trim().slice(0, 300) : "",
+        description:
+          typeof entry.description === "string" ? entry.description.trim().slice(0, 4000) : "",
+        stack: strings(entry.stack).slice(0, 12),
+        firstMilestones: strings(entry.firstMilestones).slice(0, 6),
+        dependsOn: strings(entry.dependsOn).map(slugifyCollection),
+        projectId: null,
+      },
+    ];
+  });
+  if (projects.length === 0) {
+    return null;
+  }
+  return { summary: value.summary, projects: projects.slice(0, MAX_SUGGESTED_PROJECTS) };
+}
+
+export type SuggestResult =
+  | { status: "ok"; suggestion: IdeaBuildSuggestion; request: MuseRequestSummary | null }
+  | (Failure & { request?: MuseRequestSummary | null });
+
+/** Asks Muse how to split the idea into Build Studio projects. */
+export async function suggestBuildProjects(input: unknown): Promise<SuggestResult> {
+  const parsed = suggestSchema.safeParse(input);
+  if (!parsed.success) {
+    return failure(parsed.error.issues[0]?.message ?? "Check the request and try again.");
+  }
+  const context = await requireMember(parsed.data.ideaId);
+  if (isFailure(context)) {
+    return context;
+  }
+  const { idea, userId } = context;
+  const access = await museKeyFor(userId);
+  if (isFailure(access)) {
+    return access;
+  }
+  const [latestEvaluation, projects] = await Promise.all([
+    getLatestCompletedEvaluation(idea.id),
+    listProjectsForIdea(idea.id, { clerkUserId: userId }),
+  ]);
+
+  const result = await callMuse({
+    apiKey: access.apiKey,
+    model: parsed.data.model,
+    instructions: BUILD_SUGGESTIONS_INSTRUCTIONS,
+    input: buildSuggestionsInput({
+      idea,
+      latestEvaluation,
+      existingProjects: projects.map((project) => ({
+        key: `existing-${project.id.slice(0, 8)}`,
+        name: project.name,
+        description: project.description,
+        status: project.status,
+        repos: project.repos.map((repo) => `${repo.owner}/${repo.name}`),
+      })),
+    }),
+    webSearch: false,
+    jsonFormat: { name: "build_suggestions", schema: BUILD_SUGGESTIONS_SCHEMA },
+    reasoningEffort: "high",
+    maxOutputTokens: 14_000,
+  });
+
+  const request = await record({
+    ideaId: idea.id,
+    access,
+    agentSlug: null,
+    purpose: "build-suggestions",
+    model: parsed.data.model,
+    attempt: result.attempt,
+  });
+
+  const cleaned = result.text ? cleanSuggestions(parseJsonOutput(result.text)) : null;
+  if (!cleaned) {
+    return {
+      ...failure(
+        result.attempt.error ?? "Muse answered in a shape the Idea Factory could not read.",
+      ),
+      request,
+    };
+  }
+  const suggestion = await createBuildSuggestion({
+    ideaId: idea.id,
+    clerkUserId: userId,
+    model: parsed.data.model,
+    summary: cleaned.summary,
+    projects: cleaned.projects,
+    requestId: request?.id ?? null,
+  });
+  return { status: "ok", suggestion, request };
+}
+
+const prefillSchema = z.object({
+  ideaId: uuid,
+  suggestionId: uuid,
+  key: z.string().min(1),
+});
+
+/** What "Start this project" opens the new-project dialog with. */
+export async function loadSuggestedProjectPrefill(
+  input: unknown,
+): Promise<{ status: "ok"; prefill: ProjectPrefill } | Failure> {
+  const parsed = prefillSchema.safeParse(input);
+  if (!parsed.success) {
+    return failure("That suggestion does not exist.");
+  }
+  const context = await requireMember(parsed.data.ideaId);
+  if (isFailure(context)) {
+    return context;
+  }
+  const { idea, userId } = context;
+  const suggestion = await getLatestBuildSuggestion(idea.id);
+  const project = suggestion?.projects.find((item) => item.key === parsed.data.key);
+  if (!suggestion || suggestion.id !== parsed.data.suggestionId || !project) {
+    return failure("That suggestion is no longer current. Refresh the suggestions.");
+  }
+  const others = idea.members.filter((member) => member.clerkUserId !== userId);
+  const profiles = await resolveMemberProfiles(others.map((member) => member.clerkUserId));
+  const extras: string[] = [];
+  if (project.stack.length > 0) {
+    extras.push(`## Recommended stack\n${project.stack.map((item) => `- ${item}`).join("\n")}`);
+  }
+  if (project.firstMilestones.length > 0) {
+    extras.push(
+      `## First milestones\n${project.firstMilestones.map((item, index) => `${index + 1}. ${item}`).join("\n")}`,
+    );
+  }
+  return {
+    status: "ok",
+    prefill: {
+      ideaId: idea.id,
+      name: project.name,
+      description: [project.description || project.summary, ...extras]
+        .join("\n\n")
+        .slice(0, MAX_PROJECT_DESCRIPTION),
+      invites: others.map((member) => ({
+        ...(profiles.get(member.clerkUserId) ?? {
+          clerkUserId: member.clerkUserId,
+          name: "WeStride member",
+          imageUrl: null,
+        }),
+        role: member.role === "FOUNDER" ? "OWNER" : "MEMBER",
+      })),
+      githubRepoUrl: null,
+    },
+  };
+}
+
+const linkSchema = prefillSchema.extend({ projectId: uuid });
+
+/** Remembers which project a suggestion became, so the card shows it. */
+export async function linkSuggestedProject(
+  input: unknown,
+): Promise<{ status: "ok"; suggestion: IdeaBuildSuggestion; project: LinkedProject | null } | Failure> {
+  const parsed = linkSchema.safeParse(input);
+  if (!parsed.success) {
+    return failure("That suggestion does not exist.");
+  }
+  const context = await requireMember(parsed.data.ideaId);
+  if (isFailure(context)) {
+    return context;
+  }
+  const [suggestion, projects] = await Promise.all([
+    linkBuildSuggestionProject({
+      suggestionId: parsed.data.suggestionId,
+      ideaId: parsed.data.ideaId,
+      key: parsed.data.key,
+      projectId: parsed.data.projectId,
+    }),
+    listProjectsForIdea(parsed.data.ideaId, { clerkUserId: context.userId }),
+  ]);
+  if (!suggestion) {
+    return failure("That suggestion does not exist.");
+  }
+  revalidatePath(`/ideas/${parsed.data.ideaId}`);
+  const project = projects.find((item) => item.id === parsed.data.projectId);
+  return { status: "ok", suggestion, project: project ? toLinkedProject(project) : null };
+}
+
+/** Re-reads the projects linked to the idea, after one was created elsewhere. */
+export async function refreshLinkedProjects(
+  ideaId: string,
+): Promise<{ status: "ok"; projects: LinkedProject[] } | Failure> {
+  const context = await requireMember(ideaId);
+  if (isFailure(context)) {
+    return context;
+  }
+  const projects = await listProjectsForIdea(ideaId, { clerkUserId: context.userId });
+  return { status: "ok", projects: projects.map(toLinkedProject) };
 }
 
 // ---------------------------------------------------------------------------
@@ -536,6 +1022,8 @@ export async function runEvaluationAgent(input: unknown): Promise<RunAgentResult
       agent,
       idea,
       latestEvaluation: previous?.id === evaluationId ? null : previous,
+      // Evaluations answer in JSON; file-making instructions would only confuse that.
+      artifacts: null,
       today: today(),
     }),
     input: EVALUATION_PROMPT,

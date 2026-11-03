@@ -9,7 +9,7 @@
 #   docker rm -f westride-runner
 set -eu
 
-IMAGE="${WESTRIDE_RUNNER_IMAGE:-ghcr.io/originalpioneers/westride-runner:latest}"
+IMAGE="${WESTRIDE_RUNNER_IMAGE:-ghcr.io/westrideorg/westride-runner:latest}"
 CONTAINER="westride-runner"
 VOLUME="westride-runner-state"
 WESTRIDE_URL="${WESTRIDE_URL:-https://westride.org}"

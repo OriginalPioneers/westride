@@ -11,7 +11,7 @@ import {
 } from "../schemas/common";
 
 export const MeSchema = PersonSchema.extend({
-  tokenType: z.enum(["oauth_token", "api_key"]).openapi({
+  tokenType: z.enum(["oauth_token", "api_key", "session_token"]).openapi({
     description: "How this request was authenticated.",
   }),
 }).openapi("Me");

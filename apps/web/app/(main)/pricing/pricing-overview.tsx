@@ -28,12 +28,12 @@ import { DocPage, DocSection } from "../doc-page";
 const FREE_INCLUDES = [
   { label: "Every WeStride feature", detail: "Idea Factory, Build Studio, Agent Studio, the academy, MCP, and the API." },
   { label: "Muse on your Meta account", detail: "Connect Meta in Settings. Meta bills you at its list prices." },
-  { label: "Sandboxes on your Vercel account", detail: "Connect Vercel in Settings. Vercel bills your team for sandbox time." },
+  { label: "Sandboxes on your Vercel or Modal account", detail: "Connect either in Settings. Vercel bills your team, Modal your workspace, for sandbox time." },
   { label: "Volunteer devices", detail: "Supporters can run jobs for an idea on their own machines." },
 ];
 
 const CLOUD_INCLUDES = [
-  { label: "No Meta or Vercel account needed", detail: "Add funds once; Muse and sandboxes run on WeStride's accounts." },
+  { label: "No Meta, Vercel, or Modal account needed", detail: "Add funds once; Muse and sandboxes run on WeStride's accounts." },
   { label: "Pay as you go", detail: "Charged per token and per second of compute, from your balance. Nothing monthly." },
   { label: "Switch any time", detail: "Choose which provider to use first. WeStride falls back to the other when one cannot run." },
   { label: "Codes and credits", detail: "Redeem codes from events and programs for funds on your account." },
@@ -94,14 +94,14 @@ export function PricingOverview({
                 <Icon icon={ServerStackIcon} size="lg" color="accent" />
                 <VStack gap={0}>
                   <Heading level={2}>Bring your own</Heading>
-                  <Text type="supporting">Your Meta AI account and your Vercel account</Text>
+                  <Text type="supporting">Your Meta AI account and your Vercel or Modal account</Text>
                 </VStack>
               </HStack>
               <VStack gap={0}>
                 <Text type="display-3" weight="semibold">
                   Free
                 </Text>
-                <Text type="supporting">Forever. You pay Meta and Vercel directly.</Text>
+                <Text type="supporting">Forever. You pay Meta and Vercel or Modal directly.</Text>
               </VStack>
               <Includes items={FREE_INCLUDES} />
               <HStack>
@@ -275,9 +275,9 @@ export function PricingOverview({
             label="Can I mix the two?"
             description={
               <Text type="supporting">
-                Yes. Connect Meta but not Vercel, for instance, and Muse runs on your Meta account while
-                sandboxes run on WeStride Cloud. You pick which provider to try first; WeStride uses the
-                other when the first cannot run.
+                Yes. Connect Meta but neither Vercel nor Modal, for instance, and Muse runs on your Meta
+                account while sandboxes run on WeStride Cloud. You pick which provider to try first;
+                WeStride uses the other when the first cannot run.
               </Text>
             }
           />
@@ -305,7 +305,7 @@ export function PricingOverview({
               <Text type="supporting">
                 No. WeStride is free; WeStride Cloud is a balance you draw down. Running your own copy of
                 WeStride, which is{" "}
-                <Link href="https://github.com/OriginalPioneers/westride" target="_blank">
+                <Link href="https://github.com/WeStrideOrg/westride" target="_blank">
                   open source
                 </Link>
                 , is free too.

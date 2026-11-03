@@ -7,7 +7,11 @@ import { List, ListItem } from "@astryxdesign/core/List";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
-import { TrophyIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowRightStartOnRectangleIcon,
+  TrophyIcon,
+} from "@heroicons/react/24/outline";
+import { afterAuthPath } from "@/lib/auth-paths";
 import { challengeMilestones } from "./achievements/track-progress";
 import { achievementIcons } from "./achievements/achievement-icons";
 
@@ -20,6 +24,18 @@ export function EditAccountButton() {
       onClick={() => {
         openUserProfile();
       }}
+    />
+  );
+}
+
+export function SignOutButton() {
+  const { signOut } = useClerk();
+
+  return (
+    <Button
+      label="Sign Out"
+      icon={<Icon icon={ArrowRightStartOnRectangleIcon} />}
+      clickAction={() => signOut({ redirectUrl: afterAuthPath })}
     />
   );
 }

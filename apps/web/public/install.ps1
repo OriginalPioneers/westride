@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   WeStride supporter runner installer (Windows).
 
@@ -16,7 +16,7 @@ param(
   [string]$Name = "",
   [string]$Url = $(if ($env:WESTRIDE_URL) { $env:WESTRIDE_URL } else { "https://westride.org" }),
   [string]$MetaKey = $(if ($env:META_API_KEY) { $env:META_API_KEY } else { "" }),
-  [string]$Image = $(if ($env:WESTRIDE_RUNNER_IMAGE) { $env:WESTRIDE_RUNNER_IMAGE } else { "ghcr.io/originalpioneers/westride-runner:latest" }),
+  [string]$Image = $(if ($env:WESTRIDE_RUNNER_IMAGE) { $env:WESTRIDE_RUNNER_IMAGE } else { "ghcr.io/westrideorg/westride-runner:latest" }),
   [string]$Memory = "6g",
   [string]$Cpus = "4"
 )
@@ -56,7 +56,7 @@ if ($LASTEXITCODE -eq 0) {
 }
 
 if (-not $Code -and -not $hasToken) {
-  $Code = Read-Host "Pairing code from WeStride → Supporting → Link a computer"
+  $Code = Read-Host "Pairing code from WeStride -> Supporting -> Link a computer"
   if (-not $Code) { Fail "A pairing code is required the first time." }
 }
 
@@ -83,7 +83,7 @@ try {
 }
 
 Write-Host ""
-Write-Host "Pulling $Image…"
+Write-Host "Pulling $Image..."
 docker pull $Image *> $null
 if ($LASTEXITCODE -ne 0) { Fail "The runner image could not be pulled." }
 docker volume create $Volume *> $null

@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { Tab, TabList } from "@astryxdesign/core/TabList";
+import { DEVICES_PATH, PLEDGES_PATH } from "@/lib/account-paths";
 
 type SectionTab = { label: string; href: string };
 
@@ -11,15 +12,15 @@ const OUR_STORY_TABS: SectionTab[] = [
   { label: "Design", href: "/our-story/design" },
 ];
 
-const PROFILE_TABS: SectionTab[] = [
-  { label: "Overview", href: "/profile" },
-  { label: "Achievements", href: "/profile/achievements" },
-];
-
-const SETTINGS_TABS: SectionTab[] = [
+const ACCOUNT_TABS: SectionTab[] = [
+  { label: "Profile", href: "/profile" },
+  { label: "WeStride Cloud", href: "/cloud" },
+  { label: "Devices", href: DEVICES_PATH },
   { label: "Connections", href: "/settings" },
   { label: "API", href: "/settings/api" },
   { label: "MCP", href: "/settings/mcp" },
+  { label: "Pledges", href: PLEDGES_PATH },
+  { label: "Achievements", href: "/profile/achievements" },
 ];
 
 /** Switches between the pages that share one side nav entry. */
@@ -41,10 +42,7 @@ export function OurStoryTabs() {
   return <SectionTabs tabs={OUR_STORY_TABS} />;
 }
 
-export function ProfileTabs() {
-  return <SectionTabs tabs={PROFILE_TABS} />;
-}
-
-export function SettingsTabs() {
-  return <SectionTabs tabs={SETTINGS_TABS} />;
+/** The header shared by the member's own pages, reached from the profile button. */
+export function AccountTabs() {
+  return <SectionTabs tabs={ACCOUNT_TABS} />;
 }

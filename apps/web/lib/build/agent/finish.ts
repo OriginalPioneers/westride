@@ -1,16 +1,19 @@
 import "server-only";
 
 import { Sandbox } from "@vercel/sandbox";
-import type { AgentRun, RunnerKind } from "@westride/db";
+import type { AgentRun, ComputeSource, RunnerKind } from "@westride/db";
 import { getProject, getTicketById, moveTicket } from "@westride/db/build";
 import { addTicketComment, isRunActive, updateAgentRun } from "@westride/db/build-agents";
 import { ticketKey } from "@westride/db/build-rules";
 import { usageFromMuseRun } from "@/lib/agents/usage";
 import { settleAgentRun } from "@/lib/cloud/billing";
+import { getModalConfig } from "@/lib/cloud/config";
 import { terminateModalSandbox } from "@/lib/cloud/sandbox";
 import { installationToken, repoInstallationId } from "@/lib/github/app";
 import { githubJson } from "@/lib/github/http";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
+import type { ModalCredentials } from "@/lib/modal/client";
+import { getModalSandboxCredentials } from "@/lib/modal/connection";
 import { getVercelSandboxCredentials } from "@/lib/vercel/connection";
 import type { FinishedPayload, MuseModelUsage, MuseRunUsage } from "@westride/runner-protocol";
 import { getAgentRunnerConfig } from "./config";
@@ -83,22 +86,46 @@ export function readFinishedPayload(value: unknown): FinishedPayload | null {
 
 const MAX_SUMMARY = 20_000;
 
+/** WeStride Cloud's own Modal credentials, or null when compute is not configured here. */
+function cloudModalCredentials(): ModalCredentials | null {
+  const config = getModalConfig();
+  return config
+    ? {
+        tokenId: config.tokenId,
+        tokenSecret: config.tokenSecret,
+        environment: config.environment,
+        appName: config.appName,
+      }
+    : null;
+}
+
 /**
- * Stops the sandbox. A Vercel sandbox lives on the account of the member who
- * paid for the run, so it needs their credentials; if they have since
- * disconnected Vercel, it stops at its timeout. A WeStride Cloud sandbox on
- * Modal is stopped with WeStride's own credentials.
+ * Stops the sandbox. A sandbox on the member's own account (Vercel or Modal)
+ * needs the credentials of whoever paid for the run; if they have since
+ * disconnected, it stops at its timeout. A WeStride Cloud sandbox is stopped
+ * with WeStride's own Modal credentials.
  */
 export async function stopSandboxFor(
   sandboxName: string,
   clerkUserId: string | null,
   runnerKind: RunnerKind | null = "VERCEL_SANDBOX",
+  computeSource: ComputeSource = "OWN",
 ) {
   if (runnerKind === "MODAL_SANDBOX") {
+    const credentials =
+      computeSource === "WESTRIDE_CLOUD"
+        ? cloudModalCredentials()
+        : clerkUserId
+          ? await getModalSandboxCredentials(clerkUserId)
+          : null;
+    if (!credentials) {
+      console.warn("Sandbox stop skipped: no Modal credentials for its owner", sandboxName);
+      return;
+    }
     try {
-      await terminateModalSandbox(sandboxName);
+      await terminateModalSandbox(sandboxName, credentials);
     } catch (error) {
-      console.warn("Cloud sandbox stop skipped", sandboxName, error instanceof Error ? error.message : error);
+      console.warn("Modal sandbox stop skipped", sandboxName, error instanceof Error ? error.message : error);
     }
     return;
   }
@@ -123,12 +150,12 @@ async function stopSandbox(run: AgentRun) {
   if (!run.sandboxName) {
     return;
   }
-  await stopSandboxFor(run.sandboxName, run.startedByClerkUserId, run.runnerKind);
+  await stopSandboxFor(run.sandboxName, run.startedByClerkUserId, run.runnerKind, run.computeSource);
 }
 
 /** Bills a WeStride Cloud run to the member's balance. No-op for runs on their own accounts. */
 async function settleCloudCharges(run: AgentRun, ticketTitle: string) {
-  if (run.museSource !== "WESTRIDE_CLOUD" && run.runnerKind !== "MODAL_SANDBOX") {
+  if (run.museSource !== "WESTRIDE_CLOUD" && run.computeSource !== "WESTRIDE_CLOUD") {
     return;
   }
   const vcpus = getAgentRunnerConfig()?.vcpus ?? 2;

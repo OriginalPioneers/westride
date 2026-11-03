@@ -94,7 +94,9 @@ export function createMcpServer(api: WestrideApi, me: Me): McpServer {
         "Find ideas on WeStride. Returns every public idea plus private ideas the member is on the team of. Filter by free text, type, category slug, country, collection (mine, following, featured), or the kind of support an idea wants.",
       inputSchema: {
         q: z.string().optional().describe("Matches the name or description."),
-        type: z.enum(["BUSINESS", "NON_PROFIT", "GAME", "OPEN_SOURCE"]).optional(),
+        type: z
+          .enum(["BUSINESS", "NON_PROFIT", "GAME", "OPEN_SOURCE", "WEBSITE", "MOBILE_APP"])
+          .optional(),
         category: z.string().optional().describe("A category slug from list_idea_categories."),
         country: z.string().length(2).optional().describe("ISO 3166-1 alpha-2 country code."),
         view: z.enum(["mine", "following", "featured"]).optional().describe("mine = ideas the member is on; following = ideas they follow."),
@@ -149,7 +151,7 @@ export function createMcpServer(api: WestrideApi, me: Me): McpServer {
       inputSchema: {
         name: z.string().min(1).max(120),
         description: z.string().min(1).describe("Markdown. What the idea is and why it matters."),
-        type: z.enum(["BUSINESS", "NON_PROFIT", "GAME", "OPEN_SOURCE"]),
+        type: z.enum(["BUSINESS", "NON_PROFIT", "GAME", "OPEN_SOURCE", "WEBSITE", "MOBILE_APP"]),
         categories: z.array(z.string()).min(1).max(6).describe("Category names, e.g. [\"AI\", \"Education\"]."),
         isPublic: z.boolean().describe("Public ideas are visible to everyone; private ones only to the team."),
         invites: z

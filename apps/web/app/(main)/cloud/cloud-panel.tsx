@@ -393,7 +393,7 @@ function ProviderChoice({
         </SegmentedControl>
         <Text type="supporting">
           {value === "OWN"
-            ? "Your connected Meta and Vercel accounts are used, and you pay them directly. WeStride is free this way."
+            ? "Your connected Meta and Vercel or Modal accounts are used, and you pay them directly. WeStride is free this way."
             : "Meta models and sandboxes run on WeStride's accounts and are charged to your balance at the rates on the pricing page."}{" "}
           <Link href="/pricing">See pricing</Link>
           {" · "}

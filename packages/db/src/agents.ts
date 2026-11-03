@@ -27,6 +27,7 @@ import {
   type AgentStatus,
   type AgentTicket,
   type AgentTicketSource,
+  type ComputeSource,
   type MuseKeySource,
   type RunnerKind,
 } from "./agent-schema";
@@ -711,6 +712,7 @@ export type NewAgentJobInput = {
   maxSteps: number;
   pledgeId?: string | null;
   runnerKind?: RunnerKind | null;
+  computeSource?: ComputeSource;
   museSource?: MuseKeySource;
   prompt?: string | null;
   repoFullName?: string | null;

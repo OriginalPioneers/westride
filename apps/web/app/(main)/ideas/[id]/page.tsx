@@ -67,9 +67,17 @@ export async function generateMetadata({
   return { title: idea?.name ?? "Idea" };
 }
 
-export default async function IdeaPage({ params }: { params: Params }) {
-  const { id } = await params;
+export default async function IdeaPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: Promise<{ factory?: string | string[] }>;
+}) {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   const [idea, { userId }] = await Promise.all([loadIdea(id), auth()]);
+  // `?factory=open` is set right after creating an idea so the workshop opens itself.
+  const openFactory = query.factory === "open";
   if (!idea) {
     notFound();
   }
@@ -151,6 +159,7 @@ export default async function IdeaPage({ params }: { params: Params }) {
         <IdeaFactoryButton
           idea={{ id: idea.id, name: idea.name, type: idea.type }}
           viewerId={userId}
+          autoOpen={openFactory}
         />
         {creator ? (
           <BuildProjectButton ideaId={idea.id} creator={creator} />

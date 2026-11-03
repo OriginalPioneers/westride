@@ -1,8 +1,8 @@
 # Agent Studio
 
-Agent Studio is where a member sets up **standing agents**: a named Muse persona with its own description and instructions, its own backlog of tickets, an optional schedule, and a running account of tokens and spend. An agent can be tied to a project, an idea, both, or neither, and to one GitHub repository. With a repository it works tickets as Muse Code in a Vercel Sandbox on the member's own Vercel account and opens pull requests, exactly like Build Studio's **Run with Muse Code**; without one it answers tickets as written reports through the Meta Model API with web search.
+Agent Studio is where a member sets up **standing agents**: a named Muse persona with its own description and instructions, its own backlog of tickets, an optional schedule, and a running account of tokens and spend. An agent can be tied to a project, an idea, both, or neither, and to one GitHub repository. With a repository it works tickets as Muse Code in a sandbox on the member's own Vercel or Modal account and opens pull requests, exactly like Build Studio's **Run with Muse Code**; without one it answers tickets as written reports through the Meta Model API with web search.
 
-The whole feature runs on the member's own accounts: their Meta key pays for the model and their Vercel plan for the sandbox. WeStride never calls Muse with its own key or creates sandboxes on its own Vercel account for member work.
+The whole feature runs on the member's own accounts: their Meta key pays for the model and their Vercel plan or Modal workspace for the sandbox. Members without those can use WeStride Cloud from a prepaid balance instead (`docs/westride-cloud.md`).
 
 ## Setup
 
@@ -16,7 +16,7 @@ What each part needs:
 | --- | --- |
 | Agents, tickets, log, usage pages | Nothing beyond the database. |
 | Report jobs | The member's Meta account connected in Settings (`META_TOKEN_ENCRYPTION_KEY` on the server). |
-| Code jobs (repository, sandbox, pull request) | The same as Build Studio's runner: the GitHub App (`GITHUB_APP_*`), `VERCEL_TOKEN_ENCRYPTION_KEY`, and `BUILD_RUNNER_CALLBACK_URL` on the server; the payer's Vercel account connected in Settings with a team and project chosen. See `docs/build-studio.md`. |
+| Code jobs (repository, sandbox, pull request) | The same as Build Studio's runner: the GitHub App (`GITHUB_APP_*`), `BUILD_RUNNER_CALLBACK_URL`, and a sandbox host (`VERCEL_TOKEN_ENCRYPTION_KEY`, `MODAL_TOKEN_ENCRYPTION_KEY`, or WeStride Cloud compute) on the server; the payer's Vercel account (with a team and project chosen) or Modal account connected in Settings, or a WeStride Cloud balance. See `docs/build-studio.md`. |
 | Schedules on exact time | `CRON_SECRET` and a scheduler calling `GET /integrations/agents/schedule`. See below. |
 
 `canRunCode(agent)` in `apps/web/lib/agents/start.ts` decides per agent: a repository is linked **and** `isAgentRunnerConfigured()`. Otherwise jobs are reports. A linked repository is kept either way, so configuring the runner later switches the agent to code jobs with no further change.
@@ -34,7 +34,7 @@ Both go through `runDueAgents()` in `apps/web/lib/agents/schedule.ts`, which cla
 
 Vercel's Hobby plan runs cron jobs at most **once a day** and at an imprecise time; Pro runs them on the declared schedule. On Hobby, hourly agents fire when the daily cron or a page visit catches them. The schedule form says so when `CRON_SECRET` is unset.
 
-A scheduled run picks the agent's highest-priority `BACKLOG` ticket (URGENT → LOW, then queue order). If the backlog is empty and the agent has a **standing task**, the run files a new ticket from it (first line is the title; `source = SCHEDULE`) and works that. With neither, the slot is logged and skipped. Scheduled jobs pay with the **owner's** Meta key and, for code jobs, run on the **owner's** Vercel account; a missing connection of either kind is logged on the agent and the slot is skipped.
+A scheduled run picks the agent's highest-priority `BACKLOG` ticket (URGENT → LOW, then queue order). If the backlog is empty and the agent has a **standing task**, the run files a new ticket from it (first line is the title; `source = SCHEDULE`) and works that. With neither, the slot is logged and skipped. Scheduled jobs pay with the **owner's** Meta key and, for code jobs, run on the **owner's** Vercel or Modal account (or their WeStride Cloud balance); a missing connection of either kind is logged on the agent and the slot is skipped.
 
 ## Data model
 

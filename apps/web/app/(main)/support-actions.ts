@@ -7,6 +7,7 @@ import { getIdea } from "@westride/db/ideas";
 import { savePledge, setPledgeStatus, updateIdeaSupportSettings } from "@westride/db/support";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { DEVICES_PATH, PLEDGES_PATH } from "@/lib/account-paths";
 import { failure, isFailure, type Failure } from "@/lib/build/access";
 import { uuidSchema } from "@/lib/build/schema";
 import { ideaPath } from "@/lib/ideas/filters";
@@ -41,6 +42,7 @@ async function requireVisibleIdea(ideaId: string, userId: string) {
 
 function revalidateSupport(ideaId?: string) {
   revalidatePath(supportingPath());
+  revalidatePath(PLEDGES_PATH);
   revalidatePath("/");
   if (ideaId) {
     revalidatePath(ideaPath(ideaId));
@@ -157,6 +159,11 @@ export async function updateIdeaSupportAction(ideaId: string, input: unknown): P
 // Devices
 // ---------------------------------------------------------------------------
 
+function revalidateDevices() {
+  revalidatePath(supportingPath());
+  revalidatePath(DEVICES_PATH);
+}
+
 export type PairingCodeResult = { status: "ok"; code: DevicePairingCode } | Failure;
 
 export async function createPairingCodeAction(): Promise<PairingCodeResult> {
@@ -164,7 +171,7 @@ export async function createPairingCodeAction(): Promise<PairingCodeResult> {
   if (isFailure(user)) return user;
   try {
     const code = await createPairingCode(user.userId);
-    revalidatePath(supportingPath());
+    revalidateDevices();
     return { status: "ok", code };
   } catch (error) {
     console.error("Pairing code failed", error);
@@ -183,7 +190,7 @@ export async function renameDeviceAction(input: unknown): Promise<Ok | Failure> 
   if (!renamed) {
     return failure("That computer is not linked to your account.");
   }
-  revalidatePath(supportingPath());
+  revalidateDevices();
   return { status: "ok" };
 }
 
@@ -197,6 +204,6 @@ export async function revokeDeviceAction(deviceId: string): Promise<Ok | Failure
   if (!revoked) {
     return failure("That computer is not linked to your account.");
   }
-  revalidatePath(supportingPath());
+  revalidateDevices();
   return { status: "ok" };
 }

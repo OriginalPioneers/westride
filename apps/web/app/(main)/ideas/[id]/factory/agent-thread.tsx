@@ -18,10 +18,12 @@ import { Spinner } from "@astryxdesign/core/Spinner";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
-import type { IdeaFactoryMessage } from "@westride/db";
+import { Grid } from "@astryxdesign/core/Grid";
+import type { IdeaFactoryArtifact, IdeaFactoryMessage } from "@westride/db";
 import type { AgentDefinition } from "@/lib/idea-factory/agents";
 import type { MemberProfile } from "@/lib/ideas/members";
 import { AGENT_ICONS } from "./agent-icons";
+import { ArtifactCard, type ArtifactActions } from "./artifact-card";
 import { SourceList } from "./evidence";
 
 function AgentAvatar({ agent }: { agent: AgentDefinition }) {
@@ -31,6 +33,9 @@ function AgentAvatar({ agent }: { agent: AgentDefinition }) {
 export function AgentThread({
   agent,
   messages,
+  artifacts,
+  artifactActions,
+  busyArtifactIds,
   members,
   isConnected,
   isSending,
@@ -39,6 +44,10 @@ export function AgentThread({
 }: {
   agent: AgentDefinition;
   messages: IdeaFactoryMessage[];
+  /** Every file on the idea; the thread shows the ones attached to its messages. */
+  artifacts: IdeaFactoryArtifact[];
+  artifactActions: ArtifactActions;
+  busyArtifactIds: ReadonlySet<string>;
   members: MemberProfile[];
   isConnected: boolean;
   isSending: boolean;
@@ -46,6 +55,19 @@ export function AgentThread({
   onSend: (content: string) => void;
 }) {
   const profiles = new Map(members.map((member) => [member.clerkUserId, member]));
+  const attachments = new Map<string, IdeaFactoryArtifact[]>();
+  for (const artifact of artifacts) {
+    if (artifact.messageId) {
+      const list = attachments.get(artifact.messageId) ?? [];
+      list.push(artifact);
+      attachments.set(artifact.messageId, list);
+    }
+  }
+  const waitingLabel = agent.createsImages
+    ? "Drawing and writing…"
+    : agent.usesWebSearch
+      ? "Researching and writing…"
+      : "Thinking…";
 
   const emptyState = (
     <VStack gap={5} hAlign="center" maxWidth={560}>
@@ -92,7 +114,11 @@ export function AgentThread({
           density="balanced"
           status={error ? { type: "error", message: error } : undefined}
           headerContext={
-            agent.usesWebSearch ? (
+            agent.createsImages ? (
+              <Text type="supporting">
+                Can draw logos and mockups; files land in Files &amp; assets.
+              </Text>
+            ) : agent.usesWebSearch ? (
               <Text type="supporting">May search the web; sources are cited.</Text>
             ) : (
               <Text type="supporting">Works from the idea and the team&apos;s findings.</Text>
@@ -140,6 +166,7 @@ export function AgentThread({
                 </ChatMessage>
               );
             }
+            const attached = attachments.get(message.id) ?? [];
             return (
               <ChatMessage
                 key={message.id}
@@ -148,9 +175,24 @@ export function AgentThread({
               >
                 <ChatMessageBubble variant="ghost" name={agent.name} width="100%">
                   <VStack gap={4}>
-                    <Markdown density="compact" headingLevelStart={3} contentWidth="100%">
-                      {message.content}
-                    </Markdown>
+                    {message.content.trim() ? (
+                      <Markdown density="compact" headingLevelStart={3} contentWidth="100%">
+                        {message.content}
+                      </Markdown>
+                    ) : null}
+                    {attached.length > 0 ? (
+                      <Grid columns={{ minWidth: 200, max: 3 }} gap={3}>
+                        {attached.map((artifact) => (
+                          <ArtifactCard
+                            key={artifact.id}
+                            artifact={artifact}
+                            actions={artifactActions}
+                            isBusy={busyArtifactIds.has(artifact.id)}
+                            compact
+                          />
+                        ))}
+                      </Grid>
+                    ) : null}
                     <SourceList sources={message.sources} />
                   </VStack>
                 </ChatMessageBubble>
@@ -167,9 +209,7 @@ export function AgentThread({
               <ChatMessageBubble variant="ghost" name={agent.name}>
                 <HStack gap={2} vAlign="center">
                   <Spinner size="sm" aria-label={`${agent.name} is thinking`} />
-                  <Text type="supporting">
-                    {agent.usesWebSearch ? "Researching and writing…" : "Thinking…"}
-                  </Text>
+                  <Text type="supporting">{waitingLabel}</Text>
                 </HStack>
               </ChatMessageBubble>
             </ChatMessage>

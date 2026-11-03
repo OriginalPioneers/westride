@@ -1,6 +1,7 @@
 import {
   WESTRIDE_API_PRODUCTION_URL,
   createWestrideApi,
+  type WestrideApi,
 } from "@westride/api-client";
 import Constants from "expo-constants";
 
@@ -24,4 +25,14 @@ function resolveApiBaseUrl(): string {
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
-export const api = createWestrideApi({ baseUrl: API_BASE_URL });
+export function createMobileApi(
+  getToken?: () => Promise<string | null>,
+): WestrideApi {
+  return createWestrideApi({
+    baseUrl: API_BASE_URL,
+    getToken,
+  });
+}
+
+/** Public, unauthenticated client for screens that do not need a member. */
+export const api = createMobileApi();

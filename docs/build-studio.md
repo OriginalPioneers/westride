@@ -11,6 +11,7 @@ Apply the migrations with the normal workflow (`bun run db:migrate` from `packag
 - `0013_build_studio.sql`: `projects`, `project_members`, `project_repos`, `project_milestones`, `tickets`, and their enums.
 - `0014_build_studio_agents.sql`: `ticket_comments`, `agent_runs`, `agent_run_events`; makes `muse_requests.idea_id` nullable and adds `muse_requests.project_id` so planning requests are logged against a project.
 - `0020_vercel_connections.sql`: `vercel_connections`, the member's Vercel account that hosts their sandboxes.
+- `0026_modal_connections.sql`: `modal_connections`, the member's own Modal account as the other sandbox host, and `compute_source` on runs and jobs. See `docs/westride-cloud.md`.
 
 What each feature needs:
 
@@ -19,14 +20,14 @@ What each feature needs:
 | Projects, tickets, board, comments | Nothing beyond the database. |
 | Private repositories, GitHub activity for private repos | The member's GitHub connection (Settings), as for ideas. |
 | Plan with Muse | The member's Meta account connected in Settings (`META_TOKEN_ENCRYPTION_KEY` on the server). WeStride never calls Muse with its own key for member work. |
-| Run with Muse Code | On the server: the GitHub App (`GITHUB_APP_*`), `VERCEL_TOKEN_ENCRYPTION_KEY`, and `BUILD_RUNNER_CALLBACK_URL`. For the member: a Meta account, GitHub, and a Vercel account connected in Settings. See below. |
+| Run with Muse Code | On the server: the GitHub App (`GITHUB_APP_*`), `BUILD_RUNNER_CALLBACK_URL`, and at least one sandbox host: `VERCEL_TOKEN_ENCRYPTION_KEY` (members' Vercel accounts), `MODAL_TOKEN_ENCRYPTION_KEY` (members' Modal accounts), or WeStride Cloud compute. For the member: a Meta account, GitHub, and a Vercel or Modal account connected in Settings, or a WeStride Cloud balance. See below. |
 
 ### Agent runner environment
 
-Muse Code agents run in [Vercel Sandbox](https://vercel.com/docs/vercel-sandbox) microVMs on the **member's own Vercel account**, never on WeStride's, so Vercel bills the member for sandbox time. The server needs:
+Muse Code agents run in [Vercel Sandbox](https://vercel.com/docs/vercel-sandbox) microVMs or [Modal Sandboxes](https://modal.com/docs/guide/sandboxes) on the **member's own account**, so Vercel or Modal bills the member for sandbox time; members with neither can use WeStride Cloud (`docs/westride-cloud.md`). The server needs:
 
 - `BUILD_RUNNER_CALLBACK_URL`: the public origin of this WeStride server, e.g. `https://westride.org`. The sandbox posts its work log here; it cannot reach `localhost`, so local development needs a tunnel URL.
-- `VERCEL_TOKEN_ENCRYPTION_KEY`: 32 random bytes, base64. Members' Vercel tokens are kept AES-256-GCM encrypted with it (`apps/web/lib/sealed-secret.ts`), the same way as Meta keys.
+- `VERCEL_TOKEN_ENCRYPTION_KEY` and/or `MODAL_TOKEN_ENCRYPTION_KEY`: 32 random bytes, base64, each. Members' Vercel and Modal tokens are kept AES-256-GCM encrypted with them (`apps/web/lib/sealed-secret.ts`), the same way as Meta keys. Either key alone is enough to offer that host.
 - Optional: `VERCEL_DEVICE_CLIENT_ID` turns on **Sign in with Vercel** (the OAuth device flow Vercel's CLI and Sandbox SDK use). Without it, members paste an access token from their Vercel account settings.
 - Optional tuning: `BUILD_RUNNER_SANDBOX_TIMEOUT_MINUTES` (default 45, max 300), `BUILD_RUNNER_SANDBOX_VCPUS` (default 2), `BUILD_RUNNER_MAX_ACTIVE_RUNS` (default 2 per project).
 

@@ -1,33 +1,43 @@
 import type { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
-import { Avatar } from "@astryxdesign/core/Avatar";
 import { Banner } from "@astryxdesign/core/Banner";
-import { Button } from "@astryxdesign/core/Button";
-import { Divider } from "@astryxdesign/core/Divider";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
-import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
+import { Link } from "@astryxdesign/core/Link";
+import { VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { getGithubConnection } from "@westride/db/github";
+import type { ChatPlatform } from "@westride/db";
+import { getPendingChatLinkCode, listChatConnections } from "@westride/db/chat";
+import { getSandboxProvider } from "@westride/db/cloud";
+import { getDiscordConfig, getSlackConfig, getWhatsAppConfig } from "@/lib/chat/config";
 import type { ChatFlowOutcome } from "@/lib/chat/oauth-routes";
+import { pickOwnSandboxProvider } from "@/lib/cloud/provider";
 import { isGithubAppConfigured } from "@/lib/github/config";
 import type { GithubFlowOutcome } from "@/lib/github/flow";
+import { getMetaConnectionSummary, isMetaConnectionConfigured } from "@/lib/meta/connection";
+import { getModalConnectionSummary, isModalConnectionConfigured } from "@/lib/modal/connection";
 import {
-  getGithubAccountAccess,
-  type GithubAccountAccess,
-} from "@/lib/github/repos";
-import { SettingsTabs } from "../section-tabs";
-import { CloudSection } from "./cloud-section";
-import { ChatSection, MetaSection, VercelSection } from "./connection-sections";
-import { DisconnectGithubButton } from "./disconnect-github-button";
-import { GithubAccess } from "./github-access";
+  getVercelConnectionSummary,
+  isVercelConnectionConfigured,
+} from "@/lib/vercel/connection";
+import { AccountTabs } from "../section-tabs";
+import { ConnectionGroup, ConnectionRow, type ConnectionStatus } from "./connection-list";
+import {
+  DiscordPanel,
+  GithubPanel,
+  githubNeedsReconnect,
+  loadGithubState,
+  MetaPanel,
+  ModalPanel,
+  SlackPanel,
+  VercelPanel,
+  WhatsAppPanel,
+  type GithubState,
+} from "./connection-sections";
 
 export const metadata: Metadata = {
-  title: "Settings",
+  title: "Connections",
 };
-
-const CONNECT_HREF = "/integrations/github/connect?returnTo=/settings";
-const INSTALL_HREF = "/integrations/github/connect?intent=install&returnTo=/settings";
 
 const OUTCOMES: Record<
   GithubFlowOutcome,
@@ -97,86 +107,35 @@ function chatOutcome(name: string, value: unknown): Outcome | null {
     : null;
 }
 
-async function GithubSection({ userId }: { userId: string }) {
-  if (!isGithubAppConfigured()) {
-    return (
-      <Text type="supporting">
-        GitHub is not set up on this WeStride server yet.
-      </Text>
-    );
-  }
+const CONNECTED: ConnectionStatus = { variant: "success", label: "Connected" };
+const NOT_CONNECTED: ConnectionStatus = { variant: "neutral", label: "Not connected" };
+const UNAVAILABLE: ConnectionStatus = { variant: "neutral", label: "Not available" };
 
-  const connection = await getGithubConnection(userId);
-  if (!connection) {
-    return (
-      <HStack>
-        <Button label="Connect GitHub" variant="primary" href={CONNECT_HREF} />
-      </HStack>
-    );
-  }
-
-  let access: GithubAccountAccess | null = null;
-  let loadFailed = false;
-  try {
-    access = await getGithubAccountAccess(userId);
-  } catch (error) {
-    console.error("GitHub access lookup failed", error);
-    loadFailed = true;
-  }
-
-  // GitHub stopped accepting the grant, so the connection was dropped.
-  if (!access && !loadFailed) {
-    return (
-      <VStack gap={4}>
-        <Banner
-          status="warning"
-          title="Reconnect GitHub"
-          description="GitHub no longer accepts WeStride's access to your account."
-        />
-        <HStack>
-          <Button label="Connect GitHub" variant="primary" href={CONNECT_HREF} />
-        </HStack>
-      </VStack>
-    );
-  }
-
-  return (
-    <VStack gap={6}>
-      <HStack gap={3} vAlign="center" wrap="wrap">
-        <Avatar
-          name={connection.login}
-          src={connection.avatarUrl ?? undefined}
-          size="md"
-          tooltip={false}
-        />
-        <StackItem size="fill">
-          <VStack gap={0}>
-            <Text>{connection.login}</Text>
-            <Text type="supporting">Connected GitHub account</Text>
-          </VStack>
-        </StackItem>
-        <DisconnectGithubButton />
-      </HStack>
-      <Divider />
-      {access ? (
-        <GithubAccess access={access} installHref={INSTALL_HREF} />
-      ) : (
-        <Banner
-          status="error"
-          title="GitHub could not be reached"
-          description="Your repositories will show here again once it responds."
-        />
-      )}
-      <Text type="supporting">
-        Disconnecting removes WeStride&apos;s access to your GitHub account. To
-        remove WeStride from an account or organization entirely, uninstall it
-        on GitHub.
-      </Text>
-    </VStack>
-  );
+function needsAttention(label: string): ConnectionStatus {
+  return { variant: "warning", label };
 }
 
-export default async function SettingsPage({
+function githubStatus(configured: boolean, state: GithubState | null): ConnectionStatus {
+  if (!configured) {
+    return UNAVAILABLE;
+  }
+  if (!state) {
+    return NOT_CONNECTED;
+  }
+  if (githubNeedsReconnect(state)) {
+    return needsAttention("Reconnect");
+  }
+  if (state.access && state.access.installations.length === 0) {
+    return needsAttention("Choose repositories");
+  }
+  return CONNECTED;
+}
+
+function accountStatus(configured: boolean, isConnected: boolean): ConnectionStatus {
+  return !configured ? UNAVAILABLE : isConnected ? CONNECTED : NOT_CONNECTED;
+}
+
+export default async function ConnectionsPage({
   searchParams,
 }: {
   searchParams: Promise<{
@@ -190,10 +149,65 @@ export default async function SettingsPage({
     return redirectToSignIn({ returnBackUrl: "/settings" });
   }
   const { github, slack, discord } = await searchParams;
-  const outcome =
-    (isOutcome(github) ? OUTCOMES[github] : null) ??
-    chatOutcome("Slack", slack) ??
-    chatOutcome("Discord", discord);
+  const githubOutcome = isOutcome(github) ? OUTCOMES[github] : null;
+  const slackOutcome = chatOutcome("Slack", slack);
+  const discordOutcome = chatOutcome("Discord", discord);
+  const outcome = githubOutcome ?? slackOutcome ?? discordOutcome;
+
+  const githubConfigured = isGithubAppConfigured();
+  const metaConfigured = isMetaConnectionConfigured();
+  const vercelConfigured = isVercelConnectionConfigured();
+  const modalConfigured = isModalConnectionConfigured();
+  const slackConfigured = getSlackConfig() !== null;
+  const discordConfigured = getDiscordConfig() !== null;
+  const whatsapp = getWhatsAppConfig();
+
+  const [githubState, meta, vercel, modal, sandboxPreference, chatConnections, whatsappPending] =
+    await Promise.all([
+      githubConfigured ? loadGithubState(userId) : null,
+      metaConfigured ? getMetaConnectionSummary(userId) : null,
+      vercelConfigured ? getVercelConnectionSummary(userId) : null,
+      modalConfigured ? getModalConnectionSummary(userId) : null,
+      getSandboxProvider(userId),
+      listChatConnections(userId),
+      whatsapp ? getPendingChatLinkCode(userId, "WHATSAPP") : null,
+    ]);
+  // Only worth showing when there is a choice to make.
+  const activeSandboxProvider =
+    vercel?.scope && modal
+      ? pickOwnSandboxProvider({ vercel: true, modal: true }, sandboxPreference)
+      : null;
+  const chatAccount = (platform: ChatPlatform) =>
+    chatConnections.find((connection) => connection.platform === platform) ?? null;
+  const slackAccount = chatAccount("SLACK");
+  const discordAccount = chatAccount("DISCORD");
+  const whatsappAccount = chatAccount("WHATSAPP");
+
+  const statuses = {
+    github: githubStatus(githubConfigured, githubState),
+    meta: accountStatus(metaConfigured, meta !== null),
+    vercel:
+      vercelConfigured && vercel && !vercel.scope
+        ? needsAttention("Choose a team")
+        : accountStatus(vercelConfigured, vercel !== null),
+    modal: accountStatus(modalConfigured, modal !== null),
+    slack: accountStatus(slackConfigured, slackAccount !== null),
+    discord: accountStatus(discordConfigured, discordAccount !== null),
+    whatsapp:
+      whatsapp && !whatsappAccount && whatsappPending
+        ? ({ variant: "accent", label: "Waiting for your message" } as const)
+        : accountStatus(whatsapp !== null, whatsappAccount !== null),
+  };
+  const returnedFrom = githubOutcome
+    ? "github"
+    : slackOutcome
+      ? "slack"
+      : discordOutcome
+        ? "discord"
+        : null;
+  const defaultOpen = Object.entries(statuses)
+    .filter(([key, status]) => key === returnedFrom || status.variant === "warning" || status.variant === "accent")
+    .map(([key]) => key);
 
   return (
     <Layout
@@ -201,8 +215,14 @@ export default async function SettingsPage({
       header={
         <LayoutHeader hasDivider>
           <VStack gap={4}>
-            <SettingsTabs />
-            <Heading level={1}>Settings</Heading>
+            <AccountTabs />
+            <VStack gap={2}>
+              <Heading level={1}>Connections</Heading>
+              <Text type="supporting">
+                Link the accounts WeStride works with. Each one is optional, and you can
+                disconnect it at any time.
+              </Text>
+            </VStack>
           </VStack>
         </LayoutHeader>
       }
@@ -217,68 +237,112 @@ export default async function SettingsPage({
                 isDismissable={outcome.status === "success" || outcome.status === "info"}
               />
             ) : null}
-            <VStack gap={6}>
-              <VStack gap={2}>
-                <Heading level={2}>GitHub</Heading>
-                <Text type="supporting">
-                  Connect GitHub to start ideas from your repositories. You
-                  choose which repositories WeStride can reach on GitHub, and
-                  you can change that at any time. Code WeStride commits for
-                  you is committed by the WeStride app, not your account.
-                </Text>
-              </VStack>
-              <GithubSection userId={userId} />
-            </VStack>
-            <Divider />
-            <VStack gap={6}>
-              <VStack gap={2}>
-                <Heading level={2}>WeStride Cloud</Heading>
-                <Text type="supporting">
-                  No Meta or Vercel account? Fund your WeStride account and Muse
-                  and sandboxes run on WeStride&apos;s own accounts, charged to your
-                  balance. Bring your own accounts below and WeStride is free.
-                </Text>
-              </VStack>
-              <CloudSection userId={userId} />
-            </VStack>
-            <Divider />
-            <VStack gap={6}>
-              <VStack gap={2}>
-                <Heading level={2}>Meta</Heading>
-                <Text type="supporting">
-                  Connect Meta to run WeStride&apos;s Muse advisors, like the
-                  Idea Factory, on your own Meta Model API account. You pay
-                  Meta directly. WeStride keeps the key encrypted and only uses
-                  it for requests you make.
-                </Text>
-              </VStack>
-              <MetaSection userId={userId} />
-            </VStack>
-            <Divider />
-            <VStack gap={6}>
-              <VStack gap={2}>
-                <Heading level={2}>Vercel</Heading>
-                <Text type="supporting">
-                  Connect Vercel so Muse Code agents run in sandboxes on your
-                  own Vercel account. Vercel bills you for sandbox time; WeStride
-                  keeps the token encrypted and only uses it for runs you or
-                  your scheduled agents start.
-                </Text>
-              </VStack>
-              <VercelSection userId={userId} />
-            </VStack>
-            <Divider />
-            <VStack gap={6}>
-              <VStack gap={2}>
-                <Heading level={2}>Chat with WeStride</Heading>
-                <Text type="supporting">
-                  Link your chat accounts to talk to WeStride from Slack,
-                  Discord, or WhatsApp. For now you can browse the academy
-                  tracks; more is on the way.
-                </Text>
-              </VStack>
-              <ChatSection userId={userId} />
-            </VStack>
+
+            <ConnectionGroup
+              title="Code"
+              description="Start ideas and projects from repositories you already have."
+              defaultOpen={defaultOpen}
+            >
+              <ConnectionRow
+                value="github"
+                name="GitHub"
+                purpose="Choose which repositories WeStride can reach."
+                logo="/logos/github.svg"
+                status={statuses.github}
+              >
+                <GithubPanel configured={githubConfigured} state={githubState} />
+              </ConnectionRow>
+            </ConnectionGroup>
+
+            <ConnectionGroup
+              title="AI and compute"
+              description={
+                <>
+                  Bring your own Meta account and a Vercel or Modal account and WeStride is free;
+                  you pay them directly. No accounts?{" "}
+                  <Link href="/cloud" type="inherit">
+                    WeStride Cloud
+                  </Link>{" "}
+                  runs Muse and
+                  sandboxes for you from a prepaid balance.
+                </>
+              }
+              defaultOpen={defaultOpen}
+            >
+              <ConnectionRow
+                value="meta"
+                name="Meta"
+                purpose="Run Muse advisors, like the Idea Factory, on your Meta Model API account."
+                logo="/logos/meta.svg"
+                status={statuses.meta}
+              >
+                <MetaPanel configured={metaConfigured} connection={meta} />
+              </ConnectionRow>
+              <ConnectionRow
+                value="vercel"
+                name="Vercel"
+                purpose="Run Muse Code agents in sandboxes on your Vercel account."
+                logo="/logos/vercel-mark.svg"
+                status={statuses.vercel}
+              >
+                <VercelPanel
+                  configured={vercelConfigured}
+                  connection={vercel}
+                  activeProvider={activeSandboxProvider}
+                />
+              </ConnectionRow>
+              <ConnectionRow
+                value="modal"
+                name="Modal"
+                purpose="Run Muse Code agents in sandboxes on your Modal workspace."
+                logo="/logos/modal.svg"
+                status={statuses.modal}
+              >
+                <ModalPanel
+                  configured={modalConfigured}
+                  connection={modal}
+                  activeProvider={activeSandboxProvider}
+                />
+              </ConnectionRow>
+            </ConnectionGroup>
+
+            <ConnectionGroup
+              title="Chat apps"
+              description="Talk to WeStride from the chat apps you already use. For now you can browse the Academy tracks; more is on the way."
+              defaultOpen={defaultOpen}
+            >
+              <ConnectionRow
+                value="slack"
+                name="Slack"
+                purpose="Use /westride in your Slack workspaces."
+                logo="/logos/slack-mark.svg"
+                status={statuses.slack}
+              >
+                <SlackPanel configured={slackConfigured} account={slackAccount} />
+              </ConnectionRow>
+              <ConnectionRow
+                value="discord"
+                name="Discord"
+                purpose="Use /westride in any server or direct message."
+                logo="/logos/discord.svg"
+                status={statuses.discord}
+              >
+                <DiscordPanel configured={discordConfigured} account={discordAccount} />
+              </ConnectionRow>
+              <ConnectionRow
+                value="whatsapp"
+                name="WhatsApp"
+                purpose="Message WeStride from your phone."
+                logo="/logos/whatsapp.svg"
+                status={statuses.whatsapp}
+              >
+                <WhatsAppPanel
+                  phoneNumber={whatsapp?.phoneNumber ?? null}
+                  account={whatsappAccount}
+                  pending={whatsappPending}
+                />
+              </ConnectionRow>
+            </ConnectionGroup>
           </VStack>
         </LayoutContent>
       }

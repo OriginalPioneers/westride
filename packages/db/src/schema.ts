@@ -416,6 +416,8 @@ export const ideaType = pgEnum("idea_type", [
   "NON_PROFIT",
   "GAME",
   "OPEN_SOURCE",
+  "WEBSITE",
+  "MOBILE_APP",
 ]);
 
 export const ideaMemberRole = pgEnum("idea_member_role", ["FOUNDER", "MEMBER"]);
@@ -939,9 +941,144 @@ export const ideaFactoryFindings = pgTable(
   ],
 );
 
+/** What kind of file an advisor produced. */
+export const artifactKind = pgEnum("artifact_kind", ["IMAGE", "DOCUMENT", "REPORT"]);
+
+/**
+ * A file the advisory team made for an idea: a logo iteration, a brand
+ * brief, an evaluation report. Bytes live in the private Blob store under
+ * `pathname`; only members of the idea can read them, through the app.
+ * Archived files stay on disk but drop out of every advisor's context.
+ */
+export const ideaFactoryArtifacts = pgTable(
+  "idea_factory_artifacts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    /** Member whose conversation or action produced the file. */
+    clerkUserId: text("clerk_user_id").notNull(),
+    /** Advisor that made it, or null for reports and uploads. */
+    agentSlug: text("agent_slug"),
+    /** The reply this file arrived with, when an advisor made it in chat. */
+    messageId: uuid("message_id").references(() => ideaFactoryMessages.id, {
+      onDelete: "set null",
+    }),
+    /** The evaluation a report was rendered from. */
+    evaluationId: uuid("evaluation_id").references(() => ideaFactoryEvaluations.id, {
+      onDelete: "set null",
+    }),
+    requestId: uuid("request_id").references(() => museRequests.id, {
+      onDelete: "set null",
+    }),
+    kind: artifactKind("kind").notNull(),
+    /** Groups iterations of one deliverable, e.g. "logo". Lowercase slug. */
+    collection: text("collection").notNull().default(""),
+    title: text("title").notNull(),
+    /** The prompt an image was drawn from, or a caption. */
+    description: text("description").notNull().default(""),
+    /** Pathname inside the private Blob store. */
+    pathname: text("pathname").notNull(),
+    contentType: text("content_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    /** Set when the team picked this as the one to keep from its collection. */
+    chosenAt: timestamp("chosen_at", { withTimezone: true, mode: "date" }),
+    /** Set when the team retired it; archived files leave the advisors' context. */
+    archivedAt: timestamp("archived_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("idea_factory_artifacts_idea_id_created_at_idx").on(table.ideaId, table.createdAt),
+    index("idea_factory_artifacts_message_id_idx").on(table.messageId),
+  ],
+);
+
+/** How a suggested Build Studio project fits the idea. */
+export type BuildSuggestionKind =
+  | "web"
+  | "mobile"
+  | "api"
+  | "worker"
+  | "library"
+  | "infrastructure"
+  | "docs"
+  | "other";
+
+export type BuildSuggestion = {
+  /** Stable key within one suggestion set, e.g. "web-app". */
+  key: string;
+  name: string;
+  /** Repository name suggestion: lowercase, hyphenated. */
+  repoName: string;
+  kind: BuildSuggestionKind;
+  /** One sentence. */
+  summary: string;
+  /** Markdown brief, written to become the project description. */
+  description: string;
+  stack: string[];
+  firstMilestones: string[];
+  /** Keys of other suggestions this one needs first. */
+  dependsOn: string[];
+  /** Build Studio project started from this suggestion, if any. */
+  projectId: string | null;
+};
+
+/**
+ * One set of suggested Build Studio projects for an idea, drafted by Muse
+ * from the idea and its latest evaluation. The newest set is the one shown.
+ */
+export const ideaBuildSuggestions = pgTable(
+  "idea_build_suggestions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => ideas.id, { onDelete: "cascade" }),
+    clerkUserId: text("clerk_user_id").notNull(),
+    model: text("model").notNull(),
+    /** Two or three sentences on how the work was split. Markdown. */
+    summary: text("summary").notNull(),
+    projects: jsonb("projects").$type<BuildSuggestion[]>().notNull().default([]),
+    requestId: uuid("request_id").references(() => museRequests.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("idea_build_suggestions_idea_id_created_at_idx").on(table.ideaId, table.createdAt),
+  ],
+);
+
 export const museRequestsRelations = relations(museRequests, ({ one }) => ({
   idea: one(ideas, {
     fields: [museRequests.ideaId],
+    references: [ideas.id],
+  }),
+}));
+
+export const ideaFactoryArtifactsRelations = relations(ideaFactoryArtifacts, ({ one }) => ({
+  idea: one(ideas, {
+    fields: [ideaFactoryArtifacts.ideaId],
+    references: [ideas.id],
+  }),
+  message: one(ideaFactoryMessages, {
+    fields: [ideaFactoryArtifacts.messageId],
+    references: [ideaFactoryMessages.id],
+  }),
+  evaluation: one(ideaFactoryEvaluations, {
+    fields: [ideaFactoryArtifacts.evaluationId],
+    references: [ideaFactoryEvaluations.id],
+  }),
+}));
+
+export const ideaBuildSuggestionsRelations = relations(ideaBuildSuggestions, ({ one }) => ({
+  idea: one(ideas, {
+    fields: [ideaBuildSuggestions.ideaId],
     references: [ideas.id],
   }),
 }));
@@ -1216,6 +1353,38 @@ export const vercelConnections = pgTable("vercel_connections", {
 });
 
 // ---------------------------------------------------------------------------
+// Modal
+//
+// A member's own Modal account, the other host their Muse Code sandboxes can
+// run on, so Modal bills them and not WeStride. Modal has no sign-in flow for
+// third parties, so the member pastes an API token (an id and a secret) from
+// Modal's settings. The token is bound to one workspace; the member may also
+// pick the environment within it. Secrets arrive already encrypted by the
+// web app.
+// ---------------------------------------------------------------------------
+
+export const modalConnections = pgTable("modal_connections", {
+  /** Clerk user id. One Modal account per WeStride account. */
+  clerkUserId: text("clerk_user_id").primaryKey(),
+  /** Encrypted token id (`ak-…`). */
+  tokenId: text("token_id").notNull(),
+  /** Encrypted token secret (`as-…`). */
+  tokenSecret: text("token_secret").notNull(),
+  /** The last characters of the token id, so the member can tell which token this is. */
+  tokenIdSuffix: text("token_id_suffix").notNull(),
+  /** Modal environment the sandboxes run in. Null means the workspace's default (`main`). */
+  environment: text("environment"),
+  /** The Modal app sandboxes are created under; created on first use. */
+  appName: text("app_name").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // Chat platforms
 //
 // Slack, Discord, and WhatsApp accounts a member has linked, so messages that
@@ -1320,6 +1489,8 @@ export type NewMetaConnection = typeof metaConnections.$inferInsert;
 export type VercelCredentialKind = (typeof vercelCredentialKind.enumValues)[number];
 export type VercelConnection = typeof vercelConnections.$inferSelect;
 export type NewVercelConnection = typeof vercelConnections.$inferInsert;
+export type ModalConnection = typeof modalConnections.$inferSelect;
+export type NewModalConnection = typeof modalConnections.$inferInsert;
 export type ChatPlatform = (typeof chatPlatform.enumValues)[number];
 export type ChatConnection = typeof chatConnections.$inferSelect;
 export type NewChatConnection = typeof chatConnections.$inferInsert;
@@ -1335,6 +1506,10 @@ export type IdeaFactoryMessage = typeof ideaFactoryMessages.$inferSelect;
 export type NewIdeaFactoryMessage = typeof ideaFactoryMessages.$inferInsert;
 export type IdeaFactoryEvaluation = typeof ideaFactoryEvaluations.$inferSelect;
 export type IdeaFactoryFinding = typeof ideaFactoryFindings.$inferSelect;
+export type ArtifactKind = (typeof artifactKind.enumValues)[number];
+export type IdeaFactoryArtifact = typeof ideaFactoryArtifacts.$inferSelect;
+export type NewIdeaFactoryArtifact = typeof ideaFactoryArtifacts.$inferInsert;
+export type IdeaBuildSuggestion = typeof ideaBuildSuggestions.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
 export type NewFeedback = typeof feedback.$inferInsert;
 export type FeedbackVote = typeof feedbackVotes.$inferSelect;
@@ -1418,6 +1593,7 @@ export {
   agentTickets,
   agentTicketSource,
   agentTicketsRelations,
+  computeSource,
   museSource,
   runnerKind,
 } from "./agent-schema";
@@ -1432,6 +1608,7 @@ export type {
   AgentStatus,
   AgentTicket,
   AgentTicketSource,
+  ComputeSource,
   MuseKeySource,
   NewAgent,
   NewAgentJob,
@@ -1451,6 +1628,7 @@ export {
   cloudProviderPreference,
   cloudRedemptionCodes,
   cloudRedemptionCodesRelations,
+  ownSandboxProvider,
 } from "./cloud-schema";
 export type {
   CloudAccount,
@@ -1462,6 +1640,7 @@ export type {
   NewCloudAccount,
   NewCloudLedgerEntry,
   NewCloudRedemptionCode,
+  OwnSandboxProvider,
 } from "./cloud-schema";
 
 // Supporter tables reference `ideas` and `agentJobs`.

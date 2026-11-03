@@ -173,14 +173,14 @@ async function startCodeJob(
   }
   const { commitAuthor } = requireGithubAppConfig();
 
-  // The sandbox runs on the payer's Vercel account, or on WeStride Cloud against their balance.
+  // The sandbox runs on the payer's Vercel or Modal account, or on WeStride Cloud against their balance.
   const sandboxAccess = await resolveSandboxAccess(payerClerkUserId);
   if (!sandboxAccess.ok) {
     throw new AgentJobError(
       input.trigger === "MANUAL"
         ? sandboxAccess.message
-        : "The owner has no Vercel account connected and no WeStride Cloud balance, so the scheduled job could not run.",
-      "vercel",
+        : "The owner has no Vercel or Modal account connected and no WeStride Cloud balance, so the scheduled job could not run.",
+      "compute",
     );
   }
 
@@ -237,6 +237,7 @@ async function startCodeJob(
     paidByClerkUserId: payerClerkUserId,
     pledgeId: input.pledgeId,
     runnerKind: sandboxAccess.access.kind,
+    computeSource: sandboxAccess.access.source,
     museSource: muse.source,
     model: agent.model,
     maxSteps: agent.maxSteps,
@@ -249,7 +250,8 @@ async function startCodeJob(
   const key = agentTicketKey(agent.name, ticket.number);
   const prompt = buildCodeJobPrompt({ ...context, branch });
   const model = getMuseModel(agent.model);
-  const onCloud = sandboxAccess.access.kind === "MODAL_SANDBOX";
+  const onCloud = sandboxAccess.access.source === "WESTRIDE_CLOUD";
+  const hostName = sandboxAccess.access.kind === "MODAL_SANDBOX" ? "Modal" : "Vercel";
 
   try {
     await appendAgentJobEvents(job.id, [
@@ -322,9 +324,11 @@ async function startCodeJob(
     if (isSandboxCredentialError(error)) {
       throw new AgentJobError(
         input.trigger === "MANUAL"
-          ? "Vercel refused the sandbox on your account. Reconnect Vercel in Settings and check the team has Sandbox enabled."
-          : "Vercel refused the sandbox on the owner's account, so the scheduled job could not run.",
-        "vercel",
+          ? hostName === "Modal"
+            ? "Modal refused the sandbox on your account. Reconnect Modal in Settings with a token that is still active."
+            : "Vercel refused the sandbox on your account. Reconnect Vercel in Settings and check the team has Sandbox enabled."
+          : `${hostName} refused the sandbox on the owner's account, so the scheduled job could not run.`,
+        "compute",
       );
     }
     throw new AgentJobError("The sandbox could not be started. Try again in a moment.");

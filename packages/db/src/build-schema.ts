@@ -25,6 +25,7 @@ import {
 } from "drizzle-orm/pg-core";
 import {
   agentRunStatus,
+  computeSource,
   museSource,
   runnerKind,
   ticketPriority,
@@ -270,8 +271,10 @@ export const agentRuns = pgTable(
     /** Clerk user id of the member who started the run; their Meta key or WeStride Cloud balance pays for it. */
     startedByClerkUserId: text("started_by_clerk_user_id").notNull(),
     status: agentRunStatus("status").notNull().default("QUEUED"),
-    /** Where the sandbox ran. Rows from before WeStride Cloud read as Vercel. */
+    /** Which sandbox API ran it. Rows from before WeStride Cloud read as Vercel. */
     runnerKind: runnerKind("runner_kind").notNull().default("VERCEL_SANDBOX"),
+    /** Whose account the sandbox ran on. WESTRIDE_CLOUD bills the starter's balance for its time. */
+    computeSource: computeSource("compute_source").notNull().default("OWN"),
     /** Whose Meta key the model calls used. WESTRIDE_CLOUD bills the starter's balance. */
     museSource: museSource("muse_source").notNull().default("OWN"),
     /** The sandbox's name on Vercel, or its id on Modal, used to stop it. */

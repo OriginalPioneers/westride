@@ -23,8 +23,8 @@ export type AgentPageContext = {
   isOwner: boolean;
   /** Whether Muse can run for the viewer: a Meta account connected, or a funded WeStride Cloud balance. */
   hasMetaConnection: boolean;
-  /** Whether a sandbox can start for the viewer: their Vercel account, or WeStride Cloud. */
-  hasVercelConnection: boolean;
+  /** Whether a sandbox can start for the viewer: their Vercel or Modal account, or WeStride Cloud. */
+  hasComputeAccess: boolean;
   /** Whether jobs for this agent run as Muse Code in its repository. */
   runsCode: boolean;
   openTicketCount: number;
@@ -41,7 +41,7 @@ export async function loadAgentPage(id: string): Promise<AgentPageContext | null
     return null;
   }
   const role = await getAgentRole(agent, userId);
-  const [hasMetaConnection, hasVercelConnection] =
+  const [hasMetaConnection, hasComputeAccess] =
     role !== null && userId !== null
       ? await Promise.all([hasMuseAccess(userId), hasSandboxAccess(userId)])
       : [false, false];
@@ -53,7 +53,7 @@ export async function loadAgentPage(id: string): Promise<AgentPageContext | null
     canWork: role !== null,
     isOwner: role === "OWNER",
     hasMetaConnection,
-    hasVercelConnection,
+    hasComputeAccess,
     runsCode: canRunCode(agent),
     openTicketCount,
   };

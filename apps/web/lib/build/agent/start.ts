@@ -22,8 +22,8 @@ import { AGENT_EVENTS_PATH, getAgentRunnerConfig } from "./config";
 import { agentBranchName, buildAgentPrompt } from "./prompt";
 import { createRunToken } from "./token";
 
-/** A connection the member can fix in Settings. */
-export type AgentConnection = "meta" | "github" | "vercel";
+/** A connection the member can fix in Settings. `compute` is a Vercel or Modal account, or a balance. */
+export type AgentConnection = "meta" | "github" | "compute";
 
 export class AgentStartError extends Error {
   constructor(
@@ -68,8 +68,8 @@ export async function startAgentRun(input: {
   }
   const { commitAuthor } = requireGithubAppConfig();
 
-  // The member's own Meta key and Vercel account pay when they have them;
-  // otherwise WeStride Cloud does, against their balance.
+  // The member's own Meta key and Vercel or Modal account pay when they have
+  // them; otherwise WeStride Cloud does, against their balance.
   const muse = await resolveMuseAccess(userId);
   if (!muse.ok) {
     throw new AgentStartError(muse.message, muse.needs);
@@ -140,6 +140,7 @@ export async function startAgentRun(input: {
     maxSteps: input.maxSteps,
     callbackTokenHash: hash,
     runnerKind: sandboxAccess.access.kind,
+    computeSource: sandboxAccess.access.source,
     museSource: muse.access.source,
   });
 
@@ -152,7 +153,8 @@ export async function startAgentRun(input: {
     instructions: input.instructions,
   });
   const model = getMuseModel(input.model);
-  const onCloud = sandboxAccess.access.kind === "MODAL_SANDBOX";
+  const onCloud = sandboxAccess.access.source === "WESTRIDE_CLOUD";
+  const hostName = sandboxAccess.access.kind === "MODAL_SANDBOX" ? "Modal" : "Vercel";
 
   try {
     // Server-side events use negative sequences; the runner counts up from 0.
@@ -223,8 +225,10 @@ export async function startAgentRun(input: {
     }
     if (isSandboxCredentialError(error)) {
       throw new AgentStartError(
-        "Vercel refused the sandbox on your account. Reconnect Vercel in Settings and check the team has Sandbox enabled.",
-        "vercel",
+        hostName === "Modal"
+          ? "Modal refused the sandbox on your account. Reconnect Modal in Settings with a token that is still active."
+          : "Vercel refused the sandbox on your account. Reconnect Vercel in Settings and check the team has Sandbox enabled.",
+        "compute",
       );
     }
     throw new AgentStartError("The sandbox could not be started. Try again in a moment.");

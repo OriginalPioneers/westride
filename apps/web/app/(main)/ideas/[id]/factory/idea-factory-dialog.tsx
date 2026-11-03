@@ -5,6 +5,7 @@ import { Badge } from "@astryxdesign/core/Badge";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
+import { Divider } from "@astryxdesign/core/Divider";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Icon } from "@astryxdesign/core/Icon";
 import {
@@ -14,9 +15,16 @@ import {
 } from "@astryxdesign/core/Layout";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { Step, Stepper } from "@astryxdesign/core/Stepper";
 import { Text } from "@astryxdesign/core/Text";
-import { Cog6ToothIcon, LinkIcon } from "@heroicons/react/24/outline";
-import type { IdeaFactoryFinding, IdeaFactoryMessage, IdeaType } from "@westride/db";
+import { CheckIcon, Cog6ToothIcon, LinkIcon } from "@heroicons/react/24/outline";
+import type {
+  BuildSuggestion,
+  IdeaFactoryArtifact,
+  IdeaFactoryFinding,
+  IdeaFactoryMessage,
+  IdeaType,
+} from "@westride/db";
 import type {
   EvaluationWithFindings,
   MuseRequestSummary,
@@ -27,6 +35,7 @@ import {
   getAgent,
   IDEA_COACH_SLUG,
 } from "@/lib/idea-factory/agents";
+import { artifactPath } from "@/lib/idea-factory/artifacts";
 import {
   forgetBrowserMuseCredential,
   readFactoryPreferences,
@@ -35,20 +44,31 @@ import {
 } from "@/lib/idea-factory/credentials";
 import { DEFAULT_MUSE_MODEL, getMuseModel } from "@/lib/idea-factory/pricing";
 import type { MetaConnectionSummary } from "@/lib/meta/connection";
+import { CreateProjectDialog } from "../../../build/create-project-dialog";
+import type { ProjectPrefill } from "../../../build/actions";
 import { disconnectMeta } from "../../../meta-actions";
 import {
+  generateEvaluationReport,
+  linkSuggestedProject,
   loadFactory,
+  loadSuggestedProjectPrefill,
   runEvaluationAgent,
   sendAgentMessage,
+  setArtifactArchivedAction,
+  setArtifactChosenAction,
   startEvaluation,
+  suggestBuildProjects,
   synthesizeEvaluation,
   type FactoryData,
 } from "./actions";
 import { ActivityPanel } from "./activity-panel";
 import { AgentRail, viewKey, type FactoryView } from "./agent-rail";
 import { AgentThread } from "./agent-thread";
+import type { ArtifactActions } from "./artifact-card";
+import { BuildPanel } from "./build-panel";
 import { ConnectPanel } from "./connect-panel";
 import { EvaluationPanel } from "./evaluation-panel";
+import { FilesPanel } from "./files-panel";
 
 export type FactoryIdea = {
   id: string;
@@ -68,6 +88,39 @@ const DEFAULT_PREFERENCES: FactoryPreferences = {
 };
 
 type View = FactoryView;
+
+/** The workshop's four stages, in order; each maps to a view. */
+const STAGES: { label: string; description: string; view: View }[] = [
+  {
+    label: "Explore",
+    description: "Talk it through with the coach",
+    view: { kind: "agent", slug: IDEA_COACH_SLUG },
+  },
+  { label: "Analyze", description: "Run the advisory team", view: { kind: "evaluation" } },
+  { label: "Refine", description: "Logos, briefs, and files", view: { kind: "files" } },
+  { label: "Plan", description: "Build projects and repos", view: { kind: "build" } },
+];
+
+function stageIndexFor(view: View): number {
+  if (view.kind === "agent") {
+    return 0;
+  }
+  const index = STAGES.findIndex((stage) => stage.view.kind === view.kind);
+  return index === -1 ? 0 : index;
+}
+
+/** Which stages hold real work, so the stepper can mark them done out of order. */
+function stagesDone(data: FactoryData | null): boolean[] {
+  if (!data) {
+    return STAGES.map(() => false);
+  }
+  return [
+    data.threads.some((thread) => thread.messages.length > 0),
+    data.evaluations.some((evaluation) => evaluation.status === "COMPLETED"),
+    data.artifacts.some((artifact) => artifact.kind !== "REPORT" && !artifact.archivedAt),
+    data.projects.length > 0 || data.buildSuggestion !== null,
+  ];
+}
 
 function tempId(): string {
   return `temp-${Math.random().toString(36).slice(2)}`;
@@ -92,6 +145,17 @@ function addUsage(
   };
 }
 
+function mergeArtifacts(
+  current: IdeaFactoryArtifact[],
+  incoming: IdeaFactoryArtifact[],
+): IdeaFactoryArtifact[] {
+  const byId = new Map(current.map((artifact) => [artifact.id, artifact]));
+  for (const artifact of incoming) {
+    byId.set(artifact.id, artifact);
+  }
+  return [...byId.values()].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
 export function IdeaFactoryDialog({
   isOpen,
   onOpenChange,
@@ -113,6 +177,17 @@ export function IdeaFactoryDialog({
   const [threadErrors, setThreadErrors] = useState<Record<string, string>>({});
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluationError, setEvaluationError] = useState<string | null>(null);
+  const [busyArtifactIds, setBusyArtifactIds] = useState<ReadonlySet<string>>(new Set());
+  const [filesError, setFilesError] = useState<string | null>(null);
+  const [reportBusyId, setReportBusyId] = useState<string | null>(null);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [buildError, setBuildError] = useState<string | null>(null);
+  const [startingKey, setStartingKey] = useState<string | null>(null);
+  const [projectDraft, setProjectDraft] = useState<{
+    key: string;
+    suggestionId: string;
+    prefill: ProjectPrefill;
+  } | null>(null);
 
   useEffect(() => {
     setPreferences(readFactoryPreferences(viewerId, DEFAULT_PREFERENCES));
@@ -247,6 +322,16 @@ export function IdeaFactoryDialog({
     }));
   }
 
+  function addArtifacts(artifacts: IdeaFactoryArtifact[]) {
+    if (artifacts.length === 0) {
+      return;
+    }
+    patchData((current) => ({
+      ...current,
+      artifacts: mergeArtifacts(current.artifacts, artifacts),
+    }));
+  }
+
   function setThreadError(agentSlug: string, message: string | null) {
     setThreadErrors((current) => {
       const next = { ...current };
@@ -295,7 +380,18 @@ export function IdeaFactoryDialog({
       if (result.status === "ok") {
         replaceMessage(agentSlug, optimisticId, result.userMessage);
         appendMessage(agentSlug, result.agentMessage, result.threadId);
-        recordRequest(result.request);
+        addArtifacts(result.artifacts);
+        for (const request of result.requests) {
+          recordRequest(request);
+        }
+        if (result.artifactErrors.length > 0) {
+          setThreadError(
+            agentSlug,
+            result.artifactErrors.length === 1
+              ? result.artifactErrors[0]
+              : `${result.artifactErrors.length} files could not be created: ${result.artifactErrors.join(" ")}`,
+          );
+        }
       } else {
         if (result.userMessage) {
           replaceMessage(agentSlug, optimisticId, result.userMessage);
@@ -319,6 +415,167 @@ export function IdeaFactoryDialog({
       });
     }
   }
+
+  // --- Files & assets -----------------------------------------------------
+
+  function markArtifactBusy(artifactId: string, isBusy: boolean) {
+    setBusyArtifactIds((current) => {
+      const next = new Set(current);
+      if (isBusy) {
+        next.add(artifactId);
+      } else {
+        next.delete(artifactId);
+      }
+      return next;
+    });
+  }
+
+  async function runArtifactAction(
+    artifactId: string,
+    action: () => ReturnType<typeof setArtifactArchivedAction>,
+  ) {
+    if (busyArtifactIds.has(artifactId)) {
+      return;
+    }
+    setFilesError(null);
+    markArtifactBusy(artifactId, true);
+    try {
+      const result = await action();
+      if (result.status === "ok") {
+        addArtifacts(result.artifacts);
+      } else {
+        setFilesError(result.message);
+      }
+    } catch {
+      setFilesError("That file could not be updated. Try again.");
+    } finally {
+      markArtifactBusy(artifactId, false);
+    }
+  }
+
+  const artifactActions: ArtifactActions = {
+    onArchive: (artifactId, isArchived) =>
+      void runArtifactAction(artifactId, () =>
+        setArtifactArchivedAction({ ideaId: idea.id, artifactId }, isArchived),
+      ),
+    onChoose: (artifactId, isChosen) =>
+      void runArtifactAction(artifactId, () =>
+        setArtifactChosenAction({ ideaId: idea.id, artifactId }, isChosen),
+      ),
+  };
+
+  async function handleDownloadReport(evaluationId: string) {
+    if (reportBusyId) {
+      return;
+    }
+    setEvaluationError(null);
+    setReportBusyId(evaluationId);
+    // Open the tab synchronously so the browser treats it as user-initiated.
+    const tab = window.open("", "_blank");
+    try {
+      const result = await generateEvaluationReport({ evaluationId });
+      if (result.status === "ok") {
+        addArtifacts([result.artifact]);
+        // Inline, so the new tab shows the PDF; Files & assets offers the download.
+        const href = artifactPath(idea.id, result.artifact.id);
+        if (tab) {
+          tab.location.href = href;
+        } else {
+          window.location.assign(href);
+        }
+      } else {
+        tab?.close();
+        setEvaluationError(result.message);
+        if (result.needsConnection) {
+          handleNeedsConnection();
+        }
+      }
+    } catch {
+      tab?.close();
+      setEvaluationError("The report could not be generated. Try again.");
+    } finally {
+      setReportBusyId(null);
+    }
+  }
+
+  // --- Build projects -----------------------------------------------------
+
+  async function handleSuggest() {
+    if (isSuggesting) {
+      return;
+    }
+    setBuildError(null);
+    setIsSuggesting(true);
+    try {
+      const result = await suggestBuildProjects({ ideaId: idea.id, model: preferences.model });
+      recordRequest(result.request);
+      if (result.status === "ok") {
+        patchData((current) => ({ ...current, buildSuggestion: result.suggestion }));
+      } else {
+        setBuildError(result.message);
+        if (result.needsConnection) {
+          handleNeedsConnection();
+        }
+      }
+    } catch {
+      setBuildError("Muse could not draft build projects. Try again.");
+    } finally {
+      setIsSuggesting(false);
+    }
+  }
+
+  async function handleStartProject(project: BuildSuggestion) {
+    const suggestion = data?.buildSuggestion;
+    if (!suggestion || startingKey) {
+      return;
+    }
+    setBuildError(null);
+    setStartingKey(project.key);
+    try {
+      const result = await loadSuggestedProjectPrefill({
+        ideaId: idea.id,
+        suggestionId: suggestion.id,
+        key: project.key,
+      });
+      if (result.status === "ok") {
+        setProjectDraft({ key: project.key, suggestionId: suggestion.id, prefill: result.prefill });
+      } else {
+        setBuildError(result.message);
+      }
+    } catch {
+      setBuildError("The project brief could not be loaded. Try again.");
+    } finally {
+      setStartingKey(null);
+    }
+  }
+
+  async function handleProjectCreated(projectId: string) {
+    const draft = projectDraft;
+    if (!draft) {
+      return;
+    }
+    try {
+      const result = await linkSuggestedProject({
+        ideaId: idea.id,
+        suggestionId: draft.suggestionId,
+        key: draft.key,
+        projectId,
+      });
+      if (result.status === "ok") {
+        patchData((current) => ({
+          ...current,
+          buildSuggestion: result.suggestion,
+          projects: result.project
+            ? [result.project, ...current.projects.filter((item) => item.id !== projectId)]
+            : current.projects,
+        }));
+      }
+    } catch {
+      // The project exists either way; the link is a convenience.
+    }
+  }
+
+  // --- Evaluation ---------------------------------------------------------
 
   function upsertEvaluation(evaluation: EvaluationWithFindings) {
     patchData((current) => {
@@ -426,6 +683,16 @@ export function IdeaFactoryDialog({
     [idea.type],
   );
 
+  const activeFiles = useMemo(
+    () => (data?.artifacts ?? []).filter((artifact) => !artifact.archivedAt),
+    [data?.artifacts],
+  );
+  const hasCompletedEvaluation =
+    data?.evaluations.some((evaluation) => evaluation.status === "COMPLETED") ?? false;
+  const viewer = data?.members.find((member) => member.clerkUserId === viewerId);
+  const unlinkedSuggestions =
+    data?.buildSuggestion?.projects.filter((project) => !project.projectId).length ?? 0;
+
   function renderMain() {
     if (loadError) {
       return (
@@ -466,8 +733,52 @@ export function IdeaFactoryDialog({
               isRunning={isEvaluating}
               error={evaluationError}
               defaultAgentSlugs={defaultEvaluationSlugs}
+              canStoreFiles={data.canStoreFiles}
+              reportBusyId={reportBusyId}
               onStart={(slugs) => void handleEvaluate(slugs)}
-              onAskCoach={askCoach}
+              actions={{
+                onAskCoach: askCoach,
+                onDownloadReport: (evaluationId) => void handleDownloadReport(evaluationId),
+                onOpenBuild: () => chooseView({ kind: "build" }),
+              }}
+            />
+          </VStack>
+        </VStack>
+      );
+    }
+
+    if (view.kind === "files") {
+      return (
+        <VStack padding={6} hAlign="center">
+          <VStack maxWidth={PANEL_WIDTH} width="100%">
+            <FilesPanel
+              ideaType={idea.type}
+              artifacts={data.artifacts}
+              actions={artifactActions}
+              busyIds={busyArtifactIds}
+              error={filesError}
+              canStoreFiles={data.canStoreFiles}
+              onOpenAgent={(slug) => chooseView({ kind: "agent", slug })}
+            />
+          </VStack>
+        </VStack>
+      );
+    }
+
+    if (view.kind === "build") {
+      return (
+        <VStack padding={6} hAlign="center">
+          <VStack maxWidth={PANEL_WIDTH} width="100%">
+            <BuildPanel
+              projects={data.projects}
+              suggestion={data.buildSuggestion}
+              hasEvaluation={hasCompletedEvaluation}
+              isConnected={isConnected}
+              isSuggesting={isSuggesting}
+              startingKey={startingKey}
+              error={buildError}
+              onSuggest={() => void handleSuggest()}
+              onStartProject={(project) => void handleStartProject(project)}
             />
           </VStack>
         </VStack>
@@ -527,6 +838,9 @@ export function IdeaFactoryDialog({
         <AgentThread
           agent={agent}
           messages={thread?.messages ?? []}
+          artifacts={data.artifacts}
+          artifactActions={artifactActions}
+          busyArtifactIds={busyArtifactIds}
           members={data.members}
           isConnected={isConnected}
           isSending={sendingSlugs.has(agent.slug)}
@@ -538,74 +852,142 @@ export function IdeaFactoryDialog({
   }
 
   const isChat = view.kind === "agent";
+  const showStepper = Boolean(data) && view.kind !== "connect";
+  const done = stagesDone(data);
+  const current = stageIndexFor(view);
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onOpenChange={onOpenChange}
-      purpose="info"
-      width={DIALOG_WIDTH}
-      maxHeight={DIALOG_SIZE}
-      style={{ height: DIALOG_SIZE }}
-    >
-      <Layout
-        height="fill"
-        header={
-          <DialogHeader
-            title="Idea Factory"
-            subtitle={idea.name}
-            hasDivider
-            onOpenChange={onOpenChange}
-            endContent={
-              isConnected ? (
-                <HStack gap={2} vAlign="center" wrap="wrap">
-                  <Badge variant="success" label={meta ? "Connected" : "WeStride Cloud"} />
-                  <Text type="supporting">{modelLabel}</Text>
-                  <Button
-                    label="Settings"
-                    variant="ghost"
-                    size="sm"
-                    icon={<Icon icon={Cog6ToothIcon} />}
-                    onClick={() => chooseView({ kind: "activity" })}
-                  />
-                </HStack>
-              ) : (
-                <Button
-                  label="Connect Meta"
-                  variant="primary"
-                  size="sm"
-                  icon={<Icon icon={LinkIcon} />}
-                  onClick={() => chooseView({ kind: "connect" })}
-                />
-              )
+    <>
+      <Dialog
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        purpose="info"
+        width={DIALOG_WIDTH}
+        maxHeight={DIALOG_SIZE}
+        style={{ height: DIALOG_SIZE }}
+      >
+        <Layout
+          height="fill"
+          header={
+            <VStack>
+              <DialogHeader
+                title="Idea Factory"
+                subtitle={idea.name}
+                hasDivider={!showStepper}
+                onOpenChange={onOpenChange}
+                endContent={
+                  isConnected ? (
+                    <HStack gap={2} vAlign="center" wrap="wrap">
+                      <Badge variant="success" label={meta ? "Connected" : "WeStride Cloud"} />
+                      <Text type="supporting">{modelLabel}</Text>
+                      <Button
+                        label="Settings"
+                        variant="ghost"
+                        size="sm"
+                        icon={<Icon icon={Cog6ToothIcon} />}
+                        onClick={() => chooseView({ kind: "activity" })}
+                      />
+                    </HStack>
+                  ) : (
+                    <Button
+                      label="Connect Meta"
+                      variant="primary"
+                      size="sm"
+                      icon={<Icon icon={LinkIcon} />}
+                      onClick={() => chooseView({ kind: "connect" })}
+                    />
+                  )
+                }
+              />
+              {showStepper ? (
+                <VStack>
+                  <VStack paddingInline={6} paddingBlockEnd={3}>
+                    <Stepper
+                      label="Workshop stages"
+                      activeStep={current}
+                      density="compact"
+                      indicatorPosition="on-track"
+                      horizontalOptions={{ minimumStepWidth: 140, collapsedVariant: "withLabel" }}
+                      onStepClick={(index) => {
+                        const stage = STAGES[index];
+                        if (stage) {
+                          chooseView(stage.view);
+                        }
+                      }}
+                    >
+                      {STAGES.map((stage, index) => (
+                        <Step
+                          key={stage.label}
+                          step={index}
+                          label={stage.label}
+                          description={stage.description}
+                          /* Only stages that hold real work read as done, whatever the order. */
+                          status={index !== current && done[index] ? "success" : undefined}
+                          indicator={
+                            index === current
+                              ? "number"
+                              : done[index]
+                                ? <Icon icon={CheckIcon} size="sm" />
+                                : "number"
+                          }
+                        />
+                      ))}
+                    </Stepper>
+                  </VStack>
+                  <Divider />
+                </VStack>
+              ) : null}
+            </VStack>
+          }
+          start={
+            <LayoutPanel
+              width={RAIL_WIDTH}
+              hasDivider
+              padding={3}
+              label="Advisory team"
+              style={{ userSelect: "none", WebkitUserSelect: "none" }}
+            >
+              <AgentRail
+                ideaType={idea.type}
+                view={view}
+                onSelect={chooseView}
+                busyAgentSlugs={sendingSlugs}
+                isEvaluationRunning={isEvaluating}
+                isSuggesting={isSuggesting}
+                evaluationCount={data?.evaluations.length ?? 0}
+                fileCount={activeFiles.length}
+                projectCount={data?.projects.length ?? 0}
+                suggestionCount={unlinkedSuggestions}
+                requestCount={data?.requests.length ?? 0}
+              />
+            </LayoutPanel>
+          }
+          content={
+            /* Remount per view so one panel's scroll position does not carry over. */
+            <LayoutContent key={viewKey(view)} padding={0} isScrollable={!isChat}>
+              {renderMain()}
+            </LayoutContent>
+          }
+        />
+      </Dialog>
+
+      {projectDraft ? (
+        <CreateProjectDialog
+          key={`${projectDraft.suggestionId}-${projectDraft.key}`}
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) {
+              setProjectDraft(null);
             }
-          />
-        }
-        start={
-          <LayoutPanel
-            width={RAIL_WIDTH}
-            hasDivider
-            padding={3}
-            label="Advisory team"
-            style={{ userSelect: "none", WebkitUserSelect: "none" }}
-          >
-            <AgentRail
-              ideaType={idea.type}
-              view={view}
-              onSelect={chooseView}
-              busyAgentSlugs={sendingSlugs}
-              isEvaluationRunning={isEvaluating}
-              requestCount={data?.requests.length ?? 0}
-            />
-          </LayoutPanel>
-        }
-        content={
-          /* Remount per view so one panel's scroll position does not carry over. */
-          <LayoutContent key={viewKey(view)} padding={0} isScrollable={!isChat}>
-            {renderMain()}
-          </LayoutContent>
-        }
-      />
-    </Dialog>
+          }}
+          creator={{
+            name: viewer?.name ?? "You",
+            imageUrl: viewer?.imageUrl ?? null,
+          }}
+          prefill={projectDraft.prefill}
+          onCreated={handleProjectCreated}
+        />
+      ) : null}
+    </>
   );
 }

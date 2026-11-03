@@ -35,11 +35,12 @@ import {
   trackProgress,
 } from "./achievements/track-progress";
 import { mentorPath, skillFilterPath } from "../mentorship/mentors/mentor-card";
-import { ProfileTabs } from "../section-tabs";
+import { AccountTabs } from "../section-tabs";
 import {
   ChallengeProgress,
   EarnedAchievements,
   EditAccountButton,
+  SignOutButton,
 } from "./profile-widgets";
 
 export const metadata: Metadata = {
@@ -115,7 +116,7 @@ export default async function ProfilePage() {
       header={
         <LayoutHeader hasDivider>
           <VStack gap={4}>
-            <ProfileTabs />
+            <AccountTabs />
             <HStack gap={5} vAlign="center" wrap="wrap">
               <Avatar
                 src={account?.hasImage ? account.imageUrl : undefined}
@@ -133,7 +134,7 @@ export default async function ProfilePage() {
               </StackItem>
               <HStack gap={2} wrap="wrap">
                 <EditAccountButton />
-                <Button label="Settings" href="/settings" />
+                <SignOutButton />
               </HStack>
             </HStack>
           </VStack>

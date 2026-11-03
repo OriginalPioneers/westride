@@ -14,6 +14,7 @@
     "./github": "./src/github.ts",
     "./meta": "./src/meta.ts",
     "./vercel": "./src/vercel.ts",
+    "./modal": "./src/modal.ts",
     "./chat": "./src/chat.ts",
     "./countries": "./src/country-catalog.ts",
     "./categories": "./src/tag-catalog.ts",
@@ -53,6 +54,7 @@
     "drizzle-orm": "^0.45.4"
   },
   "devDependencies": {
+    "@vercel/blob": "^2.8.2",
     "dotenv": "^18.0.9",
     "drizzle-kit": "^0.31.11",
     "typescript": "^5"

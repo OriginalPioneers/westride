@@ -29,6 +29,8 @@ const ideaTypes = [
   "NON_PROFIT",
   "GAME",
   "OPEN_SOURCE",
+  "WEBSITE",
+  "MOBILE_APP",
 ] as const satisfies readonly IdeaType[];
 const ideaRoles = [
   "FOUNDER",

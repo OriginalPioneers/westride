@@ -1,0 +1,43 @@
+name: Testers
+
+on:
+  push:
+    branches: ["dev"]
+    paths:
+      - apps/mobile/**
+      - packages/api-client/**
+      - bun.lock
+      - package.json
+
+jobs:
+  build_android:
+    name: Build Android
+    type: build
+    params:
+      platform: android
+      profile: testers
+
+  build_ios:
+    name: Build iOS
+    type: build
+    params:
+      platform: ios
+      profile: testers
+
+  submit_android:
+    name: Submit to Play testing
+    needs: [build_android]
+    type: submit
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      profile: testers
+
+  testflight:
+    name: Submit to TestFlight
+    needs: [build_ios]
+    type: testflight
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: testers
+      external_groups: ["Testers"]
+      changelog: ${{ github.commit_message || "Latest build from the dev branch." }}

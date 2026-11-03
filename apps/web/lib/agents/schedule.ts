@@ -64,7 +64,7 @@ export async function runDueAgents(now = new Date()): Promise<ScheduleTickResult
         continue;
       }
       const payer = await resolveJobPayer(agent, agent.ownerClerkUserId, {
-        needsVercel: canRunCode(agent),
+        needsCompute: canRunCode(agent),
       });
       const started = await startAgentJob({
         agent,
