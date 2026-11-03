@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { currentUser } from "@clerk/nextjs/server";
+import { listCategoryOptions } from "@westride/db/ideas";
 import { brandTagline } from "@westride/theme";
 import { AGENTS } from "@/lib/idea-factory/agents";
 import type { ImportResume } from "./home/import-repo-form";
 import { Landing } from "./home/landing";
+import { CreateIdeaProvider } from "./ideas/create-idea-button";
+import { isCreateIdeaReturn } from "./ideas/create-idea-return";
 
 export const metadata: Metadata = {
   title: {
@@ -25,6 +28,7 @@ export default async function Home({
   searchParams: Promise<{
     import?: string | string[];
     github?: string | string[];
+    create?: string | string[];
   }>;
 }) {
   const [user, params] = await Promise.all([currentUser(), searchParams]);
@@ -32,12 +36,27 @@ export default async function Home({
   const importResume: ImportResume | null = importUrl
     ? { url: importUrl, githubOutcome: first(params.github) }
     : null;
+  const founder = user
+    ? {
+        name: user.fullName || user.username || "You",
+        imageUrl: user.hasImage ? user.imageUrl : null,
+      }
+    : null;
+  const startCreateIdea = founder !== null && isCreateIdeaReturn(params.create);
+  const categoryOptions = founder ? await listCategoryOptions() : [];
 
   return (
-    <Landing
-      firstName={user?.firstName ?? null}
-      importResume={importResume}
-      stats={{ advisors: AGENTS.length }}
-    />
+    <CreateIdeaProvider
+      founder={founder}
+      categoryOptions={categoryOptions}
+      startOpen={startCreateIdea}
+    >
+      <Landing
+        firstName={user?.firstName ?? null}
+        importResume={importResume}
+        startCreateIdea={startCreateIdea}
+        stats={{ advisors: AGENTS.length }}
+      />
+    </CreateIdeaProvider>
   );
 }

@@ -2,10 +2,12 @@
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { linkIdeaGithubRepo } from "@westride/db/github";
+import type { IdeaType } from "@westride/db";
 import {
   createIdea,
   followIdea,
   getIdea,
+  listCategoryOptions,
   unfollowIdea,
   updateIdeaDetails,
 } from "@westride/db/ideas";
@@ -25,9 +27,12 @@ import {
   readRepoReadme,
   type GithubRepo,
 } from "@/lib/github/repos";
+import { resolveMuseAccess } from "@/lib/cloud/provider";
+import { draftIdeaWithMuse, type IdeaDraftSuggestion } from "@/lib/ideas/draft";
 import {
   createIdeaSchema,
   fieldErrorsFrom,
+  MAX_IDEA_PROMPT,
   updateIdeaSchema,
   type CreateIdeaFailure,
   type CreateIdeaResult,
@@ -138,6 +143,9 @@ export type GithubImportResult =
       repo: GithubRepoPreview;
       name: string;
       description: string;
+      /** Muse's suggestions. Null and empty when Muse is not available. */
+      type: IdeaType | null;
+      categories: string[];
     }
   | {
       /** Not connected, and the repo is private or missing. */
@@ -158,13 +166,25 @@ function githubFailureMessage(error: unknown): string {
   return "GitHub could not be reached. Try again.";
 }
 
+const ideaTypeSchema = z
+  .enum(["BUSINESS", "NON_PROFIT", "GAME", "OPEN_SOURCE"])
+  .nullable()
+  .catch(null);
+
+async function knownCategoryNames(): Promise<string[]> {
+  const options = await listCategoryOptions().catch(() => []);
+  return options.map((option) => option.name);
+}
+
 /**
  * Reads a repository so the create dialog can fill in the name and the
- * description from its README. Private repositories need the member's own
- * GitHub connection and a grant for that repository.
+ * description from its README. When the member can run Muse, it also
+ * suggests a kind and categories. Private repositories need the member's
+ * own GitHub connection and a grant for that repository.
  */
 export async function importIdeaFromGithub(
   url: string,
+  preferredType: IdeaType | null = null,
 ): Promise<GithubImportResult> {
   const { userId } = await auth();
   if (!userId) {
@@ -200,6 +220,13 @@ export async function importIdeaFromGithub(
     }
 
     const readme = await readRepoReadme(ref, access.token);
+    const name = ideaNameFromRepo(access.repo.name);
+    const description = ideaDescriptionFromRepo(access.repo.description, readme);
+    const type = ideaTypeSchema.parse(preferredType);
+    const suggested = await suggestForRepo(userId, {
+      text: `Repository: ${access.repo.fullName}\nName: ${name}\n\n${description}`,
+      preferredType: type,
+    });
     return {
       status: "imported",
       repo: {
@@ -207,13 +234,88 @@ export async function importIdeaFromGithub(
         htmlUrl: access.repo.htmlUrl,
         isPrivate: access.repo.isPrivate,
       },
-      name: ideaNameFromRepo(access.repo.name),
-      description: ideaDescriptionFromRepo(access.repo.description, readme),
+      name,
+      description,
+      type: suggested?.type ?? type,
+      categories: suggested?.categories ?? [],
     };
   } catch (error) {
     console.error("GitHub import failed", error);
     return { status: "error", message: githubFailureMessage(error) };
   }
+}
+
+/** Muse's kind and categories for an imported repo, or null when Muse cannot run. */
+async function suggestForRepo(
+  userId: string,
+  input: { text: string; preferredType: IdeaType | null },
+): Promise<IdeaDraftSuggestion | null> {
+  const resolved = await resolveMuseAccess(userId).catch(() => null);
+  if (!resolved?.ok) {
+    return null;
+  }
+  const outcome = await draftIdeaWithMuse({
+    access: resolved.access,
+    text: input.text,
+    preferredType: input.preferredType,
+    knownCategories: await knownCategoryNames(),
+  });
+  return outcome.ok ? outcome.suggestion : null;
+}
+
+export type DraftIdeaResult =
+  | { status: "drafted"; suggestion: IdeaDraftSuggestion }
+  /** Muse is not connected; the member fills in the details themself. */
+  | { status: "needs-ai"; message: string }
+  | { status: "error"; message: string };
+
+const draftPromptSchema = z.object({
+  prompt: z.string().trim().min(1).max(MAX_IDEA_PROMPT),
+  type: ideaTypeSchema,
+});
+
+/**
+ * Drafts a name, description, kind, and categories from what the member
+ * typed in the create dialog. Nothing is saved; the dialog shows the draft
+ * for them to edit.
+ */
+export async function draftIdeaFromPrompt(
+  prompt: string,
+  type: IdeaType | null,
+): Promise<DraftIdeaResult> {
+  const { userId } = await auth();
+  if (!userId) {
+    return { status: "error", message: "Sign in to create an idea." };
+  }
+  const parsed = draftPromptSchema.safeParse({ prompt, type });
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: `Describe the idea in under ${MAX_IDEA_PROMPT} characters.`,
+    };
+  }
+
+  const resolved = await resolveMuseAccess(userId).catch(() => null);
+  if (!resolved?.ok) {
+    return {
+      status: "needs-ai",
+      message:
+        resolved?.message ??
+        "Connect your Meta account in Settings, or add funds to WeStride Cloud, to have Muse draft this.",
+    };
+  }
+
+  const outcome = await draftIdeaWithMuse({
+    access: resolved.access,
+    text: parsed.data.prompt,
+    preferredType: parsed.data.type,
+    knownCategories: await knownCategoryNames(),
+  });
+  if (!outcome.ok) {
+    console.error("Idea draft failed", { status: outcome.status, error: outcome.message });
+    return { status: "error", message: outcome.message };
+  }
+  return { status: "drafted", suggestion: outcome.suggestion };
 }
 
 export async function createIdeaFromStudio(

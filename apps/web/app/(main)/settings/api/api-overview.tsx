@@ -1,6 +1,6 @@
 "use client";
 
-import { APIKeys, SignedIn, SignedOut } from "@clerk/nextjs";
+import { APIKeys, Show } from "@clerk/nextjs";
 import { Button } from "@astryxdesign/core/Button";
 import { Code } from "@astryxdesign/core/Code";
 import { CodeBlock } from "@astryxdesign/core/CodeBlock";
@@ -274,15 +274,15 @@ for (const project of projects) {
           like a password: keep it out of browsers and repositories, and revoke
           it here if it leaks.
         </Text>
-        <SignedIn>
+        <Show when="signed-in">
           <APIKeys />
-        </SignedIn>
-        <SignedOut>
+        </Show>
+        <Show when="signed-out">
           <VStack gap={3}>
             <Text type="supporting">Sign in to create and manage API keys.</Text>
             <Button label="Sign in" href="/sign-in" variant="primary" />
           </VStack>
-        </SignedOut>
+        </Show>
         <Text type="supporting">
           Apps acting on your behalf, such as MCP clients, use OAuth instead:
           you sign in once and they receive a short-lived token the API accepts

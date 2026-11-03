@@ -19,16 +19,23 @@ export type { IdeaFounder };
 
 const CreateIdeaContext = createContext<(() => void) | null>(null);
 
+export function useCreateIdea(): (() => void) | null {
+  return useContext(CreateIdeaContext);
+}
+
 export function CreateIdeaProvider({
   founder,
   categoryOptions,
+  startOpen = false,
   children,
 }: {
   founder: IdeaFounder | null;
   categoryOptions: CategoryOption[];
+  /** Open the dialog on first render, such as after returning from sign-in. */
+  startOpen?: boolean;
   children: ReactNode;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(startOpen && founder !== null);
   const [session, setSession] = useState(0);
   const open = useCallback(() => {
     setSession((current) => current + 1);

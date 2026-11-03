@@ -60,6 +60,8 @@ import {
   type StackLogo,
   type Tint,
 } from "./landing-content";
+import { useCreateIdea } from "../ideas/create-idea-button";
+import { HERO_CREATE_IDEA_SIGN_IN_HREF } from "../ideas/create-idea-return";
 import { HeroGlobe } from "./hero-globe";
 import { ImportRepoForm, type ImportResume } from "./import-repo-form";
 import { LANDING_STYLES } from "./landing-styles";
@@ -72,6 +74,8 @@ type LandingProps = {
   firstName: string | null;
   /** Set when someone comes back from sign-in or GitHub mid-import. Opens the importer. */
   importResume: ImportResume | null;
+  /** Returning from sign-in to workshop an idea. The dialog is already open. */
+  startCreateIdea: boolean;
   stats: LandingStats;
 };
 
@@ -614,6 +618,8 @@ type HeroCta = {
   label: string;
   href: string;
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
+  /** Opens the new-idea dialog. Signed-out visitors sign in first, then return here. */
+  opensCreateIdea?: boolean;
 };
 
 type HeroSection = {
@@ -677,6 +683,7 @@ const HERO_SECTIONS: HeroSection[] = [
       label: IDEA_STUDIO.action,
       href: IDEA_STUDIO.href,
       icon: IDEA_STUDIO.icon,
+      opensCreateIdea: true,
     },
     link: { label: "Or learn the basics first", href: "/academy" },
     screenshot: {
@@ -815,9 +822,9 @@ function tintVars(tints: [Tint, Tint]): CSSProperties {
  * focusing the tabs pauses the rail (and so the rotation), picking a tab
  * stops it, and reduced motion never starts it.
  */
-function useHeroSections() {
+function useHeroSections(startsPaused = false) {
   const [activeId, setActiveId] = useState(HERO_SECTIONS[0].id);
-  const [isAutoplaying, setIsAutoplaying] = useState(true);
+  const [isAutoplaying, setIsAutoplaying] = useState(!startsPaused);
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -861,10 +868,46 @@ function useHeroSections() {
 function HeroPanel({
   section,
   isActive,
+  openCreateIdea,
+  onOpenCreateIdea,
 }: {
   section: HeroSection;
   isActive: boolean;
+  openCreateIdea: (() => void) | null;
+  onOpenCreateIdea: () => void;
 }) {
+  const ctaIcon =
+    section.cta.icon != null ? (
+      <Icon icon={section.cta.icon} color="inherit" />
+    ) : undefined;
+  const ctaButton =
+    section.cta.opensCreateIdea && openCreateIdea ? (
+      <Button
+        className="wl-hero-cta"
+        label={section.cta.label}
+        variant="primary"
+        size="lg"
+        icon={ctaIcon}
+        onClick={() => {
+          onOpenCreateIdea();
+          openCreateIdea();
+        }}
+      />
+    ) : (
+      <Button
+        className="wl-hero-cta"
+        label={section.cta.label}
+        variant="primary"
+        size="lg"
+        icon={ctaIcon}
+        href={
+          section.cta.opensCreateIdea
+            ? HERO_CREATE_IDEA_SIGN_IN_HREF
+            : section.cta.href
+        }
+      />
+    );
+
   return (
     <VStack
       className="wl-hero-panel"
@@ -889,18 +932,7 @@ function HeroPanel({
         {section.description}
       </Text>
       <VStack gap={3} hAlign="start">
-        <Button
-          className="wl-hero-cta"
-          label={section.cta.label}
-          variant="primary"
-          size="lg"
-          href={section.cta.href}
-          icon={
-            section.cta.icon != null ? (
-              <Icon icon={section.cta.icon} color="inherit" />
-            ) : undefined
-          }
-        />
+        {ctaButton}
         <Link
           className="wl-hero-link"
           href={section.link.href}
@@ -1245,9 +1277,10 @@ function CarryBar() {
   );
 }
 
-function Hero({ importResume }: LandingProps) {
+function Hero({ importResume, startCreateIdea }: LandingProps) {
+  const openCreateIdea = useCreateIdea();
   const { activeId, activeSection, isAutoplaying, pick, stop, onProgressEnd } =
-    useHeroSections();
+    useHeroSections(startCreateIdea);
   const [isImportOpen, setIsImportOpen] = useState(importResume !== null);
 
   function openImport() {
@@ -1310,6 +1343,8 @@ function Hero({ importResume }: LandingProps) {
                       key={section.id}
                       section={section}
                       isActive={section.id === activeId}
+                      openCreateIdea={openCreateIdea}
+                      onOpenCreateIdea={stop}
                     />
                   ))}
                 </Grid>
