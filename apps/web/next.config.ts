@@ -5,7 +5,8 @@ const ROBOTS_TAG =
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@westride/db", "@westride/runner-protocol"],
-  serverExternalPackages: ["@neondatabase/serverless"],
+  // react-pdf ships its own layout engine and fonts; bundling them breaks rendering.
+  serverExternalPackages: ["@neondatabase/serverless", "@react-pdf/renderer"],
   // The dev server allows localhost by default. 127.0.0.1 is a different
   // origin, and Next blocks its HMR socket, which prevents the page from hydrating.
   allowedDevOrigins: ["127.0.0.1"],

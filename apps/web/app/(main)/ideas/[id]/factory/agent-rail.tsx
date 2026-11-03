@@ -5,7 +5,11 @@ import { List, ListItem } from "@astryxdesign/core/List";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { ListBulletIcon } from "@heroicons/react/24/outline";
+import {
+  CubeTransparentIcon,
+  FolderOpenIcon,
+  ListBulletIcon,
+} from "@heroicons/react/24/outline";
 import type { IdeaType } from "@westride/db";
 import {
   AGENT_GROUP_LABELS,
@@ -17,6 +21,8 @@ import { AGENT_ICONS, EvaluateIcon } from "./agent-icons";
 export type FactoryView =
   | { kind: "connect" }
   | { kind: "evaluation" }
+  | { kind: "files" }
+  | { kind: "build" }
   | { kind: "activity" }
   | { kind: "agent"; slug: string };
 
@@ -34,12 +40,21 @@ const GROUP_ORDER: AgentGroup[] = [
   "mobile-app",
 ];
 
+function plural(count: number, noun: string): string {
+  return `${count} ${count === 1 ? noun : `${noun}s`}`;
+}
+
 export function AgentRail({
   ideaType,
   view,
   onSelect,
   busyAgentSlugs,
   isEvaluationRunning,
+  isSuggesting,
+  evaluationCount,
+  fileCount,
+  projectCount,
+  suggestionCount,
   requestCount,
 }: {
   ideaType: IdeaType;
@@ -48,18 +63,47 @@ export function AgentRail({
   /** Agents with a reply in flight. */
   busyAgentSlugs: ReadonlySet<string>;
   isEvaluationRunning: boolean;
+  isSuggesting: boolean;
+  evaluationCount: number;
+  /** Files that are not archived. */
+  fileCount: number;
+  projectCount: number;
+  suggestionCount: number;
   requestCount: number;
 }) {
   const agents = agentsForIdea(ideaType);
   const selected = viewKey(view);
 
+  const buildDescription = isSuggesting
+    ? "Muse is drafting…"
+    : projectCount === 0 && suggestionCount === 0
+      ? "Prep repos and hand off"
+      : [
+          projectCount > 0 ? `${plural(projectCount, "project")} linked` : null,
+          suggestionCount > 0 ? `${suggestionCount} suggested` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+
   return (
     <VStack gap={5}>
-      <List edge="outset" density="compact">
+      <List
+        edge="outset"
+        density="compact"
+        header={
+          <Text type="label" color="secondary" weight="semibold">
+            Your workshop
+          </Text>
+        }
+      >
         <ListItem
           label="Evaluate my idea"
           description={
-            isEvaluationRunning ? "Advisors are working…" : "Whole team, one report"
+            isEvaluationRunning
+              ? "Advisors are working…"
+              : evaluationCount === 0
+                ? "Whole team, one report"
+                : plural(evaluationCount, "evaluation")
           }
           startContent={
             isEvaluationRunning ? (
@@ -70,6 +114,26 @@ export function AgentRail({
           }
           isSelected={selected === "evaluation"}
           onClick={() => onSelect({ kind: "evaluation" })}
+        />
+        <ListItem
+          label="Files & assets"
+          description={fileCount === 0 ? "Logos, briefs, and reports" : plural(fileCount, "file")}
+          startContent={<Icon icon={FolderOpenIcon} color="secondary" />}
+          isSelected={selected === "files"}
+          onClick={() => onSelect({ kind: "files" })}
+        />
+        <ListItem
+          label="Build projects"
+          description={buildDescription}
+          startContent={
+            isSuggesting ? (
+              <Spinner size="sm" aria-label="Drafting build projects" />
+            ) : (
+              <Icon icon={CubeTransparentIcon} color="secondary" />
+            )
+          }
+          isSelected={selected === "build"}
+          onClick={() => onSelect({ kind: "build" })}
         />
         <ListItem
           label="Muse activity"

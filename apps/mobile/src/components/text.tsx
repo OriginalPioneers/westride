@@ -3,9 +3,15 @@ import {
   StyleSheet,
   type TextProps as NativeTextProps,
 } from "react-native";
-import { colors, fontSize } from "@/theme";
+import { colors, fontSize, fonts } from "@/theme";
 
-type TextVariant = "title" | "heading" | "body" | "supporting" | "label";
+type TextVariant =
+  | "display"
+  | "title"
+  | "heading"
+  | "body"
+  | "supporting"
+  | "label";
 
 export type TextProps = NativeTextProps & {
   variant?: TextVariant;
@@ -15,7 +21,9 @@ export function Text({ variant = "body", style, ...props }: TextProps) {
   return (
     <NativeText
       accessibilityRole={
-        variant === "title" || variant === "heading" ? "header" : undefined
+        variant === "display" || variant === "title" || variant === "heading"
+          ? "header"
+          : undefined
       }
       style={[styles[variant], style]}
       {...props}
@@ -24,32 +32,40 @@ export function Text({ variant = "body", style, ...props }: TextProps) {
 }
 
 const styles = StyleSheet.create({
+  display: {
+    color: colors.textPrimary,
+    fontFamily: fonts.bold,
+    fontSize: fontSize.display,
+    lineHeight: 38,
+  },
   title: {
     color: colors.textPrimary,
+    fontFamily: fonts.bold,
     fontSize: fontSize.xlarge,
-    fontWeight: "700",
     lineHeight: 30,
   },
   heading: {
     color: colors.textPrimary,
+    fontFamily: fonts.semibold,
     fontSize: fontSize.medium,
-    fontWeight: "600",
     lineHeight: 22,
   },
   body: {
     color: colors.textPrimary,
+    fontFamily: fonts.regular,
     fontSize: fontSize.base,
     lineHeight: 20,
   },
   supporting: {
     color: colors.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: fontSize.base,
     lineHeight: 20,
   },
   label: {
     color: colors.textSecondary,
+    fontFamily: fonts.medium,
     fontSize: fontSize.small,
-    fontWeight: "500",
     lineHeight: 16,
   },
 });

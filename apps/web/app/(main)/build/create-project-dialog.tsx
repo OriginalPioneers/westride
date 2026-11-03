@@ -94,6 +94,7 @@ export function CreateProjectDialog({
   creator,
   prefill,
   ideaOptions,
+  onCreated,
 }: {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -102,6 +103,8 @@ export function CreateProjectDialog({
   prefill?: ProjectPrefill | null;
   /** Ideas the member could start from. Empty hides the picker. */
   ideaOptions?: IdeaOption[];
+  /** Runs after the project is saved, before the browser moves to it. */
+  onCreated?: (projectId: string) => void | Promise<void>;
 }) {
   const router = useRouter();
   const [isSaving, startSaving] = useTransition();
@@ -293,6 +296,9 @@ export function CreateProjectDialog({
           return;
         }
         onOpenChange(false);
+        if (onCreated) {
+          await onCreated(result.id);
+        }
         router.push(projectPath(result.id));
       } catch (error) {
         console.error("Project create failed", error);

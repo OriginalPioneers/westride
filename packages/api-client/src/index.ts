@@ -54,7 +54,7 @@ export type Person = {
   imageUrl: string | null;
 };
 
-export type TokenType = "oauth_token" | "api_key";
+export type TokenType = "oauth_token" | "api_key" | "session_token";
 
 export type Me = Person & {
   /** How the request was authenticated. */
@@ -581,10 +581,16 @@ export class WestrideApiError extends Error {
 export type WestrideApiOptions = {
   baseUrl: string;
   /**
-   * Bearer token sent with every request: a WeStride API key or an OAuth
-   * access token. Omit it to call the public, read-only endpoints.
+   * Bearer token sent with every request: a WeStride API key, an OAuth
+   * access token, or a Clerk session token. Omit it to call the public,
+   * read-only endpoints.
    */
   token?: string;
+  /**
+   * Called on each request when `token` is not set. Use this from a mobile
+   * or web client that refreshes a Clerk session token.
+   */
+  getToken?: () => Promise<string | null | undefined>;
   fetch?: typeof fetch;
 };
 
@@ -613,6 +619,7 @@ function queryString(params: Record<string, QueryValue> | undefined): string {
 export function createWestrideApi({
   baseUrl,
   token: defaultToken,
+  getToken,
   fetch: fetchImpl = globalThis.fetch,
 }: WestrideApiOptions) {
   const root = baseUrl.replace(/\/+$/, "");
@@ -623,7 +630,7 @@ export function createWestrideApi({
     options?: RequestOptions & { body?: unknown; query?: Record<string, QueryValue> },
   ): Promise<T> {
     const headers: Record<string, string> = { accept: "application/json" };
-    const token = options?.token ?? defaultToken;
+    const token = options?.token ?? defaultToken ?? (await getToken?.()) ?? undefined;
     if (token) {
       headers.authorization = `Bearer ${token}`;
     }

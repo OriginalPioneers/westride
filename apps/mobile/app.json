@@ -7,6 +7,11 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D1A2D"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.westride.org",
@@ -34,7 +39,12 @@
     },
     "owner": "originalpioneers",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "@clerk/expo",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-font",
+      "expo-splash-screen"
     ],
     "experiments": {
       "typedRoutes": true

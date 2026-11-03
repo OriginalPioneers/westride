@@ -1,7 +1,10 @@
 // ---------------------------------------------------------------------------
-// Who is calling. The API accepts two kinds of bearer token, both issued by
-// Clerk, the same identity provider the website signs people in with:
+// Who is calling. The API accepts three kinds of bearer token, all issued by
+// Clerk, the same identity provider the website and mobile app sign people
+// in with:
 //
+//   - a session token, which the mobile app (and any first-party client)
+//     gets from Clerk after sign-in;
 //   - an OAuth access token, which an MCP client obtains by sending the
 //     member through Clerk's sign-in page (the MCP server forwards it here);
 //   - a WeStride API key, which a member creates on the website for scripts.
@@ -42,6 +45,23 @@ export function clerk(): ClerkClient {
   return client;
 }
 
+/**
+ * Origins allowed to mint Clerk session tokens. Set `CLERK_AUTHORIZED_PARTIES`
+ * to a comma-separated list (the website, Expo web, Clerk's Frontend API).
+ * Leave it unset so native session tokens without an `azp` claim still verify.
+ */
+function clerkAuthorizedParties(): string[] | undefined {
+  const raw = process.env.CLERK_AUTHORIZED_PARTIES?.trim();
+  if (!raw) {
+    return undefined;
+  }
+  const parties = raw
+    .split(",")
+    .map((party) => party.trim())
+    .filter(Boolean);
+  return parties.length > 0 ? parties : undefined;
+}
+
 function bearerToken(c: Context): string | null {
   const header = c.req.header("authorization");
   if (!header) {
@@ -73,17 +93,22 @@ export const withCaller: MiddlewareHandler = async (c, next) => {
 
   let caller: Caller | null = null;
   try {
+    const authorizedParties = clerkAuthorizedParties();
     const state = await clerk().authenticateRequest(c.req.raw, {
-      acceptsToken: ["oauth_token", "api_key"],
+      acceptsToken: ["session_token", "oauth_token", "api_key"],
+      ...(authorizedParties ? { authorizedParties } : {}),
     });
     if (state.isAuthenticated) {
       const auth = state.toAuth();
-      const userId =
-        auth.tokenType === "oauth_token" || auth.tokenType === "api_key"
-          ? auth.userId
-          : null;
-      if (userId) {
-        caller = { userId, tokenType: auth.tokenType };
+      const userId = "userId" in auth ? auth.userId : null;
+      const tokenType = auth.tokenType;
+      if (
+        userId &&
+        (tokenType === "session_token" ||
+          tokenType === "oauth_token" ||
+          tokenType === "api_key")
+      ) {
+        caller = { userId, tokenType };
       }
     }
   } catch (error) {
@@ -118,7 +143,7 @@ export function unauthorized(c: Context, message: string) {
 export function signInRequired(c: Context) {
   return unauthorized(
     c,
-    "Sign in to do this. Send a WeStride API key or OAuth access token as a bearer token.",
+    "Sign in to do this. Send a Clerk session token, WeStride API key, or OAuth access token as a bearer token.",
   );
 }
 

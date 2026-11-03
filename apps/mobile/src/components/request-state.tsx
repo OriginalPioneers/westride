@@ -1,5 +1,6 @@
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
-import { colors, radius, spacing } from "@/theme";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { colors, spacing } from "@/theme";
+import { Button } from "./button";
 import { Text } from "./text";
 
 export function LoadingState() {
@@ -10,32 +11,46 @@ export function LoadingState() {
   );
 }
 
-type ErrorStateProps = {
-  title: string;
-  message: string;
-  actionLabel: string;
-  onAction: () => void;
-};
-
 export function ErrorState({
   title,
   message,
   actionLabel,
   onAction,
-}: ErrorStateProps) {
+}: {
+  title: string;
+  message: string;
+  actionLabel: string;
+  onAction: () => void;
+}) {
   return (
     <View style={styles.container}>
       <Text variant="heading">{title}</Text>
       <Text variant="supporting" style={styles.message}>
         {message}
       </Text>
-      <Pressable
-        accessibilityRole="button"
-        onPress={onAction}
-        style={({ pressed }) => [styles.button, pressed && styles.pressed]}
-      >
-        <Text style={styles.buttonLabel}>{actionLabel}</Text>
-      </Pressable>
+      <Button label={actionLabel} onPress={onAction} />
+    </View>
+  );
+}
+
+export function EmptyState({
+  title,
+  message,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <View style={styles.empty}>
+      <Text variant="heading">{title}</Text>
+      <Text variant="supporting" style={styles.message}>
+        {message}
+      </Text>
+      {actionLabel && onAction ? <Button label={actionLabel} onPress={onAction} /> : null}
     </View>
   );
 }
@@ -48,21 +63,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: spacing(6),
   },
+  empty: {
+    alignItems: "center",
+    gap: spacing(2),
+    paddingVertical: spacing(10),
+  },
   message: {
     textAlign: "center",
-  },
-  button: {
-    backgroundColor: colors.backgroundInverted,
-    borderRadius: radius.element,
-    marginTop: spacing(2),
-    paddingHorizontal: spacing(4),
-    paddingVertical: spacing(2.5),
-  },
-  pressed: {
-    opacity: 0.8,
-  },
-  buttonLabel: {
-    color: colors.textOnInverted,
-    fontWeight: "600",
   },
 });

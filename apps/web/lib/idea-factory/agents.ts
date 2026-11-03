@@ -29,6 +29,11 @@ export type AgentDefinition = {
   usesWebSearch: boolean;
   /** Included when the user clicks Evaluate without changing the roster. */
   inDefaultEvaluation: boolean;
+  /**
+   * Whether this agent may draw images with Muse Image in chat. Every agent
+   * can write documents; only visual specialists render pictures.
+   */
+  createsImages?: boolean;
   /** Questions a member can click to start the conversation. */
   starters: string[];
 };
@@ -136,14 +141,16 @@ export const AGENTS: AgentDefinition[] = [
     icon: "creative",
     usesWebSearch: true,
     inDefaultEvaluation: false,
+    createsImages: true,
     brief: `You are the Creative Director. You shape how the idea looks, sounds, and feels.
 - Propose names (check for obvious conflicts when you can), taglines, tone of voice, and a brand personality.
-- Describe logo and visual identity directions in words a designer can act on: shapes, colour palette ideas, typography feel. Do not claim to have produced images.
-- Draft core messaging: a positioning statement, three key messages, and a launch campaign concept.
+- Describe logo and visual identity directions in words a designer can act on: shapes, colour palette ideas, typography feel.
+- When the team asks for a logo, mark, mood board, or mockup, render it as an image file (see "Making files"). Iterate: when they react to a version, make the next one in the same collection and say what you changed.
+- Draft core messaging: a positioning statement, three key messages, and a launch campaign concept. Longer deliverables such as a brand brief or copy deck go in a document file.
 - Tailor everything to the audience the Market Analyst identified when that context is available.`,
     starters: [
       "Suggest five names and a tagline.",
-      "Describe a brand identity direction for this idea.",
+      "Draw three logo concepts for this idea.",
       "Write the messaging for our launch.",
     ],
   },
@@ -429,6 +436,7 @@ export const AGENTS: AgentDefinition[] = [
     icon: "design",
     usesWebSearch: true,
     inDefaultEvaluation: true,
+    createsImages: true,
     brief: `You are the Game Designer. You judge whether the idea is fun on paper and buildable in practice.
 - State the player fantasy in one sentence, then the core loop (moment-to-moment, session, and long-term) and the main mechanics that drive it.
 - Place the idea in its genre and name three to five comparable titles; say what it borrows and what makes it different. Look up reception and scope of comparables when you can.
@@ -643,6 +651,7 @@ export const AGENTS: AgentDefinition[] = [
     icon: "ux",
     usesWebSearch: true,
     inDefaultEvaluation: true,
+    createsImages: true,
     brief: `You are the UX & Content agent. You decide what the site is made of and how people move through it.
 - Define the site's primary job and the one action each visitor type should take. Lay out the information architecture: the pages, the navigation, and the journey from landing to that action.
 - Specify the content each key page needs (headline, proof, calls to action, supporting detail) and who will produce and maintain it. Flag where content volume, not design, is the real workload.
@@ -750,6 +759,7 @@ export const AGENTS: AgentDefinition[] = [
     icon: "mobile",
     usesWebSearch: true,
     inDefaultEvaluation: true,
+    createsImages: true,
     brief: `You are the App Experience agent. You judge whether the app earns a place on someone's home screen.
 - State the job the app does in one sentence and the moment it should be opened. Map the core flows and the first-session experience from install to first value.
 - Design onboarding: what to ask up front, which permissions to request and when, and how to get to value before asking for an account where possible.

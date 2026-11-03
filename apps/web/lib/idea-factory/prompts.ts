@@ -1,12 +1,14 @@
 import type { IdeaWithDetails } from "@westride/db/ideas";
 import type { EvaluationWithFindings } from "@westride/db/idea-factory";
-import type { MuseFinding } from "@westride/db";
+import type { IdeaFactoryArtifact, MuseFinding } from "@westride/db";
 import { getAgent, type AgentDefinition } from "./agents";
+import { artifactInstructions } from "./artifacts";
 import { IDEA_TYPE_LABELS } from "@/lib/ideas/filters";
 
 /** Keeps the shared context from swallowing the whole prompt budget. */
 const MAX_FINDINGS_PER_AGENT = 6;
 const MAX_HISTORY_MESSAGES = 30;
+const MAX_ARTIFACTS_IN_CONTEXT = 40;
 
 export const EVIDENCE_RULES = `Evidence discipline (always):
 - Label every substantive claim with exactly one evidence class:
@@ -72,12 +74,39 @@ ${sections.join("\n\n")}
 ${synthesis}`.trim();
 }
 
+/**
+ * The files the team still has, so advisors build on the chosen logo rather
+ * than proposing a fresh one. Archived files are never passed in.
+ */
+function filesContext(artifacts: IdeaFactoryArtifact[]): string {
+  if (artifacts.length === 0) {
+    return `## Files the team has
+None yet.`;
+  }
+  const lines = artifacts.slice(0, MAX_ARTIFACTS_IN_CONTEXT).map((artifact) => {
+    const agent = artifact.agentSlug ? getAgent(artifact.agentSlug) : undefined;
+    const by = agent ? ` by ${agent.name}` : "";
+    const chosen = artifact.chosenAt ? " [CHOSEN by the team]" : "";
+    const note = artifact.description ? ` — ${artifact.description.slice(0, 200)}` : "";
+    return `- ${artifact.kind.toLowerCase()} "${artifact.title}" in collection "${artifact.collection || "misc"}"${by} (${artifact.createdAt.toISOString().slice(0, 10)})${chosen}${note}`;
+  });
+  return `## Files the team has
+Only files the team kept are listed. One marked CHOSEN is the version they want to move forward with.
+${lines.join("\n")}`;
+}
+
 export function buildAgentInstructions(input: {
   agent: AgentDefinition;
   idea: IdeaWithDetails;
   latestEvaluation: EvaluationWithFindings | null;
+  /** Active (not archived) files. Pass `null` when files are not available. */
+  artifacts: IdeaFactoryArtifact[] | null;
   today: string;
 }): string {
+  const files =
+    input.artifacts === null
+      ? ""
+      : `\n\n${artifactInstructions(Boolean(input.agent.createsImages))}\n\n${filesContext(input.artifacts)}`;
   return `You are one specialist on the AI Advisory Team inside WeStride's Idea Factory, helping a founding team develop an early-stage ${IDEA_TYPE_LABELS[input.idea.type].toLowerCase()} idea. Today is ${input.today}.
 
 ${input.agent.brief}
@@ -86,7 +115,7 @@ ${EVIDENCE_RULES}
 
 ${ideaBrief(input.idea)}
 
-${sharedContext(input.latestEvaluation)}`;
+${sharedContext(input.latestEvaluation)}${files}`;
 }
 
 export type HistoryMessage = {
@@ -204,6 +233,111 @@ export const SYNTHESIS_SCHEMA = {
   ],
   additionalProperties: false,
 } as const;
+
+// ---------------------------------------------------------------------------
+// Suggested Build Studio projects
+// ---------------------------------------------------------------------------
+
+export const BUILD_SUGGESTION_KINDS = [
+  "web",
+  "mobile",
+  "api",
+  "worker",
+  "library",
+  "infrastructure",
+  "docs",
+  "other",
+] as const;
+
+export const BUILD_SUGGESTIONS_INSTRUCTIONS = `You are Muse, lead of the AI Advisory Team in WeStride's Idea Factory, preparing the handoff to WeStride's Build Studio, where each software project gets its own board, tickets, and GitHub repository, and coding agents work from the tickets.
+
+Split what this idea needs built into separate Build Studio projects, one per repository.
+- Think in deployable units: a web app, a mobile app, an API or backend, background workers, a shared library or SDK, infrastructure, documentation or marketing site. Merge things that would sensibly live in one repository; split things with different release cadences, runtimes, or teams.
+- Prefer the smallest set that lets the team ship a first version. Two to five projects is typical; one is fine for a simple idea. Mark anything that can wait as a later project by putting it after the essentials and explaining in its description.
+- For each project, write a description a coding agent could start from: what it is, its core user flows or responsibilities, the data it owns, integrations, the stack you recommend and why, and what is out of scope for version one. Markdown, under 2,500 characters.
+- Suggest a repository name in lowercase-hyphenated form, and the first two to four milestones.
+- Where projects already exist for this idea (listed below), do not suggest duplicates: reference them in dependsOn by their key, and only propose what is missing.
+- Respect the advisors' findings: if the evaluation says to start with a landing page and waitlist, the first project is that, not the full platform.`;
+
+export const BUILD_SUGGESTIONS_SCHEMA = {
+  type: "object",
+  properties: {
+    summary: {
+      type: "string",
+      description: "Two or three sentences on how you split the work and what you left for later.",
+    },
+    projects: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          key: {
+            type: "string",
+            description: "Short stable key, lowercase-hyphenated, unique within this list.",
+          },
+          name: { type: "string", description: "Project name, under 60 characters." },
+          repoName: { type: "string", description: "Lowercase, hyphenated, under 60 characters." },
+          kind: { type: "string", enum: [...BUILD_SUGGESTION_KINDS] },
+          summary: { type: "string", description: "One sentence." },
+          description: { type: "string", description: "Markdown brief, under 2,500 characters." },
+          stack: { type: "array", items: { type: "string" } },
+          firstMilestones: { type: "array", items: { type: "string" } },
+          dependsOn: {
+            type: "array",
+            items: { type: "string" },
+            description: "Keys of projects in this list, or existing project keys, needed first.",
+          },
+        },
+        required: [
+          "key",
+          "name",
+          "repoName",
+          "kind",
+          "summary",
+          "description",
+          "stack",
+          "firstMilestones",
+          "dependsOn",
+        ],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["summary", "projects"],
+  additionalProperties: false,
+} as const;
+
+export type ExistingProjectSummary = {
+  key: string;
+  name: string;
+  description: string;
+  status: string;
+  repos: string[];
+};
+
+export function buildSuggestionsInput(input: {
+  idea: IdeaWithDetails;
+  latestEvaluation: EvaluationWithFindings | null;
+  existingProjects: ExistingProjectSummary[];
+}): string {
+  const existing =
+    input.existingProjects.length > 0
+      ? input.existingProjects
+          .map(
+            (project) =>
+              `- key "${project.key}": ${project.name} (${project.status.toLowerCase()})${project.repos.length > 0 ? ` — repos: ${project.repos.join(", ")}` : ""}\n  ${project.description.slice(0, 400).replace(/\s+/g, " ")}`,
+          )
+          .join("\n")
+      : "None yet.";
+  return `${ideaBrief(input.idea)}
+
+${sharedContext(input.latestEvaluation)}
+
+## Build Studio projects that already exist for this idea
+${existing}
+
+Propose the Build Studio projects this idea needs.`;
+}
 
 export function buildSynthesisInput(evaluation: EvaluationWithFindings): string {
   const sections = evaluation.findings.map((finding) => {

@@ -42,6 +42,7 @@ const PURPOSE_LABELS: Record<string, string> = {
   verify: "Key check",
   image: "Image",
   "image-prompt": "Image description",
+  "build-suggestions": "Build project suggestions",
 };
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {

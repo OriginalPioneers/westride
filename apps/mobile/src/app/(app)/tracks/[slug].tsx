@@ -6,7 +6,7 @@ import { ListRow, ListSection } from "@/components/list";
 import { ErrorState, LoadingState } from "@/components/request-state";
 import { Tag } from "@/components/tag";
 import { Text } from "@/components/text";
-import { api } from "@/lib/api";
+import { useApi } from "@/lib/api-context";
 import {
   DIFFICULTY_LABEL,
   DIFFICULTY_TONE,
@@ -19,37 +19,29 @@ import { colors, spacing } from "@/theme";
 export default function TrackDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
+  const api = useApi();
   const loadTrack = useCallback(
     (signal: AbortSignal) => api.getAcademyTrack(slug, { signal }),
-    [slug],
+    [api, slug],
   );
-  const {
-    data: track,
-    error,
-    isLoading,
-    isRefreshing,
-    refresh,
-  } = useRequest(loadTrack);
+  const { data: track, error, isLoading, isRefreshing, refresh } = useRequest(loadTrack);
 
-  if (isLoading) {
+  if (isLoading && !track) {
     return <LoadingState />;
   }
 
   if (!track) {
     const notFound = error instanceof WestrideApiError && error.status === 404;
-    return notFound ? (
+    return (
       <ErrorState
-        title="Track not found"
-        message="This track may have been renamed or removed."
-        actionLabel="Back to tracks"
-        onAction={() => router.dismissTo("/")}
-      />
-    ) : (
-      <ErrorState
-        title="Couldn't load this track"
-        message={error?.message ?? "Something went wrong."}
-        actionLabel="Try again"
-        onAction={refresh}
+        title={notFound ? "Track not found" : "Couldn't load this track"}
+        message={
+          notFound
+            ? "This track may have been renamed or removed."
+            : (error?.message ?? "Something went wrong.")
+        }
+        actionLabel={notFound ? "Back to Learn" : "Try again"}
+        onAction={notFound ? () => router.dismissTo("/learn") : refresh}
       />
     );
   }
@@ -59,11 +51,7 @@ export default function TrackDetailScreen() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={refresh}
-          tintColor={colors.accent}
-        />
+        <RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor={colors.accent} />
       }
     >
       <View style={styles.hero}>
@@ -112,19 +100,14 @@ export default function TrackDetailScreen() {
       {track.lessons.length > 0 ? (
         <ListSection title="Lessons">
           {track.lessons.map((lesson, index) => (
-            <ListRow
-              key={lesson.id}
-              leading={String(index + 1)}
-              label={lesson.name}
-            />
+            <ListRow key={lesson.id} leading={String(index + 1)} label={lesson.name} />
           ))}
         </ListSection>
       ) : (
         <View style={styles.section}>
           <Text variant="heading">Lessons</Text>
           <Text variant="supporting">
-            Lessons are on the way. This track will have{" "}
-            {formatLessonCount(track.lessonCount)}.
+            Lessons are on the way. This track will have {formatLessonCount(track.lessonCount)}.
           </Text>
         </View>
       )}

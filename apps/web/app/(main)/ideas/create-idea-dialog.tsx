@@ -408,7 +408,8 @@ export function CreateIdeaDialog({
         }
         return;
       }
-      router.push(ideaPath(result.id));
+      // Land on the idea with the Idea Factory already open so the work starts right away.
+      router.push(`${ideaPath(result.id)}?factory=open`);
     });
   }
 
