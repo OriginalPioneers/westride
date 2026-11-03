@@ -11,9 +11,11 @@ import { useApi } from "@/lib/api-context";
 import { formatCount, formatRelativeTime } from "@/lib/format";
 import { IDEA_TYPE_LABELS, IDEA_TYPE_TONE } from "@/lib/labels";
 import { useRequest } from "@/lib/use-request";
-import { colors, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { spacing } from "@/theme";
 
 export default function IdeaDetailScreen() {
+  const colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const api = useApi();

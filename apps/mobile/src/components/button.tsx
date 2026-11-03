@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
-import { colors, fonts, radius, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { fonts, radius, spacing } from "@/theme";
 import { Text } from "./text";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
@@ -17,7 +18,18 @@ export function Button({
   disabled?: boolean;
   loading?: boolean;
 }) {
+  const colors = useColors();
   const isDisabled = disabled || loading;
+  const onDark = variant === "primary" || variant === "danger";
+  const labelColor = onDark ? colors.textOnInverted : colors.textPrimary;
+  const variantStyle =
+    variant === "primary"
+      ? { backgroundColor: colors.backgroundInverted }
+      : variant === "secondary"
+        ? { backgroundColor: colors.backgroundCard, borderColor: colors.border }
+        : variant === "danger"
+          ? { backgroundColor: colors.danger }
+          : null;
 
   return (
     <Pressable
@@ -28,16 +40,15 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         styles[variant],
+        variantStyle,
         pressed && !isDisabled && styles.pressed,
         isDisabled && styles.disabled,
       ]}
     >
       {loading ? (
-        <ActivityIndicator
-          color={variant === "primary" || variant === "danger" ? colors.textOnInverted : colors.textPrimary}
-        />
+        <ActivityIndicator color={labelColor} />
       ) : (
-        <Text style={[styles.label, labelStyles[variant]]}>{label}</Text>
+        <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
       )}
     </Pressable>
   );
@@ -52,20 +63,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing(4),
     paddingVertical: spacing(2.5),
   },
-  primary: {
-    backgroundColor: colors.backgroundInverted,
-  },
+  primary: {},
   secondary: {
-    backgroundColor: colors.backgroundCard,
-    borderColor: colors.border,
     borderWidth: StyleSheet.hairlineWidth,
   },
   ghost: {
     backgroundColor: "transparent",
   },
-  danger: {
-    backgroundColor: colors.danger,
-  },
+  danger: {},
   pressed: {
     opacity: 0.8,
   },
@@ -75,11 +80,4 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fonts.semibold,
   },
-});
-
-const labelStyles = StyleSheet.create({
-  primary: { color: colors.textOnInverted },
-  secondary: { color: colors.textPrimary },
-  ghost: { color: colors.textPrimary },
-  danger: { color: colors.textOnInverted },
 });

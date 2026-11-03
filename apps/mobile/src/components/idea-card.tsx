@@ -3,11 +3,13 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { excerpt, formatCount, formatRelativeTime } from "@/lib/format";
 import { IDEA_TYPE_LABELS, IDEA_TYPE_TONE } from "@/lib/labels";
-import { colors, radius, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { radius, spacing } from "@/theme";
 import { Tag } from "./tag";
 import { Text } from "./text";
 
 export function IdeaCard({ idea }: { idea: Idea }) {
+  const colors = useColors();
   const router = useRouter();
   const categories = idea.categories.slice(0, 3);
 
@@ -21,7 +23,13 @@ export function IdeaCard({ idea }: { idea: Idea }) {
           params: { id: idea.id },
         })
       }
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.card,
+        {
+          backgroundColor: pressed ? colors.backgroundMuted : colors.backgroundCard,
+          borderColor: colors.border,
+        },
+      ]}
     >
       <View style={styles.tags}>
         <Tag tone={IDEA_TYPE_TONE[idea.type]} label={IDEA_TYPE_LABELS[idea.type]} />
@@ -48,15 +56,10 @@ export function IdeaCard({ idea }: { idea: Idea }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.backgroundCard,
-    borderColor: colors.border,
     borderRadius: radius.container,
     borderWidth: StyleSheet.hairlineWidth,
     gap: spacing(2),
     padding: spacing(4),
-  },
-  pressed: {
-    backgroundColor: colors.backgroundMuted,
   },
   tags: {
     flexDirection: "row",

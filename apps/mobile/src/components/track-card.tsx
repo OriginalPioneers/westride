@@ -7,11 +7,13 @@ import {
   formatDuration,
   formatLessonCount,
 } from "@/lib/format";
-import { colors, radius, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { radius, spacing } from "@/theme";
 import { Tag } from "./tag";
 import { Text } from "./text";
 
 export function TrackCard({ track }: { track: AcademyTrack }) {
+  const colors = useColors();
   const router = useRouter();
   const difficulty = DIFFICULTY_LABEL[track.difficulty];
   const meta = `${formatDuration(track.estimatedDurationMinutes)} · ${formatLessonCount(track.lessonCount)}`;
@@ -27,7 +29,13 @@ export function TrackCard({ track }: { track: AcademyTrack }) {
           params: { slug: track.slug },
         })
       }
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.card,
+        {
+          backgroundColor: pressed ? colors.backgroundMuted : colors.backgroundCard,
+          borderColor: colors.border,
+        },
+      ]}
     >
       <View style={styles.tags}>
         <Tag tone={DIFFICULTY_TONE[track.difficulty]} label={difficulty} />
@@ -47,15 +55,10 @@ export function TrackCard({ track }: { track: AcademyTrack }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.backgroundCard,
-    borderColor: colors.border,
     borderRadius: radius.container,
     borderWidth: StyleSheet.hairlineWidth,
     gap: spacing(2),
     padding: spacing(4),
-  },
-  pressed: {
-    backgroundColor: colors.backgroundMuted,
   },
   tags: {
     flexDirection: "row",

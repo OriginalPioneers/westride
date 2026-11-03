@@ -3,11 +3,13 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { excerpt, formatRelativeTime } from "@/lib/format";
 import { AGENT_STATUS_LABELS, AGENT_STATUS_TONE } from "@/lib/labels";
-import { colors, radius, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { radius, spacing } from "@/theme";
 import { Tag } from "./tag";
 import { Text } from "./text";
 
 export function AgentCard({ agent }: { agent: Agent }) {
+  const colors = useColors();
   const router = useRouter();
 
   return (
@@ -20,7 +22,13 @@ export function AgentCard({ agent }: { agent: Agent }) {
           params: { id: agent.id },
         })
       }
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.card,
+        {
+          backgroundColor: pressed ? colors.backgroundMuted : colors.backgroundCard,
+          borderColor: colors.border,
+        },
+      ]}
     >
       <View style={styles.tags}>
         <Tag tone={AGENT_STATUS_TONE[agent.status]} label={AGENT_STATUS_LABELS[agent.status]} />
@@ -39,15 +47,10 @@ export function AgentCard({ agent }: { agent: Agent }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.backgroundCard,
-    borderColor: colors.border,
     borderRadius: radius.container,
     borderWidth: StyleSheet.hairlineWidth,
     gap: spacing(2),
     padding: spacing(4),
-  },
-  pressed: {
-    backgroundColor: colors.backgroundMuted,
   },
   tags: {
     flexDirection: "row",

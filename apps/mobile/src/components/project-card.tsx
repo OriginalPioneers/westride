@@ -3,11 +3,13 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { excerpt, formatRelativeTime } from "@/lib/format";
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_TONE } from "@/lib/labels";
-import { colors, radius, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { radius, spacing } from "@/theme";
 import { Tag } from "./tag";
 import { Text } from "./text";
 
 export function ProjectCard({ project }: { project: Project }) {
+  const colors = useColors();
   const router = useRouter();
   const openTickets =
     project.ticketCounts.BACKLOG +
@@ -25,7 +27,13 @@ export function ProjectCard({ project }: { project: Project }) {
           params: { id: project.id },
         })
       }
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.card,
+        {
+          backgroundColor: pressed ? colors.backgroundMuted : colors.backgroundCard,
+          borderColor: colors.border,
+        },
+      ]}
     >
       <View style={styles.tags}>
         <Tag
@@ -48,15 +56,10 @@ export function ProjectCard({ project }: { project: Project }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.backgroundCard,
-    borderColor: colors.border,
     borderRadius: radius.container,
     borderWidth: StyleSheet.hairlineWidth,
     gap: spacing(2),
     padding: spacing(4),
-  },
-  pressed: {
-    backgroundColor: colors.backgroundMuted,
   },
   tags: {
     flexDirection: "row",

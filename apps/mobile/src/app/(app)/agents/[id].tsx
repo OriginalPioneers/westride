@@ -16,9 +16,11 @@ import {
   TICKET_STATUS_LABELS,
 } from "@/lib/labels";
 import { useRequest } from "@/lib/use-request";
-import { colors, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { spacing } from "@/theme";
 
 export default function AgentDetailScreen() {
+  const colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const api = useApi();

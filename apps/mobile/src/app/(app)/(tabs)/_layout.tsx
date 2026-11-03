@@ -1,22 +1,31 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
-import { brand, colors, fonts } from "@/theme";
+import { Wordmark } from "@/components/wordmark";
+import { useNavigationTheme } from "@/lib/chrome";
+import { brand, fonts, spacing } from "@/theme";
 
 function tabIconColor(color: string | number | { toString(): string } | null | undefined): string {
   return typeof color === "string" ? color : brand.navy;
 }
 
 export default function TabsLayout() {
+  const chrome = useNavigationTheme();
+
   return (
     <Tabs
       screenOptions={{
-        headerTintColor: colors.accent,
-        headerTitleStyle: { fontFamily: fonts.semibold },
-        sceneStyle: { backgroundColor: colors.backgroundBody },
-        tabBarActiveTintColor: brand.navy,
-        tabBarInactiveTintColor: colors.textSecondary,
+        headerLeft: () => <Wordmark />,
+        headerLeftContainerStyle: { paddingLeft: spacing(2) },
+        headerShadowVisible: chrome.headerShadowVisible,
+        headerStyle: chrome.headerStyle,
+        headerTintColor: chrome.headerTintColor,
+        headerTitleAlign: "center",
+        headerTitleStyle: chrome.headerTitleStyle,
+        sceneStyle: chrome.sceneStyle,
+        tabBarActiveTintColor: chrome.tabBarActiveTintColor,
+        tabBarInactiveTintColor: chrome.tabBarInactiveTintColor,
         tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
-        tabBarStyle: { backgroundColor: colors.backgroundCard },
+        tabBarStyle: chrome.tabBarStyle,
       }}
     >
       <Tabs.Screen

@@ -1,9 +1,10 @@
 import { StyleSheet, View } from "react-native";
-import { colors, fonts, fontSize, radius, spacing, type Tone } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { fonts, fontSize, radius, spacing, type Tone } from "@/theme";
 import { Text } from "./text";
 
 export function Tag({ tone = "gray", label }: { tone?: Tone; label: string }) {
-  const palette = colors[tone];
+  const palette = useColors()[tone];
 
   return (
     <View

@@ -52,7 +52,6 @@ import {
   STACK_ROWS,
   STUDIOS,
   SUPPORT,
-  SUPPORTER_WAYS,
   FOUNDER,
   type Integration,
   type MobileApp,
@@ -593,7 +592,6 @@ function PlatformTile({ surface }: { surface: PlatformSurface }) {
   );
 }
 
-const META_AI_URL = "https://meta.ai";
 const MUSE_CODE_URL = "https://dev.meta.ai/lp/muse-code";
 const MUSE_URL = "https://ai.meta.com/muse/";
 const META_MODELS_URL = "https://ai.meta.com/";
@@ -664,28 +662,21 @@ const HERO_SECTIONS: HeroSection[] = [
     where: IDEA_STUDIO.where,
     title: (
       <>
-        Start with an idea{" "}
+        Explore ideas. Build projects.{" "}
         <Text type="inherit" display="inline" className="wl-gradient-text">
-          worth building.
+          Create with Meta AI.
         </Text>
       </>
     ),
-    description: (
-      <>
-        Turn your business, nonprofit, game, open-source, website, or mobile
-        app idea into a plan worth building. Collaborate with{" "}
-        <MetaLink href={META_AI_URL}>Meta AI</MetaLink> advisors to brainstorm,
-        research, challenge assumptions, and refine your vision before writing a
-        single line of code.
-      </>
-    ),
+    description:
+      "Bring your ideas to life with WeStride. Collaborate with AI-powered advisors to brainstorm, research, and refine your vision. Build real projects in GitHub with AI coding agents, create your own AI agents, and connect with a community of learners, creators, and builders.",
     cta: {
-      label: IDEA_STUDIO.action,
+      label: "Workshop an Idea",
       href: IDEA_STUDIO.href,
       icon: IDEA_STUDIO.icon,
       opensCreateIdea: true,
     },
-    link: { label: "Or learn the basics first", href: "/academy" },
+    link: { label: "Explore WeStride", href: "/#wl-studios" },
     screenshot: {
       src: "/hero/idea.webp",
       alt: "Idea Workshop in WeStride: a grid of your ideas with their pictures, kinds, and a card to start a new one.",
@@ -700,7 +691,7 @@ const HERO_SECTIONS: HeroSection[] = [
     where: BUILD_STUDIO.where,
     title: (
       <>
-        Build it for real,{" "}
+        From idea to code,{" "}
         <Text type="inherit" display="inline" className="wl-gradient-text">
           in GitHub.
         </Text>
@@ -708,19 +699,19 @@ const HERO_SECTIONS: HeroSection[] = [
     ),
     description: (
       <>
-        {
-          "Projects, tickets, and a linked repository. Muse drafts the backlog and roadmap, then "
-        }
+        {"Turn your ideas into working projects with "}
         <MetaLink href={MUSE_CODE_URL}>Meta Muse Code</MetaLink>
-        {" agents work the tickets and open pull requests, directly in GitHub."}
+        {
+          ". WeStride creates your project roadmap and organizes development tickets, while AI coding agents write code, tackle tasks, and open pull requests directly in your GitHub repository."
+        }
       </>
     ),
     cta: {
-      label: BUILD_STUDIO.action,
+      label: "Build a Project",
       href: BUILD_STUDIO.href,
       icon: BUILD_STUDIO.icon,
     },
-    link: { label: "Or find a mentor first", href: "/mentorship" },
+    link: { label: "Find a Mentor", href: "/mentorship" },
     screenshot: {
       src: "/hero/build.webp",
       alt: "Build Studio in WeStride: a project board with backlog, in progress, in review, roadblocked, and done columns of tickets.",
@@ -743,19 +734,19 @@ const HERO_SECTIONS: HeroSection[] = [
     ),
     description: (
       <>
-        {"Design the "}
-        <MetaLink href={MUSE_URL}>Muse AI</MetaLink>
+        {"Create and manage a fleet of AI agents powered by "}
+        <MetaLink href={MUSE_URL}>Meta Muse</MetaLink>
         {
-          " agents a project needs, give each one a job, and run them as a fleet, so the product keeps working after you ship it."
+          ". Give each agent a role, define its responsibilities, and put it to work on your projects. From automating tasks to supporting ongoing development, your AI agents help keep things moving."
         }
       </>
     ),
     cta: {
-      label: AGENT_STUDIO.action,
+      label: "Create an AI Agent",
       href: AGENT_STUDIO.href,
       icon: AGENT_STUDIO.icon,
     },
-    link: { label: "Or connect your Meta account", href: "/settings" },
+    link: { label: "Connect Your Meta Account", href: "/settings" },
     screenshot: {
       src: "/hero/agent.webp",
       alt: "AI Agent Fleet in WeStride: the new agent form, with a name, what it does, standing instructions, and the project it works in.",
@@ -767,7 +758,7 @@ const HERO_SECTIONS: HeroSection[] = [
   {
     id: "support",
     tab: "Support a Project",
-    where: "Pledge tokens, compute or capital",
+    where: "Explore projects",
     title: (
       <>
         Back an idea{" "}
@@ -777,13 +768,13 @@ const HERO_SECTIONS: HeroSection[] = [
       </>
     ),
     description:
-      "Pledge tokens or compute to the ideas you choose, or contribute capital through a team's own links. WeStride never collects or holds money.",
+      "Discover ideas and projects worth supporting across the WeStride community. Help creators move their projects forward by contributing AI tokens, computing resources, or capital. Choose how you want to support, connect with the people building, and be part of what comes next.",
     cta: {
-      label: SUPPORTER_WAYS[0].action,
-      href: SUPPORTER_WAYS[0].href,
-      icon: SUPPORTER_WAYS[0].icon,
+      label: "Explore Projects",
+      href: "/supporting#looking-for-support",
+      icon: HeartIcon,
     },
-    link: { label: "Or pledge compute or capital", href: "/supporting" },
+    link: { label: "Pledge Tokens, Compute or Capital", href: "/supporting" },
     screenshot: {
       src: "/hero/support.webp",
       alt: "Supporting in WeStride: tokens, compute, and capital flowing into an idea, with counts of pledges and linked computers.",

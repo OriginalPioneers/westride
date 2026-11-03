@@ -1,11 +1,16 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { colors, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { spacing } from "@/theme";
+import { BrandMark } from "./brand-mark";
 import { Button } from "./button";
 import { Text } from "./text";
 
-export function LoadingState() {
+export function LoadingState({ compact = false }: { compact?: boolean }) {
+  const colors = useColors();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, compact && styles.compact]}>
+      {compact ? null : <BrandMark size={96} />}
       <ActivityIndicator color={colors.accent} />
     </View>
   );
@@ -59,9 +64,13 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     flex: 1,
-    gap: spacing(3),
+    gap: spacing(4),
     justifyContent: "center",
     padding: spacing(6),
+  },
+  compact: {
+    flex: 0,
+    padding: spacing(2),
   },
   empty: {
     alignItems: "center",

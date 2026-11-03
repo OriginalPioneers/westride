@@ -3,7 +3,6 @@ import { useHostedAuth } from "@clerk/expo/hosted-auth";
 import { Link } from "expo-router";
 import { useState } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,14 +11,16 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BrandMark, BrandStampRow } from "@/components/brand-mark";
 import { Button } from "@/components/button";
 import { Field } from "@/components/field";
 import { Text } from "@/components/text";
+import { Wordmark } from "@/components/wordmark";
 import { clerkMessage } from "@/lib/clerk-error";
-import { brand, colors, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { brand, spacing } from "@/theme";
 
 export default function SignUpScreen() {
+  const colors = useColors();
   const { signUp, errors, fetchStatus } = useSignUp();
   const { startHostedAuth } = useHostedAuth();
   const [emailAddress, setEmailAddress] = useState("");
@@ -90,17 +91,10 @@ export default function SignUpScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.brand}>
-            <BrandMark size={72} />
-            <Image
-              accessibilityLabel="WeStride"
-              resizeMode="contain"
-              source={require("../../../assets/wordmark-navy.png")}
-              style={styles.wordmark}
-            />
-            <BrandStampRow />
+            <Wordmark height={40} tone="white" />
           </View>
 
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.backgroundBody }]}>
             <Text variant="title">{verifying ? "Check your email" : "Create an account"}</Text>
             <Text variant="supporting">
               {verifying
@@ -136,7 +130,7 @@ export default function SignUpScreen() {
               </>
             )}
             {formError || fieldError ? (
-              <Text style={styles.error}>{formError ?? fieldError}</Text>
+              <Text style={[styles.error, { color: colors.danger }]}>{formError ?? fieldError}</Text>
             ) : null}
             <Button
               label={verifying ? "Verify and continue" : "Create account"}
@@ -182,20 +176,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing(3),
   },
-  wordmark: {
-    height: 32,
-    tintColor: brand.white,
-    width: 200,
-  },
   card: {
-    backgroundColor: colors.backgroundBody,
     borderRadius: 16,
     gap: spacing(3),
     padding: spacing(5),
   },
-  error: {
-    color: colors.danger,
-  },
+  error: {},
   link: {
     alignItems: "center",
     paddingVertical: spacing(1),

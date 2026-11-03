@@ -1,6 +1,7 @@
 import { Image, StyleSheet, View } from "react-native";
 import { initials } from "@/lib/format";
-import { brand, colors, fonts, fontSize } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { brand, fonts, fontSize } from "@/theme";
 import { Text } from "./text";
 
 export function Avatar({
@@ -12,12 +13,19 @@ export function Avatar({
   imageUrl?: string | null;
   size?: number;
 }) {
+  const colors = useColors();
+
   if (imageUrl) {
     return (
       <Image
         accessibilityIgnoresInvertColors
         source={{ uri: imageUrl }}
-        style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
+        style={{
+          backgroundColor: colors.backgroundMuted,
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+        }}
       />
     );
   }
@@ -41,16 +49,13 @@ export function Avatar({
 }
 
 const styles = StyleSheet.create({
-  image: {
-    backgroundColor: colors.backgroundMuted,
-  },
   fallback: {
     alignItems: "center",
     backgroundColor: brand.navy,
     justifyContent: "center",
   },
   initials: {
-    color: colors.textOnInverted,
+    color: brand.white,
     fontFamily: fonts.semibold,
   },
 });
