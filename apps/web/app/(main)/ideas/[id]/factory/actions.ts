@@ -19,6 +19,7 @@ import type { TicketCounts } from "@westride/db/build-rules";
 import {
   addAgentMessage,
   addUserMessage,
+  attachArtifactsToMessage,
   completeEvaluation,
   completeFinding,
   createArtifact,
@@ -26,6 +27,7 @@ import {
   createEvaluation,
   failEvaluation,
   failFinding,
+  getArtifactsByIds,
   getEvaluation,
   getLatestBuildSuggestion,
   getLatestCompletedEvaluation,
@@ -59,13 +61,35 @@ import {
   type AgentDefinition,
 } from "@/lib/idea-factory/agents";
 import { produceArtifacts } from "@/lib/idea-factory/artifact-producer";
-import { isArtifactStorageConfigured, storeArtifact } from "@/lib/idea-factory/artifact-storage";
+import {
+  isArtifactStorageConfigured,
+  openArtifact,
+  readArtifactBytes,
+  storeArtifact,
+} from "@/lib/idea-factory/artifact-storage";
 import { extractArtifactBlocks, slugifyCollection } from "@/lib/idea-factory/artifacts";
+import {
+  isImageUpload,
+  isPdfUpload,
+  isTextUpload,
+  isUploadPathname,
+  kindFromContentType,
+  MAX_ARTIFACT_BYTES,
+  MAX_MUSE_FILE_BYTES,
+  MAX_MUSE_FILES_BYTES,
+  MAX_UPLOADS_PER_MESSAGE,
+  primaryType,
+  titleFromFilename,
+  UPLOAD_COLLECTION,
+  UPLOAD_CONTENT_TYPES,
+} from "@/lib/idea-factory/uploads";
 import {
   callMuse,
   deviceClientId,
   parseJsonOutput,
+  withInlineFiles,
   type MuseAttempt,
+  type MuseInlineFile,
 } from "@/lib/idea-factory/muse";
 import { isMuseModelId, MUSE_IMAGE_MODEL } from "@/lib/idea-factory/pricing";
 import { renderEvaluationReport } from "@/lib/idea-factory/report-pdf";
@@ -336,13 +360,18 @@ export async function getMuseRequestDetail(
 // Conversations
 // ---------------------------------------------------------------------------
 
-const sendSchema = z.object({
-  ideaId: uuid,
-  agentSlug: z.string().min(1),
-  content: z.string().trim().min(1, "Write a message.").max(MAX_MESSAGE),
-  model: modelSchema,
-  webSearch: z.boolean(),
-});
+const sendSchema = z
+  .object({
+    ideaId: uuid,
+    agentSlug: z.string().min(1),
+    content: z.string().trim().max(MAX_MESSAGE),
+    artifactIds: z.array(uuid).max(MAX_UPLOADS_PER_MESSAGE).default([]),
+    model: modelSchema,
+    webSearch: z.boolean(),
+  })
+  .refine((value) => value.content.length > 0 || value.artifactIds.length > 0, {
+    message: "Write a message or attach a file.",
+  });
 
 export type SendResult =
   | {
@@ -350,7 +379,7 @@ export type SendResult =
       threadId: string;
       userMessage: IdeaFactoryMessage;
       agentMessage: IdeaFactoryMessage;
-      /** Files the advisor made with this reply. */
+      /** Files attached to this turn: uploads first, then files the advisor made. */
       artifacts: IdeaFactoryArtifact[];
       /** Files the advisor tried to make but could not. */
       artifactErrors: string[];
@@ -363,6 +392,7 @@ export type SendResult =
       needsConnection?: boolean;
       threadId?: string;
       userMessage?: IdeaFactoryMessage;
+      artifacts?: IdeaFactoryArtifact[];
       request?: MuseRequestSummary | null;
     };
 
@@ -382,7 +412,7 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
   if (!parsed.success) {
     return failure(parsed.error.issues[0]?.message ?? "Check the message and try again.");
   }
-  const { ideaId, agentSlug, content, model, webSearch } = parsed.data;
+  const { ideaId, agentSlug, content, artifactIds, model, webSearch } = parsed.data;
 
   const context = await requireMember(ideaId);
   if (isFailure(context)) {
@@ -399,12 +429,45 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
   }
 
   const canStoreFiles = isArtifactStorageConfigured();
-  const [thread, latestEvaluation, activeArtifacts] = await Promise.all([
+  const [thread, latestEvaluation, activeArtifacts, uploaded] = await Promise.all([
     getOrCreateThread(ideaId, agentSlug),
     getLatestCompletedEvaluation(ideaId),
     canStoreFiles ? listActiveArtifacts(ideaId) : Promise.resolve(null),
+    artifactIds.length > 0 ? getArtifactsByIds(ideaId, artifactIds) : Promise.resolve([]),
+  ]);
+  if (uploaded.length !== artifactIds.length) {
+    return failure("One of those files is not on this idea.");
+  }
+  const titlesByMessage = titlesByMessageId([
+    ...(activeArtifacts ?? []),
+    ...uploaded,
   ]);
   const userMessage = await addUserMessage(thread.id, userId, content);
+  const linkedUploads =
+    artifactIds.length > 0
+      ? await attachArtifactsToMessage(ideaId, userMessage.id, artifactIds)
+      : [];
+  const { files: museFiles, skipped } = await loadUploadsForMuse(linkedUploads);
+
+  const history = [...thread.messages, userMessage].map((message) => ({
+    role: message.role,
+    content: message.content,
+    attachmentTitles: titlesByMessage.get(message.id) ?? (message.id === userMessage.id
+      ? linkedUploads.map((artifact) => artifact.title)
+      : undefined),
+  }));
+  const skippedNote =
+    skipped.length > 0
+      ? `\n\nThese attached files could not be opened for you: ${skipped.join(", ")}.`
+      : "";
+  const museInput = withInlineFiles(
+    buildChatInput(history).map((item, index, items) =>
+      index === items.length - 1 && item.role === "user"
+        ? { ...item, content: `${item.content}${skippedNote}` }
+        : item,
+    ),
+    museFiles,
+  );
 
   const result = await callMuse({
     apiKey: access.apiKey,
@@ -416,7 +479,7 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
       artifacts: activeArtifacts,
       today: today(),
     }),
-    input: buildChatInput([...thread.messages, userMessage]),
+    input: museInput,
     webSearch: webSearch && agent.usesWebSearch,
     reasoningEffort: "medium",
     // Documents the advisor writes ride along in the reply, so leave room.
@@ -438,6 +501,7 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
       message: result.attempt.error ?? "Muse did not answer.",
       threadId: thread.id,
       userMessage,
+      artifacts: linkedUploads,
       request,
     };
   }
@@ -497,10 +561,69 @@ export async function sendAgentMessage(input: unknown): Promise<SendResult> {
     threadId: thread.id,
     userMessage,
     agentMessage,
-    artifacts: produced.produced.map((item) => item.artifact),
+    artifacts: [...linkedUploads, ...produced.produced.map((item) => item.artifact)],
     artifactErrors,
     requests,
   };
+}
+
+function titlesByMessageId(artifacts: IdeaFactoryArtifact[]): Map<string, string[]> {
+  const titles = new Map<string, string[]>();
+  for (const artifact of artifacts) {
+    if (!artifact.messageId) {
+      continue;
+    }
+    const list = titles.get(artifact.messageId) ?? [];
+    list.push(artifact.title);
+    titles.set(artifact.messageId, list);
+  }
+  return titles;
+}
+
+async function loadUploadsForMuse(
+  artifacts: IdeaFactoryArtifact[],
+): Promise<{ files: MuseInlineFile[]; skipped: string[] }> {
+  const files: MuseInlineFile[] = [];
+  const skipped: string[] = [];
+  let total = 0;
+  for (const artifact of artifacts) {
+    if (artifact.archivedAt) {
+      continue;
+    }
+    const as = isImageUpload(artifact.contentType)
+      ? "image"
+      : isPdfUpload(artifact.contentType)
+        ? "pdf"
+        : isTextUpload(artifact.contentType)
+          ? "text"
+          : null;
+    if (!as) {
+      skipped.push(artifact.title);
+      continue;
+    }
+    if (artifact.sizeBytes > MAX_MUSE_FILE_BYTES || total + artifact.sizeBytes > MAX_MUSE_FILES_BYTES) {
+      skipped.push(`${artifact.title} (too large to attach)`);
+      continue;
+    }
+    try {
+      const bytes = await readArtifactBytes(artifact.pathname);
+      if (!bytes) {
+        skipped.push(artifact.title);
+        continue;
+      }
+      files.push({
+        title: artifact.title,
+        contentType: primaryType(artifact.contentType),
+        bytes,
+        as,
+      });
+      total += artifact.sizeBytes;
+    } catch (error) {
+      console.error("Could not read upload for Muse", error);
+      skipped.push(artifact.title);
+    }
+  }
+  return { files, skipped };
 }
 
 // ---------------------------------------------------------------------------
@@ -513,6 +636,67 @@ const artifactSchema = z.object({
 });
 
 export type ArtifactResult = { status: "ok"; artifacts: IdeaFactoryArtifact[] } | Failure;
+
+const registerUploadsSchema = z.object({
+  ideaId: uuid,
+  files: z
+    .array(
+      z.object({
+        pathname: z.string().min(1).max(400),
+        title: z.string().trim().min(1).max(180),
+        contentType: z.string().min(1).max(120),
+        sizeBytes: z.number().int().positive().max(MAX_ARTIFACT_BYTES),
+      }),
+    )
+    .min(1)
+    .max(MAX_UPLOADS_PER_MESSAGE),
+});
+
+/**
+ * Records files the browser already wrote to the private store. The pathname
+ * must be one this idea was allowed to mint a token for.
+ */
+export async function registerUploadedArtifacts(input: unknown): Promise<ArtifactResult> {
+  const parsed = registerUploadsSchema.safeParse(input);
+  if (!parsed.success) {
+    return failure(parsed.error.issues[0]?.message ?? "Those files could not be recorded.");
+  }
+  const context = await requireMember(parsed.data.ideaId);
+  if (isFailure(context)) {
+    return context;
+  }
+  if (!isArtifactStorageConfigured()) {
+    return failure("File storage is not set up on this server, so files cannot be kept.");
+  }
+
+  const artifacts: IdeaFactoryArtifact[] = [];
+  for (const file of parsed.data.files) {
+    const contentType = primaryType(file.contentType);
+    if (!UPLOAD_CONTENT_TYPES.has(contentType) || !isUploadPathname(parsed.data.ideaId, file.pathname)) {
+      return failure(`"${file.title}" is not a file this idea can keep.`);
+    }
+    const stored = await openArtifact(file.pathname);
+    if (!stored) {
+      return failure(`"${file.title}" did not finish uploading. Try again.`);
+    }
+    artifacts.push(
+      await createArtifact({
+        ideaId: parsed.data.ideaId,
+        clerkUserId: context.userId,
+        agentSlug: null,
+        messageId: null,
+        kind: kindFromContentType(contentType),
+        collection: UPLOAD_COLLECTION,
+        title: titleFromFilename(file.title),
+        description: "Uploaded by the team.",
+        pathname: file.pathname,
+        contentType,
+        sizeBytes: stored.size,
+      }),
+    );
+  }
+  return { status: "ok", artifacts };
+}
 
 /** Archives a file so advisors stop considering it, or brings it back. */
 export async function setArtifactArchivedAction(

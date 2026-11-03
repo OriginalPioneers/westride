@@ -39,17 +39,21 @@ Describe something you learned by trial and error. What was your "data", what wa
         "Large language models learn with self-supervision: predicting hidden parts of raw text.",
       ],
       artifacts: [
-        lessonVideo(
-          "Learning from Data",
-          "Explainer, 4 minutes. A hand-drawn weather forecaster improves day by day; a loop diagram (guess, compare, adjust) animates alongside. Gentle pace, no equations.",
-          240,
-        ),
+        lessonVideo({
+          title: "AI Doesn't Know Anything. It Just Passes Tests.",
+          channel: "CGP Grey",
+          url: "https://www.youtube.com/watch?v=R9OHn5ZF4Uo",
+          durationSeconds: 534,
+          brief:
+            "CGP Grey's classic 'How Machines Learn' (since retitled) shows, with no equations, how a 'teacher bot' tests a student bot and keeps and tweaks whichever guesses score best, which is the guess-compare-adjust loop the lesson builds on, including the honest point that the resulting model is hard to inspect.",
+        }),
         {
           key: "learning-loop",
           kind: "DIAGRAM",
           title: "The learning loop",
           brief:
             "Circular diagram with three arrows: Guess (model makes a prediction) → Compare (loss measures the error) → Adjust (knobs turn slightly) → back to Guess. Small weather icons for flavour.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/how-ai-models-learn/learning-from-data/learning-loop.webp",
         },
       ],
     },
@@ -88,17 +92,21 @@ List one thing you would want an assistant to remember across conversations. Whe
         "Open releases like Llama share the expensive training step with everyone.",
       ],
       artifacts: [
-        lessonVideo(
-          "Training versus Inference",
-          "Explainer, 3 minutes. Left half: a vast data centre humming for weeks (training). Right half: a single phone answering in a blink (inference). Narration ties cost and time to each side.",
-          180,
-        ),
+        lessonVideo({
+          title: "AI Inference: The Secret to AI's Superpowers",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=XtT5i0ZeHHE",
+          durationSeconds: 641,
+          brief:
+            "Martin Keen contrasts the one-off, expensive training phase (data in, weights learned) with inference, where the frozen model answers new inputs, and ties cost, speed and hardware to each side exactly as the lesson does.",
+        }),
         {
           key: "training-inference",
           kind: "DIAGRAM",
           title: "Training once, inference many times",
           brief:
             "Two-stage diagram. Stage 1 'Training': many documents → large compute cluster → frozen model (padlock icon). Stage 2 'Inference': user question → frozen model → answer, repeated with small arrows showing many users.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/how-ai-models-learn/training-vs-inference/training-inference.webp",
         },
       ],
     },
@@ -137,17 +145,21 @@ Think of a skill you have that you cannot fully explain, such as recognizing a f
         "Depth enables abstraction, but it also makes the network hard to interpret.",
       ],
       artifacts: [
-        lessonVideo(
-          "Inside a Neural Network",
-          "Visual explainer, 4 minutes. Camera flies into a stylized network; each layer lights up with what it responds to (edges, textures, objects) as a photo of a bicycle passes through. Slow, cinematic.",
-          240,
-        ),
+        lessonVideo({
+          title: "But what is a neural network? | Deep learning chapter 1",
+          channel: "3Blue1Brown",
+          url: "https://www.youtube.com/watch?v=aircAruvnKk",
+          durationSeconds: 1120,
+          brief:
+            "The definitive visual introduction to neurons, layers, weights and why stacking layers lets a network build edges into shapes into whole digits, assuming no background; it is the natural companion to a lesson about layers and emergent hierarchy.",
+        }),
         {
           key: "layers",
           kind: "DIAGRAM",
           title: "What each layer responds to",
           brief:
             "Left-to-right diagram: input photo of a bicycle → Layer group 1 (edge patterns) → Layer group 2 (textures and curves) → Layer group 3 (wheel, frame, saddle) → output label 'bicycle'. Small thumbnail examples under each group.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/how-ai-models-learn/inside-a-neural-network/layers.webp",
         },
       ],
     },
@@ -190,17 +202,21 @@ For each of these, pick small or large: a spelling helper on your phone; a legal
         "Small models are often enough and can run privately on modest hardware.",
       ],
       artifacts: [
-        lessonVideo(
-          "Parameters and Weights",
-          "Explainer, 3 minutes. A mixing desk with billions of tiny sliders zooms out to become a model. Three model sizes compared on a balance scale: capability versus cost and speed.",
-          180,
-        ),
+        lessonVideo({
+          title: "Understanding Model Parameters: 8B vs 70B Explained",
+          channel: "bonsaiilabs",
+          url: "https://www.youtube.com/watch?v=ecX3To06aA0",
+          durationSeconds: 235,
+          brief:
+            "Four-minute explainer of what the parameter count on a model's name means, how parameters are learned, and why a bigger model is not always the better choice.",
+        }),
         {
           key: "size-tradeoffs",
           kind: "DIAGRAM",
           title: "Model size trade-offs",
           brief:
             "Three columns for 8B, 70B, 405B. Rows: capability, speed, cost per request, hardware needed. Filled dots (1–5) per cell. Caption: choose the smallest model that does the job well.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/how-ai-models-learn/parameters-and-weights/size-tradeoffs.webp",
         },
       ],
     },
@@ -238,17 +254,21 @@ Write a sentence with a long made-up word in it. Guess how many tokens it is, th
         "Models write one token at a time; temperature controls how adventurous each pick is.",
       ],
       artifacts: [
-        lessonVideo(
-          "Tokens: How Models Read",
-          "Explainer, 4 minutes. A sentence on screen breaks into coloured token tiles, each tile gets a number, then the model generates a reply tile by tile with a probability bar for each pick.",
-          240,
-        ),
+        lessonVideo({
+          title: "What is a Context Window? Unlocking LLM Secrets",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=-QVoIxEpFkM",
+          durationSeconds: 690,
+          brief:
+            "Explains what a token is (character, sub-word, word), how a tokenizer splits text with worked examples, the roughly 1.5-tokens-per-word rule of thumb, and why tokens set the context window, which covers the lesson's tokenization and context-limit points for a general audience.",
+        }),
         {
           key: "tokenization",
           kind: "IMAGE",
           title: "A sentence as tokens",
           brief:
             "The sentence 'WeStride helps people build with Llama.' shown twice: as plain text, then split into coloured token blocks with 'WeStride' broken into two or three pieces. Monospace labels, brand palette.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/how-ai-models-learn/tokens-how-models-read/tokenization.webp",
         },
       ],
     },
@@ -287,17 +307,21 @@ Write a sentence where a pronoun is ambiguous. Then rewrite it so the reference 
         "Transformers now power text, image, audio, and video models alike.",
       ],
       artifacts: [
-        lessonVideo(
-          "The Transformer Breakthrough",
-          "Explainer, 4 minutes. Dinner-party metaphor: guests (tokens) around a table with glowing lines showing who is listening to whom; the lines brighten for 'it' and 'trophy'. Then zoom out to show the same idea at massive scale.",
-          240,
-        ),
+        lessonVideo({
+          title: "Transformers, explained: Understand the model behind GPT, BERT, and T5",
+          channel: "Google Cloud Tech",
+          url: "https://www.youtube.com/watch?v=SZorAJ4I-sA",
+          durationSeconds: 551,
+          brief:
+            "Dale Markowitz explains the pre-2017 problem (RNNs forget and are slow to train), then attention and self-attention with an ambiguous-word example, and why parallel processing let transformers scale to GPT-3, the same arc as the lesson.",
+        }),
         {
           key: "attention",
           kind: "DIAGRAM",
           title: "Attention links 'it' to 'trophy'",
           brief:
             "The sentence 'The trophy did not fit in the suitcase because it was too big' with arcs above the words from 'it' to every other word; the arc to 'trophy' is thick and bright, others faint. Minimal, elegant.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/how-ai-models-learn/the-transformer-breakthrough/attention.webp",
         },
       ],
     },
@@ -336,17 +360,21 @@ Write three prompts: one the model should handle well from training alone, one t
         "An LLM is not a search engine, database, or calculator; products add those around it.",
       ],
       artifacts: [
-        lessonVideo(
-          "What Is a Large Language Model?",
-          "Explainer, 3 minutes. The three earlier ideas (transformer, parameters, tokens) click together like puzzle pieces into 'LLM'. Then quick demos of writing, translating, and summarizing from the same model.",
-          180,
-        ),
+        lessonVideo({
+          title: "How Large Language Models Work",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=5sLYAQS9sWQ",
+          durationSeconds: 333,
+          brief:
+            "Defines a large language model as a foundation model for text, then walks through data, transformer architecture, and next-word training, with everyday business uses.",
+        }),
         {
           key: "llm-recipe",
           kind: "DIAGRAM",
           title: "The LLM recipe",
           brief:
             "Recipe-card layout. Ingredients: transformer architecture, billions of parameters, a huge text corpus, next-token prediction. Method: pretrain, then align. Result: an assistant that writes, summarizes, translates, codes.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/how-ai-models-learn/what-is-a-large-language-model/llm-recipe.webp",
         },
       ],
     },
@@ -387,17 +415,21 @@ Think of a job where you were trained in general skills first, then in company s
         "Fine-tuning is cheap enough that open models get adapted for countless uses.",
       ],
       artifacts: [
-        lessonVideo(
-          "Pretraining, Fine-Tuning, and Alignment",
-          "Explainer, 4 minutes. A character goes through school (pretraining), job training (fine-tuning), and mentoring (alignment). Side panel shows the model's answers improving at each stage.",
-          240,
-        ),
+        lessonVideo({
+          title: "Reinforcement Learning from Human Feedback (RLHF) Explained",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=T_X4XFwKX8k",
+          durationSeconds: 688,
+          brief:
+            "Walks through the stages from a pretrained base model, to supervised fine-tuning on example prompts and answers, to a reward model trained on human preference comparisons and reinforcement learning, which maps directly onto the lesson's three stages.",
+        }),
         {
           key: "three-stages",
           kind: "DIAGRAM",
           title: "From base model to assistant",
           brief:
             "Three-step horizontal flow: Pretraining (huge text corpus icon) → Fine-tuning (curated Q&A icon) → Alignment (thumbs up/down comparisons icon). Labels 'base model' after step 1 and 'instruct model' after step 3.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/how-ai-models-learn/pretraining-fine-tuning-alignment/three-stages.webp",
         },
       ],
     },
@@ -436,17 +468,21 @@ Take a product you know well and sketch which model types it probably combines. 
         "Real products combine several model types in a pipeline.",
       ],
       artifacts: [
-        lessonVideo(
-          "Types of AI Models",
-          "Explainer, 3 minutes. Five doors labelled with each model family; the host opens each to show a quick demo. Ends with a photo app built from three of them working together.",
-          180,
-        ),
+        lessonVideo({
+          title: "Predictive vs Generative AI: How They Work and When to Use Each",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=phOhGqpXss4",
+          durationSeconds: 719,
+          brief:
+            "Contrasts predictive models (classification and regression such as fraud, churn and lending decisions) with generative models that create text, images and code, and discusses when to use each, covering the lesson's core classifier/regressor/generator split for non-specialists.",
+        }),
         {
           key: "model-families",
           kind: "DIAGRAM",
           title: "Five model families and what they output",
           brief:
             "Table-like diagram. Rows: Classifier → category label; Regressor → number; Generator → new text/image/audio; Embedding model → vector of numbers; Multimodal → mixed input and output. One icon per row, consistent style.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/how-ai-models-learn/types-of-ai-models/model-families.webp",
         },
       ],
     },
@@ -489,17 +525,21 @@ Write the one-sentence task description for an idea you have. Then answer the fi
         "A small evaluation on your own examples beats any leaderboard.",
       ],
       artifacts: [
-        lessonVideo(
-          "Choosing the Right Model",
-          "Practical walkthrough, 4 minutes. A builder on a whiteboard writes a one-sentence task, answers five questions, and lands on a model size. Shows a tiny spreadsheet evaluation at the end.",
-          240,
-        ),
+        lessonVideo({
+          title: "LLM vs. SLM vs. FM: Choosing the Right AI Model",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=AVQzG2MY858",
+          durationSeconds: 849,
+          brief:
+            "A practical decision guide that weighs task complexity, latency, cost, privacy and control to pick between small, large and foundation models, matching the lesson's five questions and 'start from the task' advice.",
+        }),
         {
           key: "decision-guide",
           kind: "DIAGRAM",
           title: "Model choice decision guide",
           brief:
             "Flowchart. Start: 'Define the task.' Diamonds: Hard reasoning? Needs speed? Tight budget? Data must stay local? Need fine-tuning? Leaves point to 'small open model', 'large open model', 'hosted large model'. Clean, few words.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/how-ai-models-learn/choosing-the-right-model/decision-guide.webp",
         },
       ],
     },

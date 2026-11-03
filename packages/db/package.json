@@ -36,7 +36,8 @@
     "./devices": "./src/devices.ts",
     "./cloud": "./src/cloud.ts",
     "./limits": "./src/content-limits.ts",
-    "./muse-models": "./src/muse-models.ts"
+    "./muse-models": "./src/muse-models.ts",
+    "./admin": "./src/admin.ts"
   },
   "scripts": {
     "lint": "tsc --noEmit",
@@ -47,6 +48,7 @@
     "db:seed:production": "bun src/seed.ts --target production",
     "db:reset": "bun src/reset.ts",
     "db:reset:production": "bun src/reset.ts --target production",
+    "academy:images": "bun src/academy-images.ts",
     "cloud:code": "bun src/cloud-code.ts"
   },
   "dependencies": {

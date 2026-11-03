@@ -62,8 +62,8 @@ function Preview({ artifact }: { artifact: IdeaFactoryArtifact }) {
 }
 
 /**
- * One file the team made. `compact` is the version that sits under an
- * advisor's reply; the full card lives in Files & assets.
+ * One file the team has. `compact` is the version that sits under a
+ * chat message; the full card lives in Files & assets.
  */
 export function ArtifactCard({
   artifact,

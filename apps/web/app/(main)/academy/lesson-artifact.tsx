@@ -13,6 +13,7 @@ import {
   VideoCameraIcon,
 } from "@heroicons/react/24/outline";
 import type { LessonArtifact, LessonArtifactKind } from "@westride/db";
+import { youtubeEmbedUrl, youtubeVideoId } from "./format";
 
 const KIND_LABEL: Record<LessonArtifactKind, string> = {
   IMAGE: "Illustration",
@@ -84,15 +85,29 @@ function ArtifactMedia({
   url: string;
 }) {
   switch (artifact.kind) {
-    case "VIDEO":
+    case "VIDEO": {
+      // Lesson videos are curated YouTube videos; anything else is a file we host.
+      const youtubeId = youtubeVideoId(url);
       return (
         <VStack gap={2}>
           <AspectRatio ratio={16 / 9} fit="cover">
-            <video controls preload="metadata" src={url} title={artifact.title} />
+            {youtubeId ? (
+              <iframe
+                src={youtubeEmbedUrl(youtubeId)}
+                title={artifact.title}
+                loading="lazy"
+                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            ) : (
+              <video controls preload="metadata" src={url} title={artifact.title} />
+            )}
           </AspectRatio>
           <Text type="supporting">{artifact.title}</Text>
         </VStack>
       );
+    }
     case "AUDIO":
       return (
         <VStack gap={2}>

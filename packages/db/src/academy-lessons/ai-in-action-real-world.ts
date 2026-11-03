@@ -49,17 +49,21 @@ List five tasks from your week. Score each on frequent, language-heavy, reviewab
         "Start with tasks people dread; adoption follows motivation.",
       ],
       artifacts: [
-        lessonVideo(
-          "Where AI Creates Value",
-          "Framework explainer, 4 minutes. Tasks fall onto a matrix as the narrator scores them; three kinds of win illustrated with mini-scenarios; ends on 'start with the pain'.",
-          240,
-        ),
+        lessonVideo({
+          title: "Knowing When Not to Use AI: AI Agents vs Rules vs ML",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=_ZqSFVi6UDY",
+          durationSeconds: 635,
+          brief:
+            "Lays out a practical framework for deciding which tasks belong to humans, deterministic rules, classic ML, or generative AI, weighing accuracy, cost, risk and scale, which mirrors the lesson's 'where AI helps a lot, a little, or not at all' matrix.",
+        }),
         {
           key: "value-matrix",
           kind: "DIAGRAM",
           title: "Where AI helps most",
           brief:
             "2×2 matrix. X axis: rare → frequent. Y axis: physical/judgement-only → language/pattern heavy. Top-right quadrant highlighted 'start here' with examples (summaries, classification, drafts); bottom-left labelled 'weak fit'.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-in-action-real-world/where-ai-creates-value/value-matrix.webp",
         },
       ],
     },
@@ -110,17 +114,21 @@ Choose two routines and set a reminder to use them every day for two weeks. Note
         "Keep confidential data out of unapproved tools and verify before acting.",
       ],
       artifacts: [
-        lessonVideo(
-          "AI for Personal Productivity",
-          "Day-in-the-life, 4 minutes. A person applies five routines across a workday with before/after time estimates; the guardrails appear as brief on-screen reminders.",
-          240,
-        ),
+        lessonVideo({
+          title: "You're Not Behind: Become AI-Native (without the overwhelm)",
+          channel: "Jeff Su",
+          url: "https://www.youtube.com/watch?v=j63bBK_ct-M",
+          durationSeconds: 611,
+          brief:
+            "A workplace-productivity creator shows how to spot recurring needs (email drafting, research, feedback triage, learning plans), pick one tool and build it into a daily routine, matching the lesson's 'routines, not tricks' approach.",
+        }),
         {
           key: "daily-routines",
           kind: "IMAGE",
           title: "Five daily AI routines",
           brief:
             "Checklist card: Email triage (decision, deadline, draft), Meeting notes (decisions, actions, questions), Research overview (viewpoints, terms, verify), Realistic plan (constraints, buffers), Learn and self-test (explain, harder, quiz). Minimal icons.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-in-action-real-world/ai-for-personal-productivity/daily-routines.webp",
         },
       ],
     },
@@ -170,17 +178,21 @@ Pick one business function you know. Write the narrow task, the measure, and whe
         "Failures come from vague goals and removing review before accuracy is proven.",
       ],
       artifacts: [
-        lessonVideo(
-          "AI in Business and Marketing",
-          "Case-study montage, 4 minutes. Four illustrated vignettes (invoices, sales follow-ups, marketing drafts, plain-language analytics) each ending with its pattern as a title card.",
-          240,
-        ),
+        lessonVideo({
+          title: "How AI Is Already Reshaping White-Collar Work | WSJ",
+          channel: "The Wall Street Journal",
+          url: "https://www.youtube.com/watch?v=DVpTpx9Avf0",
+          durationSeconds: 331,
+          brief:
+            "WSJ reports on how companies are actually deploying generative AI for first drafts of documents, presentations, marketing content and analysis, with employees reviewing output, and where they are seeing gains and concerns.",
+        }),
         {
           key: "marketing-pipeline",
           kind: "DIAGRAM",
           title: "Content pipeline with a human editor",
           brief:
             "Brand style guide + product data → LLM draft → Copywriter edits and approves (highlighted) → Publish to channels. Side metric: 'volume up, editor focused on voice'.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-in-action-real-world/ai-in-business-and-marketing/marketing-pipeline.webp",
         },
       ],
     },
@@ -229,17 +241,21 @@ Write a tutor system prompt for a subject you know and test it by pretending to 
         "Watch equity, privacy, and over-trust; small open models help with access.",
       ],
       artifacts: [
-        lessonVideo(
-          "AI in Education",
-          "Classroom-and-home montage, 4 minutes. A tutor asks guiding questions; a teacher differentiates a worksheet in minutes; captions help a learner; the narrator names each pitfall with a clear fix.",
-          240,
-        ),
+        lessonVideo({
+          title: "How AI Could Save (Not Destroy) Education | Sal Khan | TED",
+          channel: "TED",
+          url: "https://www.youtube.com/watch?v=hJP5GqnTrNo",
+          durationSeconds: 937,
+          brief:
+            "Sal Khan demonstrates Khanmigo as a Socratic tutor that asks guiding questions instead of giving answers, shows teacher-facing uses like lesson planning and feedback, and addresses cheating, guardrails and equity, exactly the lesson's tutor pattern and pitfalls.",
+        }),
         {
           key: "tutor-prompt",
           kind: "IMAGE",
           title: "A tutor system prompt",
           brief:
             "Card with the tutor system prompt text, highlighting 'never give the final answer', 'one guiding question', 'hint after stuck twice', 'only provided materials', 'encourage, do not grade'. Beside it, a short mock dialogue showing the pattern.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-in-action-real-world/ai-in-education/tutor-prompt.webp",
         },
       ],
     },
@@ -290,17 +306,21 @@ Choose one healthcare or science task above and write where the human decision p
         "Representation in data, grounding, and privacy are non-negotiable in high-stakes fields.",
       ],
       artifacts: [
-        lessonVideo(
-          "AI in Healthcare and Science",
-          "Documentary-style explainer, 4 minutes. A clinician reviews an AI-drafted note; a radiologist examines a flagged region; a researcher screens candidates before lab work. Measured tone, emphasis on accountability.",
-          240,
-        ),
+        lessonVideo({
+          title: "How AI is Revolutionizing Medicine",
+          channel: "Bloomberg Originals",
+          url: "https://www.youtube.com/watch?v=FqsvgFTQv8w",
+          durationSeconds: 471,
+          brief:
+            "Measured documentary explainer covering AI-assisted diagnostics and imaging, note transcription, risk prediction and drug discovery, alongside FDA oversight, error risk and why clinicians remain accountable for decisions.",
+        }),
         {
           key: "clinical-loop",
           kind: "DIAGRAM",
           title: "AI assists, the clinician decides",
           brief:
             "Flow: Patient encounter → AI drafts/flags → Clinician reviews and decides (large highlighted box) → Action → Monitoring feeds back to the AI system. A regulation/validation band across the top.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-in-action-real-world/ai-in-healthcare-and-science/clinical-loop.webp",
         },
       ],
     },
@@ -345,17 +365,21 @@ Write the handoff summary format your assistant would pass to a human agent. Inc
         "Start with agent assist, measure resolution and satisfaction, and expand carefully.",
       ],
       artifacts: [
-        lessonVideo(
-          "AI in Customer Support",
-          "Explainer, 4 minutes. A customer gets a grounded self-service answer, then escalates; the human agent sees a summary and suggested replies; a weekly insight dashboard closes. Clear 'talk to a person' button throughout.",
-          240,
-        ),
+        lessonVideo({
+          title: "The AI Customer Service Boom: Why Companies are Spending Billions to Kill the Call Center",
+          channel: "Fortune Magazine",
+          url: "https://www.youtube.com/watch?v=-6EiO5_Ixdg",
+          durationSeconds: 577,
+          brief:
+            "Fortune's AI editor interviews companies deploying agentic support AI and contrasts self-service automation of high-volume requests with customers' strong preference for a reachable human, the trust and escalation trade-offs at the heart of this lesson.",
+        }),
         {
           key: "support-architecture",
           kind: "DIAGRAM",
           title: "Support AI architecture",
           brief:
             "Customer → Self-service assistant (RAG over help content) → either Resolved or Handoff with summary → Human agent with Agent assist panel → Resolved. All conversations flow to a Quality & insight classifier.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-in-action-real-world/ai-in-customer-support/support-architecture.webp",
         },
       ],
     },
@@ -414,17 +438,21 @@ Fill in the one-page assessment for the top task from lesson one. Would you pilo
         "Pilot with real users and a golden set; include change management and privacy review in costs.",
       ],
       artifacts: [
-        lessonVideo(
-          "Judging ROI and Feasibility",
-          "Worksheet walkthrough, 4 minutes. The one-page assessment is filled in for a real-sounding example; scores are assigned; a two-week pilot plan is sketched. Practical, numbers on screen.",
-          240,
-        ),
+        lessonVideo({
+          title: "AI ROI Measurement | Proving the Business Value of Artificial Intelligence | Uplatz",
+          channel: "Uplatz",
+          url: "https://www.youtube.com/watch?v=iCRP1aeqqt0",
+          durationSeconds: 358,
+          brief:
+            "A compact four-step method for AI ROI: measure a baseline before deploying, separate hard from soft returns, count the full cost including integration, training and human review of outputs, and set a payback horizon, closely matching the lesson's one-page assessment.",
+        }),
         {
           key: "roi-sheet",
           kind: "IMAGE",
           title: "One-page AI opportunity assessment",
           brief:
             "Printable worksheet with three sections (Value, Feasibility, Cost) each with its questions and a 1–5 score box, plus a 'Pilot?' decision box at the bottom. Clean form design.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-in-action-real-world/roi-and-feasibility/roi-sheet.webp",
         },
       ],
     },
@@ -479,17 +507,21 @@ List your main tasks. Mark which AI could speed up, which it cannot touch, and w
         "Use AI daily, build one thing, go deep, teach someone, and revisit the plan every six months.",
       ],
       artifacts: [
-        lessonVideo(
-          "Careers in the Age of AI",
-          "Encouraging wrap-up, 4 minutes. A role is shown as a bundle of task cards; some speed up, some vanish, new ones appear; the five-step plan is laid out. Closes the track and points to the capstone.",
-          240,
-        ),
+        lessonVideo({
+          title: "What You Know That AI Doesn't | Priyanka Vergadia | TED",
+          channel: "TED",
+          url: "https://www.youtube.com/watch?v=eR3IsKVLorg",
+          durationSeconds: 560,
+          brief:
+            "An encouraging TED talk from a Google Cloud technologist using real stories to show that context, judgement and domain knowledge are what make people valuable alongside AI, reinforcing the lesson's 'skills gaining value' and personal plan.",
+        }),
         {
           key: "skills-shift",
           kind: "DIAGRAM",
           title: "Skills gaining and losing relative value",
           brief:
             "Two columns with arrows. Gaining ↑: judgement, framing, domain depth, communication and trust, AI fluency. Losing ↓: routine drafting, basic summarization, boilerplate code, first-pass research. Neutral, encouraging design.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-in-action-real-world/careers-in-the-age-of-ai/skills-shift.webp",
         },
       ],
     },

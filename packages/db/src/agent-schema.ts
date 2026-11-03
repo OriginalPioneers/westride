@@ -64,6 +64,8 @@ export const agents = pgTable(
     /** Public Blob URL of a 512×512 square image. */
     imageUrl: text("image_url"),
     status: agentStatus("status").notNull().default("ACTIVE"),
+    /** Picked by the WeStride team, from the admin portal. */
+    isFeatured: boolean("is_featured").notNull().default(false),
     isPublic: boolean("is_public").notNull().default(false),
     /** Clerk user id. Owns the settings; their Meta key pays for scheduled jobs. */
     ownerClerkUserId: text("owner_clerk_user_id").notNull(),
@@ -120,6 +122,7 @@ export const agents = pgTable(
     index("agents_idea_id_idx").on(table.ideaId),
     index("agents_project_id_idx").on(table.projectId),
     index("agents_visibility_idx").on(table.isPublic),
+    index("agents_featured_idx").on(table.isFeatured),
     index("agents_due_idx").on(table.status, table.nextRunAt),
     index("agents_updated_at_idx").on(table.updatedAt),
   ],

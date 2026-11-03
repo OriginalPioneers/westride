@@ -40,3 +40,35 @@ export function lessonPath(trackSlug: string, lessonSlug: string): string {
 export function theaterPath(trackSlug: string, lessonSlug: string): string {
   return `/academy/${trackSlug}/${lessonSlug}/theater`;
 }
+
+/**
+ * The 11-character video id from any YouTube URL shape (watch, youtu.be,
+ * embed, shorts, live), or null when the URL is not a YouTube video.
+ */
+export function youtubeVideoId(url: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  const host = parsed.hostname.replace(/^(www|m)\./, "");
+  if (host === "youtu.be") {
+    const id = parsed.pathname.slice(1);
+    return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null;
+  }
+  if (host !== "youtube.com" && host !== "youtube-nocookie.com") {
+    return null;
+  }
+  const fromQuery = parsed.searchParams.get("v");
+  if (fromQuery && /^[A-Za-z0-9_-]{11}$/.test(fromQuery)) {
+    return fromQuery;
+  }
+  const fromPath = /^\/(?:embed|shorts|live|v)\/([A-Za-z0-9_-]{11})/.exec(parsed.pathname);
+  return fromPath ? fromPath[1] : null;
+}
+
+/** Privacy-enhanced embed URL for a YouTube video id. */
+export function youtubeEmbedUrl(videoId: string): string {
+  return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0`;
+}

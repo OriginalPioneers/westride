@@ -24,12 +24,8 @@ import {
   type IdeaCollection,
   type IdeaFilterValues,
 } from "@/lib/ideas/filters";
-import {
-  CreateIdeaButton,
-  CreateIdeaCard,
-  CreateIdeaProvider,
-} from "./create-idea-button";
 import { IdeaCard } from "./idea-card";
+import { IdeaComposer } from "./idea-composer";
 import { IdeaCollectionTabs, IdeaSearchBar } from "./idea-filters";
 
 export const metadata: Metadata = {
@@ -109,8 +105,7 @@ function CollectionEmptyState({
     return (
       <EmptyState
         title="No ideas in this category yet"
-        description="Start one and file it here, or pick another category."
-        actions={<CreateIdeaButton variant="secondary" />}
+        description="Describe one above and file it here, or pick another category."
       />
     );
   }
@@ -156,8 +151,7 @@ function CollectionEmptyState({
   return (
     <EmptyState
       title="No ideas yet"
-      description="Start one and you will be the founder. You can invite other people onto the team."
-      actions={<CreateIdeaButton variant="secondary" />}
+      description="Describe one above and you will be the founder. You can invite other people onto the team."
     />
   );
 }
@@ -165,16 +159,12 @@ function CollectionEmptyState({
 function IdeaGrid({
   ideas,
   viewerId,
-  hasCreateTile,
 }: {
   ideas: IdeaWithDetails[];
   viewerId: string | null;
-  /** Leads the grid with the "New idea" tile. */
-  hasCreateTile: boolean;
 }) {
   return (
     <Grid columns={{ minWidth: 320, max: 3 }} gap={4}>
-      {hasCreateTile ? <CreateIdeaCard /> : null}
       {ideas.map((idea) => (
         <IdeaCard key={idea.id} idea={idea} viewerId={viewerId} />
       ))}
@@ -212,78 +202,70 @@ export default async function IdeaWorkshopPage({
     ? options.countries.find((country) => country.code === values.country)
     : undefined;
   const countLabel = ideas.length === 1 ? "1 idea" : `${ideas.length} ideas`;
-  // Your Ideas always leads with the "New idea" tile, so a signed-in member
-  // with no ideas yet sees the tile rather than an empty state.
-  const hasCreateTile =
-    isSignedIn && collection.kind === "view" && collection.view === "mine";
 
   return (
-    <CreateIdeaProvider founder={founder} categoryOptions={categoryOptions}>
-      <Layout
-        contentWidth={1120}
-        header={
-          <LayoutHeader hasDivider>
-            <VStack gap={4}>
-              <IdeaSearchBar values={values} />
-              <IdeaCollectionTabs
-                values={values}
-                isSignedIn={isSignedIn}
-                categories={options.tags.map((tag) => ({
-                  slug: tag.slug,
-                  name: tag.name,
-                }))}
-              />
-            </VStack>
-          </LayoutHeader>
-        }
-        content={
-          <LayoutContent>
-            <VStack gap={8}>
-              <VStack gap={4}>
-                <HStack gap={3} vAlign="end" wrap="wrap">
-                  <StackItem size="fill">
-                    <VStack gap={1}>
-                      {/* The collection is the page's heading now that the title block is gone. */}
-                      <Heading level={2} accessibilityLevel={1}>
-                        {heading.title}
-                      </Heading>
-                      {heading.description ? (
-                        <Text type="supporting">{heading.description}</Text>
-                      ) : null}
-                    </VStack>
-                  </StackItem>
-                  <HStack gap={2} vAlign="center" wrap="wrap">
-                    {values.country ? (
-                      <Token
-                        label={`In ${countryFilter?.name ?? values.country}`}
-                        href={ideasPath({ ...values, country: "" })}
-                        description="Remove the geography filter"
-                      />
-                    ) : null}
-                    {ideas.length > 0 ? (
-                      <Text type="supporting">{countLabel}</Text>
-                    ) : null}
-                  </HStack>
-                </HStack>
+    <Layout
+      contentWidth={1120}
+      header={
+        <LayoutHeader hasDivider>
+          <VStack gap={4}>
+            <IdeaSearchBar values={values} />
+            <IdeaCollectionTabs
+              values={values}
+              isSignedIn={isSignedIn}
+              categories={options.tags.map((tag) => ({
+                slug: tag.slug,
+                name: tag.name,
+              }))}
+            />
+          </VStack>
+        </LayoutHeader>
+      }
+      content={
+        <LayoutContent>
+          <VStack gap={10}>
+            <IdeaComposer founder={founder} categoryOptions={categoryOptions} />
 
-                {ideas.length === 0 && !hasCreateTile ? (
-                  <CollectionEmptyState
-                    collection={collection}
-                    values={values}
-                    isSignedIn={isSignedIn}
-                  />
-                ) : (
-                  <IdeaGrid
-                    ideas={ideas}
-                    viewerId={userId}
-                    hasCreateTile={hasCreateTile}
-                  />
-                )}
-              </VStack>
+            <VStack gap={4}>
+              <HStack gap={3} vAlign="end" wrap="wrap">
+                <StackItem size="fill">
+                  <VStack gap={1}>
+                    {/* The collection is the page's heading now that the title block is gone. */}
+                    <Heading level={2} accessibilityLevel={1}>
+                      {heading.title}
+                    </Heading>
+                    {heading.description ? (
+                      <Text type="supporting">{heading.description}</Text>
+                    ) : null}
+                  </VStack>
+                </StackItem>
+                <HStack gap={2} vAlign="center" wrap="wrap">
+                  {values.country ? (
+                    <Token
+                      label={`In ${countryFilter?.name ?? values.country}`}
+                      href={ideasPath({ ...values, country: "" })}
+                      description="Remove the geography filter"
+                    />
+                  ) : null}
+                  {ideas.length > 0 ? (
+                    <Text type="supporting">{countLabel}</Text>
+                  ) : null}
+                </HStack>
+              </HStack>
+
+              {ideas.length === 0 ? (
+                <CollectionEmptyState
+                  collection={collection}
+                  values={values}
+                  isSignedIn={isSignedIn}
+                />
+              ) : (
+                <IdeaGrid ideas={ideas} viewerId={userId} />
+              )}
             </VStack>
-          </LayoutContent>
-        }
-      />
-    </CreateIdeaProvider>
+          </VStack>
+        </LayoutContent>
+      }
+    />
   );
 }

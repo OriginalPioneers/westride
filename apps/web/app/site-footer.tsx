@@ -27,10 +27,11 @@ const META_AI_LOGO_LIGHT = "/logos/meta-ai-light.png";
 
 const LEGAL_LINKS = [
   { label: "Terms of Service", href: "/terms" },
-  { label: "Privacy", href: "/privacy" },
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Mobile Apps", href: "/mobile-apps" },
   { label: "Open Source", href: GITHUB_PROFILE_URL, isExternal: true },
-  { label: "API", href: "/settings/api" },
-  { label: "MCP", href: "/settings/mcp" },
+  { label: "API", href: "https://api.westride.org", isExternal: true  },
+  { label: "MCP", href: "https://mcp.westride.org", isExternal: true  }
 ] as const;
 
 /** Only English ships today; the menu is where other languages will appear. */
@@ -243,7 +244,7 @@ export function SiteFooter() {
           <LanguageMenu />
           <Divider orientation="vertical" />
           <Link href="/our-story" isStandalone size="sm" color="secondary">
-            About WeStride
+            About
           </Link>
           <Divider orientation="vertical" />
           <HStack gap={3} wrap="nowrap" vAlign="center">

@@ -10,14 +10,15 @@
 // --amount is in US dollars. Codes are upper case; members can type them in
 // any case.
 // ---------------------------------------------------------------------------
-import { randomBytes } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   createRedemptionCode,
   deactivateRedemptionCode,
+  generateRedemptionCode,
   listRedemptionCodes,
   normalizeRedemptionCode,
+  REDEMPTION_CODE_PATTERN,
 } from "./cloud";
 import { databaseLabel, databaseUrl, dbTargetFromArgv, loadDbEnv } from "./load-env";
 import { fail } from "./run";
@@ -43,18 +44,6 @@ function option(name: string): string | undefined {
 
 function hasFlag(name: string): boolean {
   return args.includes(`--${name}`);
-}
-
-/** Letters and digits that are hard to confuse, in groups of four. */
-function randomCode(): string {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const bytes = randomBytes(12);
-  let out = "";
-  for (let i = 0; i < 12; i += 1) {
-    out += alphabet[bytes[i]! % alphabet.length];
-    if (i % 4 === 3 && i < 11) out += "-";
-  }
-  return out;
 }
 
 function usd(micros: number): string {
@@ -114,8 +103,8 @@ try {
   }
 
   const codeText = option("code");
-  const code = codeText ? normalizeRedemptionCode(codeText) : randomCode();
-  if (!/^[A-Z0-9-]{4,64}$/.test(code)) {
+  const code = codeText ? normalizeRedemptionCode(codeText) : generateRedemptionCode();
+  if (!REDEMPTION_CODE_PATTERN.test(code)) {
     fail("--code may use letters, digits, and dashes only (4 to 64 characters).");
   }
 

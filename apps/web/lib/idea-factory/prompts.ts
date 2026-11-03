@@ -4,6 +4,7 @@ import type { IdeaFactoryArtifact, MuseFinding } from "@westride/db";
 import { getAgent, type AgentDefinition } from "./agents";
 import { artifactInstructions } from "./artifacts";
 import { IDEA_TYPE_LABELS } from "@/lib/ideas/filters";
+import { userMessageForMuse } from "./uploads";
 
 /** Keeps the shared context from swallowing the whole prompt budget. */
 const MAX_FINDINGS_PER_AGENT = 6;
@@ -85,13 +86,17 @@ None yet.`;
   }
   const lines = artifacts.slice(0, MAX_ARTIFACTS_IN_CONTEXT).map((artifact) => {
     const agent = artifact.agentSlug ? getAgent(artifact.agentSlug) : undefined;
-    const by = agent ? ` by ${agent.name}` : "";
+    const by = agent
+      ? ` by ${agent.name}`
+      : artifact.kind === "REPORT"
+        ? " (evaluation report)"
+        : " uploaded by the team";
     const chosen = artifact.chosenAt ? " [CHOSEN by the team]" : "";
     const note = artifact.description ? ` — ${artifact.description.slice(0, 200)}` : "";
     return `- ${artifact.kind.toLowerCase()} "${artifact.title}" in collection "${artifact.collection || "misc"}"${by} (${artifact.createdAt.toISOString().slice(0, 10)})${chosen}${note}`;
   });
   return `## Files the team has
-Only files the team kept are listed. One marked CHOSEN is the version they want to move forward with.
+Only files the team kept are listed. One marked CHOSEN is the version they want to move forward with. The team can upload images, PDFs, and text files; when a message lists attached files, those files are included so you can see them. Refer to them by title.
 ${lines.join("\n")}`;
 }
 
@@ -121,6 +126,7 @@ ${sharedContext(input.latestEvaluation)}${files}`;
 export type HistoryMessage = {
   role: "USER" | "AGENT";
   content: string;
+  attachmentTitles?: string[];
 };
 
 /** Converts the stored thread into Responses API input items. */
@@ -129,7 +135,10 @@ export function buildChatInput(
 ): { role: "user" | "assistant"; content: string }[] {
   return history.slice(-MAX_HISTORY_MESSAGES).map((message) => ({
     role: message.role === "USER" ? "user" : "assistant",
-    content: message.content,
+    content:
+      message.role === "USER"
+        ? userMessageForMuse(message.content, message.attachmentTitles ?? [])
+        : message.content,
   }));
 }
 

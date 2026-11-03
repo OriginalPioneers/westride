@@ -52,7 +52,7 @@ function LinkDeviceDialog({
   const [isPending, startTransition] = useTransition();
   const [code, setCode] = useState<Code | null>(initialCode);
   const [error, setError] = useState<string | null>(null);
-  const [origin, setOrigin] = useState("https://westride.org");
+  const [origin, setOrigin] = useState("https://www.westride.org");
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -77,8 +77,10 @@ function LinkDeviceDialog({
   }, [isOpen]);
 
   const pairing = code && !expired ? code.code : "XXXX-XXXX";
-  const shell = `curl -fsSL ${origin}${INSTALL_SH_PATH} | sh -s -- --code ${pairing}`;
-  const powershell = `& ([scriptblock]::Create((irm ${origin}${INSTALL_PS1_PATH}))) -Code ${pairing}`;
+  // The origin is passed through so the runner talks to the host that issued the code,
+  // whatever the installer's built-in default is.
+  const shell = `curl -fsSL ${origin}${INSTALL_SH_PATH} | sh -s -- --code ${pairing} --url ${origin}`;
+  const powershell = `& ([scriptblock]::Create((irm ${origin}${INSTALL_PS1_PATH}))) -Code ${pairing} -Url ${origin}`;
 
   return (
     <Dialog isOpen={isOpen} onOpenChange={onOpenChange} purpose="info" width={720}>

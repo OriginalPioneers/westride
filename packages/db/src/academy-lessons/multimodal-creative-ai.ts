@@ -46,17 +46,21 @@ Photograph a handwritten list and ask a multimodal assistant to turn it into a c
         "Fine detail and spatial precision remain weak points; verify when accuracy matters.",
       ],
       artifacts: [
-        lessonVideo(
-          "What Is Multimodal AI?",
-          "Explainer, 4 minutes. A photo, an audio clip, and a sentence each break into tokens and merge into one stream; the model answers a question about the photo. Demos of receipt reading and chart Q&A.",
-          240,
-        ),
+        lessonVideo({
+          title: "What is Multimodal AI? How LLMs Process Text, Images, and More",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=J51oZYcNvP8",
+          durationSeconds: 555,
+          brief:
+            "Whiteboard explainer of what a modality is, how early systems bolted a vision encoder onto an LLM versus natively multimodal models with a shared token space, and how image patches and video cubes become tokens, which maps directly onto the lesson's one-model-many-senses framing.",
+        }),
         {
           key: "modalities",
           kind: "DIAGRAM",
           title: "Many inputs, one model",
           brief:
             "Image patches, audio waveform, and text words each become token rows that converge into a single transformer block; output arrows to text, and optionally image or audio. Clean, symmetrical.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/multimodal-creative-ai/what-is-multimodal-ai/modalities.webp",
         },
       ],
     },
@@ -98,17 +102,21 @@ Give the same busy photo to a model twice: once whole, once cropped to one detai
         "Crop, ask specific questions, and add context to improve accuracy.",
       ],
       artifacts: [
-        lessonVideo(
-          "How Models See Images",
-          "Visual explainer, 4 minutes. A photo is gridded into patches that become tokens; attention links 'bicycle' to the right patches; a zoom shows why tiny text fails and how cropping helps.",
-          240,
-        ),
+        lessonVideo({
+          title: "What Are Vision Language Models? How AI Sees & Understands Images",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=lOD_EE96jhM",
+          durationSeconds: 588,
+          brief:
+            "Walks through how a vision encoder turns an image into visual tokens that sit alongside text tokens in the LLM's attention layers, and covers captioning, visual Q&A, receipt reading and chart analysis, matching the lesson's patches-to-tokens explanation and its examples.",
+        }),
         {
           key: "patches",
           kind: "IMAGE",
           title: "A photo as patches",
           brief:
             "A street photo overlaid with a visible grid of square patches; a handful of patches pulled out to the side as tokens with numbers. Caption notes the grid size.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/multimodal-creative-ai/how-models-see-images/patches.webp",
         },
       ],
     },
@@ -159,17 +167,21 @@ Write a five-ingredient prompt, generate it, then change only the lighting word 
         "Change one ingredient at a time with a fixed seed and save what works.",
       ],
       artifacts: [
-        lessonVideo(
-          "Visual Prompting Fundamentals",
-          "Hands-on explainer, 4 minutes. A prompt is built ingredient by ingredient with the generated image updating each time; then lighting words are swapped with the seed fixed.",
-          240,
-        ),
+        lessonVideo({
+          title: "Generate Realistic AI Photos with a Prompt Formula in Firefly with Jesús Ramirez | Adobe Firefly",
+          channel: "Adobe Firefly",
+          url: "https://www.youtube.com/watch?v=lwdbGBFeVi4",
+          durationSeconds: 305,
+          brief:
+            "Official Adobe tutorial that builds an image prompt ingredient by ingredient (subject, setting, action, composition, lighting, style, camera, material) with the generated image updating at each step, which is exactly the lesson's five-ingredient, iterate-one-thing-at-a-time approach.",
+        }),
         {
           key: "prompt-anatomy",
           kind: "IMAGE",
           title: "Anatomy of an image prompt",
           brief:
             "The baker prompt written out with each of the five ingredients colour-coded, beside the resulting illustrated image with matching colour callouts pointing to subject, setting, composition, light, style.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/multimodal-creative-ai/visual-prompting-fundamentals/prompt-anatomy.webp",
         },
       ],
     },
@@ -215,17 +227,21 @@ Take a photo of your own, remove one object with inpainting, then extend the can
         "Finish edits by hand and disclose changes that alter what a photo documents.",
       ],
       artifacts: [
-        lessonVideo(
-          "Editing Images with AI",
-          "Demo, 4 minutes. A single photo goes through inpaint (remove a sign), outpaint (extend sky), restyle (evening light), and upscale, with the narrator pointing out drift and how small masks avoid it.",
-          240,
-        ),
+        lessonVideo({
+          title: "Introduction to Generative Fill | Adobe Photoshop",
+          channel: "Adobe Photoshop",
+          url: "https://www.youtube.com/watch?v=Sp6K3qpVFO0",
+          durationSeconds: 331,
+          brief:
+            "Official Photoshop demo of Firefly-powered Generative Fill showing inpainting (remove/replace objects) and outpainting (extend the canvas) on a single photo with non-destructive layers, covering the core editing operations and the small-selection workflow the lesson teaches.",
+        }),
         {
           key: "edit-operations",
           kind: "IMAGE",
           title: "Four edits on one photo",
           brief:
             "2×2 grid of the same street scene: Inpainting (a sign removed, mask outline shown), Outpainting (canvas extended with dashed original border), Restyling (evening watercolor), Upscaling (zoomed detail inset). Labels under each.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/multimodal-creative-ai/editing-images-with-ai/edit-operations.webp",
         },
       ],
     },
@@ -276,17 +292,21 @@ Record a two-minute voice memo about a project, transcribe it, and ask an assist
         "Voice assistants chain three models; stream each and confirm before acting. Clone voices only with consent.",
       ],
       artifacts: [
-        lessonVideo(
-          "Voice and Speech AI",
-          "Explainer, 4 minutes. A voice memo becomes a transcript becomes action items; a short script is read aloud by a synthetic voice with pacing markup; a voice assistant pipeline is drawn with latency bars.",
-          240,
-        ),
+        lessonVideo({
+          title: "Introduction to AI speech concepts | AI-901 | Episode 8",
+          channel: "Microsoft Learn",
+          url: "https://www.youtube.com/watch?v=KTp8iKAQb-U",
+          durationSeconds: 1056,
+          brief:
+            "Explains the two core speech workloads, speech-to-text (meeting transcripts, live captions, accessibility) and text-to-speech (assistants, hands-free interfaces), and how they combine into a listen-understand-respond voice assistant, mirroring the lesson's two-directions structure.",
+        }),
         {
           key: "voice-pipeline",
           kind: "DIAGRAM",
           title: "Voice assistant pipeline",
           brief:
             "Microphone → Speech to text → LLM (Llama) → Text to speech → Speaker, with a streaming arrow under each stage and a 'confirm before acting' gate before any tool call branch.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/multimodal-creative-ai/voice-and-speech-ai/voice-pipeline.webp",
         },
       ],
     },
@@ -332,17 +352,21 @@ Generate a 30-second background bed for a short video using a prompt with genre,
         "Use AI for sketches and placeholders, credit and pay musicians for finished work, and label generated audio.",
       ],
       artifacts: [
-        lessonVideo(
-          "AI Music and Sound Design",
-          "Explainer, 4 minutes. A music prompt is written and a short generated bed plays under a sample video; stem separation splits a track; a composer refines a generated sketch at a keyboard.",
-          240,
-        ),
+        lessonVideo({
+          title: "How to Make AI Music with ElevenLabs Music v2",
+          channel: "ElevenLabs",
+          url: "https://www.youtube.com/watch?v=vcpM4MRupNE",
+          durationSeconds: 328,
+          brief:
+            "Official vendor walkthrough of prompting a music model by genre, mood and structure, building tracks section by section, embedding sound effects, generating a bed to fit a video, and the licensed-training-data / commercial-rights point the lesson stresses.",
+        }),
         {
           key: "music-prompt",
           kind: "IMAGE",
           title: "A complete music prompt",
           brief:
             "Card showing a music prompt with labelled parts: Genre & era, Tempo (BPM), Mood, Instruments, Structure, Use. Example filled in for a warm acoustic 30-second video bed. Small waveform decoration.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/multimodal-creative-ai/ai-music-and-sound/music-prompt.webp",
         },
       ],
     },
@@ -390,17 +414,21 @@ Write a 60-second explainer script with an LLM, then list which shots you would 
         "Text-based editing and automatic captions save the most time; disclose synthetic elements.",
       ],
       artifacts: [
-        lessonVideo(
-          "Video Workflows",
-          "Behind-the-scenes, 4 minutes. A short explainer is produced end to end: script, filmed host, generated b-roll skies, text-based editing, captions, and a generated music bed. Honest about where AI falls short.",
-          240,
-        ),
+        lessonVideo({
+          title: "Creating an AI Short Film (Full Workflow) | Runway",
+          channel: "Runway",
+          url: "https://www.youtube.com/watch?v=TM8hd2lnrEk",
+          durationSeconds: 926,
+          brief:
+            "Runway's end-to-end production walkthrough: planning the story, generating reference and hero images, prompting shots by shot type and camera movement, keeping characters consistent across clips, and cutting it together, with candid notes on where generation falls short.",
+        }),
         {
           key: "video-pipeline",
           kind: "DIAGRAM",
           title: "AI across the video pipeline",
           brief:
             "Five stages left to right: Plan, Generate, Edit, Enhance, Publish. Under each, two or three AI tasks as small chips. A camera icon at Generate labelled 'film what is specific'.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/multimodal-creative-ai/video-workflows/video-pipeline.webp",
         },
       ],
     },
@@ -452,17 +480,21 @@ Design a four-step pipeline for something you make regularly. Mark the human che
         "Make steps re-runnable, version every asset with its prompt, and plan fallbacks.",
       ],
       artifacts: [
-        lessonVideo(
-          "Building Creative Pipelines",
-          "Walkthrough, 4 minutes. The newsletter pipeline runs stage by stage with files appearing in a folder; a human review pause; the final email and audio version. Mentions no-code and scripted options.",
-          240,
-        ),
+        lessonVideo({
+          title: "n8n Made Easy: Create Short Videos in a Single Click",
+          channel: "Automation-Tribe",
+          url: "https://www.youtube.com/watch?v=qPMEVt3PsP4",
+          durationSeconds: 667,
+          brief:
+            "Builds a no-code pipeline where one idea flows through an LLM (scene text and image prompts), an image model with a fixed style, text-to-speech narration, and assembly into a published video with assets saved to Airtable and Drive, a concrete example of chaining tools with templates and asset management.",
+        }),
         {
           key: "newsletter-pipeline",
           kind: "DIAGRAM",
           title: "Newsletter creative pipeline",
           brief:
             "Six boxes: Gather data → Draft text (LLM) → Illustrate (image model, fixed style) → Narrate (TTS) → Human review (highlighted) → Publish (email/web, alt text). Small file icons flowing between boxes.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/multimodal-creative-ai/creative-pipelines/newsletter-pipeline.webp",
         },
       ],
     },
@@ -512,17 +544,21 @@ Write three sentences describing your visual or written style. Turn them into a 
         "Consent, disclosure, credit, and records are the ethical baseline.",
       ],
       artifacts: [
-        lessonVideo(
-          "Creative Ethics and Finding Your Style",
-          "Reflective wrap-up, 4 minutes. A creator's board of references becomes a style prefix; a series of pieces grows consistent; a credit line is written. Closes the track with encouragement.",
-          240,
-        ),
+        lessonVideo({
+          title: "The Real Fight Over AI Art",
+          channel: "Cleo Abram",
+          url: "https://www.youtube.com/watch?v=NiJeB2NJy1A",
+          durationSeconds: 854,
+          brief:
+            "Explores whether AI-assisted work can be genuinely yours, how artists feel about training data, style imitation and consent, and what the tools do versus what people assume they do, framing the originality, credit and disclosure questions the lesson closes the track with.",
+        }),
         {
           key: "style-loop",
           kind: "DIAGRAM",
           title: "The style-building loop",
           brief:
             "Cycle: Collect references → Set constraints → Generate → Edit hard → Make a series → Review and refine references. Soft, creative visual treatment; brand palette.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/multimodal-creative-ai/creative-ethics-and-your-style/style-loop.webp",
         },
       ],
     },

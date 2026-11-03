@@ -1,0 +1,87 @@
+@layer reset, astryx-base, astryx-theme;
+
+@import '@astryxdesign/core/reset.css';
+@import '@astryxdesign/core/astryx.css';
+
+body {
+  font-family: var(--font-family-body);
+}
+
+/* Button labels are controls, not copy. */
+button,
+.astryx-button {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* The wordmark comes in a navy and a white version; one shows per color mode. */
+.westride-wordmark {
+  height: var(--spacing-12);
+  width: auto;
+  max-width: 100%;
+  display: block;
+}
+
+.westride-wordmark-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .westride-wordmark-light {
+    display: none;
+  }
+
+  .westride-wordmark-dark {
+    display: block;
+  }
+}
+
+[data-theme="light"] .westride-wordmark-light {
+  display: block;
+}
+
+[data-theme="light"] .westride-wordmark-dark {
+  display: none;
+}
+
+[data-theme="dark"] .westride-wordmark-light {
+  display: none;
+}
+
+[data-theme="dark"] .westride-wordmark-dark {
+  display: block;
+}
+
+/* Thin pill scrollbars, as on the member site. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-icon-secondary) 72%, transparent)
+    transparent;
+}
+
+::-webkit-scrollbar {
+  width: var(--spacing-3);
+  height: var(--spacing-3);
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: var(--spacing-0-5) solid transparent;
+  border-radius: var(--radius-full);
+  background-color: color-mix(in srgb, var(--color-icon-secondary) 72%, transparent);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-icon-secondary);
+}

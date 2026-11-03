@@ -14,6 +14,7 @@ import {
   cloudLedgerEntries,
   cloudRedemptionCodes,
   type CloudAccount,
+  type CloudCodeRedemption,
   type CloudLedgerEntry,
   type CloudLedgerKind,
   type CloudProviderPreference,
@@ -198,6 +199,22 @@ export function normalizeRedemptionCode(raw: string): string {
   return raw.trim().toUpperCase().replace(/\s+/g, "");
 }
 
+/** Letters and digits, dashes allowed, 4 to 64 characters, after normalising. */
+export const REDEMPTION_CODE_PATTERN = /^[A-Z0-9-]{4,64}$/;
+
+/** Letters and digits that are hard to confuse, in groups of four: `K7QP-3RTX-WN2M`. */
+export function generateRedemptionCode(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  let out = "";
+  for (let i = 0; i < bytes.length; i += 1) {
+    out += alphabet[bytes[i]! % alphabet.length];
+    if (i % 4 === 3 && i < bytes.length - 1) out += "-";
+  }
+  return out;
+}
+
 export type NewRedemptionCodeInput = {
   code: string;
   amountMicros: number;
@@ -230,12 +247,32 @@ export async function listRedemptionCodes(): Promise<CloudRedemptionCode[]> {
 }
 
 export async function deactivateRedemptionCode(code: string): Promise<boolean> {
+  return setRedemptionCodeActive(code, false);
+}
+
+/** Turns a code off or back on. A code that is off is refused as unknown. */
+export async function setRedemptionCodeActive(code: string, isActive: boolean): Promise<boolean> {
   const updated = await getDb()
     .update(cloudRedemptionCodes)
-    .set({ isActive: false })
+    .set({ isActive })
     .where(eq(cloudRedemptionCodes.code, normalizeRedemptionCode(code)))
     .returning({ id: cloudRedemptionCodes.id });
   return updated.length > 0;
+}
+
+export async function getRedemptionCodeByCode(code: string): Promise<CloudRedemptionCode | null> {
+  const row = await getDb().query.cloudRedemptionCodes.findFirst({
+    where: eq(cloudRedemptionCodes.code, normalizeRedemptionCode(code)),
+  });
+  return row ?? null;
+}
+
+/** Who redeemed a code and when, newest first. */
+export async function listCodeRedemptions(codeId: string): Promise<CloudCodeRedemption[]> {
+  return getDb().query.cloudCodeRedemptions.findMany({
+    where: eq(cloudCodeRedemptions.codeId, codeId),
+    orderBy: [desc(cloudCodeRedemptions.createdAt)],
+  });
 }
 
 export type RedeemResult =

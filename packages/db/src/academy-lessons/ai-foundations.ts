@@ -36,17 +36,21 @@ Write down three things you did today that involved software. For each one, ask:
         "Recent progress comes from scale: more data, more compute, and better model designs.",
       ],
       artifacts: [
-        lessonVideo(
-          "What Is Artificial Intelligence?",
-          "Friendly explainer, 3 minutes. A host at a kitchen table sorts photos into piles by hand, then a laptop does it instantly. Narration contrasts rules written by people with patterns learned from examples. End on the line: if it learns from examples, it is probably AI.",
-          180,
-        ),
+        lessonVideo({
+          title: "What Is Artificial Intelligence? Crash Course AI #1",
+          channel: "CrashCourse",
+          url: "https://www.youtube.com/watch?v=a0_lo_GDcFw",
+          durationSeconds: 705,
+          brief:
+            "Beginner-friendly definition of AI built around 'learns from examples rather than hand-written rules', with everyday examples and the data/compute story that mirrors the lesson's 'why now' section.",
+        }),
         {
           key: "rules-vs-patterns",
           kind: "DIAGRAM",
           title: "Rules versus patterns",
           brief:
             "Two-column diagram. Left: 'Traditional software' with a flowchart of if/then rules written by a programmer. Right: 'AI' with many example photos flowing into a model that outputs labels. Clean, flat, high contrast, no more than 12 words of text.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-foundations/what-is-ai/rules-vs-patterns.webp",
         },
       ],
     },
@@ -87,17 +91,21 @@ Pick a product you use that advertises "AI". Decide which circle it most likely 
         "Model, training, and prediction are the three words you need for the rest of this track.",
       ],
       artifacts: [
-        lessonVideo(
-          "AI, Machine Learning, and Deep Learning",
-          "Animated explainer, 3 minutes. Three concentric circles draw themselves on screen while the narrator places real products inside each: a thermostat rule, a spam filter, a photo recognizer. Calm pace, large labels.",
-          180,
-        ),
+        lessonVideo({
+          title: "AI, Machine Learning, Deep Learning and Generative AI Explained",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=qYNweeDHiyU",
+          durationSeconds: 600,
+          brief:
+            "IBM's whiteboard explainer draws the exact nested-circles picture (AI > ML > DL) the lesson teaches, with plain-language examples and a short note on where generative AI fits.",
+        }),
         {
           key: "nested-circles",
           kind: "DIAGRAM",
           title: "AI, machine learning, and deep learning as nested circles",
           brief:
             "Three concentric circles labelled Artificial intelligence (outer), Machine learning (middle), Deep learning (inner). One small example icon in each ring. Flat style, brand colours, readable at 320px wide.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-foundations/ai-ml-deep-learning/nested-circles.webp",
         },
       ],
     },
@@ -136,17 +144,21 @@ Which of the three ingredients (data, compute, technique) do you think mattered 
         "The transformer (2017) is the design behind today's large language models.",
       ],
       artifacts: [
-        lessonVideo(
-          "A Short History of AI",
-          "Documentary-style montage, 4 minutes. Archival-feel stills from each era (period-appropriate illustration, not real photos) with a horizontal timeline that advances as the narrator speaks. Ends on a modern phone screen running an AI assistant.",
-          240,
-        ),
+        lessonVideo({
+          title: "A Brief History of AI: From Machine Learning to Gen AI to Agentic AI",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=ZHCB09O6zUk",
+          durationSeconds: 773,
+          brief:
+            "Walks the same timeline as the lesson (Turing, 1956 Dartmouth, expert systems, Deep Blue, machine/deep learning, generative AI) in a current, non-technical format.",
+        }),
         {
           key: "timeline",
           kind: "DIAGRAM",
           title: "Milestones in AI, 1956 to today",
           brief:
             "Horizontal timeline with 7 markers: 1956 Dartmouth workshop, 1970s first AI winter, 1980s expert systems, 1997 computer beats chess champion, 2012 deep learning wins image recognition, 2017 transformer paper, 2023+ open large language models including Llama. One short caption per marker.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-foundations/a-short-history-of-ai/timeline.webp",
         },
       ],
     },
@@ -190,17 +202,21 @@ Keep a note on your phone for one day. Each time you suspect AI is involved, jot
         "Spotting the job helps you ask what the system is optimizing for and how it can fail.",
       ],
       artifacts: [
-        lessonVideo(
-          "AI in Your Everyday Life",
-          "Follow-along day, 3 minutes. A person wakes up, commutes, works, and relaxes; each time AI is used a small label pops in naming the job (recognize, predict, rank, generate). Upbeat, no dialogue, narration only.",
-          180,
-        ),
+        lessonVideo({
+          title: "How AI works in everyday life | Google AI",
+          channel: "Google",
+          url: "https://www.youtube.com/watch?v=oJC8VIDSx_Q",
+          durationSeconds: 203,
+          brief:
+            "A 3-minute follow-along day (face unlock, voice assistant, check deposit, navigation, music recommendations) that matches the lesson's video brief almost exactly and ends with the same 'notice your own AI moments' reflection.",
+        }),
         {
           key: "day-in-the-life",
           kind: "IMAGE",
           title: "Twelve AI moments before lunch",
           brief:
             "Illustrated grid of 12 small scenes from a morning: face unlock, photo portrait mode, spam folder, smart reply, traffic map, playlist, voice assistant, autocorrect, translation, fitness tracker, news feed, thermostat. Consistent flat illustration style, warm palette.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-foundations/ai-in-everyday-life/day-in-the-life.webp",
         },
       ],
     },
@@ -239,17 +255,21 @@ Ask any AI assistant for the population of your hometown and the source. Then ch
         "Treat output as a strong first draft and verify anything that matters.",
       ],
       artifacts: [
-        lessonVideo(
-          "What AI Can't Do (Yet)",
-          "Explainer, 3 minutes. Split screen: an AI assistant answers confidently on the left while a fact-checker on the right finds the errors. Tone is fair, not alarmist. Ends with the 'well-read colleague who sometimes bluffs' metaphor.",
-          180,
-        ),
+        lessonVideo({
+          title: "Why Large Language Models Hallucinate",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=cfqtFvWOfg0",
+          durationSeconds: 577,
+          brief:
+            "Opens with confident-but-false 'facts', explains that models predict plausible text rather than verify truth, and closes with practical ways to reduce errors, matching the lesson's 'confident is not correct' framing.",
+        }),
         {
           key: "hallucination-example",
           kind: "IMAGE",
           title: "A confident but wrong answer",
           brief:
             "Mock chat screenshot (not from any real product). The assistant gives a crisp, well-formatted answer citing a book that does not exist. A red annotation circles the invented citation with the caption 'fluent, formatted, false'.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-foundations/what-ai-cant-do/hallucination-example.webp",
         },
       ],
     },
@@ -287,17 +307,21 @@ Choose one AI product you rely on. Answer the four questions for it in a few wor
         "Privacy and misuse deserve attention before launch, not after.",
       ],
       artifacts: [
-        lessonVideo(
-          "Risks, Bias, and Ethics",
-          "Thoughtful explainer, 3 minutes. Illustrated scenarios: a résumé screener, a photo filter, a voice clone. For each, the narrator asks the four questions. Neutral, respectful tone; diverse illustrated people.",
-          180,
-        ),
+        lessonVideo({
+          title: "What is AI Ethics?",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=aGwYtUzMQUk",
+          durationSeconds: 370,
+          brief:
+            "Six-minute overview of fairness/bias, explainability, accountability, transparency, and privacy, covering the lesson's four questions and its privacy/misuse section for a general audience.",
+        }),
         {
           key: "four-questions",
           kind: "DIAGRAM",
           title: "Four questions for any AI system",
           brief:
             "Four cards in a row: Who is affected? Who is accountable? What data was used? What happens when it fails? Each with a simple line icon. Flat, high contrast.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-foundations/risks-bias-and-ethics/four-questions.webp",
         },
       ],
     },
@@ -336,17 +360,21 @@ Find one AI headline from this week. Run it through the checklist. Did your opin
         "Words like 'understands' and 'knows' are metaphors; check what the evidence actually shows.",
       ],
       artifacts: [
-        lessonVideo(
-          "Reading AI News Like a Pro",
-          "Fast-paced explainer, 3 minutes. A newsroom-style desk; headlines fly in and the host stamps each one with a checklist item. Light humour, respectful of journalists.",
-          180,
-        ),
+        lessonVideo({
+          title: "You should be skeptical when it comes to hyped-up AI. Here's why | Gary Marcus",
+          channel: "Big Think",
+          url: "https://www.youtube.com/watch?v=oHtug8l1rtQ",
+          durationSeconds: 387,
+          brief:
+            "Gives a concrete checklist for AI headlines (what was actually tested, who the comparison was, narrow vs general, how robust, strip away words like 'reads' and 'understands') that lines up with the lesson's five-point checklist and 'words to watch'.",
+        }),
         {
           key: "hype-checklist",
           kind: "IMAGE",
           title: "The AI headline checklist",
           brief:
             "Printable-style checklist card with five tick boxes: Demo or product? Benchmark or real task? Who evaluated it? Open or closed? What is the failure rate? Clean typography, brand accent colour.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-foundations/reading-ai-news-like-a-pro/hype-checklist.webp",
         },
       ],
     },
@@ -387,17 +415,21 @@ Go back to the list you made in lesson one. Re-label each item with what you kno
         "Lessons stand alone; mark them complete to track progress and earn track badges.",
       ],
       artifacts: [
-        lessonVideo(
-          "Your AI Journey Starts Here",
-          "Warm wrap-up, 2 minutes. Host recaps the track on a whiteboard, then reveals the full Academy path as a winding road with ten stops. Encouraging close inviting the learner to the next track.",
-          120,
-        ),
+        lessonVideo({
+          title: "AI for Everyone by Andrew Ng",
+          channel: "DeepLearningAI",
+          url: "https://www.youtube.com/watch?v=JPcx9qHzzgk",
+          durationSeconds: 461,
+          brief:
+            "Andrew Ng's welcoming, non-technical kickoff cuts through hype, previews what AI can and cannot do, and encourages learners to keep going, which suits a wrap-up that points learners toward the rest of the Academy path.",
+        }),
         {
           key: "academy-map",
           kind: "DIAGRAM",
           title: "The WeStride Academy path",
           brief:
             "Illustrated road map with ten stops in order: AI Foundations, How AI Models Learn, Generative AI Explained, Meet Meta AI & Llama, Prompt Engineering Mastery, Build with Llama, AI Agents & Automation, Multimodal & Creative AI, AI in Action, From Idea to Launch. Branches shown after Prompt Engineering. Friendly, flat style.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-foundations/your-ai-journey/academy-map.webp",
         },
       ],
     },

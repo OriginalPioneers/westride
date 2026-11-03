@@ -2,17 +2,17 @@ import "server-only";
 
 import { del, get, put } from "@vercel/blob";
 import type { ArtifactKind } from "@westride/db";
+import { extensionFor, MAX_ARTIFACT_BYTES } from "./uploads";
 
 /**
- * Files the advisory team makes live in the private Blob store. Nothing in
- * it has a public URL: the app reads bytes back with the store token and
- * serves them to members of the idea only.
+ * Files the team keeps live in the private Blob store: advisor deliverables
+ * and member uploads. Nothing in it has a public URL; the app reads bytes
+ * back with the store token and serves them to members of the idea only.
  */
 
 const PREFIX = "idea-factory";
 
-/** Enough for a few logo renders and a report. Uploads are not accepted here. */
-export const MAX_ARTIFACT_BYTES = 25 * 1024 * 1024;
+export { MAX_ARTIFACT_BYTES };
 
 export class ArtifactStorageError extends Error {}
 
@@ -29,21 +29,7 @@ export function isArtifactStorageConfigured(): boolean {
   return Boolean(process.env.BLOB_PRIVATE_READ_WRITE_TOKEN);
 }
 
-const EXTENSIONS: Record<string, string> = {
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/jpeg": "jpg",
-  "image/svg+xml": "svg",
-  "application/pdf": "pdf",
-  "text/markdown": "md",
-  "text/plain": "txt",
-  "text/csv": "csv",
-  "application/json": "json",
-};
-
-export function extensionFor(contentType: string): string {
-  return EXTENSIONS[contentType] ?? "bin";
-}
+export { extensionFor };
 
 export type StoredArtifact = {
   pathname: string;
@@ -97,6 +83,26 @@ export async function openArtifact(pathname: string): Promise<ArtifactStream | n
     size: result.blob.size,
     etag: result.blob.etag,
   };
+}
+
+/** Reads the whole file into memory so it can be sent to Muse. */
+export async function readArtifactBytes(pathname: string): Promise<Buffer | null> {
+  const file = await openArtifact(pathname);
+  if (!file) {
+    return null;
+  }
+  const chunks: Uint8Array[] = [];
+  const reader = file.stream.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    if (value) {
+      chunks.push(value);
+    }
+  }
+  return Buffer.concat(chunks);
 }
 
 /** Best effort. A file left behind costs storage, not correctness. */

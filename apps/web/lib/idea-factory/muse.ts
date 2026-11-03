@@ -6,6 +6,21 @@ import {
   estimateTranscriptionCostMicros,
   MUSE_TRANSCRIBE_MODEL,
 } from "./pricing";
+import {
+  redactMuseInput,
+  type MuseInputItem,
+} from "./muse-input";
+
+export {
+  redactMuseInput,
+  withInlineFiles,
+  type MuseContentPart,
+  type MuseFilePart,
+  type MuseImagePart,
+  type MuseInlineFile,
+  type MuseInputItem,
+  type MuseTextPart,
+} from "./muse-input";
 
 /**
  * A thin client for Meta Model API (https://dev.meta.ai/docs). The member's
@@ -30,8 +45,6 @@ export class MuseError extends Error {
     this.name = "MuseError";
   }
 }
-
-export type MuseInputItem = { role: "user" | "assistant"; content: string };
 
 export type MuseJsonFormat = {
   name: string;
@@ -271,7 +284,10 @@ export async function callMuse(options: MuseCallOptions): Promise<MuseResult> {
     payload.max_output_tokens = options.maxOutputTokens;
   }
 
-  const requestBody = payload as unknown as Record<string, unknown>;
+  const requestBody = {
+    ...(payload as unknown as Record<string, unknown>),
+    input: redactMuseInput(payload.input),
+  };
   const started = Date.now();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? REQUEST_TIMEOUT_MS);

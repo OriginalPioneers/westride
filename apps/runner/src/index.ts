@@ -17,7 +17,9 @@ import { listOllamaModels } from "./ollama";
 
 const config = loadConfig();
 const tokenFile = join(config.stateDir, "device-token");
-const api = new WeStrideApi(config.baseUrl, null);
+const api = new WeStrideApi(config.baseUrl, null, (baseUrl) => {
+  log(`WeStride redirected to ${baseUrl}; using that from now on.`);
+});
 
 const shutdown = new AbortController();
 let currentJob: LeasedJob | null = null;

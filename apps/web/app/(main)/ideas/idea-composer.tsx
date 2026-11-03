@@ -47,6 +47,7 @@ import {
 } from "@heroicons/react/24/outline";
 import type { IdeaMemberRole, IdeaType } from "@westride/db";
 import type { CategoryOption } from "@westride/db/ideas";
+import { signInPath } from "@/lib/auth-paths";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 import {
   MAX_IDEA_DESCRIPTION,
@@ -77,7 +78,7 @@ export type IdeaFounder = {
 
 type Invitee = IdeaPersonHit & { role: IdeaMemberRole };
 
-/** Step 0 is the opening prompt; the stepper covers the steps after it. */
+/** Step 0 is the composer on the page; the dialog's stepper covers the steps after it. */
 const STEPS = [
   { label: "Start", question: "" },
   { label: "Details", question: "Does this look right?" },
@@ -97,6 +98,8 @@ const CONNECT_GITHUB_HREF = "/integrations/github/connect?returnTo=/settings";
 const CHOOSE_REPOS_HREF =
   "/integrations/github/connect?intent=install&returnTo=/settings";
 const SETTINGS_HREF = "/settings";
+const SIGN_IN_HREF = `${signInPath}?redirect_url=${encodeURIComponent("/ideas")}`;
+const COMPOSER_WIDTH = 720;
 
 type ImportNotice = Exclude<GithubImportResult, { status: "imported" }>;
 type DraftNotice = Exclude<DraftIdeaResult, { status: "drafted" }>;
@@ -277,16 +280,69 @@ function formatClock(totalSeconds: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export function CreateIdeaDialog({
-  isOpen,
-  onOpenChange,
+function ComposerIntro() {
+  return (
+    <VStack gap={3} hAlign="center">
+      <Icon icon={SparklesIcon} size="md" color="accent" />
+      <Text type="display-3" as="p" justify="center">
+        Every idea starts somewhere.
+      </Text>
+      <Text type="large" color="secondary" as="p" justify="center">
+        What are you thinking about creating?
+      </Text>
+    </VStack>
+  );
+}
+
+/**
+ * The top of the Idea Workshop: describe an idea (or paste a GitHub link)
+ * and Muse drafts it, then a dialog walks through details, sharing, and
+ * team. Signed-out visitors are asked to sign in first.
+ */
+export function IdeaComposer({
   founder,
   categoryOptions,
 }: {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
+  founder: IdeaFounder | null;
+  categoryOptions: CategoryOption[];
+}) {
+  // Cancelling the dialog remounts the composer so the next idea starts clean.
+  const [session, setSession] = useState(0);
+
+  if (!founder) {
+    return (
+      <VStack hAlign="center">
+        <VStack gap={6} hAlign="center" maxWidth={COMPOSER_WIDTH} width="100%">
+          <ComposerIntro />
+          <Button
+            label="Sign in to start an idea"
+            variant="primary"
+            size="lg"
+            href={SIGN_IN_HREF}
+          />
+        </VStack>
+      </VStack>
+    );
+  }
+
+  return (
+    <ComposerSession
+      key={session}
+      founder={founder}
+      categoryOptions={categoryOptions}
+      onCancel={() => setSession((current) => current + 1)}
+    />
+  );
+}
+
+function ComposerSession({
+  founder,
+  categoryOptions,
+  onCancel,
+}: {
   founder: IdeaFounder;
   categoryOptions: CategoryOption[];
+  onCancel: () => void;
 }) {
   const router = useRouter();
   const [isSaving, startSaving] = useTransition();
@@ -373,10 +429,10 @@ export function CreateIdeaDialog({
   }
 
   function handleOpenChange(next: boolean) {
-    if (!next && (isSaving || isDrafting || isImporting)) {
+    if (next || isSaving) {
       return;
     }
-    onOpenChange(next);
+    onCancel();
   }
 
   function goNext() {
@@ -502,9 +558,10 @@ export function CreateIdeaDialog({
     );
   }
 
-  const isLanding = step === 0;
-  const isLastStep = step === STEPS.length - 1;
-  const question = STEPS[step]?.question ?? "New idea";
+  // Hold the dialog on its first step while it closes back to the composer.
+  const dialogStep = Math.max(1, step);
+  const isLastStep = dialogStep === STEPS.length - 1;
+  const question = STEPS[dialogStep]?.question ?? "New idea";
   const isWorking = isDrafting || isImporting;
   const isListening = dictation.state.phase === "listening";
   const isDictationBusy =
@@ -527,111 +584,90 @@ export function CreateIdeaDialog({
             ? "Paste a repository link. Its README fills in the details."
             : "Describe it in your own words, or import a GitHub repository.";
 
-  const landing = (
-    <Layout
-      height="auto"
-      contentWidth={720}
-      header={
-        <DialogHeader
-          title="New idea"
-          onOpenChange={handleOpenChange}
-          hasDivider={false}
-        />
-      }
-      content={
-        <LayoutContent>
-          <VStack gap={6} paddingBlock={8}>
-            <VStack gap={3} hAlign="center">
-              <Icon icon={SparklesIcon} size="md" color="accent" />
-              <Text type="display-3" as="p" justify="center">
-                Every idea starts somewhere.
-              </Text>
-              <Text type="large" color="secondary" as="p" justify="center">
-                What are you thinking about creating?
-              </Text>
-            </VStack>
+  const composer = (
+    <VStack hAlign="center">
+      <VStack gap={6} maxWidth={COMPOSER_WIDTH} width="100%">
+        <ComposerIntro />
 
-            <HStack gap={2} wrap="wrap" justify="center">
-              <ToggleButtonGroup
-                label="Kind of idea"
-                value={type ?? (isExploring ? EXPLORING : null)}
-                onChange={(value) =>
-                  chooseKind(typeof value === "string" ? value : null)
-                }
-                size="lg"
-                isDisabled={isWorking}
-              >
-                {IDEA_TYPES.map((option) => (
-                  <ToggleButton
-                    key={option}
-                    value={option}
-                    label={IDEA_TYPE_LABELS[option]}
-                  />
-                ))}
-                <ToggleButton value={EXPLORING} label="Just exploring" />
-              </ToggleButtonGroup>
-            </HStack>
+        <HStack gap={2} wrap="wrap" justify="center">
+          <ToggleButtonGroup
+            label="Kind of idea"
+            value={type ?? (isExploring ? EXPLORING : null)}
+            onChange={(value) =>
+              chooseKind(typeof value === "string" ? value : null)
+            }
+            size="lg"
+            isDisabled={isWorking}
+          >
+            {IDEA_TYPES.map((option) => (
+              <ToggleButton
+                key={option}
+                value={option}
+                label={IDEA_TYPE_LABELS[option]}
+              />
+            ))}
+            <ToggleButton value={EXPLORING} label="Just exploring" />
+          </ToggleButtonGroup>
+        </HStack>
 
-            <ChatComposer
-              value={prompt}
-              onChange={(value) => {
-                setPrompt(value);
-                setPromptError(null);
-                setImportNotice(null);
-                dictation.dismissError();
-              }}
-              onSubmit={submitPrompt}
-              isDisabled={isWorking}
-              placeholder={
-                isGithubMode
-                  ? "https://github.com/owner/repo"
-                  : "Describe your idea, or ask me anything…"
-              }
-              input={
-                <ChatComposerInput
-                  label={isGithubMode ? "GitHub repository link" : "Describe your idea"}
-                  style={composerInput}
-                  pasteAsToken={false}
-                  hasHistory={false}
-                />
-              }
-              footerActions={
-                <ToggleButton
-                  label="Import from GitHub"
-                  icon={<Icon icon={CodeBracketIcon} size="sm" />}
-                  isPressed={isGithubMode}
-                  onPressedChange={(pressed) => {
-                    setIsGithubMode(pressed);
-                    setImportNotice(null);
-                  }}
-                  isDisabled={isWorking}
-                />
-              }
-              sendActions={
-                <IconButton
-                  label={isListening ? "Stop dictating" : "Dictate your idea"}
-                  tooltip={isListening ? "Stop and transcribe" : "Dictate with your voice"}
-                  icon={<Icon icon={isListening ? StopIcon : MicrophoneIcon} />}
-                  variant={isListening ? "primary" : "ghost"}
-                  isLoading={isDictationBusy}
-                  isDisabled={isWorking}
-                  onClick={dictation.toggle}
-                />
-              }
-              status={
-                composerError ? { type: "error", message: composerError } : undefined
-              }
+        <ChatComposer
+          value={prompt}
+          onChange={(value) => {
+            setPrompt(value);
+            setPromptError(null);
+            setImportNotice(null);
+            dictation.dismissError();
+          }}
+          onSubmit={submitPrompt}
+          isDisabled={isWorking}
+          placeholder={
+            isGithubMode
+              ? "https://github.com/owner/repo"
+              : "Describe your idea, or ask me anything…"
+          }
+          input={
+            <ChatComposerInput
+              label={isGithubMode ? "GitHub repository link" : "Describe your idea"}
+              style={composerInput}
+              pasteAsToken={false}
+              hasHistory={false}
             />
+          }
+          footerActions={
+            <ToggleButton
+              label="Import from GitHub"
+              icon={<Icon icon={CodeBracketIcon} size="sm" />}
+              isPressed={isGithubMode}
+              onPressedChange={(pressed) => {
+                setIsGithubMode(pressed);
+                setImportNotice(null);
+              }}
+              isDisabled={isWorking}
+            />
+          }
+          sendActions={
+            <IconButton
+              label={isListening ? "Stop dictating" : "Dictate your idea"}
+              tooltip={isListening ? "Stop and transcribe" : "Dictate with your voice"}
+              icon={<Icon icon={isListening ? StopIcon : MicrophoneIcon} />}
+              variant={isListening ? "primary" : "ghost"}
+              isLoading={isDictationBusy}
+              isDisabled={isWorking}
+              onClick={dictation.toggle}
+            />
+          }
+          status={
+            composerError ? { type: "error", message: composerError } : undefined
+          }
+        />
 
-            {importNotice ? <ImportNoticeBanner notice={importNotice} /> : null}
+        {importNotice ? <ImportNoticeBanner notice={importNotice} /> : null}
 
-            <Text type="supporting" as="p" justify="center" aria-live="polite">
-              {footnote}
-            </Text>
-          </VStack>
-        </LayoutContent>
-      }
-    />
+        <Text type="supporting" as="p" justify="center" aria-live="polite">
+          {footnote}
+        </Text>
+      </VStack>
+    </VStack>
   );
 
   const steps = (
@@ -647,7 +683,7 @@ export function CreateIdeaDialog({
             {formMessage ? (
               <Banner status="error" title={formMessage} />
             ) : null}
-            <Stepper activeStep={step - 1} label="Create an idea">
+            <Stepper activeStep={dialogStep - 1} label="Create an idea">
               {STEPS.slice(1).map((item, index) => (
                 <Step key={item.label} step={index} label={item.label} />
               ))}
@@ -658,7 +694,7 @@ export function CreateIdeaDialog({
                 {question}
               </Heading>
 
-              {step === 1 ? (
+              {dialogStep === 1 ? (
                 <VStack gap={6}>
                   {draftNotice ? <DraftNoticeBanner notice={draftNotice} /> : null}
                   {linkedRepo ? (
@@ -750,7 +786,7 @@ export function CreateIdeaDialog({
                 </VStack>
               ) : null}
 
-              {step === 2 ? (
+              {dialogStep === 2 ? (
                 <VStack gap={4}>
                   <Grid columns={{ minWidth: 280, max: 2 }} gap={4}>
                     {SHARING_OPTIONS.map((option) => (
@@ -784,7 +820,7 @@ export function CreateIdeaDialog({
                 </VStack>
               ) : null}
 
-              {step === 3 ? (
+              {dialogStep === 3 ? (
                 <VStack gap={5}>
                   <Text type="supporting">
                     You start as the founder. Invite other WeStride members
@@ -907,7 +943,7 @@ export function CreateIdeaDialog({
         <LayoutFooter>
           <HStack gap={2} vAlign="center">
             <Button
-              label={step === 1 ? "Start over" : "Back"}
+              label={dialogStep === 1 ? "Start over" : "Back"}
               variant="secondary"
               isDisabled={isSaving}
               onClick={() => setStep((current) => Math.max(0, current - 1))}
@@ -926,15 +962,18 @@ export function CreateIdeaDialog({
   );
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onOpenChange={handleOpenChange}
-      purpose="form"
-      width={DIALOG_WIDTH}
-      maxHeight={DIALOG_SIZE}
-      style={isLanding ? undefined : { height: DIALOG_SIZE }}
-    >
-      {isLanding ? landing : steps}
-    </Dialog>
+    <>
+      {composer}
+      <Dialog
+        isOpen={step > 0}
+        onOpenChange={handleOpenChange}
+        purpose="form"
+        width={DIALOG_WIDTH}
+        maxHeight={DIALOG_SIZE}
+        style={{ height: DIALOG_SIZE }}
+      >
+        {steps}
+      </Dialog>
+    </>
   );
 }

@@ -12,6 +12,11 @@ export const TESTFLIGHT_URL =
 export const PLAY_TESTING_URL =
   "https://play.google.com/apps/testing/com.westride.org";
 
+/** Showcase and join instructions. The public store listings are not live yet. */
+export const MOBILE_APPS_PATH = "/mobile-apps";
+export const IOS_BETA_PATH = "/mobile-apps/ios";
+export const ANDROID_BETA_PATH = "/mobile-apps/android";
+
 export const STORE_LINKS = [
   { label: "TestFlight", href: TESTFLIGHT_URL },
   { label: "Google Play", href: PLAY_TESTING_URL },

@@ -71,6 +71,8 @@ export const projects = pgTable(
     ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "set null" }),
     /** Public Blob URL of a 512×512 square image. */
     imageUrl: text("image_url"),
+    /** Picked by the WeStride team, from the admin portal. */
+    isFeatured: boolean("is_featured").notNull().default(false),
     isPublic: boolean("is_public").notNull().default(false),
     origin: contentOrigin("origin").notNull().default("MEMBER"),
     /** The next ticket number to hand out. Tickets read as PRJ-12 style keys. */
@@ -86,6 +88,7 @@ export const projects = pgTable(
     index("projects_idea_id_idx").on(table.ideaId),
     index("projects_origin_idx").on(table.origin),
     index("projects_visibility_idx").on(table.isPublic),
+    index("projects_featured_idx").on(table.isFeatured),
     index("projects_updated_at_idx").on(table.updatedAt),
   ],
 );
