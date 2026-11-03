@@ -110,16 +110,25 @@ export const SUPPORTING_STYLES = `
   --sp-orange: var(--color-brand-orange);
   --sp-green: var(--color-data-categorical-green);
   --sp-yellow: var(--color-data-yellow-3);
-  --sp-accent: var(--color-data-categorical-purple);
+  /* Same treatment as the landing eyebrow: categorical purple does not
+     lighten in dark mode, so the accent mixes Electric Purple toward the
+     primary text color until small text stays readable. */
+  --sp-accent: light-dark(
+    var(--color-data-categorical-purple),
+    color-mix(in srgb, var(--color-brand-purple) 50%, var(--color-text-primary))
+  );
   /* One kind, one hue, everywhere on the page. */
   --sp-tokens: var(--sp-blue);
   --sp-compute: var(--sp-green);
   --sp-capital: var(--sp-orange);
 }
 
-[data-theme="dark"] .sp-root,
 .sp-root [data-theme="dark"] {
-  --sp-accent: var(--sp-indigo);
+  --sp-accent: color-mix(in srgb, var(--color-brand-purple) 50%, var(--color-text-primary));
+}
+
+.sp-root [data-theme="light"] {
+  --sp-accent: var(--color-data-categorical-purple);
 }
 
 .sp-eyebrow {

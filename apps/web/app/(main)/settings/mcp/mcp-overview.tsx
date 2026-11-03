@@ -5,6 +5,7 @@ import { Button } from "@astryxdesign/core/Button";
 import { Code } from "@astryxdesign/core/Code";
 import { CodeBlock } from "@astryxdesign/core/CodeBlock";
 import { Heading } from "@astryxdesign/core/Heading";
+import { Link } from "@astryxdesign/core/Link";
 import { List, ListItem } from "@astryxdesign/core/List";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Tab, TabList } from "@astryxdesign/core/TabList";
@@ -79,18 +80,18 @@ const CLIENTS: Client[] = [
                 <>
                   Back in <Menu>Apps &amp; Connectors</Menu>, choose{" "}
                   <Menu>Create</Menu>. Name it <Menu>WeStride</Menu>, paste the
-                  server URL, and set Authentication to{" "}
-                  <Menu>No authentication</Menu>.
+                  server URL, and set Authentication to <Menu>OAuth</Menu>.
+                  Leave the client fields empty; ChatGPT registers itself.
                 </>
               ),
             },
             {
-              title: "Use it in a chat",
+              title: "Sign in and use it",
               body: (
                 <>
-                  Start a new chat, open the <Menu>+</Menu> menu, pick{" "}
-                  <Menu>Developer mode</Menu>, and enable{" "}
-                  <Menu>WeStride</Menu>.
+                  ChatGPT opens WeStride sign-in once. Then start a new chat,
+                  open the <Menu>+</Menu> menu, pick <Menu>Developer mode</Menu>,
+                  and enable <Menu>WeStride</Menu>.
                 </>
               ),
             },
@@ -130,10 +131,11 @@ const CLIENTS: Client[] = [
               ),
             },
             {
-              title: "Use it in a chat",
+              title: "Sign in and use it",
               body: (
                 <>
-                  In any conversation, open the tools menu below the message
+                  Claude asks you to connect; sign in with WeStride once. Then,
+                  in any conversation, open the tools menu below the message
                   box and make sure <Menu>WeStride</Menu> is switched on.
                 </>
               ),
@@ -158,6 +160,9 @@ const CLIENTS: Client[] = [
           language="bash"
           width="100%"
         />
+        <Text type="supporting">
+          Then type <Code>/mcp</Code> in Claude Code and pick WeStride to sign in.
+        </Text>
       </>
     ),
   },
@@ -175,6 +180,10 @@ const CLIENTS: Client[] = [
           language="json"
           width="100%"
         />
+        <Text type="supporting">
+          Cursor shows a <Menu>Needs login</Menu> prompt next to the server;
+          click it to sign in with WeStride.
+        </Text>
       </>
     ),
   },
@@ -182,50 +191,114 @@ const CLIENTS: Client[] = [
     value: "other",
     label: "Other clients",
     content: (
-      <Text>
-        Any MCP client that supports the Streamable HTTP transport, including
-        VS Code, can connect to <Code>{MCP_URL}</Code> with no authentication.
-        Look for an option to add a remote or HTTP server in its settings.
-      </Text>
+      <>
+        <Text>
+          Any MCP client that supports the Streamable HTTP transport with OAuth,
+          including VS Code, can connect to <Code>{MCP_URL}</Code> and will
+          walk you through WeStride sign-in. Look for an option to add a remote
+          or HTTP server in its settings.
+        </Text>
+        <Text>
+          Clients without OAuth support can send a WeStride API key instead, as
+          an <Code>Authorization: Bearer</Code> header. Create one under{" "}
+          <Code>Your API keys</Code> on the{" "}
+          <Link href="/settings/api">API page</Link>.
+        </Text>
+      </>
     ),
   },
 ];
 
-const TOOLS = [
+const TOOL_GROUPS: { name: string; tools: { name: string; description: string }[] }[] = [
   {
-    name: "list_academy_tracks",
-    description:
-      "Every Academy track in recommended order, with its difficulty, estimated duration, category, tags, prerequisite tracks, learning objectives, and the badge earned on completion.",
+    name: "You",
+    tools: [{ name: "whoami", description: "The member this session is signed in as, with your member id." }],
+  },
+  {
+    name: "Ideas",
+    tools: [
+      { name: "list_ideas", description: "Search ideas by text, type, category, country, collection, or support wanted." },
+      { name: "get_idea", description: "One idea with its team, links, and the projects and agents built on it." },
+      { name: "list_idea_categories", description: "Every category an idea can carry." },
+      { name: "create_idea", description: "Start an idea with you as founder." },
+      { name: "update_idea", description: "Edit name, description, categories, prototype, or team. Founders only." },
+      { name: "follow_idea", description: "Follow or unfollow an idea." },
+    ],
+  },
+  {
+    name: "Projects",
+    tools: [
+      { name: "list_projects", description: "Search projects, or list the ones you belong to." },
+      { name: "get_project", description: "One project with team, repositories, milestones, ticket counts, and agents." },
+      { name: "create_project", description: "Start a project, optionally from an idea you belong to." },
+      { name: "update_project", description: "Edit details, status, or team. Owners only." },
+      { name: "list_tickets", description: "The ticket board, optionally one status." },
+      { name: "get_ticket", description: "One ticket with its comments." },
+      { name: "create_ticket", description: "Add a ticket to the backlog." },
+      { name: "update_ticket", description: "Edit a ticket or move it between columns." },
+      { name: "delete_ticket", description: "Delete a ticket." },
+      { name: "comment_on_ticket", description: "Comment on a ticket as you." },
+      { name: "create_milestone", description: "Add a milestone to the roadmap." },
+      { name: "update_milestone", description: "Edit a milestone." },
+      { name: "delete_milestone", description: "Remove a milestone." },
+    ],
+  },
+  {
+    name: "Agents",
+    tools: [
+      { name: "list_agents", description: "Search agents, or list the ones you own." },
+      { name: "get_agent", description: "One agent with its brief, schedule, counts, usage, and your role." },
+      { name: "create_agent", description: "Create an agent with an optional schedule and first ticket." },
+      { name: "update_agent", description: "Edit settings, schedule, or status. Owners only." },
+      { name: "delete_agent", description: "Delete an agent that has no running job. Owners only." },
+      { name: "list_agent_tickets", description: "The agent's work queue." },
+      { name: "get_agent_ticket", description: "One ticket with the jobs that worked it." },
+      { name: "queue_agent_ticket", description: "Add work to the queue. Owner and collaborators." },
+      { name: "update_agent_ticket", description: "Edit or move a queued ticket." },
+      { name: "delete_agent_ticket", description: "Delete a queued ticket." },
+      { name: "list_agent_jobs", description: "Jobs newest first, with status, pull request, and usage." },
+      { name: "get_agent_job", description: "One job with its summary or report." },
+      { name: "read_agent_log", description: "What the agent and its team did, newest first." },
+      { name: "get_agent_usage", description: "Token and cost totals by model, trigger, and day." },
+    ],
+  },
+  {
+    name: "Academy",
+    tools: [
+      { name: "list_academy_tracks", description: "Every Academy track in recommended order." },
+      { name: "get_academy_track", description: "One track with its lessons." },
+    ],
   },
 ];
 
 const PROMPTS = [
-  "Using WeStride, which Academy tracks should a beginner take first, and in what order?",
+  "Using WeStride, show me the open tickets on my projects and draft a plan for this week.",
+  "Create a WeStride idea for a neighbourhood tool library and invite my teammate.",
+  "Queue a ticket for my docs agent on WeStride to review last week's changes, then tell me what it did on its last run.",
+  "Which WeStride ideas are looking for compute, and which of them already have a project?",
   "Look up the WeStride Academy tracks and build me a four-week learning plan.",
-  "Which WeStride tracks cover AI agents, and what should I finish before starting them?",
-  "How long would it take to finish every beginner track in WeStride Academy?",
 ];
 
 const ACCESS = [
   {
-    label: "No sign-in",
+    label: "You sign in once",
     detail:
-      "The server is public. It does not know who you are and cannot see your WeStride account.",
+      "The server follows the MCP authorization spec. Your client discovers WeStride sign-in, registers itself, and opens the sign-in page. Revoke its access any time from your account settings.",
   },
   {
-    label: "Read-only",
+    label: "Acts as you, no more",
     detail:
-      "Tools only read published catalog data. Nothing is created, changed, or deleted.",
+      "Every tool call is forwarded to the WeStride API with your token, so you see what you could see on the website and change only what you could change here.",
+  },
+  {
+    label: "Assistants are told to confirm",
+    detail:
+      "Tools that create or delete things are marked as such and their descriptions ask the assistant to check with you first. Your client may also ask before running them.",
   },
   {
     label: "Only what your assistant sends",
     detail:
       "The server receives the tool calls your assistant makes, not your conversation, and keeps no session between calls.",
-  },
-  {
-    label: "Same data as the API",
-    detail:
-      "Results come from the public WeStride API, so they match what the API, this website, and the mobile app show.",
   },
 ];
 
@@ -238,17 +311,22 @@ const STACK = [
   {
     name: "Hono",
     detail:
-      "Routes requests, allows any origin so browser-based clients can connect, and serves the setup guide at the root of mcp.westride.org.",
+      "Routes requests, allows any origin so browser-based clients can connect, serves the OAuth discovery documents under /.well-known, and serves the setup guide at the root of mcp.westride.org.",
+  },
+  {
+    name: "Clerk and @clerk/mcp-tools",
+    detail:
+      "Clerk is the OAuth authorization server, the same one this website uses. The MCP server publishes protected-resource metadata pointing at it and verifies each token by asking the API who it belongs to.",
   },
   {
     name: "@westride/api-client",
     detail:
-      "Tools call the WeStride API rather than the database, through the same typed client the mobile app uses.",
+      "Tools call the WeStride API rather than the database, through the same typed client the mobile app uses, with your token attached.",
   },
   {
     name: "Zod",
     detail:
-      "Each tool publishes a Zod output schema, so clients know the shape of a result before they call it. Results come back as structured content plus a JSON text copy for clients that only read text.",
+      "Each tool declares a Zod input schema, so your assistant knows exactly what to send. Results come back as structured content plus a JSON text copy for clients that only read text.",
   },
   {
     name: "Astryx",
@@ -263,9 +341,9 @@ const STACK = [
 ];
 
 const CALL_FLOW = [
-  "Your assistant decides it needs WeStride data and sends a JSON-RPC request to POST /mcp.",
-  "The server creates a fresh MCP server and transport for that request alone. Nothing is shared between requests, so instances can scale out freely.",
-  "The tool calls the WeStride API, which answers from Vercel's cache or reads Neon Postgres.",
+  "The first time, your client calls POST /mcp without a token and gets a 401 pointing at the server's protected-resource metadata. From there it finds WeStride sign-in, registers itself, and opens the sign-in page for you.",
+  "Afterwards every JSON-RPC request to POST /mcp carries your access token. The server checks it with the API and creates a fresh MCP server and transport bound to it for that request alone. Nothing is shared between requests, so instances can scale out freely.",
+  "The tool calls the WeStride API with your token, which reads or writes Neon Postgres as you.",
   "The result goes back to your assistant as JSON, and the per-request server closes.",
 ];
 
@@ -278,7 +356,7 @@ const RELATED = [
   },
   {
     label: "WeStride API",
-    detail: "The public API every MCP tool reads from.",
+    detail: "The API every MCP tool calls, and where you manage API keys.",
     href: "/settings/api",
   },
   {
@@ -326,7 +404,7 @@ export function McpOverview() {
     <DocPage
       tabs={<SettingsTabs />}
       title="WeStride MCP"
-      lede="Connect ChatGPT, Claude, Cursor, and other AI assistants to WeStride, so they answer from the real Academy catalog."
+      lede="Connect ChatGPT, Claude, Cursor, and other AI assistants to WeStride, so they can work on your ideas, projects, and agents with you."
       actions={
         <>
           <Button
@@ -347,16 +425,18 @@ export function McpOverview() {
           and use the results in its answer.
         </Text>
         <Text>
-          The WeStride MCP server gives assistants the Academy catalog. Ask one
-          to compare tracks, check prerequisites, or plan what to learn next,
-          and it answers from WeStride&apos;s data instead of guessing.
+          The WeStride MCP server gives assistants your WeStride. Ask one to
+          find ideas looking for help, start a project and plan its first
+          tickets, queue work for an agent and read what it did, or build a
+          study plan from the Academy, and it works from WeStride&apos;s data
+          instead of guessing.
         </Text>
       </DocSection>
 
       <DocSection id="connect" title="Connect your assistant">
         <Text>
-          Every client uses the same server URL. There is no account, API key,
-          or sign-in.
+          Every client uses the same server URL. The first time you connect,
+          your client opens WeStride sign-in; there is no key to paste.
         </Text>
         <CodeBlock code={MCP_URL} title="Server URL" width="100%" />
         <ClientSetup />
@@ -369,24 +449,34 @@ export function McpOverview() {
 
       <DocSection id="tools" title="Tools">
         <Text>
-          Tools are what an assistant can call. Each one is read-only and
-          idempotent: calling it never changes anything, and calling it twice
-          returns the same result.
+          Tools are what an assistant can call. Reads are marked read-only and
+          idempotent; writes carry the same permission rules as the website,
+          and deletes are flagged as destructive so clients can ask you first.
         </Text>
-        <Table
-          data={TOOLS}
-          idKey="name"
-          columns={[
-            {
-              key: "name",
-              header: "Tool",
-              renderCell: (row) => <Code>{row.name}</Code>,
-            },
-            { key: "description", header: "Returns" },
-          ]}
-        />
+        <VStack gap={6}>
+          {TOOL_GROUPS.map((group) => (
+            <VStack key={group.name} gap={2}>
+              <Heading level={3}>{group.name}</Heading>
+              <Table
+                data={group.tools}
+                idKey="name"
+                density="compact"
+                verticalAlign="top"
+                columns={[
+                  {
+                    key: "name",
+                    header: "Tool",
+                    renderCell: (row) => <Code>{row.name}</Code>,
+                  },
+                  { key: "description", header: "Does" },
+                ]}
+              />
+            </VStack>
+          ))}
+        </VStack>
         <Text type="supporting">
-          More tools will follow as more of WeStride opens up through the API.
+          Linking GitHub repositories and starting agent jobs stay on the
+          website for now, where GitHub access and Muse keys are checked.
         </Text>
       </DocSection>
 
@@ -447,8 +537,8 @@ export function McpOverview() {
         </Text>
         <CodeBlock
           code={`bun install
-cp apps/api/.env.example apps/api/.env   # then set DATABASE_URL
-cp apps/mcp/.env.example apps/mcp/.env
+cp apps/api/.env.example apps/api/.env   # set DATABASE_URL and the CLERK_* keys
+cp apps/mcp/.env.example apps/mcp/.env   # set CLERK_PUBLISHABLE_KEY
 bun run dev:mcp                          # API on :3001, MCP on :3002`}
           language="bash"
           width="100%"

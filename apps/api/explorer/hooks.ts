@@ -22,6 +22,53 @@ export function useRoute(): Route {
     : { page: "overview" };
 }
 
+// ---------------------------------------------------------------------------
+// The bearer token the Try it panel sends. Kept in sessionStorage so it
+// survives navigating between endpoints but is gone when the tab closes, and
+// shared across panels through a tiny store so every console shows the same
+// value.
+// ---------------------------------------------------------------------------
+
+const TOKEN_KEY = "westride-api-explorer-token";
+const tokenListeners = new Set<() => void>();
+
+function readToken(): string {
+  try {
+    return window.sessionStorage.getItem(TOKEN_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function subscribeToToken(onChange: () => void) {
+  tokenListeners.add(onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    tokenListeners.delete(onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+export function setToken(value: string) {
+  try {
+    if (value) {
+      window.sessionStorage.setItem(TOKEN_KEY, value);
+    } else {
+      window.sessionStorage.removeItem(TOKEN_KEY);
+    }
+  } catch {
+    // Private mode may refuse storage; the in-memory listeners still update.
+  }
+  for (const listener of tokenListeners) {
+    listener();
+  }
+}
+
+export function useToken(): [string, (value: string) => void] {
+  const token = useSyncExternalStore(subscribeToToken, readToken, () => "");
+  return [token, setToken];
+}
+
 export type DocumentState =
   | { status: "loading" }
   | { status: "error"; message: string }

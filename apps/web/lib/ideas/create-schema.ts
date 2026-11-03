@@ -2,13 +2,24 @@ import type { IdeaMemberRole, IdeaType } from "@westride/db";
 import { z } from "zod";
 import { prototypeUrl } from "@westride/db/builder";
 import { tagSlug } from "@westride/db/categories";
+import {
+  MAX_CATEGORY_NAME,
+  MAX_IDEA_CATEGORIES,
+  MAX_IDEA_DESCRIPTION,
+  MAX_IDEA_INVITES,
+  MAX_IDEA_MEMBERS,
+  MAX_IDEA_NAME,
+} from "@westride/db/limits";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 
-export const MAX_IDEA_NAME = 120;
-export const MAX_IDEA_DESCRIPTION = 8000;
-export const MAX_IDEA_INVITES = 20;
-export const MAX_IDEA_CATEGORIES = 6;
-export const MAX_CATEGORY_NAME = 40;
+export {
+  MAX_CATEGORY_NAME,
+  MAX_IDEA_CATEGORIES,
+  MAX_IDEA_DESCRIPTION,
+  MAX_IDEA_INVITES,
+  MAX_IDEA_MEMBERS,
+  MAX_IDEA_NAME,
+};
 
 const ideaTypes = [
   "BUSINESS",
@@ -73,9 +84,6 @@ const categoriesSchema = z
   .refine((names) => names.length <= MAX_IDEA_CATEGORIES, {
     error: `Pick up to ${MAX_IDEA_CATEGORIES} categories.`,
   });
-
-/** One founder, plus the people they can invite while creating an idea. */
-export const MAX_IDEA_MEMBERS = MAX_IDEA_INVITES + 1;
 
 function memberListSchema(max: number, maxMessage: string) {
   return z

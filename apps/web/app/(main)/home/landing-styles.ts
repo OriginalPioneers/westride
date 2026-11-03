@@ -74,9 +74,45 @@ export const LANDING_STYLES = `
   7%, 100% { opacity: 0; transform: translate(-260%, 260%); }
 }
 
-@keyframes wl-swell {
-  0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(1.25); }
+/* A wave slides sideways by exactly one of its own periods (set per path as
+   --wl-flow, a fraction of the path's width), so the loop never shows a
+   seam. Reversed layers run the same distance the other way. */
+@keyframes wl-flow {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-1 * var(--wl-flow))); }
+}
+
+@keyframes wl-flow-reverse {
+  from { transform: translateX(calc(-1 * var(--wl-flow))); }
+  to { transform: translateX(0); }
+}
+
+/* A pool of light wanders over the grid, lower left to upper right and
+   back, lighting the lines it passes. */
+@keyframes wl-sweep {
+  0% { transform: translate(220px, 640px); }
+  50% { transform: translate(1180px, 160px); }
+  100% { transform: translate(220px, 640px); }
+}
+
+/* A short dash travels the length of a connection (normalised to 1000 by
+   pathLength), then waits out the rest of its cycle at the far end. */
+@keyframes wl-net-pulse {
+  0% { stroke-dashoffset: 1000; opacity: 0; }
+  4% { opacity: 1; }
+  36% { opacity: 1; }
+  40%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+@keyframes wl-shot-in {
+  from {
+    opacity: 0;
+    transform: perspective(1600px) rotateY(-10deg) translateX(var(--spacing-8)) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1600px) rotateY(-5deg) translateX(0) scale(1);
+  }
 }
 
 @keyframes wl-dots-drift {
@@ -96,6 +132,22 @@ export const LANDING_STYLES = `
   to { transform: scaleX(1); }
 }
 
+/* The hero's scene colors are registered so a change of section eases from
+   one color to the next instead of cutting. Every gradient that reads them
+   (sky blobs, stride, wave, globe halo) follows the eased value. Where
+   @property is unsupported the colors still change, only at once. */
+@property --wl-scene-a {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --wl-scene-b {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
 /* The theme keeps its semantic colors earthy and publishes the brand palette
    as --color-brand-*. The stamp's hues alias those; the extra tints the
    landing needs come from the data-visualization ramp. */
@@ -108,12 +160,25 @@ export const LANDING_STYLES = `
   --wl-green: var(--color-data-categorical-green);
   --wl-pink: var(--color-data-categorical-pink);
   --wl-yellow: var(--color-data-yellow-3);
-  --wl-accent: var(--color-data-categorical-purple);
+  /* Categorical purple is one deep hue in both schemes, so on a dark field
+     it drops under the contrast small text needs. Dark mode mixes Electric
+     Purple halfway toward the primary text color, which stays purple and
+     clears the body, cards, and pastel fields. */
+  --wl-accent: light-dark(
+    var(--color-data-categorical-purple),
+    color-mix(in srgb, var(--color-brand-purple) 50%, var(--color-text-primary))
+  );
 }
 
-[data-theme="dark"] .wl-root,
+/* A nested theme resolves its own scheme. The variable above is computed on
+   the page root, so a dark band inside a light page (and the reverse) sets
+   it again. */
 .wl-root [data-theme="dark"] {
-  --wl-accent: var(--wl-indigo);
+  --wl-accent: color-mix(in srgb, var(--color-brand-purple) 50%, var(--color-text-primary));
+}
+
+.wl-root [data-theme="light"] {
+  --wl-accent: var(--color-data-categorical-purple);
 }
 
 .wl-eyebrow {
@@ -152,7 +217,27 @@ export const LANDING_STYLES = `
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: var(--color-background-body);
+  /* The active section sets --wl-scene-a and -b inline (see sceneVars).
+     The third scene color stays anchored on teal, with a lean toward the
+     section, so the sky keeps one hue in common from section to section. */
+  --wl-scene-c: color-mix(in srgb, var(--wl-scene-b) 45%, var(--wl-teal));
+  /* A faint wash under the sky, so the whole field warms or cools with the
+     section rather than only the blobs. */
+  background:
+    radial-gradient(
+      ellipse 70% 60% at 22% 18%,
+      color-mix(in srgb, var(--wl-scene-a) 9%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 60% 70% at 82% 40%,
+      color-mix(in srgb, var(--wl-scene-b) 7%, transparent),
+      transparent 70%
+    ),
+    var(--color-background-body);
+  transition:
+    --wl-scene-a calc(var(--duration-slow-max) * 2) var(--ease-standard),
+    --wl-scene-b calc(var(--duration-slow-max) * 2) var(--ease-standard);
   --wl-wave-mask:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C120 50.67 240 50.67 360 24C480 -2.67 600 -2.67 720 24C840 50.67 960 50.67 1080 24C1200 -2.67 1320 -2.67 1440 24V0H0Z'/%3E%3C/svg%3E")
       bottom / 100% var(--wl-wave) no-repeat,
@@ -168,19 +253,20 @@ export const LANDING_STYLES = `
   bottom: 0;
   z-index: 0;
   width: 100%;
-  height: calc(var(--wl-wave) * 3);
+  height: calc(var(--wl-wave) * 5);
+  overflow: hidden;
   pointer-events: none;
 }
 
-.wl-hero-wave .wl-wave-swell {
+/* Each layer is wider than the box and slides by one period (see
+   HeroWave), so the percentages are of the path's own box. */
+.wl-hero-wave .wl-wave-flow {
   transform-box: fill-box;
-  transform-origin: center bottom;
-  animation: wl-swell calc(var(--duration-slow-max) * 8) var(--ease-standard) infinite;
+  animation: wl-flow var(--wl-flow-time) linear infinite;
 }
 
-.wl-hero-wave .wl-wave-swell + .wl-wave-swell {
-  animation-duration: calc(var(--duration-slow-max) * 11);
-  animation-direction: reverse;
+.wl-hero-wave .wl-wave-flow[data-reversed] {
+  animation-name: wl-flow-reverse;
 }
 
 .wl-hero-sky {
@@ -209,11 +295,26 @@ export const LANDING_STYLES = `
   animation: wl-drift-c calc(var(--duration-slow-max) * 16) var(--ease-standard) infinite;
 }
 
-.wl-hero-sky .wl-stride {
-  stroke-dasharray: 2400;
-  stroke-dashoffset: 2400;
-  animation: wl-dash calc(var(--duration-slow-max) * 3) var(--ease-standard) forwards;
-  animation-delay: var(--duration-medium);
+/* The lit grid shows only through this wandering pool of light. */
+.wl-hero-sky .wl-sweep {
+  transform-box: view-box;
+  animation: wl-sweep calc(var(--duration-slow-max) * 34) var(--ease-standard) infinite;
+}
+
+/* Connections draw themselves in once, staggered, then their pulses run. */
+.wl-hero-sky .wl-net-link {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: wl-dash calc(var(--duration-slow-max) * 2.5) var(--ease-standard) forwards;
+  animation-delay: calc(var(--duration-medium) + var(--duration-fast-max) * var(--wl-i, 0));
+}
+
+.wl-hero-sky .wl-net-pulse {
+  opacity: 0;
+  stroke-dasharray: 28 972;
+  stroke-dashoffset: 1000;
+  animation: wl-net-pulse calc(var(--duration-slow-max) * var(--wl-pulse-cycle, 8)) ease-in-out infinite;
+  animation-delay: calc(var(--duration-slow-max) * (2 + var(--wl-pulse-delay, 0)));
 }
 
 .wl-hero-sky .wl-node {
@@ -226,6 +327,8 @@ export const LANDING_STYLES = `
 .wl-hero-sky .wl-node:nth-of-type(3) { animation-delay: var(--duration-slow); }
 .wl-hero-sky .wl-node:nth-of-type(4) { animation-delay: calc(var(--duration-slow) * 1.5); }
 .wl-hero-sky .wl-node:nth-of-type(5) { animation-delay: calc(var(--duration-slow) * 2); }
+.wl-hero-sky .wl-node:nth-of-type(6) { animation-delay: calc(var(--duration-slow) * 2.5); }
+.wl-hero-sky .wl-node:nth-of-type(7) { animation-delay: calc(var(--duration-slow) * 3); }
 
 .wl-hero-sky .wl-shooting-star {
   opacity: 0;
@@ -258,27 +361,19 @@ export const LANDING_STYLES = `
     );
   }
 
-  .wl-hero-stage .wl-globe {
-    width: clamp(
-      calc(var(--spacing-12) * 16),
-      calc(100dvh - var(--spacing-12) * 1.5),
-      calc(var(--spacing-12) * 28)
-    );
-  }
 }
 
 /* Side by side (the Grid goes to two columns once both fit 484px), the
-   stage column is at least wide enough for the tab column plus the globe
-   peeking out beside it; the copy takes the rest. Grid exposes its
-   template through this variable, set inline, so the override has to be
-   important. */
+   stage takes the larger share so the platform preview reads, and the
+   copy takes the rest. Grid exposes its template through this variable,
+   set inline, so the override has to be important. */
 .wl-hero .wl-hero-content {
   container-type: inline-size;
 }
 
 @container (min-width: 62.5rem) {
   .wl-hero .wl-hero-split {
-    --x-gridTemplateColumns: minmax(0, 1fr) minmax(calc(var(--spacing-12) * 11.5), 1fr) !important;
+    --x-gridTemplateColumns: minmax(0, 0.8fr) minmax(calc(var(--spacing-12) * 13), 1.2fr) !important;
   }
 }
 
@@ -292,33 +387,164 @@ export const LANDING_STYLES = `
   }
 }
 
-/* The globe and the cards share one cell, the cards in front. The globe is
-   a backdrop: it is taken out of flow, centred on the stage, and left to
-   spill past the column (the hero clips it), so it never sizes the row. */
+/* ---------- Hero stage: platform preview and tabs ---------- */
+
 .wl-hero-stage {
   position: relative;
-}
-
-.wl-hero-stage > * {
-  grid-area: 1 / 1;
-  /* Grid items default to min-width auto, which would let the tab grid's
-     two-column minimum widen the stage past a phone screen. */
+  z-index: 1;
+  width: 100%;
   min-width: 0;
 }
 
-.wl-hero-stage .wl-globe {
+.wl-hero-stage-row {
+  width: 100%;
+  min-width: 0;
+}
+
+.wl-hero-stage-shot {
+  min-width: 0;
+  /* In front of the tabs, which tuck in behind its right edge. */
+  position: relative;
+  z-index: 1;
+}
+
+/* The stand: two tilted panels behind the screenshot give it depth, and a
+   pool of the section's light sits behind both. */
+.wl-hero-shot-stand {
+  position: relative;
+  width: 100%;
+  animation: wl-shot-in calc(var(--duration-slow-max) * 1.4) var(--ease-standard) both;
+  animation-delay: var(--duration-medium-min);
+  transform: perspective(1600px) rotateY(-5deg);
+  transform-style: preserve-3d;
+  transition: transform var(--duration-slow) var(--ease-standard);
+}
+
+.wl-hero-shot-stand:hover {
+  transform: perspective(1600px) rotateY(-2deg);
+}
+
+.wl-hero-shot-stand::before,
+.wl-hero-shot-stand::after {
+  content: "";
   position: absolute;
-  top: 50%;
-  left: 50%;
-  translate: -50% -50%;
-  width: calc(var(--spacing-12) * 18);
-  max-width: none;
-  margin: 0;
+  z-index: -1;
+  border-radius: calc(var(--radius-container) * 1.5);
   pointer-events: none;
 }
 
-.wl-hero-stage .wl-globe-canvas {
+/* The far panel: larger, leaning the other way, mostly light. */
+.wl-hero-shot-stand::before {
+  inset: -7% -4% 8% -3%;
+  transform: rotate(-3.5deg);
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--wl-scene-a) 34%, transparent),
+    color-mix(in srgb, var(--wl-scene-b) 14%, transparent) 55%,
+    transparent
+  );
+  border: var(--border-width) solid color-mix(in srgb, var(--wl-scene-a) 28%, transparent);
+  filter: blur(var(--border-width));
+}
+
+/* The near panel: a frosted sheet just behind the screenshot. */
+.wl-hero-shot-stand::after {
+  inset: 4% -2% -4% 3%;
+  transform: rotate(2deg);
+  background: color-mix(in srgb, var(--color-background-surface) 55%, transparent);
+  border: var(--border-width) solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  box-shadow: 0 var(--spacing-6) var(--spacing-12) color-mix(in srgb, var(--wl-scene-a) 22%, transparent);
+}
+
+.wl-hero-shot {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: var(--radius-container);
+  border: var(--border-width) solid color-mix(in srgb, var(--color-border-emphasized) 80%, var(--wl-scene-b));
+  background: var(--color-background-body);
+  box-shadow:
+    0 var(--spacing-8) calc(var(--spacing-12) * 1.5) color-mix(in srgb, black 55%, transparent),
+    0 0 0 var(--border-width) color-mix(in srgb, var(--wl-scene-b) 20%, transparent),
+    0 0 var(--spacing-12) color-mix(in srgb, var(--wl-scene-a) 28%, transparent);
+}
+
+/* A thin highlight along the top edge, as if lit from above. */
+.wl-hero-shot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-text-primary) 10%, transparent),
+    transparent 18%
+  );
+}
+
+/* All pictures share one cell; the active one shows, the rest wait. */
+.wl-hero-shot > .wl-hero-shot-image {
+  grid-area: 1 / 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  opacity: 0;
+  transform: scale(1.02);
+  transition:
+    opacity var(--duration-slow) var(--ease-standard),
+    transform var(--duration-slow) var(--ease-standard);
+}
+
+.wl-hero-shot > .wl-hero-shot-image[data-active] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Globe placement ---------- */
+
+/* An atmospheric element rather than the subject: anchored to the hero's
+   lower right corner, cropped by the hero's edges, behind the waves and
+   everything in the content column. The section sets how close it sits
+   (see sceneVars); the scale property composes with the entry animation's
+   transform, so neither fights the other. */
+.wl-hero .wl-globe {
+  /* Sized from the hero's width so the same share of the sphere shows at
+     every size: its centre sits just past the right edge, a little above
+     the bottom, so the upper left of the globe rises into the stage. */
+  --wl-globe-size: clamp(calc(var(--spacing-12) * 9), 50vw, calc(var(--spacing-12) * 19));
+  position: absolute;
+  right: calc(var(--wl-globe-size) * -0.3);
+  bottom: calc(var(--wl-globe-size) * -0.44);
+  z-index: 0;
+  width: var(--wl-globe-size);
+  max-width: none;
+  margin: 0;
+  scale: var(--wl-globe-scale, 1);
+  transform-origin: 74% 90%;
+  pointer-events: none;
+  transition: scale calc(var(--duration-slow-max) * 2) var(--ease-standard);
+}
+
+.wl-hero .wl-globe-tilt {
+  width: 100%;
+  height: 100%;
+  rotate: -45deg;
+}
+
+.wl-hero .wl-globe-canvas {
   pointer-events: auto;
+}
+
+/* On a phone the globe is a glow at the corner behind the stage. */
+@media (max-width: 63.99rem) {
+  .wl-hero .wl-globe {
+    --wl-globe-size: clamp(calc(var(--spacing-12) * 8), 90vw, calc(var(--spacing-12) * 14));
+    opacity: 0.6;
+  }
 }
 
 /* The title is sized from its own column, so it wraps to two balanced
@@ -331,7 +557,21 @@ export const LANDING_STYLES = `
 }
 
 .wl-hero .wl-hero-copy .wl-hero-title {
-  font-size: clamp(var(--font-size-3xl), 7.4cqw, var(--font-size-5xl));
+  font-size: clamp(var(--font-size-3xl), 11cqw, calc(var(--font-size-5xl) * 1.6));
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+}
+
+/* One button, one quiet link under it. The link is plain text in the
+   body color so nothing competes with the button. */
+.wl-hero .wl-hero-link {
+  text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(in srgb, var(--color-text-primary) 55%, transparent);
+  transition: text-decoration-color var(--duration-medium) var(--ease-standard);
+}
+
+.wl-hero .wl-hero-link:hover {
+  text-decoration-color: var(--wl-scene-b);
 }
 
 /* ---------- Hero panels ---------- */
@@ -365,10 +605,6 @@ export const LANDING_STYLES = `
   transition-delay: var(--duration-fast-min), var(--duration-fast-min), 0s;
 }
 
-.wl-hero-import {
-  padding-top: var(--spacing-2);
-}
-
 .wl-hero-copy > * {
   animation: wl-rise var(--duration-slow) var(--ease-standard) both;
 }
@@ -382,20 +618,21 @@ export const LANDING_STYLES = `
 
 /* ---------- Hero tabs ---------- */
 
-/* The section tabs stay one column in front of the globe. Import sits
-   above the studio stack, and Support sits below it, with the same gap
-   the tabs used to have between every card. */
+/* The four section tabs stand in one column beside the platform preview.
+   Side by side they tuck in behind its right edge and peek out; stacked
+   on a phone they form a two-by-two grid under it. The import bar sits
+   under the stage and is not a carousel tab. */
 .wl-hero .wl-hero-tabs {
   --wl-hero-dwell: calc(var(--duration-slow-max) * 6);
+  /* How far each tab hides behind the preview, and how far the active one
+     pulls out from the stack. */
+  --wl-tab-tuck: var(--spacing-12);
+  --wl-tab-reach: var(--spacing-3);
   position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: calc(var(--spacing-12) * 12);
-  margin-inline: auto;
-}
-
-.wl-hero-tab-group {
-  width: 100%;
+  z-index: 0;
+  flex: 0 0 auto;
+  width: calc(var(--spacing-12) * 5.5);
+  min-width: 0;
 }
 
 .wl-hero .wl-hero-tab {
@@ -406,72 +643,99 @@ export const LANDING_STYLES = `
   -webkit-user-select: none;
   user-select: none;
   border-radius: var(--radius-container);
-  border-color: var(--color-border);
-  background: color-mix(in srgb, var(--color-background-surface) 72%, transparent);
+  border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
+  background: color-mix(in srgb, var(--color-background-surface) 78%, transparent);
   -webkit-backdrop-filter: blur(var(--spacing-3));
   backdrop-filter: blur(var(--spacing-3));
+  box-shadow: 0 var(--spacing-2) var(--spacing-6) color-mix(in srgb, black 35%, transparent);
   animation: wl-rise var(--duration-slow) var(--ease-standard) both;
   animation-delay: calc(var(--duration-medium-max) + var(--duration-fast-min) * var(--wl-i, 0));
   transition:
     background-color var(--duration-medium) var(--ease-standard),
     border-color var(--duration-medium) var(--ease-standard),
-    box-shadow var(--duration-medium) var(--ease-standard);
+    box-shadow var(--duration-medium) var(--ease-standard),
+    translate var(--duration-medium) var(--ease-standard);
 }
 
 .wl-hero .wl-hero-tab:hover {
-  border-color: color-mix(in srgb, var(--wl-tint-a) 45%, var(--color-border));
+  border-color: color-mix(in srgb, var(--wl-tint-a) 50%, var(--color-border));
+  background: color-mix(in srgb, var(--wl-tint-a) 10%, var(--color-background-surface));
+  translate: var(--wl-tab-reach) 0;
 }
 
+/* The active tab fills with its gradient, lifts, and steps out of line. */
 .wl-hero .wl-hero-tab[data-active] {
-  --_card-ring: inset 0 0 0 var(--border-width) color-mix(in srgb, var(--wl-tint-a) 70%, transparent);
-  border-color: color-mix(in srgb, var(--wl-tint-a) 70%, var(--color-border));
-  background: color-mix(in srgb, var(--wl-tint-a) 22%, var(--color-background-surface));
-  box-shadow: 0 0 var(--spacing-8) color-mix(in srgb, var(--wl-tint-a) 35%, transparent);
-}
-
-/* Idea, Build, and Agent share one outline: square inner corners, and
-   each seam is a single border instead of two cards sitting flush. */
-.wl-hero .wl-hero-tab-group > .wl-hero-tab {
-  border-radius: 0;
-}
-
-.wl-hero .wl-hero-tab-group > .wl-hero-tab:first-child {
-  border-start-start-radius: var(--radius-container);
-  border-start-end-radius: var(--radius-container);
-}
-
-.wl-hero .wl-hero-tab-group > .wl-hero-tab:last-child {
-  border-end-start-radius: var(--radius-container);
-  border-end-end-radius: var(--radius-container);
-}
-
-.wl-hero .wl-hero-tab-group > .wl-hero-tab + .wl-hero-tab {
-  margin-top: calc(var(--border-width) * -1);
-}
-
-.wl-hero .wl-hero-tab-group > .wl-hero-tab[data-active] {
+  --_card-ring: inset 0 0 0 var(--border-width) color-mix(in srgb, var(--color-text-primary) 20%, transparent);
   z-index: 1;
+  border-color: color-mix(in srgb, var(--wl-tint-b) 60%, var(--color-border));
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--wl-tint-a) 82%, var(--color-background-surface)),
+    color-mix(in srgb, var(--wl-tint-b) 72%, var(--color-background-surface))
+  );
+  box-shadow:
+    0 var(--spacing-3) var(--spacing-8) color-mix(in srgb, var(--wl-tint-a) 40%, transparent),
+    0 0 0 var(--border-width) color-mix(in srgb, var(--wl-tint-a) 40%, transparent);
+  translate: calc(var(--wl-tab-reach) * 2) 0;
+}
+
+.wl-hero .wl-hero-tab[data-active] .wl-hero-tab-label {
+  color: var(--color-on-accent);
+}
+
+.wl-hero-tab-label {
+  min-width: 0;
+  line-height: 1.2;
+  transition: color var(--duration-medium) var(--ease-standard);
 }
 
 .wl-hero-tab-icon {
   flex-shrink: 0;
-  width: var(--spacing-10);
-  height: var(--spacing-10);
+  width: var(--spacing-9);
+  height: var(--spacing-9);
   border-radius: var(--radius-element);
   color: var(--wl-tint-a);
-  background: var(--color-background-surface);
-  box-shadow: var(--shadow-low);
+  background: color-mix(in srgb, var(--wl-tint-a) 12%, var(--color-background-surface));
+  box-shadow: inset 0 0 0 var(--border-width) color-mix(in srgb, var(--wl-tint-a) 30%, transparent);
   transition:
     background var(--duration-medium) var(--ease-standard),
     color var(--duration-medium) var(--ease-standard),
+    box-shadow var(--duration-medium) var(--ease-standard),
     transform var(--duration-medium) var(--ease-standard);
+}
+
+.wl-hero .wl-hero-tab:hover .wl-hero-tab-icon {
+  transform: scale(1.05);
 }
 
 .wl-hero .wl-hero-tab[data-active] .wl-hero-tab-icon {
   color: var(--color-on-accent);
-  background: linear-gradient(135deg, var(--wl-tint-a), var(--wl-tint-b));
-  box-shadow: 0 var(--spacing-1) var(--spacing-3) color-mix(in srgb, var(--wl-tint-a) 45%, transparent);
+  background: color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+  box-shadow: inset 0 0 0 var(--border-width) color-mix(in srgb, var(--color-text-primary) 30%, transparent);
   transform: scale(1.06) rotate(-3deg);
+}
+
+/* Import is one short pill under the stage: a smaller icon, no progress
+   rail, and it never takes a turn in the rotation or steps out of line. */
+.wl-hero .wl-hero-import-bar {
+  width: auto;
+  border-radius: var(--radius-full);
+  translate: none;
+}
+
+.wl-hero .wl-hero-import-bar .wl-hero-tab-icon {
+  width: var(--spacing-7);
+  height: var(--spacing-7);
+  border-radius: var(--radius-full);
+}
+
+.wl-hero .wl-hero-import-bar:hover .wl-hero-tab-icon,
+.wl-hero .wl-hero-import-bar[data-active] .wl-hero-tab-icon {
+  transform: none;
+}
+
+.wl-hero-import-bar .wl-hero-tab-body::after {
+  content: none;
 }
 
 /* The progress rail along the bottom edge of the active tab. It belongs
@@ -503,17 +767,52 @@ export const LANDING_STYLES = `
   animation-play-state: paused;
 }
 
-/* Side by side, the tabs hug the stage's far edge and the globe sits
-   behind its near side, spilling under the tabs like a photo tucked
-   behind a panel. After the base rules above so it wins on order. */
+.wl-hero .wl-hero-import-bar:hover {
+  translate: none;
+}
+
+/* Side by side, the tab column slides in under the preview's right edge
+   by the tuck, so each tab peeks out from behind it, and the stage leaves
+   room on the right for the active tab to step out. After the base rules
+   above so it wins on order. */
 @container (min-width: 62.5rem) {
   .wl-hero .wl-hero-tabs {
-    max-width: calc(var(--spacing-12) * 7.5);
-    margin-inline-end: 0;
+    margin-inline-start: calc(-1 * var(--wl-tab-tuck));
+    padding-inline-end: calc(var(--wl-tab-reach) * 2);
   }
 
-  .wl-hero-stage .wl-globe {
-    left: 36%;
+  .wl-hero .wl-hero-tab .wl-hero-tab-body {
+    padding-inline-start: var(--wl-tab-tuck);
+  }
+}
+
+/* Stacked under the preview, the tabs form a two-by-two grid with
+   nothing hidden, and the active one no longer steps out of line. */
+@container (max-width: 62.49rem) {
+  .wl-hero .wl-hero-stage-row {
+    flex-wrap: wrap;
+    gap: var(--spacing-4);
+  }
+
+  .wl-hero .wl-hero-stage-shot {
+    flex-basis: 100%;
+  }
+
+  .wl-hero .wl-hero-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .wl-hero .wl-hero-tab,
+  .wl-hero .wl-hero-tab[data-active],
+  .wl-hero .wl-hero-tab:hover {
+    translate: none;
+  }
+
+  .wl-hero .wl-hero-shot-stand,
+  .wl-hero .wl-hero-shot-stand:hover {
+    transform: none;
   }
 }
 
@@ -600,7 +899,8 @@ export const LANDING_STYLES = `
   animation-delay: var(--duration-medium);
 }
 
-/* A soft halo behind the sphere; the canvas itself stays transparent. */
+/* A soft halo behind the sphere in the section's scene colors; the canvas
+   itself stays transparent. */
 .wl-globe::before {
   content: "";
   position: absolute;
@@ -609,8 +909,8 @@ export const LANDING_STYLES = `
   border-radius: var(--radius-full);
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--wl-purple) 40%, transparent),
-    color-mix(in srgb, var(--wl-indigo) 18%, transparent) 55%,
+    color-mix(in srgb, var(--wl-scene-b) 36%, transparent),
+    color-mix(in srgb, var(--wl-scene-a) 16%, transparent) 55%,
     transparent 72%
   );
   filter: blur(var(--spacing-10));
@@ -944,11 +1244,15 @@ export const LANDING_STYLES = `
     transition: none;
   }
 
+  .wl-hero,
   .wl-hero-sky .wl-blob,
   .wl-hero-sky .wl-node,
-  .wl-hero-wave .wl-wave-swell,
+  .wl-hero-sky .wl-sweep,
+  .wl-hero-wave .wl-wave-flow,
   .wl-hero-copy > *,
   .wl-hero-panels > .wl-hero-panel,
+  .wl-hero-shot-stand,
+  .wl-hero-shot > .wl-hero-shot-image,
   .wl-hero-tab,
   .wl-hero-tab-icon,
   .wl-hero-tab-body::after,
@@ -971,16 +1275,27 @@ export const LANDING_STYLES = `
     transition: none;
   }
 
-  .wl-hero-sky .wl-stride,
+  .wl-hero-sky .wl-net-link,
   .wl-track .wl-glow {
     animation: none;
     stroke-dashoffset: 0;
   }
 
   .wl-track .wl-runner,
-  .wl-hero-sky .wl-shooting-star {
+  .wl-hero-sky .wl-shooting-star,
+  .wl-hero-sky .wl-net-pulse {
     animation: none;
     opacity: 0;
+  }
+
+  /* The sweep still lights one spot on the grid; it just stays put. */
+  .wl-hero-sky .wl-sweep {
+    transform: translate(700px, 400px);
+  }
+
+  /* The stand keeps its resting tilt without the entrance. */
+  .wl-hero-shot-stand {
+    transform: perspective(1600px) rotateY(-5deg);
   }
 }
 `;

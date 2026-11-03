@@ -391,6 +391,22 @@ export async function unfollowIdea(
     );
 }
 
+/** Names of the given ideas the viewer may see, for labelling links to them. */
+export async function listIdeaNames(
+  ids: string[],
+  viewer: IdeaViewer = ANYONE,
+): Promise<Map<string, string>> {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) {
+    return new Map();
+  }
+  const rows = await getDb()
+    .select({ id: ideas.id, name: ideas.name })
+    .from(ideas)
+    .where(and(inArray(ideas.id, unique), visibilityCondition(viewer)));
+  return new Map(rows.map((row) => [row.id, row.name]));
+}
+
 /** Only values some visible idea has, so no filter choice comes back empty. */
 export async function listIdeaFilterOptions(
   viewer: IdeaViewer = ANYONE,

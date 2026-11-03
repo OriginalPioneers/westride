@@ -17,9 +17,11 @@ import { Tab, TabList } from "@astryxdesign/core/TabList";
 import { Text } from "@astryxdesign/core/Text";
 import { useState } from "react";
 import {
+  acceptsBearer,
   exampleFromSchema,
   flattenSchema,
   jsonSchemaOf,
+  requiresBearer,
   schemaTypeLabel,
   type OpenApiDocument,
   type Operation,
@@ -41,10 +43,61 @@ const STATUS_TEXT: Record<string, string> = {
   "204": "No Content",
   "400": "Bad Request",
   "401": "Unauthorized",
+  "403": "Forbidden",
   "404": "Not Found",
+  "409": "Conflict",
   "429": "Too Many Requests",
   "500": "Internal Server Error",
 };
+
+function AuthSection({ operation }: { operation: Operation }) {
+  if (!acceptsBearer(operation)) {
+    return null;
+  }
+  const required = requiresBearer(operation);
+  return (
+    <VStack gap={2}>
+      <HStack gap={2} vAlign="center">
+        <Heading level={2}>Authentication</Heading>
+        <Badge variant={required ? "orange" : "neutral"} label={required ? "Required" : "Optional"} />
+      </HStack>
+      <Text>
+        {required
+          ? "Send a WeStride API key or OAuth access token as "
+          : "Works without a token for public data. Send a WeStride API key or OAuth access token as "}
+        <Code>Authorization: Bearer &lt;token&gt;</Code>
+        {required
+          ? ". The change is made as that member, with the same permissions they have on the website."
+          : " to also see your private work and your role on each item."}
+      </Text>
+    </VStack>
+  );
+}
+
+function RequestBodySection({
+  doc,
+  operation,
+}: {
+  doc: OpenApiDocument;
+  operation: Operation;
+}) {
+  const body = operation.requestBody;
+  if (!body) {
+    return null;
+  }
+  const schema = jsonSchemaOf(body);
+  const fields = flattenSchema(doc, schema);
+  return (
+    <VStack gap={3}>
+      <Heading level={2}>Request body</Heading>
+      <Text>
+        JSON, sent as <Code>application/json</Code>.
+        {body.description ? ` ${body.description}` : ""}
+      </Text>
+      {fields.length > 0 ? <SchemaTable fields={fields} /> : null}
+    </VStack>
+  );
+}
 
 function ParametersSection({
   doc,
@@ -170,7 +223,9 @@ export function OperationPage({
   operation: Operation;
 }) {
   const isStacked = useMediaQuery("(max-width: 1180px)");
-  const requestConsole = <RequestConsole operation={operation} />;
+  const requestConsole = <RequestConsole doc={doc} operation={operation} />;
+  const hasBody = Boolean(operation.requestBody);
+  const hasAuth = acceptsBearer(operation);
 
   return (
     <Layout
@@ -207,7 +262,19 @@ export function OperationPage({
       content={
         <LayoutContent>
           <VStack gap={8}>
+            {hasAuth ? (
+              <>
+                <AuthSection operation={operation} />
+                <Divider />
+              </>
+            ) : null}
             <ParametersSection doc={doc} operation={operation} />
+            {hasBody ? (
+              <>
+                <Divider />
+                <RequestBodySection doc={doc} operation={operation} />
+              </>
+            ) : null}
             <Divider />
             <ResponsesSection doc={doc} operation={operation} />
             {isStacked ? (

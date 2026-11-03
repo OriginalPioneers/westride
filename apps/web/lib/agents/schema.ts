@@ -2,22 +2,31 @@ import type { AgentSchedule, AgentStatus, TicketPriority, TicketStatus } from "@
 import { z } from "zod";
 import {
   DEFAULT_AGENT_STEPS,
+  MAX_AGENT_DESCRIPTION,
+  MAX_AGENT_INSTRUCTIONS,
+  MAX_AGENT_NAME,
   MAX_AGENT_STEPS,
   MAX_BLOCKED_REASON,
-  MAX_PLAN_NOTES,
+  MAX_JOB_INSTRUCTIONS,
+  MAX_LOCAL_MODEL,
+  MAX_STANDING_TASK,
   MAX_TICKET_DESCRIPTION,
   MAX_TICKET_TITLE,
   MIN_AGENT_STEPS,
-  fieldErrorsFrom,
-  uuidSchema,
-  type FieldErrors,
-} from "@/lib/build/schema";
+} from "@westride/db/limits";
+import { fieldErrorsFrom, uuidSchema, type FieldErrors } from "@/lib/build/schema";
 import { parseGithubRepoRef } from "@/lib/github/repo-ref";
 
 export {
   DEFAULT_AGENT_STEPS,
+  MAX_AGENT_DESCRIPTION,
+  MAX_AGENT_INSTRUCTIONS,
+  MAX_AGENT_NAME,
   MAX_AGENT_STEPS,
   MAX_BLOCKED_REASON,
+  MAX_JOB_INSTRUCTIONS,
+  MAX_LOCAL_MODEL,
+  MAX_STANDING_TASK,
   MAX_TICKET_DESCRIPTION,
   MAX_TICKET_TITLE,
   MIN_AGENT_STEPS,
@@ -25,13 +34,6 @@ export {
   uuidSchema,
 };
 export type { FieldErrors };
-
-export const MAX_AGENT_NAME = 80;
-export const MAX_AGENT_DESCRIPTION = 2000;
-export const MAX_AGENT_INSTRUCTIONS = 8000;
-export const MAX_STANDING_TASK = 4000;
-export const MAX_JOB_INSTRUCTIONS = MAX_PLAN_NOTES;
-export const MAX_LOCAL_MODEL = 120;
 
 const agentStatuses = ["ACTIVE", "PAUSED", "ARCHIVED"] as const satisfies readonly AgentStatus[];
 const agentSchedules = ["NONE", "HOURLY", "DAILY", "WEEKLY"] as const satisfies readonly AgentSchedule[];

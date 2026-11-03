@@ -33,7 +33,9 @@
     "./social-progress": "./src/social-progress.ts",
     "./support": "./src/support.ts",
     "./devices": "./src/devices.ts",
-    "./cloud": "./src/cloud.ts"
+    "./cloud": "./src/cloud.ts",
+    "./limits": "./src/content-limits.ts",
+    "./muse-models": "./src/muse-models.ts"
   },
   "scripts": {
     "lint": "tsc --noEmit",

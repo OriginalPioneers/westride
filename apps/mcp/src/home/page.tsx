@@ -127,14 +127,15 @@ export function HomePage({ serverUrl }: { serverUrl: string }) {
                   Bring WeStride into ChatGPT and Claude
                 </Heading>
                 <Text type="large" color="secondary" textWrap="pretty">
-                  The WeStride MCP server lets your AI assistant read WeStride
-                  data directly, so you can explore WeStride Academy, compare
-                  learning tracks, and plan what to learn next in plain
-                  conversation.
+                  The WeStride MCP server lets your AI assistant work in
+                  WeStride with you: find and shape ideas, run projects and
+                  their ticket boards, queue work for agents and read what they
+                  did, and explore the Academy, all in plain conversation.
                 </Text>
                 <Text type="supporting">
-                  No account or API key needed. The server is read-only and
-                  never changes anything on your behalf.
+                  You sign in with your WeStride account the first time you
+                  connect. The assistant then sees what you can see and can do
+                  what you can do on the website, nothing more.
                 </Text>
               </VStack>
 
@@ -143,7 +144,7 @@ export function HomePage({ serverUrl }: { serverUrl: string }) {
                   id="chatgpt"
                   name="ChatGPT"
                   tagline="Add WeStride as a custom app"
-                  intro="ChatGPT connects to MCP servers through Developer mode. Once WeStride is added, ChatGPT can look up Academy tracks while it answers you."
+                  intro="ChatGPT connects to MCP servers through Developer mode. Once WeStride is added and you have signed in, ChatGPT can read and update your ideas, projects, and agents while it answers you."
                   steps={[
                     {
                       title: "Turn on Developer mode",
@@ -163,15 +164,17 @@ export function HomePage({ serverUrl }: { serverUrl: string }) {
                           Back in <Menu>Apps &amp; Connectors</Menu>, choose{" "}
                           <Menu>Create</Menu>. Name it <Menu>WeStride</Menu>,
                           paste the server URL below, and set Authentication to{" "}
-                          <Menu>No authentication</Menu>.
+                          <Menu>OAuth</Menu>. Leave the client fields empty;
+                          ChatGPT registers itself.
                         </>
                       ),
                     },
                     {
-                      title: "Use it in a chat",
+                      title: "Sign in and use it",
                       body: (
                         <>
-                          Start a new chat, open the <Menu>+</Menu> menu, pick{" "}
+                          ChatGPT opens WeStride sign-in once. Then in a new
+                          chat, open the <Menu>+</Menu> menu, pick{" "}
                           <Menu>Developer mode</Menu>, and enable{" "}
                           <Menu>WeStride</Menu>.
                         </>
@@ -180,7 +183,7 @@ export function HomePage({ serverUrl }: { serverUrl: string }) {
                   ]}
                   extra={urlBlock("MCP server URL")}
                   availability="Available on ChatGPT Plus, Pro, Business, Enterprise, and Edu. On workspace plans, an admin may need to allow custom apps."
-                  prompt="Using WeStride, which Academy tracks should a beginner take first, and in what order?"
+                  prompt="Using WeStride, show me the open tickets on my projects and draft a plan for this week."
                 />
 
                 <GuideCard
@@ -210,12 +213,13 @@ export function HomePage({ serverUrl }: { serverUrl: string }) {
                       ),
                     },
                     {
-                      title: "Use it in a chat",
+                      title: "Sign in and use it",
                       body: (
                         <>
-                          In any conversation, open the tools menu below the
-                          message box and make sure <Menu>WeStride</Menu> is
-                          switched on.
+                          Claude asks you to connect; sign in with WeStride
+                          once. Then, in any conversation, open the tools menu
+                          below the message box and make sure{" "}
+                          <Menu>WeStride</Menu> is switched on.
                         </>
                       ),
                     },
@@ -228,7 +232,7 @@ export function HomePage({ serverUrl }: { serverUrl: string }) {
                         <Text weight="semibold">Using Claude Code?</Text>
                         <Text type="supporting">
                           Skip the steps above and run this once in your
-                          terminal:
+                          terminal, then <Code>/mcp</Code> to sign in:
                         </Text>
                         <CodeBlock
                           code={`claude mcp add --transport http westride ${serverUrl}`}
@@ -241,7 +245,7 @@ export function HomePage({ serverUrl }: { serverUrl: string }) {
                     </VStack>
                   }
                   availability="Available on every Claude plan. On Team and Enterprise, an owner adds the connector from Admin settings first."
-                  prompt="Look up the WeStride Academy tracks and build me a four-week learning plan."
+                  prompt="Queue a ticket for my docs agent on WeStride to review last week's changes, then tell me what it did on its last run."
                 />
               </Grid>
 
@@ -249,47 +253,63 @@ export function HomePage({ serverUrl }: { serverUrl: string }) {
 
               <Grid columns={{ minWidth: 240, max: 3 }} gap={8}>
                 <VStack gap={2}>
-                  <Heading level={3}>What WeStride can share</Heading>
+                  <Heading level={3}>What your assistant can do</Heading>
                   <List listStyle="disc" density="compact">
                     <ListItem
                       label={
                         <Text color="secondary">
-                          Every WeStride Academy track in its recommended order
+                          Ideas: search, read, create, edit, and follow
                         </Text>
                       }
                     />
                     <ListItem
                       label={
                         <Text color="secondary">
-                          Difficulty, duration, prerequisites, and learning
-                          goals
+                          Projects: team, milestones, and the ticket board,
+                          including comments
                         </Text>
                       }
                     />
                     <ListItem
                       label={
                         <Text color="secondary">
-                          The badge you earn for finishing each track
+                          Agents: settings and schedule, queue work, read
+                          jobs, log, and usage
+                        </Text>
+                      }
+                    />
+                    <ListItem
+                      label={
+                        <Text color="secondary">
+                          Academy tracks and lessons
                         </Text>
                       }
                     />
                   </List>
                 </VStack>
                 <VStack gap={2}>
-                  <Heading level={3}>How it works</Heading>
+                  <Heading level={3}>How sign-in works</Heading>
                   <Text color="secondary">
-                    MCP is an open standard that lets AI assistants call tools
-                    on other services. When a question needs WeStride data,
-                    your assistant asks this server and uses the answer in its
-                    reply.
+                    The server follows the MCP authorization spec. Your client
+                    discovers WeStride sign-in from the server, registers
+                    itself, and opens the sign-in page in your browser. The
+                    token it receives is forwarded to the WeStride API on every
+                    call, so permissions match the website exactly. Revoke
+                    access any time from your WeStride account settings.
                   </Text>
                 </VStack>
                 <VStack gap={2}>
                   <Heading level={3}>Other MCP clients</Heading>
                   <Text color="secondary">
                     Cursor, VS Code, and any other client that supports
-                    Streamable HTTP can connect to <Code>{serverUrl}</Code>{" "}
-                    with no authentication.
+                    Streamable HTTP with OAuth can connect to{" "}
+                    <Code>{serverUrl}</Code>. Clients without OAuth support can
+                    send a WeStride API key as a bearer token instead; create
+                    one at{" "}
+                    <Link href="https://westride.org/settings/api">
+                      westride.org/settings/api
+                    </Link>
+                    .
                   </Text>
                 </VStack>
               </Grid>

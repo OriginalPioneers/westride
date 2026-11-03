@@ -16,7 +16,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { sendClaimDecisionEmail, sendClaimRequestEmail } from "@/lib/claims/email";
 import { checkClaimEligibility } from "@/lib/claims/github";
-import { importGithubRepository } from "@/lib/claims/import";
+import { importGithubRepository, publicRepoVisibility } from "@/lib/claims/import";
 import { MAX_CLAIM_MESSAGE } from "@/lib/claims/limits";
 import {
   hashReviewToken,
@@ -251,23 +251,33 @@ export type ImportProjectResult =
   | {
       status: "created";
       ideaId: string;
-      /** True when the importer owns or administers the repo and became founder at once. */
+      /** True when the importer became founder: they maintain the public repo, or it is private. */
       claimed: boolean;
+      /** Private repositories become a private idea and project for the importer's team. */
+      isPrivate: boolean;
     }
   | { status: "exists"; ideaId: string }
-  | { status: "needs-sign-in" }
+  | {
+      status: "needs-sign-in";
+      /** `hidden`: private, or missing. Null when GitHub could not be asked. */
+      repoVisibility: "public" | "hidden" | null;
+    }
+  /** Private, or missing: the member's GitHub has to show it to WeStride first. */
+  | {
+      status: "needs-github";
+      /** `needs-connection`: connect GitHub. `needs-access`: install WeStride on the repo. */
+      reason: "needs-connection" | "needs-access";
+      message: string;
+    }
   | { status: "error"; message: string };
 
 /**
- * Creates a public, unclaimed idea and project from a public GitHub
- * repository. When the importer maintains the repository, they claim it on
- * the spot.
+ * Creates an idea and project from a GitHub repository. A public one becomes
+ * a public, unclaimed import that a maintainer claims on the spot. A private
+ * one takes a connected GitHub account that can see it, and becomes a
+ * private idea and project the importer owns.
  */
 export async function importGithubProject(url: string): Promise<ImportProjectResult> {
-  const { userId } = await auth();
-  if (!userId) {
-    return { status: "needs-sign-in" };
-  }
   const ref = parseGithubRepoRef(url);
   if (!ref) {
     return {
@@ -276,6 +286,17 @@ export async function importGithubProject(url: string): Promise<ImportProjectRes
     };
   }
   const fullName = `${ref.owner}/${ref.repo}`;
+
+  const { userId } = await auth();
+  if (!userId) {
+    let repoVisibility: "public" | "hidden" | null = null;
+    try {
+      repoVisibility = await publicRepoVisibility(ref);
+    } catch (error) {
+      console.error("GitHub visibility check failed", error);
+    }
+    return { status: "needs-sign-in", repoVisibility };
+  }
 
   let outcome: Awaited<ReturnType<typeof importGithubRepository>>;
   try {
@@ -293,23 +314,32 @@ export async function importGithubProject(url: string): Promise<ImportProjectRes
 
   switch (outcome.status) {
     case "unavailable":
-      return {
-        status: "error",
-        message: `${fullName} does not exist, or it is private. Only public repositories can be imported.`,
-      };
-    case "private":
-      return {
-        status: "error",
-        message: `${fullName} is private. Only public repositories can be imported; start a private idea from Idea Studio instead.`,
-      };
+      if (!isGithubAppConfigured()) {
+        return {
+          status: "error",
+          message: `${fullName} does not exist, or it is private. Private repositories cannot be imported right now.`,
+        };
+      }
+      return outcome.reason === "needs-connection"
+        ? {
+            status: "needs-github",
+            reason: "needs-connection",
+            message: `${fullName} is private, or does not exist. Connect your GitHub account so WeStride can see your private repositories.`,
+          }
+        : {
+            status: "needs-github",
+            reason: "needs-access",
+            message: `GitHub does not show ${fullName} to WeStride. If you can see it on GitHub, install WeStride on that repository, then import it again.`,
+          };
     case "exists":
       return { status: "exists", ideaId: outcome.ideaId };
     case "created":
       break;
   }
 
-  let claimed = false;
-  if (isGithubAppConfigured()) {
+  const isPrivate = outcome.repo.isPrivate;
+  let claimed = isPrivate;
+  if (!isPrivate && isGithubAppConfigured()) {
     try {
       const eligibility = await checkClaimEligibility(userId, outcome.repo.id);
       if (eligibility.status === "eligible") {
@@ -321,7 +351,7 @@ export async function importGithubProject(url: string): Promise<ImportProjectRes
   }
 
   revalidateClaim(outcome.ideaId, [outcome.projectId]);
-  return { status: "created", ideaId: outcome.ideaId, claimed };
+  return { status: "created", ideaId: outcome.ideaId, claimed, isPrivate };
 }
 
 // ---------------------------------------------------------------------------

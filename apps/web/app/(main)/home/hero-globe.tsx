@@ -38,6 +38,14 @@ const DRAG_RATIO = 220;
 const THETA = 0.28;
 /** Opens on the Americas so Menlo Park is in view at first paint. */
 const START_PHI = 0.4;
+/**
+ * How long a glow change takes to close most of its distance, in
+ * milliseconds: an exponential ease, so a mid-flight change never jumps.
+ */
+const EASE_TIME = 420;
+/** The glow is this fraction of its token: full brightness washes out the land. */
+const GLOW_LEVEL = 0.85;
+const DEFAULT_GLOW_TOKEN = "--wl-purple";
 
 /**
  * Reads a color token as linear 0-1 RGB. Tokens may be any CSS color syntax,
@@ -57,22 +65,58 @@ function tokenRgb(
   return [(r / 255) * scale, (g / 255) * scale, (b / 255) * scale];
 }
 
-function themeColors(element: Element): Partial<COBEOptions> {
+/** A one-pixel canvas that turns any token into RGB for the globe. */
+function tokenReader(element: Element) {
   const probeCanvas = document.createElement("canvas");
   probeCanvas.width = 1;
   probeCanvas.height = 1;
   const probe = probeCanvas.getContext("2d", { willReadFrequently: true });
-  if (probe == null) return {};
+  if (probe == null) return null;
+  return (token: string, scale = 1) => tokenRgb(element, probe, token, scale);
+}
+
+function themeColors(
+  read: ReturnType<typeof tokenReader>,
+  glowToken: string
+): Partial<COBEOptions> {
+  if (read == null) return {};
   return {
-    baseColor: tokenRgb(element, probe, "--wl-indigo", 0.55),
-    markerColor: tokenRgb(element, probe, "--wl-teal"),
-    glowColor: tokenRgb(element, probe, "--wl-purple", 0.85),
-    arcColor: tokenRgb(element, probe, "--wl-orange"),
+    baseColor: read("--wl-indigo", 0.55),
+    markerColor: read("--wl-teal"),
+    glowColor: read(glowToken, GLOW_LEVEL),
+    arcColor: read("--wl-blue"),
   };
 }
 
-export function HeroGlobe() {
+function mixRgb(from: Rgb, to: Rgb, amount: number): Rgb {
+  return [
+    from[0] + (to[0] - from[0]) * amount,
+    from[1] + (to[1] - from[1]) * amount,
+    from[2] + (to[2] - from[2]) * amount,
+  ];
+}
+
+function isCloseRgb(a: Rgb, b: Rgb) {
+  return (
+    Math.abs(a[0] - b[0]) < 0.002 &&
+    Math.abs(a[1] - b[1]) < 0.002 &&
+    Math.abs(a[2] - b[2]) < 0.002
+  );
+}
+
+export function HeroGlobe({
+  glowToken = DEFAULT_GLOW_TOKEN,
+}: {
+  /**
+   * The token the atmosphere glows in, e.g. `--wl-purple`. A change eases
+   * in over a few frames rather than cutting.
+   */
+  glowToken?: string;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const glowTokenRef = useRef(glowToken);
+  /** Set by the draw loop: retargets the glow and wakes it if it had stopped. */
+  const retargetRef = useRef<(token: string) => void>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -81,8 +125,13 @@ export function HeroGlobe() {
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
+    const read = tokenReader(canvas);
     let size = canvas.offsetWidth;
     let phi = START_PHI;
+    let glow: Rgb = read?.(glowTokenRef.current, GLOW_LEVEL) ?? [
+      0.6, 0.4, 1,
+    ];
+    let targetGlow = glow;
 
     const globe = createGlobe(canvas, {
       devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
@@ -92,20 +141,20 @@ export function HeroGlobe() {
       theta: THETA,
       dark: 1,
       diffuse: 1.4,
-      mapSamples: 20_000,
+      mapSamples: 26_000,
       mapBrightness: 7,
       mapBaseBrightness: 0.06,
       baseColor: [0.3, 0.3, 0.45],
       markerColor: [0.3, 0.9, 0.9],
-      glowColor: [0.6, 0.4, 1],
-      opacity: 0.72,
+      glowColor: glow,
+      opacity: 0.64,
       markers: MARKERS,
       markerElevation: 0.01,
       arcs: ARCS,
       arcColor: [1, 0.6, 0.3],
       arcWidth: 0.5,
       arcHeight: 0.14,
-      ...themeColors(canvas),
+      ...themeColors(read, glowTokenRef.current),
     });
 
     // The land texture decodes after the first draw, so even a still globe
@@ -121,9 +170,17 @@ export function HeroGlobe() {
       const elapsed = Math.min(now - last, 64);
       last = now;
       if (!reduceMotion && drag == null) phi += elapsed * SPIN_SPEED;
-      globe.update({ phi });
 
-      if (reduceMotion && drag == null && --settle <= 0) {
+      // Ease the glow toward its target. Reduced motion lands at once.
+      const isSettled = isCloseRgb(glow, targetGlow);
+      if (!isSettled) {
+        const amount = reduceMotion ? 1 : 1 - Math.exp(-elapsed / EASE_TIME);
+        glow = mixRgb(glow, targetGlow, amount);
+        if (isCloseRgb(glow, targetGlow)) glow = targetGlow;
+      }
+      globe.update({ phi, glowColor: glow });
+
+      if (reduceMotion && drag == null && isSettled && --settle <= 0) {
         frame = 0;
         return;
       }
@@ -140,6 +197,11 @@ export function HeroGlobe() {
     const stop = () => {
       cancelAnimationFrame(frame);
       frame = 0;
+    };
+
+    retargetRef.current = (token) => {
+      targetGlow = read?.(token, GLOW_LEVEL) ?? targetGlow;
+      start();
     };
 
     const resizeObserver = new ResizeObserver(() => {
@@ -186,6 +248,7 @@ export function HeroGlobe() {
 
     return () => {
       stop();
+      retargetRef.current = null;
       resizeObserver.disconnect();
       visibilityObserver.disconnect();
       canvas.removeEventListener("pointerdown", onPointerDown);
@@ -196,9 +259,24 @@ export function HeroGlobe() {
     };
   }, []);
 
+  // The globe outlives the section it was mounted under; later sections
+  // only retarget the running loop, so the sphere never rebuilds.
+  useEffect(() => {
+    glowTokenRef.current = glowToken;
+    retargetRef.current?.(glowToken);
+  }, [glowToken]);
+
+  // The canvas sits in its own tilted frame: the sphere spins about an
+  // axis leaning back toward the corner, while the halo stays upright.
   return (
     <Center className="wl-globe">
-      <canvas ref={canvasRef} className="wl-globe-canvas" aria-hidden="true" />
+      <Center className="wl-globe-tilt">
+        <canvas
+          ref={canvasRef}
+          className="wl-globe-canvas"
+          aria-hidden="true"
+        />
+      </Center>
     </Center>
   );
 }

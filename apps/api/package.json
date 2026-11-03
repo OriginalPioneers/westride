@@ -13,6 +13,7 @@
   "dependencies": {
     "@astryxdesign/core": "^0.7.4",
     "@astryxdesign/theme-stone": "^0.7.4",
+    "@clerk/backend": "^3.26.5",
     "@heroicons/react": "^2.2.0",
     "@hono/zod-openapi": "^1.6.3",
     "@westride/api-client": "workspace:*",

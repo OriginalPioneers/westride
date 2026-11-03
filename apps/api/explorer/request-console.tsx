@@ -3,15 +3,22 @@ import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { CodeBlock } from "@astryxdesign/core/CodeBlock";
 import { Heading } from "@astryxdesign/core/Heading";
+import { Link } from "@astryxdesign/core/Link";
 import { MetadataList, MetadataListItem } from "@astryxdesign/core/MetadataList";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Tab, TabList } from "@astryxdesign/core/TabList";
 import { Text } from "@astryxdesign/core/Text";
+import { TextArea } from "@astryxdesign/core/TextArea";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { useState } from "react";
+import { useToken } from "./hooks";
 import {
+  acceptsBearer,
   buildRequestPath,
   defaultParameterValues,
+  exampleRequestBody,
+  requiresBearer,
+  type OpenApiDocument,
   type Operation,
 } from "./openapi";
 import {
@@ -19,6 +26,8 @@ import {
   SNIPPET_LANGUAGES,
   type SnippetLanguage,
 } from "./snippets";
+
+const API_KEYS_PAGE = "https://westride.org/settings/api";
 
 type ConsoleResult =
   | {
@@ -33,7 +42,13 @@ type ConsoleResult =
     }
   | { kind: "network-error"; message: string };
 
-const SHOWN_HEADERS = ["content-type", "cache-control", "age", "x-vercel-cache"];
+const SHOWN_HEADERS = [
+  "content-type",
+  "cache-control",
+  "age",
+  "x-vercel-cache",
+  "www-authenticate",
+];
 
 function formatBody(text: string, contentType: string | null) {
   if (contentType?.includes("json")) {
@@ -50,12 +65,38 @@ function formatSize(bytes: number): string {
   return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
 }
 
-export function RequestConsole({ operation }: { operation: Operation }) {
+function jsonProblem(text: string): string | null {
+  if (!text.trim()) {
+    return null;
+  }
+  try {
+    JSON.parse(text);
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : "Not valid JSON.";
+  }
+}
+
+export function RequestConsole({
+  doc,
+  operation,
+}: {
+  doc: OpenApiDocument;
+  operation: Operation;
+}) {
   const parameters = operation.parameters ?? [];
+  const hasBody = Boolean(operation.requestBody);
+  const needsToken = requiresBearer(operation);
+  const takesToken = acceptsBearer(operation);
+
   const [values, setValues] = useState(() => defaultParameterValues(operation));
+  const [body, setBody] = useState(() => exampleRequestBody(doc, operation) ?? "");
   const [missing, setMissing] = useState<string[]>([]);
+  const [bodyError, setBodyError] = useState<string | null>(null);
+  const [tokenMissing, setTokenMissing] = useState(false);
   const [result, setResult] = useState<ConsoleResult | null>(null);
   const [language, setLanguage] = useState<SnippetLanguage>("curl");
+  const [token, setToken] = useToken();
 
   const requestPath = buildRequestPath(operation, values);
   const requestUrl = `${window.location.origin}${requestPath}`;
@@ -67,15 +108,28 @@ export function RequestConsole({ operation }: { operation: Operation }) {
       .filter((p) => (p.required || p.in === "path") && !values[p.name]?.trim())
       .map((p) => p.name);
     setMissing(empty);
-    if (empty.length > 0) {
+    const problem = hasBody ? jsonProblem(body) : null;
+    setBodyError(problem);
+    const noToken = needsToken && !token.trim();
+    setTokenMissing(noToken);
+    if (empty.length > 0 || problem || noToken) {
       return;
+    }
+
+    const headers: Record<string, string> = { accept: "application/json" };
+    if (token.trim()) {
+      headers.authorization = `Bearer ${token.trim()}`;
+    }
+    if (hasBody && body.trim()) {
+      headers["content-type"] = "application/json";
     }
 
     const started = performance.now();
     try {
       const response = await fetch(requestPath, {
         method: operation.method,
-        headers: { accept: "application/json" },
+        headers,
+        body: hasBody && body.trim() ? body : undefined,
       });
       const text = await response.text();
       setResult({
@@ -101,6 +155,33 @@ export function RequestConsole({ operation }: { operation: Operation }) {
     <VStack gap={6}>
       <VStack gap={4}>
         <Heading level={2}>Try it</Heading>
+
+        {takesToken ? (
+          <TextInput
+            label="Bearer token"
+            type="password"
+            autoComplete="off"
+            description={
+              needsToken
+                ? "Required. A WeStride API key or OAuth access token."
+                : "Optional. Send one to include your private work."
+            }
+            isRequired={needsToken}
+            isOptional={!needsToken}
+            value={token}
+            onChange={(value) => {
+              setToken(value);
+              setTokenMissing(false);
+            }}
+            status={
+              tokenMissing
+                ? { type: "error", message: "This endpoint needs a token." }
+                : undefined
+            }
+            width="100%"
+          />
+        ) : null}
+
         {parameters.map((parameter) => (
           <TextInput
             key={parameter.name}
@@ -121,6 +202,24 @@ export function RequestConsole({ operation }: { operation: Operation }) {
             width="100%"
           />
         ))}
+
+        {hasBody ? (
+          <TextArea
+            label="Request body"
+            description={
+              operation.requestBody?.description ??
+              "JSON. Required fields are filled with placeholders; see the Request body table for the rest."
+            }
+            value={body}
+            onChange={(value) => {
+              setBody(value);
+              setBodyError(null);
+            }}
+            rows={Math.min(18, Math.max(4, body.split("\n").length + 1))}
+            status={bodyError ? { type: "error", message: bodyError } : undefined}
+          />
+        ) : null}
+
         <CodeBlock
           code={`${operation.method} ${requestPath}`}
           language="http"
@@ -129,8 +228,16 @@ export function RequestConsole({ operation }: { operation: Operation }) {
           isWrapped
           width="100%"
         />
-        <HStack>
+        <HStack gap={3} vAlign="center" wrap="wrap">
           <Button label="Send request" variant="primary" clickAction={send} />
+          {takesToken ? (
+            <Text type="supporting" size="sm">
+              Tokens stay in this tab.{" "}
+              <Link href={API_KEYS_PAGE} isExternalLink>
+                Create an API key
+              </Link>
+            </Text>
+          ) : null}
         </HStack>
       </VStack>
 
@@ -194,7 +301,12 @@ export function RequestConsole({ operation }: { operation: Operation }) {
         </TabList>
         <VStack id="request-console-snippet" role="tabpanel">
           <CodeBlock
-            code={buildSnippet(language, operation.method, requestUrl)}
+            code={buildSnippet(language, {
+              method: operation.method,
+              url: requestUrl,
+              body: hasBody ? body || "{}" : null,
+              withToken: needsToken || (takesToken && Boolean(token.trim())),
+            })}
             language={snippetSyntax}
             width="100%"
           />

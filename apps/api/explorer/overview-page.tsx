@@ -13,9 +13,29 @@ import { groupOperations, type OpenApiDocument } from "./openapi";
 
 const ERROR_CODES = [
   {
+    code: "validation_failed",
+    status: "400",
+    meaning: "A parameter or body field is wrong. `error.fields` names each one.",
+  },
+  {
+    code: "unauthorized",
+    status: "401",
+    meaning: "The endpoint needs a token, or the one sent did not verify.",
+  },
+  {
+    code: "forbidden",
+    status: "403",
+    meaning: "You are signed in but not allowed to do this, e.g. editing a project you do not own.",
+  },
+  {
     code: "not_found",
     status: "404",
-    meaning: "The route or the resource it names does not exist.",
+    meaning: "Nothing with that id is visible to you. Private items read as missing.",
+  },
+  {
+    code: "conflict",
+    status: "409",
+    meaning: "The change clashes with the current state, e.g. deleting an agent with a running job.",
   },
   {
     code: "internal_error",
@@ -23,6 +43,8 @@ const ERROR_CODES = [
     meaning: "Something failed on our side. Retry with backoff.",
   },
 ];
+
+const API_KEYS_PAGE = "https://westride.org/settings/api";
 
 export function OverviewPage({
   doc,
@@ -33,9 +55,10 @@ export function OverviewPage({
 }) {
   const origin = window.location.origin;
   const groups = groupOperations(doc);
-  const firstListOperation = groups
-    .flatMap((group) => group.operations)
-    .find((operation) => operation.path.startsWith("/v1/"));
+  const operations = groups.flatMap((group) => group.operations);
+  const firstListOperation =
+    operations.find((operation) => operation.method === "GET" && operation.path === "/v1/ideas") ??
+    operations.find((operation) => operation.method === "GET" && operation.path.startsWith("/v1/"));
   const exampleUrl = `${origin}${firstListOperation?.path ?? "/health"}`;
 
   return (
@@ -58,14 +81,54 @@ export function OverviewPage({
             <VStack gap={4}>
               <Heading level={2}>Make your first request</Heading>
               <Text>
-                Every endpoint is a plain HTTPS <Code>GET</Code> that returns
-                JSON. There is no API key, so you can call it from a terminal, a
-                server, or a browser on any origin.
+                Every endpoint speaks JSON over HTTPS and allows any origin.
+                Public ideas, projects, agents, and the Academy need no token,
+                so start from a terminal:
               </Text>
               <CodeBlock code={`curl ${exampleUrl}`} language="bash" width="100%" />
               <Text type="supporting">
                 Pick an endpoint from the menu to read its parameters and
                 responses, then send a live request from the Try it panel.
+              </Text>
+            </VStack>
+
+            <Divider />
+
+            <VStack gap={4}>
+              <Heading level={2}>Authentication</Heading>
+              <Text>
+                To see your private work or change anything, send a bearer
+                token. The API accepts two kinds, both tied to your WeStride
+                account:
+              </Text>
+              <List edge="flush" hasDividers>
+                <ListItem
+                  label="API key"
+                  description={
+                    <Text size="sm">
+                      For scripts and servers. Create and revoke keys at{" "}
+                      <Link href={API_KEYS_PAGE} isExternalLink>
+                        westride.org/settings/api
+                      </Link>
+                      . Keep them out of client-side code.
+                    </Text>
+                  }
+                />
+                <ListItem
+                  label="OAuth access token"
+                  description="For apps acting on a member's behalf, including MCP clients. The member signs in with WeStride and the app receives a token it forwards here."
+                />
+              </List>
+              <CodeBlock
+                code={`curl ${origin}/v1/me \\\n  -H "Authorization: Bearer $WESTRIDE_API_KEY"`}
+                language="bash"
+                width="100%"
+              />
+              <Text>
+                Everything runs as the member behind the token: you see what you
+                could see on the website and can do what you could do there, no
+                more. Items you cannot see return <Code>404</Code>; actions you
+                may not take return <Code>403</Code>.
               </Text>
             </VStack>
 
@@ -124,7 +187,7 @@ export function OverviewPage({
                   <Code>message</Code>.
                 </Text>
                 <CodeBlock
-                  code={`{ "data": { ... } }\n\n{ "error": { "code": "not_found", "message": "No track with slug \\"x\\"." } }`}
+                  code={`{ "data": { ... } }\n\n{ "error": { "code": "validation_failed", "message": "name: Give the idea a name.", "fields": { "name": "Give the idea a name." } } }`}
                   language="json"
                   width="100%"
                 />
@@ -147,12 +210,28 @@ export function OverviewPage({
                 />
               </VStack>
               <VStack gap={2}>
+                <Heading level={3}>Partial updates</Heading>
+                <Text>
+                  <Code>PATCH</Code> endpoints take only the fields you want to
+                  change; anything you leave out keeps its value. Send{" "}
+                  <Code>null</Code> to clear an optional link such as a
+                  ticket&apos;s milestone or an agent&apos;s project.
+                </Text>
+              </VStack>
+              <VStack gap={2}>
+                <Heading level={3}>People</Heading>
+                <Text>
+                  Members appear as <Code>{`{ id, name, username, imageUrl }`}</Code>.
+                  When inviting someone, send their <Code>id</Code>; find your
+                  own with <Code>GET /v1/me</Code>.
+                </Text>
+              </VStack>
+              <VStack gap={2}>
                 <Heading level={3}>Caching</Heading>
                 <Text>
-                  Catalog responses send{" "}
+                  Catalog responses (Academy tracks, idea categories) send{" "}
                   <Code>Cache-Control: public, max-age=60, s-maxage=300</Code>.
-                  Browsers reuse a response for a minute and the edge for five,
-                  so new content can take up to five minutes to appear.
+                  Everything else is uncached and reflects the latest state.
                 </Text>
               </VStack>
             </VStack>

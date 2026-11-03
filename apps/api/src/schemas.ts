@@ -1,19 +1,7 @@
 import { z } from "@hono/zod-openapi";
+import { ApiErrorSchema, internalErrorResponse, jsonContent } from "./schemas/common";
 
-export const ApiErrorSchema = z
-  .object({
-    error: z.object({
-      code: z
-        .enum(["not_found", "internal_error"])
-        .openapi({ description: "Stable, machine-readable error code." }),
-      message: z
-        .string()
-        .openapi({ description: "Human-readable explanation of the error." }),
-    }),
-  })
-  .openapi("ApiError", {
-    description: "Every non-2xx response uses this envelope.",
-  });
+export { ApiErrorSchema, internalErrorResponse, jsonContent };
 
 export const AcademyTrackSchema = z
   .object({
@@ -117,15 +105,3 @@ export const catalogCacheHeaders = {
     schema: { type: "string" as const, example: "public, max-age=60, s-maxage=300" },
   },
 };
-
-export function jsonContent<T extends z.ZodType>(schema: T, description: string) {
-  return {
-    description,
-    content: { "application/json": { schema } },
-  };
-}
-
-export const internalErrorResponse = jsonContent(
-  ApiErrorSchema,
-  "Unexpected server error.",
-);
