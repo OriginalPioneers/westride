@@ -1,8 +1,18 @@
 // ---------------------------------------------------------------------------
 // Supporter devices: pairing, heartbeats, and leasing volunteer jobs.
 // ---------------------------------------------------------------------------
-import { and, asc, desc, eq, gt, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { agentJobs, agents, type Agent, type AgentJob } from "./agent-schema";
+import {
+  agentRuns,
+  projectRepos,
+  projects,
+  tickets,
+  type AgentRun,
+  type Project,
+  type ProjectRepo,
+  type Ticket,
+} from "./build-schema";
 import { getDb } from "./client";
 import { devicePairingCodes, devices, pledges, type Device, type DevicePairingCode } from "./support-schema";
 
@@ -338,6 +348,147 @@ export async function hasEligibleDevice(agent: Agent): Promise<boolean> {
     limit: 50,
   });
   return online.some((device) => deviceCanServe(device, agent));
+}
+
+// ---------------------------------------------------------------------------
+// Build Studio runs on linked computers
+//
+// A ticket run whose compute target is LOCAL waits for one of the starter's
+// own computers; SPONSORS waits for a computer whose owner has an active
+// COMPUTE pledge on the project's idea. Both use the same runner and the
+// same lease protocol as Agent Studio's volunteer jobs.
+// ---------------------------------------------------------------------------
+
+export type LeasedRun = {
+  run: AgentRun;
+  project: Project;
+  ticket: Ticket | null;
+  /** The linked repository row, when it is still linked. */
+  repo: ProjectRepo | null;
+};
+
+/** Whether the device has what the run asked for: the local model, or a Meta key. */
+export function deviceCanServeRun(
+  device: Pick<Device, "hasMetaKey" | "models">,
+  run: Pick<AgentRun, "localModel">,
+): boolean {
+  if (run.localModel) {
+    return device.models.includes(run.localModel);
+  }
+  return device.hasMetaKey;
+}
+
+/** The queued device runs this computer may take, oldest first. */
+async function queuedRunsForDevice(device: Device): Promise<LeasedRun[]> {
+  const db = getDb();
+  const sponsoredIdeaIds = db
+    .select({ ideaId: pledges.ideaId })
+    .from(pledges)
+    .where(
+      and(
+        eq(pledges.clerkUserId, device.clerkUserId),
+        eq(pledges.kind, "COMPUTE"),
+        eq(pledges.status, "ACTIVE"),
+      ),
+    );
+  const rows = await db
+    .select({ run: agentRuns, project: projects, ticket: tickets, repo: projectRepos })
+    .from(agentRuns)
+    .innerJoin(projects, eq(projects.id, agentRuns.projectId))
+    .leftJoin(tickets, eq(tickets.id, agentRuns.ticketId))
+    .leftJoin(projectRepos, eq(projectRepos.id, agentRuns.repoId))
+    .where(
+      and(
+        eq(agentRuns.runnerKind, "VOLUNTEER_DEVICE"),
+        eq(agentRuns.status, "QUEUED"),
+        isNull(agentRuns.deviceId),
+        or(
+          and(eq(agentRuns.computeTarget, "LOCAL"), eq(agentRuns.startedByClerkUserId, device.clerkUserId)),
+          and(eq(agentRuns.computeTarget, "SPONSORS"), inArray(projects.ideaId, sponsoredIdeaIds)),
+        ),
+      ),
+    )
+    .orderBy(asc(agentRuns.createdAt))
+    .limit(10);
+  return rows;
+}
+
+/**
+ * Hands the device one queued Build Studio run it may take. Claiming is a
+ * conditional update, so two computers never take the same run.
+ */
+export async function leaseRunForDevice(device: Device): Promise<LeasedRun | null> {
+  if (device.status !== "ACTIVE") {
+    return null;
+  }
+  const db = getDb();
+  const now = new Date();
+  for (const candidate of await queuedRunsForDevice(device)) {
+    if (!deviceCanServeRun(device, candidate.run)) {
+      continue;
+    }
+    const [claimed] = await db
+      .update(agentRuns)
+      .set({
+        deviceId: device.id,
+        status: "RUNNING",
+        startedAt: now,
+        leaseExpiresAt: new Date(now.getTime() + JOB_LEASE_MS),
+      })
+      .where(
+        and(eq(agentRuns.id, candidate.run.id), eq(agentRuns.status, "QUEUED"), isNull(agentRuns.deviceId)),
+      )
+      .returning();
+    if (claimed) {
+      await db
+        .update(devices)
+        .set({ currentJobId: claimed.id, lastSeenAt: now, updatedAt: now })
+        .where(eq(devices.id, device.id));
+      return { run: claimed, project: candidate.project, ticket: candidate.ticket, repo: candidate.repo };
+    }
+  }
+  return null;
+}
+
+/** A heartbeat from the device running the run keeps its lease alive. */
+export async function extendRunLease(runId: string, deviceId: string): Promise<boolean> {
+  const rows = await getDb()
+    .update(agentRuns)
+    .set({ leaseExpiresAt: new Date(Date.now() + JOB_LEASE_MS) })
+    .where(and(eq(agentRuns.id, runId), eq(agentRuns.deviceId, deviceId), eq(agentRuns.status, "RUNNING")))
+    .returning({ id: agentRuns.id });
+  return rows.length > 0;
+}
+
+/** The member's own linked computers that have checked in recently. */
+export async function listOnlineDevicesForUser(clerkUserId: string): Promise<Device[]> {
+  return getDb().query.devices.findMany({
+    where: and(
+      eq(devices.clerkUserId, clerkUserId),
+      eq(devices.status, "ACTIVE"),
+      gt(devices.lastSeenAt, new Date(Date.now() - DEVICE_ONLINE_WINDOW_MS)),
+    ),
+    orderBy: [asc(devices.createdAt)],
+    limit: 50,
+  });
+}
+
+/** Online computers whose owners pledged compute to an idea. */
+export async function listOnlineSponsorDevicesForIdea(ideaId: string): Promise<Device[]> {
+  const db = getDb();
+  const supporterIds = db
+    .select({ clerkUserId: pledges.clerkUserId })
+    .from(pledges)
+    .where(and(eq(pledges.ideaId, ideaId), eq(pledges.kind, "COMPUTE"), eq(pledges.status, "ACTIVE")));
+  return db.query.devices.findMany({
+    where: and(
+      eq(devices.status, "ACTIVE"),
+      inArray(devices.clerkUserId, supporterIds),
+      gt(devices.lastSeenAt, new Date(Date.now() - DEVICE_ONLINE_WINDOW_MS)),
+    ),
+    orderBy: [asc(devices.createdAt)],
+    limit: 50,
+  });
 }
 
 /** Online devices pledged to an idea, for the idea page. */

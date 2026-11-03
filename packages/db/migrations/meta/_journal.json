@@ -204,6 +204,13 @@
       "when": 1793728591601,
       "tag": "0028_featured_projects_agents",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793734744851,
+      "tag": "0029_build_compute_targets",
+      "breakpoints": true
     }
   ]
 }

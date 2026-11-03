@@ -130,10 +130,22 @@ export type LeasedJob = {
   jobId: string;
   /** Bearer for the events route. Valid for this job only. */
   runToken: string;
+  /**
+   * The events path on WeStride's public callback URL. Runners keep only the
+   * path and post to the WeStride they are paired with.
+   */
   eventsUrl: string;
+  /**
+   * First line of the work log, e.g. "Running on your computer". Older
+   * servers omit it and the runner says it is a supporter's computer.
+   */
+  startMessage?: string;
   repo: {
     fullName: string;
-    /** Public clone URL; no credentials are ever sent to a device. */
+    /**
+     * Clone URL. Anonymous for supporters' computers; a member's own
+     * computer may get a short-lived read-only token for a private repository.
+     */
     cloneUrl: string;
     baseBranch: string;
     branch: string;

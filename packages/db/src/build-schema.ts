@@ -26,6 +26,7 @@ import {
 import {
   agentRunStatus,
   computeSource,
+  computeTarget,
   museSource,
   runnerKind,
   ticketPriority,
@@ -48,7 +49,7 @@ export const projectMemberRole = pgEnum("project_member_role", [
 
 // Shared with agent-schema.ts; defined in a leaf module so neither file
 // trips over the other mid-evaluation.
-export { agentRunStatus, ticketPriority, ticketStatus };
+export { agentRunStatus, computeTarget, ticketPriority, ticketStatus };
 
 /** Who wrote the ticket: a member, or Muse during planning. */
 export const ticketSource = pgEnum("ticket_source", ["MEMBER", "MUSE"]);
@@ -280,6 +281,24 @@ export const agentRuns = pgTable(
     computeSource: computeSource("compute_source").notNull().default("OWN"),
     /** Whose Meta key the model calls used. WESTRIDE_CLOUD bills the starter's balance. */
     museSource: museSource("muse_source").notNull().default("OWN"),
+    /** Where the member asked the run to execute. Rows from before the choice read as THIRD_PARTY or WESTRIDE_CLOUD. */
+    computeTarget: computeTarget("compute_target").notNull().default("THIRD_PARTY"),
+    /** The linked computer that ran it (LOCAL or SPONSORS). Null for sandboxes. */
+    deviceId: uuid("device_id"),
+    /**
+     * A device run waits in QUEUED until a computer leases it; the lease
+     * lapses when heartbeats stop, and the run goes back to the queue.
+     */
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true, mode: "date" }),
+    /** The full brief, kept for device runs so the computer can fetch it at lease time. */
+    prompt: text("prompt"),
+    /**
+     * An Ollama model tag the device should run instead of `model`, when the
+     * member chose a local model. Null means the device uses its Meta key.
+     */
+    localModel: text("local_model"),
+    /** The COMPUTE pledge a SPONSORS run drew on, credited when it finishes. */
+    pledgeId: uuid("pledge_id"),
     /** The sandbox's name on Vercel, or its id on Modal, used to stop it. */
     sandboxName: text("sandbox_name"),
     branch: text("branch").notNull(),
@@ -320,6 +339,8 @@ export const agentRuns = pgTable(
     index("agent_runs_ticket_created_idx").on(table.ticketId, table.createdAt),
     index("agent_runs_project_created_idx").on(table.projectId, table.createdAt),
     index("agent_runs_status_idx").on(table.status),
+    index("agent_runs_runner_status_idx").on(table.runnerKind, table.status),
+    index("agent_runs_device_idx").on(table.deviceId),
   ],
 );
 
@@ -505,6 +526,7 @@ export type NewTicket = typeof tickets.$inferInsert;
 export type TicketComment = typeof ticketComments.$inferSelect;
 export type NewTicketComment = typeof ticketComments.$inferInsert;
 export type AgentRunStatus = (typeof agentRunStatus.enumValues)[number];
+export type ComputeTarget = (typeof computeTarget.enumValues)[number];
 export type AgentRun = typeof agentRuns.$inferSelect;
 export type NewAgentRun = typeof agentRuns.$inferInsert;
 export type AgentRunEvent = typeof agentRunEvents.$inferSelect;

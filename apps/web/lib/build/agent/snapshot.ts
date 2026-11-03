@@ -17,6 +17,9 @@ export type RunSummary = Pick<
   | "baseBranch"
   | "repoFullName"
   | "model"
+  | "computeTarget"
+  | "localModel"
+  | "deviceId"
   | "maxSteps"
   | "exitCode"
   | "headSha"
@@ -47,6 +50,9 @@ export function toRunSummary(run: AgentRun): RunSummary {
     baseBranch: run.baseBranch,
     repoFullName: run.repoFullName,
     model: run.model,
+    computeTarget: run.computeTarget,
+    localModel: run.localModel,
+    deviceId: run.deviceId,
     maxSteps: run.maxSteps,
     exitCode: run.exitCode,
     headSha: run.headSha,

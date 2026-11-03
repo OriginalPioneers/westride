@@ -11,8 +11,9 @@ import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { listTickets } from "@westride/db/build";
 import { listAgentRunsForProject } from "@westride/db/build-agents";
 import { ticketKey } from "@westride/db/build-rules";
-import { isAgentRunnerConfigured } from "@/lib/build/agent/config";
+import { isBuildRunnerConfigured } from "@/lib/build/agent/config";
 import { reconcileStaleRun } from "@/lib/build/agent/finish";
+import { COMPUTE_TARGET_LABELS } from "@/lib/build/compute-target";
 import { ticketPath } from "@/lib/build/labels";
 import { resolveMemberProfiles } from "@/lib/ideas/members";
 import { loadProjectPage } from "../load-project";
@@ -56,11 +57,11 @@ export default async function RunsPage({ params }: { params: Params }) {
       content={
         <LayoutContent>
           <VStack gap={6}>
-            {!isAgentRunnerConfigured() ? (
+            {!isBuildRunnerConfigured() ? (
               <Banner
                 status="info"
                 title="Agents are not set up on this server"
-                description="Muse Code runs need the GitHub App, a public callback URL, and an encryption key for members' Vercel tokens. See docs/build-studio.md."
+                description="Muse Code runs need the GitHub App and a public callback URL, plus either sandbox credentials or linked computers running the WeStride runner. See docs/build-studio.md."
               />
             ) : null}
             {runs.length === 0 ? (
@@ -82,7 +83,8 @@ export default async function RunsPage({ params }: { params: Params }) {
                       description={
                         <VStack gap={0}>
                           <Text type="supporting">
-                            {run.repoFullName} · {run.branch} · {run.model} · started by {starter}{" "}
+                            {run.repoFullName} · {run.branch} · {COMPUTE_TARGET_LABELS[run.computeTarget]} ·{" "}
+                            {run.localModel ?? run.model} · started by {starter}{" "}
                             <Timestamp value={run.createdAt.toISOString()} format="relative" />
                           </Text>
                           {run.error ? (

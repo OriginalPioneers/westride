@@ -1,13 +1,18 @@
 # WeStride supporter runner
 
-A small Docker container that lets a supporter lend their computer to the ideas they have pledged compute to. It picks up agent code jobs from WeStride, runs Muse Code on a fresh clone of the idea's public repository, and sends the changed files back. WeStride commits them and opens the pull request.
+A small Docker container that lets a supporter lend their computer to the ideas they have pledged compute to, and lets a member run their own Build Studio tickets on their own machine. It picks up work from WeStride, runs Muse Code on a fresh clone of the repository, and sends the changed files back. WeStride commits them and opens the pull request.
+
+It takes two kinds of work:
+
+- **Agent Studio code jobs** for ideas you have pledged compute to, when the team allows supporters' computers.
+- **Build Studio ticket runs** where the member chose **Local** (their own linked computer) or **Sponsors** (a supporter's computer pledged to the project's idea) in the run dialog.
 
 ## What it does and does not do
 
-- Only takes jobs for ideas you have an active **compute pledge** on, and only when the idea's team turned on "Run code jobs on supporters' computers" for that agent.
-- Only clones **public** repositories, anonymously. The runner never receives GitHub credentials and never pushes.
+- Only takes supporters' jobs for ideas you have an active **compute pledge** on, and only when the idea's team turned on "Run code jobs on supporters' computers" for that agent or chose Sponsors for a ticket run. Your own **Local** ticket runs come only from you.
+- Clones supporters' work from **public** repositories only, anonymously. For your own Local runs on a private repository, WeStride includes a short-lived read-only token for just that repository in the clone URL. The runner never receives write credentials and never pushes.
 - Runs Muse Code inside the container with no access to your files. The work directory is wiped after every job.
-- Uses a local **Ollama** model when the team allows one, so jobs can cost nothing. If you set `META_API_KEY`, that key stays on your computer; WeStride never sees it.
+- Runs Muse Code with the `META_API_KEY` you give the runner; that key stays on your computer and WeStride never sees it. **Ollama models are not offered by default**: the Muse Code build in the image cannot talk to Ollama (its `local` provider is Muse's own on-device runtime, macOS only, and it has no OpenAI-compatible provider). Set `WESTRIDE_OFFER_OLLAMA_MODELS=1` to advertise them anyway when trying a newer Muse build.
 - Checks in every minute. Unlink the computer from **Supporting** in WeStride and it stops getting work.
 
 ## Install
@@ -49,11 +54,12 @@ Logs: `docker logs -f westride-runner`. Stop: `docker rm -f westride-runner`.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `WESTRIDE_URL` | `https://www.westride.org` | The WeStride server. A redirect to another host (such as `westride.org` → `www.westride.org`) is followed and remembered. |
+| `WESTRIDE_URL` | `https://www.westride.org` | The WeStride server. A redirect to another host (such as `westride.org` → `www.westride.org`) is followed and remembered. Inside Docker, `localhost` is rewritten to `host.docker.internal` so pairing against a dev server on the same machine works. |
 | `WESTRIDE_PAIRING_CODE` | – | One-time code from Supporting. Only read when no token is stored in `/state`. |
 | `WESTRIDE_DEVICE_NAME` | `My computer` | Shown on your Supporting page. |
 | `META_API_KEY` | – | Optional. Lets jobs that need a Meta key run here. Never sent to WeStride. |
 | `OLLAMA_URL` | `http://host.docker.internal:11434` | Where Ollama is listening on the host. |
+| `WESTRIDE_OFFER_OLLAMA_MODELS` | unset | Set to `1` to report Ollama's models to WeStride. Off because the bundled Muse Code cannot use them; see above. |
 
 ## Development
 

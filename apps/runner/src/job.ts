@@ -110,9 +110,12 @@ function runMuse(
       env.META_API_KEY = config.metaApiKey;
       args.push("--contributor-mode", job.model.contributorMode ? "on" : "off");
     } else {
-      // Ollama on the host, through its OpenAI-compatible endpoint.
+      // Ollama on the host, through its OpenAI-compatible endpoint. Muse Code
+      // 1.4 refuses this (its `local` provider is an on-device runtime and it
+      // ships no OpenAI-compatible provider); the runner only offers Ollama
+      // models when WESTRIDE_OFFER_OLLAMA_MODELS is set, for trying newer builds.
       args.push("--provider", "local", "--base-url", `${config.ollamaUrl}/v1`);
-      env.MUSE_EXPERIMENTS = [process.env.MUSE_EXPERIMENTS, "local_models"].filter(Boolean).join(",");
+      env.MUSE_EXPERIMENTAL_LOCAL_MODELS = "1";
     }
     events.emit("setup", {
       step: "muse",
@@ -227,9 +230,24 @@ async function collectChanges(repoDir: string): Promise<Collected> {
 // One job, start to finish
 // ---------------------------------------------------------------------------
 
+/**
+ * The work log goes to the WeStride this runner already talks to. The lease
+ * names the events path on the server's public callback URL, which a sandbox
+ * needs but a linked computer does not: it may reach WeStride at another
+ * address (a development server, a tunnel), so only the path is kept.
+ */
+export function resolveEventsUrl(eventsUrl: string, baseUrl: string): string {
+  try {
+    const given = new URL(eventsUrl);
+    return new URL(`${given.pathname}${given.search}`, `${baseUrl}/`).href;
+  } catch {
+    return eventsUrl;
+  }
+}
+
 export async function runJob(job: LeasedJob, config: RunnerConfig, signal: AbortSignal): Promise<ResultRequest> {
   const startedAt = Date.now();
-  const events = new EventStream(job.eventsUrl, job.jobId, job.runToken);
+  const events = new EventStream(resolveEventsUrl(job.eventsUrl, config.baseUrl), job.jobId, job.runToken);
   const repoDir = join(config.workDir, job.jobId.slice(0, 8));
   const promptFile = join(config.workDir, `${job.jobId.slice(0, 8)}.prompt.md`);
   let baseSha = "0".repeat(40);
@@ -250,7 +268,11 @@ export async function runJob(job: LeasedJob, config: RunnerConfig, signal: Abort
   try {
     await rm(repoDir, { recursive: true, force: true });
     await mkdir(repoDir, { recursive: true });
-    events.emit("setup", { step: "start", message: "Running on a supporter's computer", runner: "docker" });
+    events.emit("setup", {
+      step: "start",
+      message: job.startMessage ?? "Running on a supporter's computer",
+      runner: "docker",
+    });
     await events.flush();
 
     events.emit("setup", { step: "clone", message: `Cloning ${job.repo.fullName} (${job.repo.baseBranch})` });

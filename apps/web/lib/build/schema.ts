@@ -11,6 +11,7 @@ import {
   MAX_AGENT_STEPS,
   MAX_BLOCKED_REASON,
   MAX_COMMENT,
+  MAX_LOCAL_MODEL,
   MAX_MILESTONE_DESCRIPTION,
   MAX_MILESTONE_TITLE,
   MAX_PLAN_NOTES,
@@ -21,6 +22,7 @@ import {
   MAX_TICKET_TITLE,
   MIN_AGENT_STEPS,
 } from "@westride/db/limits";
+import { COMPUTE_TARGETS } from "@/lib/build/compute-target";
 import { isGithubRepoName, parseGithubRepoRef } from "@/lib/github/repo-ref";
 
 export {
@@ -284,7 +286,19 @@ export const startRunSchema = z.object({
   maxSteps: z.number().int().min(MIN_AGENT_STEPS).max(MAX_AGENT_STEPS).default(DEFAULT_AGENT_STEPS),
   /** Extra guidance the member adds on top of the ticket brief. */
   instructions: z.string().trim().max(MAX_PLAN_NOTES).default(""),
+  /** Where the run executes. Omitted by older clients, which get the member's preference order. */
+  computeTarget: z.enum(COMPUTE_TARGETS, { error: "Choose where to run." }).nullable().default(null),
+  /**
+   * For LOCAL and SPONSORS: an Ollama model tag the computer should run
+   * instead of `model`. Null means the computer uses its own Meta key.
+   */
+  localModel: z
+    .union([z.string().trim().max(MAX_LOCAL_MODEL, `Keep the model name under ${MAX_LOCAL_MODEL} characters.`), z.null()])
+    .transform((value) => value || null)
+    .default(null),
 });
+
+export type StartRunInput = z.output<typeof startRunSchema>;
 
 export const reorderTicketSchema = z.object({
   status: z.enum(ticketStatuses),

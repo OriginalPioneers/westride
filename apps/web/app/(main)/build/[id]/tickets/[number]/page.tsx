@@ -17,10 +17,11 @@ import {
   listAgentRunsForTicket,
   listTicketComments,
 } from "@westride/db/build-agents";
-import { isAgentRunnerConfigured } from "@/lib/build/agent/config";
+import { isBuildRunnerConfigured } from "@/lib/build/agent/config";
 import { reconcileStaleRun } from "@/lib/build/agent/finish";
 import { toRunSnapshot } from "@/lib/build/agent/snapshot";
 import { FIRST_EVENT_SEQUENCE } from "@/lib/build/agent/start";
+import { getComputeAvailability } from "@/lib/build/compute-availability";
 import {
   TICKET_PRIORITY_LABELS,
   TICKET_STATUS_LABELS,
@@ -76,9 +77,12 @@ export default async function TicketPage({ params }: { params: Params }) {
   }
   const { context, ticket } = loaded;
   const { project } = context;
-  const [storedRuns, comments] = await Promise.all([
+  const [storedRuns, comments, compute] = await Promise.all([
     listAgentRunsForTicket(ticket.id),
     listTicketComments(ticket.id),
+    context.isMember && context.userId && isBuildRunnerConfigured()
+      ? getComputeAvailability(context.userId, project)
+      : Promise.resolve(null),
   ]);
   const runs = await Promise.all(storedRuns.map((run) => reconcileStaleRun(run)));
   const latestRun = runs[0] ?? null;
@@ -156,9 +160,8 @@ export default async function TicketPage({ params }: { params: Params }) {
                     ticketId={ticket.id}
                     ticketRepoId={ticket.repoId}
                     repos={project.repos}
-                    hasMetaConnection={context.hasMetaConnection}
-                    hasComputeAccess={context.hasComputeAccess}
-                    isConfigured={isAgentRunnerConfigured()}
+                    compute={compute}
+                    isConfigured={isBuildRunnerConfigured()}
                     isDisabled={activeRun !== null || ticket.status === "DONE"}
                     disabledReason={
                       activeRun

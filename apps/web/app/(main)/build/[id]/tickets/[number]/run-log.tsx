@@ -14,6 +14,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
 import type { AgentRunStatus } from "@westride/db";
 import { describeRunEvent, type RunLogEvent, type RunSnapshot } from "@/lib/build/agent/snapshot";
+import { COMPUTE_TARGET_LABELS, isDeviceTarget } from "@/lib/build/compute-target";
 import { AGENT_RUN_STATUS_LABELS } from "@/lib/build/labels";
 import { cancelRunAction, readRunAction } from "../../../run-actions";
 
@@ -109,7 +110,8 @@ export function RunLog({
         <RunStatusBadge status={run.status} />
         <StackItem size="fill">
           <Text type="supporting">
-            {run.repoFullName} · <Text type="code">{run.branch}</Text> · {run.model} ·{" "}
+            {run.repoFullName} · <Text type="code">{run.branch}</Text> ·{" "}
+            {COMPUTE_TARGET_LABELS[run.computeTarget]} · {run.localModel ?? run.model} ·{" "}
             {run.eventCount} events ·{" "}
             <Timestamp value={run.startedAt ?? run.createdAt} format="relative" />
           </Text>
@@ -134,7 +136,11 @@ export function RunLog({
       ) : null}
       <Collapsible trigger={`Work log (${snapshot.events.length})`} defaultIsOpen={defaultOpen}>
         {snapshot.events.length === 0 ? (
-          <Text type="supporting">Waiting for the sandbox to report in.</Text>
+          <Text type="supporting">
+            {isDeviceTarget(run.computeTarget)
+              ? "Waiting for the computer to pick this up and report in."
+              : "Waiting for the sandbox to report in."}
+          </Text>
         ) : (
           <VStack gap={2}>
             {snapshot.events.map((event) => (
