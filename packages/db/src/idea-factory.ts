@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getDb } from "./client";
 import {
   ideaBuildSuggestions,
@@ -387,6 +387,44 @@ export async function getArtifact(
     where: and(eq(ideaFactoryArtifacts.id, id), eq(ideaFactoryArtifacts.ideaId, ideaId)),
   });
   return artifact ?? null;
+}
+
+export async function getArtifactsByIds(
+  ideaId: string,
+  ids: string[],
+): Promise<IdeaFactoryArtifact[]> {
+  if (ids.length === 0) {
+    return [];
+  }
+  return getDb().query.ideaFactoryArtifacts.findMany({
+    where: and(eq(ideaFactoryArtifacts.ideaId, ideaId), inArray(ideaFactoryArtifacts.id, ids)),
+  });
+}
+
+/**
+ * Pins member uploads to the chat message they were sent with. Only files
+ * the team uploaded (no advisor, not already attached) are updated.
+ */
+export async function attachArtifactsToMessage(
+  ideaId: string,
+  messageId: string,
+  artifactIds: string[],
+): Promise<IdeaFactoryArtifact[]> {
+  if (artifactIds.length === 0) {
+    return [];
+  }
+  return getDb()
+    .update(ideaFactoryArtifacts)
+    .set({ messageId })
+    .where(
+      and(
+        eq(ideaFactoryArtifacts.ideaId, ideaId),
+        isNull(ideaFactoryArtifacts.agentSlug),
+        isNull(ideaFactoryArtifacts.messageId),
+        inArray(ideaFactoryArtifacts.id, artifactIds),
+      ),
+    )
+    .returning();
 }
 
 export async function createArtifact(

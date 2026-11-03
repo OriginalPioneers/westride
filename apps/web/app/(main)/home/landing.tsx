@@ -44,6 +44,7 @@ import {
   HACKATHON_NAME,
   HACKATHON_URL,
   INTEGRATIONS,
+  META_CAPABILITIES,
   META_MODELS,
   MILESTONES,
   MOBILE_APPS,
@@ -51,7 +52,6 @@ import {
   SOURCE_URL,
   STACK_ROWS,
   STUDIOS,
-  SUPPORT,
   FOUNDER,
   type Integration,
   type MobileApp,
@@ -537,12 +537,17 @@ function HeroSky() {
 }
 
 function MobileAppTile({ app }: { app: MobileApp }) {
+  const isExternal = app.href.startsWith("http");
   return (
     <ClickableCard
       className="wl-app-tile"
       href={app.href}
-      target="_blank"
-      label={`WeStride ${app.name} on ${app.store} (opens in a new tab)`}
+      target={isExternal ? "_blank" : undefined}
+      label={
+        isExternal
+          ? `WeStride ${app.name} on ${app.store} (opens in a new tab)`
+          : `WeStride ${app.name}, ${app.store}`
+      }
       padding={3}
       variant="transparent"
     >
@@ -556,11 +561,13 @@ function MobileAppTile({ app }: { app: MobileApp }) {
             <Text type="supporting" size="xsm" textWrap="nowrap">
               {app.store}
             </Text>
-            <Icon
-              icon={ArrowTopRightOnSquareIcon}
-              size="xsm"
-              color="secondary"
-            />
+            {isExternal ? (
+              <Icon
+                icon={ArrowTopRightOnSquareIcon}
+                size="xsm"
+                color="secondary"
+              />
+            ) : null}
           </HStack>
         </VStack>
       </HStack>
@@ -1515,9 +1522,9 @@ function StudiosSection() {
       <StudiosEdge edge="top" id="wl-studios" />
       <Container>
         <SectionIntro
-          eyebrow="Idea, build, agent"
-          title="Take an idea from a hunch to a shipped product with agents of its own"
-          lede="Three studios, one path. Muse pressure-tests the idea, plans the work and writes the code with you, then gives the finished project agents that keep working. Every step runs on Meta's models."
+          eyebrow="Workshop. Build. Create."
+          title="From your first idea to what comes next."
+          lede="Explore possibilities, develop ideas, and build real projects with Meta AI. WeStride brings together AI-powered tools, coding agents, and a community of creators to help you move forward, wherever you are starting."
         />
         <VStack gap={4} className="wl-reveal" style={revealDelay(1)}>
           <PathTrack />
@@ -1561,47 +1568,6 @@ function StudiosSection() {
             ))}
           </Grid>
         </VStack>
-
-        <VStack gap={3} className="wl-reveal" style={revealDelay(2)}>
-          <Text type="supporting" weight="semibold">
-            Want a hand along the way?
-          </Text>
-          <Grid columns={{ minWidth: 280, max: 2 }} gap={4}>
-            {SUPPORT.map((step) => (
-              <ClickableCard
-                key={step.href}
-                className="wl-support"
-                href={step.href}
-                label={`${step.step} in ${step.where}`}
-                padding={4}
-              >
-                <HStack gap={3} vAlign="center">
-                  <Center
-                    className="wl-feature-icon"
-                    style={
-                      {
-                        "--wl-tint": `var(--wl-${step.tints[0]})`,
-                      } as CSSProperties
-                    }
-                  >
-                    <Icon icon={step.icon} size="md" color="inherit" />
-                  </Center>
-                  <StackItem size="fill">
-                    <VStack gap={0.5}>
-                      <Text weight="semibold">
-                        {step.step} · {step.where}
-                      </Text>
-                      <Text type="supporting" size="sm">
-                        {step.how}
-                      </Text>
-                    </VStack>
-                  </StackItem>
-                  <Icon icon={ArrowRightIcon} size="xsm" color="secondary" />
-                </HStack>
-              </ClickableCard>
-            ))}
-          </Grid>
-        </VStack>
       </Container>
     </Section>
   );
@@ -1615,8 +1581,8 @@ function MetaAiSection() {
       <Container>
         <SectionIntro
           eyebrow="Powered by Meta AI"
-          title="Muse is the coach, the advisory team, and the engineer"
-          lede="Meta's models are not a feature bolted onto WeStride. They give feedback on every challenge, pressure-test every idea, and work every ticket."
+          title="From your first idea to working code. Powered by Meta."
+          lede="WeStride brings Meta's Muse AI models into every stage of your journey. Explore possibilities with AI advisors, turn ideas into actionable development plans, and build real projects in GitHub with Muse Code agents. All in one open-source platform."
         />
         <Grid columns={{ minWidth: 280, max: 3 }} gap={4}>
           {META_MODELS.map((model, index) => (
@@ -1642,7 +1608,12 @@ function MetaAiSection() {
                   <Icon icon={model.icon} size="md" color="inherit" />
                 </Center>
                 <VStack gap={1}>
-                  <Text type="supporting" size="xsm" weight="semibold">
+                  <Text
+                    type="supporting"
+                    size="xsm"
+                    weight="semibold"
+                    style={eyebrowStyle}
+                  >
                     {model.role}
                   </Text>
                   <Heading level={3}>{model.name}</Heading>
@@ -1652,16 +1623,25 @@ function MetaAiSection() {
             </Card>
           ))}
         </Grid>
-        <HStack gap={2} wrap="wrap" vAlign="center" className="wl-reveal">
-          <Text type="supporting">
-            Learning on WeStride is free, with a daily Muse allowance. To
-            validate and build, members connect their own Meta account so that
-            work runs on their key and credits.
-          </Text>
-          <Link href="/settings" isStandalone>
-            Connect your Meta account
-          </Link>
-        </HStack>
+        <VStack gap={4} className="wl-reveal">
+          <VStack gap={2}>
+            <Eyebrow>Built for real workflows</Eyebrow>
+            <Text type="supporting">{META_CAPABILITIES.join(" · ")}</Text>
+          </VStack>
+          <VStack gap={2}>
+            <Text type="supporting">
+              Start exploring WeStride with free learning resources and a daily
+              Muse allowance. Connect your own Meta account to use your API key
+              and credits for additional AI-powered work.
+            </Text>
+            <HStack gap={1} vAlign="center">
+              <Link href="/settings" isStandalone>
+                Connect your Meta account
+              </Link>
+              <Icon icon={ArrowRightIcon} size="xsm" color="accent" />
+            </HStack>
+          </VStack>
+        </VStack>
       </Container>
     </Section>
   );
@@ -1854,8 +1834,8 @@ function IntegrationsSection() {
       <Container>
         <SectionIntro
           eyebrow="Integrations"
-          title="Plugs into the places you already work"
-          lede="Connect the accounts you use, talk to WeStride from your chat app, and let your AI assistant read the same data the website does."
+          title="Your tools. Your workflow. All connected."
+          lede="Connect the platforms you already use to bring your ideas, projects, and AI-powered workflows together. From building with Meta AI and GitHub to collaborating across your favorite apps, WeStride helps you create, learn, and build wherever you work."
         />
         <Grid columns={{ minWidth: 240, max: 4 }} gap={4}>
           {INTEGRATIONS.map((integration, index) => (

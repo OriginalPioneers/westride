@@ -7,6 +7,7 @@ import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
+import { FileInput } from "@astryxdesign/core/FileInput";
 import { Grid } from "@astryxdesign/core/Grid";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Icon } from "@astryxdesign/core/Icon";
@@ -16,6 +17,11 @@ import { FolderOpenIcon, PaintBrushIcon } from "@heroicons/react/24/outline";
 import type { IdeaFactoryArtifact, IdeaType } from "@westride/db";
 import { agentsForIdea } from "@/lib/idea-factory/agents";
 import { collectionLabel } from "@/lib/idea-factory/artifacts";
+import {
+  MAX_ARTIFACT_BYTES,
+  MAX_UPLOADS_PER_MESSAGE,
+  UPLOAD_ACCEPT,
+} from "@/lib/idea-factory/uploads";
 import { ArtifactCard, type ArtifactActions } from "./artifact-card";
 
 type Group = {
@@ -68,6 +74,8 @@ export function FilesPanel({
   busyIds,
   error,
   canStoreFiles,
+  isUploading,
+  onUpload,
   onOpenAgent,
 }: {
   ideaType: IdeaType;
@@ -76,9 +84,12 @@ export function FilesPanel({
   busyIds: ReadonlySet<string>;
   error: string | null;
   canStoreFiles: boolean;
+  isUploading: boolean;
+  onUpload: (files: File[]) => Promise<void> | void;
   onOpenAgent: (slug: string) => void;
 }) {
   const [showArchived, setShowArchived] = useState(false);
+  const [pendingUploads, setPendingUploads] = useState<File[] | null>(null);
   const groups = useMemo(() => groupArtifacts(artifacts, showArchived), [artifacts, showArchived]);
   const archivedTotal = artifacts.filter((artifact) => artifact.archivedAt).length;
   const activeTotal = artifacts.length - archivedTotal;
@@ -94,9 +105,9 @@ export function FilesPanel({
               <VStack gap={1}>
                 <Heading level={2}>Files &amp; assets</Heading>
                 <Text type="supporting">
-                  Everything the advisory team has made for this idea: logo iterations, briefs,
-                  plans, and reports. Mark the version you are going with; archive the rest so
-                  advisors stop building on them.
+                  Files the team uploaded and files the advisors made: logos, briefs, plans, and
+                  reports. Mark the version you are going with; archive the rest so advisors stop
+                  building on them.
                 </Text>
               </VStack>
             </StackItem>
@@ -116,6 +127,31 @@ export function FilesPanel({
             />
           ) : null}
           {error ? <Banner status="error" title={error} /> : null}
+          {canStoreFiles ? (
+            <FileInput
+              label="Upload files for the advisors"
+              description="Images, PDFs, and text files. Ask an advisor about a file in chat so they can read it."
+              accept={UPLOAD_ACCEPT}
+              maxSize={MAX_ARTIFACT_BYTES}
+              maxFiles={MAX_UPLOADS_PER_MESSAGE}
+              isMultiple
+              mode="dropzone"
+              value={pendingUploads}
+              onChange={(files) => {
+                setPendingUploads(files == null ? null : Array.isArray(files) ? files : [files]);
+              }}
+              changeAction={async (files) => {
+                const list = files == null ? [] : Array.isArray(files) ? files : [files];
+                if (list.length > 0) {
+                  await onUpload(list);
+                  setPendingUploads(null);
+                }
+              }}
+              isDisabled={isUploading}
+              isLoading={isUploading}
+              placeholder="Drop files here or choose them"
+            />
+          ) : null}
         </VStack>
       </Card>
 
@@ -125,7 +161,7 @@ export function FilesPanel({
           description={
             activeTotal === 0 && archivedTotal > 0
               ? "Show archived files above to restore one, or ask an advisor for a fresh version."
-              : "Ask an advisor for a deliverable and it lands here. Try the Creative Director for logo concepts, or any advisor for a brief, plan, or checklist."
+              : "Upload a pitch deck, screenshot, or notes above, or ask an advisor for a deliverable. Try the Creative Director for logo concepts."
           }
           actions={
             drawers.length > 0 ? (

@@ -36,6 +36,7 @@ import {
   IDEA_COACH_SLUG,
 } from "@/lib/idea-factory/agents";
 import { artifactPath } from "@/lib/idea-factory/artifacts";
+import { uploadIdeaFiles } from "@/lib/idea-factory/upload-client";
 import {
   forgetBrowserMuseCredential,
   readFactoryPreferences,
@@ -179,6 +180,7 @@ export function IdeaFactoryDialog({
   const [evaluationError, setEvaluationError] = useState<string | null>(null);
   const [busyArtifactIds, setBusyArtifactIds] = useState<ReadonlySet<string>>(new Set());
   const [filesError, setFilesError] = useState<string | null>(null);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [reportBusyId, setReportBusyId] = useState<string | null>(null);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [buildError, setBuildError] = useState<string | null>(null);
@@ -344,12 +346,27 @@ export function IdeaFactoryDialog({
     });
   }
 
-  async function handleSend(agentSlug: string, content: string) {
+  async function handleSend(agentSlug: string, content: string, files: File[] = []) {
     if (sendingSlugs.has(agentSlug)) {
       return;
     }
     setThreadError(agentSlug, null);
     setSendingSlugs((current) => new Set(current).add(agentSlug));
+
+    let uploaded: IdeaFactoryArtifact[] = [];
+    if (files.length > 0) {
+      const uploadedResult = await uploadIdeaFiles(idea.id, files);
+      if (uploadedResult.status === "error") {
+        setThreadError(agentSlug, uploadedResult.message);
+        setSendingSlugs((current) => {
+          const next = new Set(current);
+          next.delete(agentSlug);
+          return next;
+        });
+        return;
+      }
+      uploaded = uploadedResult.artifacts;
+    }
 
     const optimisticId = tempId();
     const threadId = data?.threads.find((thread) => thread.agentSlug === agentSlug)?.id ?? tempId();
@@ -367,12 +384,16 @@ export function IdeaFactoryDialog({
       },
       threadId,
     );
+    if (uploaded.length > 0) {
+      addArtifacts(uploaded.map((artifact) => ({ ...artifact, messageId: optimisticId })));
+    }
 
     try {
       const result = await sendAgentMessage({
         ideaId: idea.id,
         agentSlug,
         content,
+        artifactIds: uploaded.map((artifact) => artifact.id),
         model: preferences.model,
         webSearch: preferences.webSearch,
       });
@@ -393,6 +414,9 @@ export function IdeaFactoryDialog({
           );
         }
       } else {
+        if (result.artifacts) {
+          addArtifacts(result.artifacts);
+        }
         if (result.userMessage) {
           replaceMessage(agentSlug, optimisticId, result.userMessage);
         } else {
@@ -413,6 +437,26 @@ export function IdeaFactoryDialog({
         next.delete(agentSlug);
         return next;
       });
+    }
+  }
+
+  async function handleUploadFiles(files: File[]) {
+    if (files.length === 0) {
+      return;
+    }
+    setFilesError(null);
+    setIsUploadingFiles(true);
+    try {
+      const result = await uploadIdeaFiles(idea.id, files);
+      if (result.status === "ok") {
+        addArtifacts(result.artifacts);
+      } else {
+        setFilesError(result.message);
+      }
+    } catch {
+      setFilesError("Those files could not be uploaded. Try again.");
+    } finally {
+      setIsUploadingFiles(false);
     }
   }
 
@@ -758,6 +802,8 @@ export function IdeaFactoryDialog({
               busyIds={busyArtifactIds}
               error={filesError}
               canStoreFiles={data.canStoreFiles}
+              isUploading={isUploadingFiles}
+              onUpload={(files) => void handleUploadFiles(files)}
               onOpenAgent={(slug) => chooseView({ kind: "agent", slug })}
             />
           </VStack>
@@ -844,8 +890,9 @@ export function IdeaFactoryDialog({
           members={data.members}
           isConnected={isConnected}
           isSending={sendingSlugs.has(agent.slug)}
+          canStoreFiles={data.canStoreFiles}
           error={threadErrors[agent.slug] ?? null}
-          onSend={(content) => void handleSend(agent.slug, content)}
+          onSend={(content, files) => void handleSend(agent.slug, content, files)}
         />
       </VStack>
     );

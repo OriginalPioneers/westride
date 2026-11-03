@@ -1086,16 +1086,6 @@ export const LANDING_STYLES = `
   transform: scale(1.06) rotate(-3deg);
 }
 
-.wl-support {
-  height: 100%;
-  transition: transform var(--duration-medium) var(--ease-standard);
-}
-
-.wl-support:hover,
-.wl-support:focus-within {
-  transform: translateX(var(--spacing-1));
-}
-
 /* ---------- Feature cards ---------- */
 
 .wl-feature {
@@ -1267,7 +1257,6 @@ export const LANDING_STYLES = `
   .wl-marquee-track,
   .wl-step,
   .wl-step-icon,
-  .wl-support,
   .wl-feature,
   .wl-integration,
   .wl-dots::before {

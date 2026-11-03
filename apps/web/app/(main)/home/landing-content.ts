@@ -1,6 +1,5 @@
 import type { ComponentType, SVGProps } from "react";
 import {
-  AcademicCapIcon,
   BanknotesIcon,
   BoltIcon,
   CodeBracketSquareIcon,
@@ -10,10 +9,13 @@ import {
   DevicePhoneMobileIcon,
   LightBulbIcon,
   SparklesIcon,
-  UserGroupIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
-import { PLAY_TESTING_URL, STORE_LINKS, TESTFLIGHT_URL } from "../../store-links";
+import {
+  ANDROID_BETA_PATH,
+  IOS_BETA_PATH,
+  MOBILE_APPS_PATH,
+} from "../../store-links";
 import { PROJECT_REPOSITORY } from "../legal-document";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
@@ -56,29 +58,29 @@ export type Studio = PathStep & {
 /** The three studios an idea moves through on its way to a shipped product. */
 export const STUDIOS: Studio[] = [
   {
-    step: "Shape the idea",
-    where: "Idea Studio",
-    action: "Workshop an idea",
+    step: "Explore the possibilities.",
+    where: "Idea Workshop",
+    action: "Workshop an Idea",
     href: "/ideas",
-    how: "Bring a business, non-profit, game, open-source, website, or mobile app idea. A team of Muse advisors pressure-tests it with live research and cited sources, so you know what holds up before you build.",
+    how: "Bring your business, nonprofit, game, or open-source idea to life through collaborative brainstorming, research, and feedback. Work alongside Meta AI advisors to explore opportunities, challenge assumptions, and shape your next steps.",
     icon: LightBulbIcon,
     tints: ["indigo", "purple"],
   },
   {
-    step: "Build it for real",
+    step: "From idea to code, in GitHub.",
     where: "Build Studio",
-    action: "Build a project",
+    action: "Build a Project",
     href: "/build",
-    how: "Projects, tickets, and a linked GitHub repository. Muse drafts the backlog and roadmap, and Muse Code agents work the tickets and open pull requests.",
+    how: "Turn your ideas into working projects with Meta Muse Code. Plan development, organize GitHub issues, and collaborate with AI coding agents that write code and open pull requests directly in your repository.",
     icon: WrenchScrewdriverIcon,
     tints: ["blue", "teal"],
   },
   {
-    step: "Give it agents",
+    step: "Create agents that work for you.",
     where: "Agent Studio",
-    action: "Manage an AI agent fleet",
+    action: "Create an Agent",
     href: "/agents",
-    how: "Design the Muse agents a project needs, give each one a job, and add them to it, so the product keeps working after you ship it.",
+    how: "Build and manage custom AI agents powered by Meta's models. Give each agent a purpose, configure its capabilities, and create a team of agents to support your projects and workflows.",
     icon: CpuChipIcon,
     tints: ["orange", "pink"],
   },
@@ -118,26 +120,6 @@ export const SUPPORTER_WAYS: SupporterWay[] = [
   },
 ];
 
-/** Help along the way, for anyone who wants to learn or find a guide first. */
-export const SUPPORT: PathStep[] = [
-  {
-    step: "Learn the basics",
-    where: "Academy",
-    href: "/academy",
-    how: "Short tracks on AI fundamentals, prompting, and agents, with challenges Muse gives feedback on.",
-    icon: AcademicCapIcon,
-    tints: ["purple", "blue"],
-  },
-  {
-    step: "Find a mentor",
-    where: "Mentorship",
-    href: "/mentorship",
-    how: "Free, one-to-one guidance from builders who have shipped before.",
-    icon: UserGroupIcon,
-    tints: ["teal", "green"],
-  },
-];
-
 export type MobileApp = {
   name: string;
   store: string;
@@ -146,11 +128,11 @@ export type MobileApp = {
 };
 
 export const MOBILE_APPS: MobileApp[] = [
-  { name: "iOS app", store: "TestFlight", href: TESTFLIGHT_URL, logo: "/logos/apple.svg" },
+  { name: "iOS app", store: "Open beta", href: IOS_BETA_PATH, logo: "/logos/apple.svg" },
   {
     name: "Android app",
-    store: "Google Play",
-    href: PLAY_TESTING_URL,
+    store: "Open beta",
+    href: ANDROID_BETA_PATH,
     logo: "/logos/android.svg",
   },
 ];
@@ -195,33 +177,43 @@ export type MetaModel = {
 
 export const META_MODELS: MetaModel[] = [
   {
-    name: "Muse Spark and Muse Wonder",
-    role: "The advisory team",
+    name: "Think bigger with Muse AI",
+    role: "Explore & refine",
     detail:
-      "Every Idea Studio advisor is Muse with its own specialist brief. Advisors search the web, cite sources, and answer in structured JSON the page renders directly. Members pick Muse Spark 1.3 or Muse Wonder 1.0 and see what each request cost.",
+      "Collaborate with specialized AI advisors powered by Muse Spark and Muse Wonder. Brainstorm ideas, research opportunities, challenge assumptions, and refine your vision with web-backed insights, cited sources, and structured responses.",
     icon: SparklesIcon,
     pastel: "blue",
     tint: "blue",
   },
   {
-    name: "Muse planning",
-    role: "The product manager",
+    name: "Turn ideas into action",
+    role: "Plan & prepare",
     detail:
-      "In Build Studio, Muse reads the project, the linked idea, and the repository README, then drafts a backlog and roadmap and ranks the open tickets. Every ticket is a self-contained brief, ready for a coding agent.",
+      "Bring your vision into Build Studio, where Muse analyzes your project, GitHub repository, and README to create development roadmaps, prioritize tasks, and generate structured tickets that give coding agents the context they need.",
     icon: BoltIcon,
     pastel: "purple",
     tint: "purple",
   },
   {
-    name: "Muse Code agents",
-    role: "The engineer",
+    name: "Build with Muse Code",
+    role: "Build & ship",
     detail:
-      "Hand a ticket to Muse Code without installing anything. WeStride starts an isolated sandbox, clones the repo, runs Muse Code headless on a branch, streams the work log live, and opens a pull request when it finishes.",
+      "Put Meta's Muse Code agents to work in isolated development environments connected to your GitHub repository. Agents write code, complete development tickets, and open pull requests. Follow progress through live logs and review changes before merging.",
     icon: CommandLineIcon,
     pastel: "teal",
     tint: "teal",
   },
 ];
+
+/** What Muse brings to a real project, listed under the model cards. */
+export const META_CAPABILITIES = [
+  "Meta Muse Models",
+  "Web Research & Citations",
+  "Structured JSON Outputs",
+  "GitHub Integration",
+  "Isolated Sandboxes",
+  "Pull Requests",
+] as const;
 
 export type Integration = {
   name: string;
@@ -236,51 +228,58 @@ export type Integration = {
 export const INTEGRATIONS: Integration[] = [
   {
     name: "GitHub",
-    detail: "Link repositories to projects. Muse Code agents open pull requests on them.",
+    detail:
+      "Connect your repositories, manage development tasks, and build projects with AI coding agents that create pull requests directly in GitHub.",
     href: "/build",
     logo: "/logos/github.svg",
   },
   {
-    name: "Meta account",
-    detail: "Validate and build on your own Muse key and credits, through the same device sign-in Muse Code uses.",
+    name: "Meta Account",
+    detail:
+      "Connect your Meta account to access Muse AI and Muse Code, manage your credentials, and power your AI development workflows.",
     href: "/settings",
     logo: "/logos/meta.svg",
   },
   {
     name: "Slack",
-    detail: "Type /westride in any workspace with the WeStride app installed.",
+    detail:
+      "Bring WeStride into your workspace. Collaborate, access project information, and interact with your AI assistant without leaving Slack.",
     href: "/settings",
     logo: "/logos/slack.png",
   },
   {
     name: "Discord",
-    detail: "The same /westride commands in any server or direct message.",
+    detail:
+      "Connect with WeStride directly through Discord. Access your AI assistant, explore ideas, and stay engaged with your community.",
     href: "/settings",
     logo: "/logos/discord.svg",
   },
   {
     name: "WhatsApp",
-    detail: "Message WeStride from your phone and get the Academy in reply.",
+    detail:
+      "Take WeStride with you. Message your AI assistant, access learning resources, and stay connected from your phone.",
     href: "/settings",
     logo: "/logos/whatsapp.svg",
   },
   {
-    name: "MCP server",
-    detail: "Let ChatGPT, Claude, and Cursor read WeStride data through the Model Context Protocol.",
+    name: "MCP Server",
+    detail:
+      "Connect AI tools like ChatGPT, Claude, and Cursor to your WeStride data through the Model Context Protocol.",
     href: "/settings/mcp",
     logo: "/logos/model-context-protocol.svg",
   },
   {
     name: "Public API",
-    detail: "A read-only REST API with an OpenAPI document and an interactive explorer.",
+    detail:
+      "Extend WeStride with developer-friendly APIs to access platform data and build custom integrations.",
     href: "/settings/api",
     icon: CodeBracketSquareIcon,
   },
   {
-    name: "iOS and Android",
-    detail: "The Academy in your pocket, built with Expo and React Native.",
-    href: STORE_LINKS[0].href,
-    isExternal: true,
+    name: "iOS & Android",
+    detail:
+      "The mobile app is in open beta. Install a tester build and use the same account as the website.",
+    href: MOBILE_APPS_PATH,
     icon: DevicePhoneMobileIcon,
   },
 ];

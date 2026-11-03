@@ -12,7 +12,7 @@ import { Table } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { Theme } from "@astryxdesign/core/theme";
 import { defaultThemeSlug, themes } from "@/astryx-themes";
-import { STORE_LINKS } from "../../../store-links";
+import { ANDROID_BETA_PATH, IOS_BETA_PATH } from "../../../store-links";
 import { DocPage, DocSection } from "../../doc-page";
 import { OurStoryTabs } from "../../section-tabs";
 
@@ -54,9 +54,12 @@ const WORKSPACES: Workspace[] = [
   },
   {
     path: "apps/mobile",
-    description: "The iOS and Android app.",
-    runsAt: "App Store and Google Play",
-    links: STORE_LINKS,
+    description: "The iOS and Android app, currently in open beta.",
+    runsAt: "Open beta",
+    links: [
+      { label: "iOS", href: IOS_BETA_PATH },
+      { label: "Android", href: ANDROID_BETA_PATH },
+    ],
   },
   {
     path: "packages/db",
@@ -390,7 +393,11 @@ export function TechStackOverview() {
                 row.links ? (
                   <HStack gap={2} wrap="wrap">
                     {row.links.map((link) => (
-                      <Link key={link.href} href={link.href} isExternalLink>
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        isExternalLink={link.href.startsWith("http")}
+                      >
                         {link.label}
                       </Link>
                     ))}
