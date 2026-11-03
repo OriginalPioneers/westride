@@ -14,7 +14,7 @@ import { List, ListItem } from "@astryxdesign/core/List";
 import { Section } from "@astryxdesign/core/Section";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import type { Device, PledgeStatus } from "@westride/db";
+import type { Device } from "@westride/db";
 import { getPendingPairingCode, isDeviceOnline, listDevicesForSupporter } from "@westride/db/devices";
 import { listIdeas, type SupportWant, isSupportWant } from "@westride/db/ideas";
 import {
@@ -28,6 +28,12 @@ import {
 import { signInPath } from "@/lib/auth-paths";
 import { isVolunteerRunnerConfigured } from "@/lib/build/agent/config";
 import { ideaPath } from "@/lib/ideas/filters";
+import {
+  deviceDetail,
+  PLEDGE_STATUS_LABEL,
+  PLEDGE_STATUS_VARIANT,
+  pledgeDetail,
+} from "@/lib/support/describe";
 import { formatMicros, formatSeconds, supportingPath } from "@/lib/support/schema";
 import { EntityImage } from "../entity-image";
 import { LookingForBadges } from "../ideas/idea-badges";
@@ -80,13 +86,6 @@ const WAYS: Way[] = [
   },
 ];
 
-const STATUS_LABEL: Record<PledgeStatus, string> = { ACTIVE: "Active", PAUSED: "Paused", REVOKED: "Ended" };
-const STATUS_VARIANT: Record<PledgeStatus, "success" | "warning" | "neutral"> = {
-  ACTIVE: "success",
-  PAUSED: "warning",
-  REVOKED: "neutral",
-};
-
 function wayStat(way: Way, platform: PlatformSupportSummary): string {
   const ideas = (count: number, what: string) =>
     `${count} idea${count === 1 ? "" : "s"} looking for ${what}`;
@@ -113,32 +112,6 @@ function wayStat(way: Way, platform: PlatformSupportSummary): string {
         .filter(Boolean)
         .join(" · ");
   }
-}
-
-function pledgeDetail(pledge: PledgeWithIdea): string {
-  if (pledge.kind === "COMPUTE") {
-    return pledge.jobsTotal > 0 ? `${pledge.jobsTotal} job${pledge.jobsTotal === 1 ? "" : "s"} run` : "No jobs yet";
-  }
-  const cap =
-    pledge.capMicros === null
-      ? "No cap"
-      : `${formatMicros(pledge.capMicros)} ${pledge.resetsMonthly ? "a month" : "one time"}`;
-  const spent =
-    pledge.capMicros !== null && pledge.resetsMonthly
-      ? `${formatMicros(pledge.spentMicrosThisPeriod)} used this period`
-      : `${formatMicros(pledge.spentMicrosTotal)} used`;
-  return `${cap} · ${spent}`;
-}
-
-function deviceDetail(device: Device): string {
-  const parts: string[] = [];
-  if (device.os || device.arch) parts.push([device.os, device.arch].filter(Boolean).join(" "));
-  if (device.cpus) parts.push(`${device.cpus} CPU${device.cpus === 1 ? "" : "s"}`);
-  if (device.memoryMb) parts.push(`${Math.round(device.memoryMb / 1024)} GB`);
-  if (device.models.length > 0) parts.push(`${device.models.length} local model${device.models.length === 1 ? "" : "s"}`);
-  if (device.hasMetaKey) parts.push("Meta key");
-  if (device.jobsCompleted > 0) parts.push(`${device.jobsCompleted} job${device.jobsCompleted === 1 ? "" : "s"}`);
-  return parts.join(" · ") || "Waiting for its first check-in";
 }
 
 /* ----------------------------- Ways ----------------------------- */
@@ -317,7 +290,10 @@ function YourSupportSection({
                             variant={pledge.kind === "TOKENS" ? "blue" : "green"}
                             label={pledge.kind === "TOKENS" ? "Tokens" : "Compute"}
                           />
-                          <Badge variant={STATUS_VARIANT[pledge.status]} label={STATUS_LABEL[pledge.status]} />
+                          <Badge
+                            variant={PLEDGE_STATUS_VARIANT[pledge.status]}
+                            label={PLEDGE_STATUS_LABEL[pledge.status]}
+                          />
                         </HStack>
                       }
                       description={pledgeDetail(pledge)}

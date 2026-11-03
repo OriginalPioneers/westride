@@ -176,6 +176,13 @@
       "when": 1793639911924,
       "tag": "0024_westride_cloud",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793686565693,
+      "tag": "0025_idea_type_website_mobile_app",
+      "breakpoints": true
     }
   ]
 }

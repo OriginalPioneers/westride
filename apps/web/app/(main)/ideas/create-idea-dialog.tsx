@@ -163,7 +163,14 @@ const DIALOG_SIZE = "calc(100dvh - (2 * var(--spacing-4)))";
 const DIALOG_WIDTH = 880;
 const composerInput: CSSProperties = { minHeight: "calc(2 * var(--spacing-10))" };
 
-const IDEA_TYPES: IdeaType[] = ["BUSINESS", "NON_PROFIT", "GAME", "OPEN_SOURCE"];
+const IDEA_TYPES: IdeaType[] = [
+  "BUSINESS",
+  "NON_PROFIT",
+  "GAME",
+  "OPEN_SOURCE",
+  "WEBSITE",
+  "MOBILE_APP",
+];
 /** The landing chip for "no kind yet": Muse picks one from the description. */
 const EXPLORING = "EXPLORING";
 

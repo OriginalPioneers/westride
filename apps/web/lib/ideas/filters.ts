@@ -12,6 +12,8 @@ export const IDEA_TYPE_LABELS: Record<IdeaType, string> = {
   NON_PROFIT: "Non-Profit",
   GAME: "Game",
   OPEN_SOURCE: "Open Source",
+  WEBSITE: "Website",
+  MOBILE_APP: "Mobile App",
 };
 
 export const IDEA_ROLE_LABELS: Record<IdeaMemberRole, string> = {

@@ -1,12 +1,11 @@
 "use client";
 
-import { Show, useClerk } from "@clerk/nextjs";
+import { Show } from "@clerk/nextjs";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@astryxdesign/core/AppShell";
 import { Button } from "@astryxdesign/core/Button";
 import { Divider } from "@astryxdesign/core/Divider";
-import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { Layout } from "@astryxdesign/core/Layout";
@@ -17,13 +16,8 @@ import {
   TopNavItem,
   useTopNavRenderMode,
 } from "@astryxdesign/core/TopNav";
-import {
-  ArrowRightStartOnRectangleIcon,
-  CloudIcon,
-  Cog6ToothIcon,
-  UserCircleIcon,
-} from "@heroicons/react/24/outline";
-import { afterAuthPath, signInPath } from "@/lib/auth-paths";
+import { UserCircleIcon } from "@heroicons/react/24/outline";
+import { signInPath } from "@/lib/auth-paths";
 import { ThemeToggle } from "../theme-toggle";
 import { MuseDock } from "./muse-dock";
 import { SITE_CONTAINER_WIDTH, SiteFooter } from "../site-footer";
@@ -123,36 +117,14 @@ function Wordmark() {
   );
 }
 
-function AccountMenu() {
-  const { signOut } = useClerk();
-
+function ProfileLink() {
   return (
-    <DropdownMenu
-      placement="below"
-      alignment="end"
-      hasChevron={false}
-      renderTrigger={(props) => (
-        <IconButton
-          {...props}
-          label="Account"
-          tooltip="Account"
-          variant="ghost"
-          icon={<Icon icon={UserCircleIcon} />}
-        />
-      )}
-      items={[
-        { label: "Profile", href: "/profile", icon: UserCircleIcon },
-        { label: "WeStride Cloud", href: "/cloud", icon: CloudIcon },
-        { label: "Settings", href: "/settings", icon: Cog6ToothIcon },
-        { type: "divider" },
-        {
-          label: "Sign Out",
-          icon: ArrowRightStartOnRectangleIcon,
-          onClick: () => {
-            void signOut({ redirectUrl: afterAuthPath });
-          },
-        },
-      ]}
+    <IconButton
+      label="Profile"
+      tooltip="Profile"
+      variant="ghost"
+      href="/profile"
+      icon={<Icon icon={UserCircleIcon} />}
     />
   );
 }
@@ -207,7 +179,7 @@ export function AppFrame({
                 <Button label="Sign In" variant="secondary" href={signInPath} />
               </Show>
               <Show when="signed-in">
-                <AccountMenu />
+                <ProfileLink />
               </Show>
             </>
           }

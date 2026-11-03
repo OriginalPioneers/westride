@@ -5,8 +5,8 @@ WeStride is free when a member brings their own Meta AI account and their own Ve
 Pages:
 
 - `/pricing` (public, in the primary nav): Free with your own accounts versus WeStride Cloud pay-as-you-go, the per-model price list, compute rates, and how funds and codes work.
-- `/cloud` (signed in; account menu → WeStride Cloud): balance and totals, add funds, redeem a code, choose which provider to use first, and the ledger.
-- Settings shows the balance and preference with a link to `/cloud`.
+- `/cloud` (signed in; the WeStride Cloud tab of the profile pages): balance and totals, add funds, redeem a code, choose which provider to use first, and the ledger.
+- Connections (`/settings`) points members without their own Meta or Vercel accounts to `/cloud`.
 
 ## Setup
 

@@ -21,7 +21,6 @@ const CLOUD_PATH = "/cloud";
 
 function revalidateCloud() {
   revalidatePath(CLOUD_PATH);
-  revalidatePath("/settings");
 }
 
 async function requireUser(): Promise<string | Failure> {

@@ -9,7 +9,7 @@ import {
   syncLearningAwards,
 } from "@westride/db/learning";
 import { awardIfSignedIn } from "@/lib/achievements";
-import { ProfileTabs } from "../../section-tabs";
+import { AccountTabs } from "../../section-tabs";
 import { AchievementTrack } from "./achievement-track";
 export const metadata: Metadata = { title: "Achievements" };
 export default async function AchievementsPage() {
@@ -26,7 +26,7 @@ export default async function AchievementsPage() {
       header={
         <LayoutHeader hasDivider>
           <VStack gap={4}>
-            <ProfileTabs />
+            <AccountTabs />
             <Heading level={1}>Achievements</Heading>
           </VStack>
         </LayoutHeader>

@@ -13,7 +13,6 @@ export const MICROS_PER_DOLLAR = 1_000_000;
 
 export const supportingPath = (kind?: "tokens" | "compute" | "capital") =>
   kind ? `/supporting?kind=${kind}` : "/supporting";
-
 // ---------------------------------------------------------------------------
 // Pledges
 // ---------------------------------------------------------------------------

@@ -60,7 +60,7 @@ export const STUDIOS: Studio[] = [
     where: "Idea Studio",
     action: "Workshop an idea",
     href: "/ideas",
-    how: "Bring a business, non-profit, game, or open-source idea. A team of Muse advisors pressure-tests it with live research and cited sources, so you know what holds up before you build.",
+    how: "Bring a business, non-profit, game, open-source, website, or mobile app idea. A team of Muse advisors pressure-tests it with live research and cited sources, so you know what holds up before you build.",
     icon: LightBulbIcon,
     tints: ["indigo", "purple"],
   },

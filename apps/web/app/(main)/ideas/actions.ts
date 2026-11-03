@@ -167,7 +167,7 @@ function githubFailureMessage(error: unknown): string {
 }
 
 const ideaTypeSchema = z
-  .enum(["BUSINESS", "NON_PROFIT", "GAME", "OPEN_SOURCE"])
+  .enum(["BUSINESS", "NON_PROFIT", "GAME", "OPEN_SOURCE", "WEBSITE", "MOBILE_APP"])
   .nullable()
   .catch(null);
 

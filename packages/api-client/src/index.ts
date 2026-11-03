@@ -65,7 +65,13 @@ export type Me = Person & {
 // Ideas
 // ---------------------------------------------------------------------------
 
-export type IdeaType = "BUSINESS" | "NON_PROFIT" | "GAME" | "OPEN_SOURCE";
+export type IdeaType =
+  | "BUSINESS"
+  | "NON_PROFIT"
+  | "GAME"
+  | "OPEN_SOURCE"
+  | "WEBSITE"
+  | "MOBILE_APP";
 export type IdeaMemberRole = "FOUNDER" | "MEMBER";
 export type ContentOrigin = "MEMBER" | "IMPORT";
 export type IdeaView = "mine" | "following" | "featured";

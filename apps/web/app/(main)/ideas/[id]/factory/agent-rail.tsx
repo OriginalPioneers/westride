@@ -30,6 +30,8 @@ const GROUP_ORDER: AgentGroup[] = [
   "non-profit",
   "game",
   "open-source",
+  "website",
+  "mobile-app",
 ];
 
 export function AgentRail({

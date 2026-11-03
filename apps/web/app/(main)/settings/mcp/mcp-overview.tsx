@@ -12,7 +12,7 @@ import { Tab, TabList } from "@astryxdesign/core/TabList";
 import { Table } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { DocPage, DocSection } from "../../doc-page";
-import { SettingsTabs } from "../../section-tabs";
+import { AccountTabs } from "../../section-tabs";
 
 const MCP_HOME_URL = "https://mcp.westride.org";
 const MCP_URL = `${MCP_HOME_URL}/mcp`;
@@ -402,7 +402,7 @@ function ClientSetup() {
 export function McpOverview() {
   return (
     <DocPage
-      tabs={<SettingsTabs />}
+      tabs={<AccountTabs />}
       title="WeStride MCP"
       lede="Connect ChatGPT, Claude, Cursor, and other AI assistants to WeStride, so they can work on your ideas, projects, and agents with you."
       actions={

@@ -672,8 +672,8 @@ const HERO_SECTIONS: HeroSection[] = [
     ),
     description: (
       <>
-        Turn your business, nonprofit, game, or open-source idea into a plan
-        worth building. Collaborate with{" "}
+        Turn your business, nonprofit, game, open-source, website, or mobile
+        app idea into a plan worth building. Collaborate with{" "}
         <MetaLink href={META_AI_URL}>Meta AI</MetaLink> advisors to brainstorm,
         research, challenge assumptions, and refine your vision before writing a
         single line of code.

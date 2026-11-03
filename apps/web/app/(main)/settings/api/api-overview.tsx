@@ -11,7 +11,7 @@ import { VStack } from "@astryxdesign/core/Stack";
 import { Table } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { DocPage, DocSection } from "../../doc-page";
-import { SettingsTabs } from "../../section-tabs";
+import { AccountTabs } from "../../section-tabs";
 
 const API_URL = "https://api.westride.org";
 const EXPLORER_URL = `${API_URL}/docs`;
@@ -180,7 +180,7 @@ const REQUEST_FLOW = [
 export function ApiOverview() {
   return (
     <DocPage
-      tabs={<SettingsTabs />}
+      tabs={<AccountTabs />}
       title="WeStride API"
       lede="Read and change ideas, projects, and agents from your own code, with the same permissions you have on the website."
       actions={

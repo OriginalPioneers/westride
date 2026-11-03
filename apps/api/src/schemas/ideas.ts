@@ -20,7 +20,7 @@ import {
 } from "./common";
 
 export const IdeaTypeSchema = z
-  .enum(["BUSINESS", "NON_PROFIT", "GAME", "OPEN_SOURCE"])
+  .enum(["BUSINESS", "NON_PROFIT", "GAME", "OPEN_SOURCE", "WEBSITE", "MOBILE_APP"])
   .openapi("IdeaType");
 
 export const IdeaMemberRoleSchema = z.enum(["FOUNDER", "MEMBER"]).openapi("IdeaMemberRole");

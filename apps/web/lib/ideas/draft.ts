@@ -20,7 +20,14 @@ import {
  * and edits every field before anything is saved.
  */
 
-const IDEA_TYPES = ["BUSINESS", "NON_PROFIT", "GAME", "OPEN_SOURCE"] as const;
+const IDEA_TYPES = [
+  "BUSINESS",
+  "NON_PROFIT",
+  "GAME",
+  "OPEN_SOURCE",
+  "WEBSITE",
+  "MOBILE_APP",
+] as const;
 
 /** Known categories shown to Muse so it reuses them instead of inventing near-duplicates. */
 const MAX_KNOWN_CATEGORIES = 200;
@@ -65,7 +72,7 @@ function instructions(
     "Read what the member wrote and return a draft listing as JSON.",
     `- name: a short, specific title, under ${Math.min(60, MAX_IDEA_NAME)} characters. No quotes, no trailing period.`,
     "- description: two or three short paragraphs of Markdown in the member's voice: what it is, who it is for, and why it should exist. Use only what they said; do not invent facts, numbers, or features.",
-    "- type: BUSINESS (a product, service, or company), NON_PROFIT (a cause, charity, or community organization), GAME (a video, tabletop, or playable experience), or OPEN_SOURCE (a library, tool, or project released under an open license).",
+    "- type: BUSINESS (a product, service, or company), NON_PROFIT (a cause, charity, or community organization), GAME (a video, tabletop, or playable experience), OPEN_SOURCE (a library, tool, or project released under an open license), WEBSITE (a site, blog, portal, or web-based tool where the site itself is the thing being made), or MOBILE_APP (an app for phones or tablets).",
     preferredType
       ? `  The member already chose ${preferredType}; return that.`
       : "  Pick the one that fits best.",

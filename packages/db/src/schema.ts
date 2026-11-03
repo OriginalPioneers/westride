@@ -416,6 +416,8 @@ export const ideaType = pgEnum("idea_type", [
   "NON_PROFIT",
   "GAME",
   "OPEN_SOURCE",
+  "WEBSITE",
+  "MOBILE_APP",
 ]);
 
 export const ideaMemberRole = pgEnum("idea_member_role", ["FOUNDER", "MEMBER"]);

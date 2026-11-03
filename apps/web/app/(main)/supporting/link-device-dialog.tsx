@@ -18,12 +18,18 @@ import { createPairingCodeAction } from "../support-actions";
 
 type Code = { code: string; expiresAt: string };
 
-export function LinkDeviceButton({ initialCode }: { initialCode: Code | null }) {
+export function LinkDeviceButton({
+  initialCode,
+  label = "Link a computer",
+}: {
+  initialCode: Code | null;
+  label?: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
       <Button
-        label="Link a computer"
+        label={label}
         variant="primary"
         icon={<Icon icon={ComputerDesktopIcon} />}
         onClick={() => setIsOpen(true)}

@@ -8,7 +8,7 @@ Built in public for the [Meta Global AI Developer Hackathon](https://cerebralval
 
 | Studio | What it does |
 | -------- | -------------- |
-| Idea Studio | Bring a business, non-profit, game, or open-source idea. A team of Muse advisors, each with a specialist brief, researches it with web search and cited sources, evaluates it in parallel, and a synthesis step weighs where they agree and disagree. Import any public GitHub repository to start from existing work. |
+| Idea Studio | Bring a business, non-profit, game, open-source, website, or mobile app idea. A team of Muse advisors, each with a specialist brief, researches it with web search and cited sources, evaluates it in parallel, and a synthesis step weighs where they agree and disagree. Import any public GitHub repository to start from existing work. |
 | Build Studio | Projects, tickets, milestones, and linked GitHub repositories. Muse drafts the backlog and roadmap and ranks the open tickets. Muse Code takes a ticket, works it in a Vercel Sandbox on the member's own account, streams the work log live, and opens a pull request. |
 | Agent Studio | Standing Muse agents with their own instructions, backlog, schedule, and usage ledger. With a repository they work tickets as Muse Code; without one they answer with researched reports. |
 | Supporting | Back an idea without joining its team. Pledge tokens (your Meta key pays for the team's agents up to a cap you set), pledge compute (your computer runs their jobs in an isolated container, optionally on a local model), or follow the team's own capital links. WeStride never collects or holds money. |
