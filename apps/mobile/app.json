@@ -15,6 +15,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.westride.org",
+      "associatedDomains": [
+        "applinks:clerk.westride.org",
+        "webcredentials:clerk.westride.org"
+      ],
       "config": {
         "usesNonExemptEncryption": false
       }
@@ -37,7 +41,7 @@
         "projectId": "7d612213-eb2b-4a73-afd5-b3791ad6c8e6"
       }
     },
-    "owner": "originalpioneers",
+    "owner": "westrideorg",
     "plugins": [
       "expo-router",
       "@clerk/expo",
