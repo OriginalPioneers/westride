@@ -34,12 +34,7 @@ import {
   ArrowRightIcon,
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/20/solid";
-import {
-  AcademicCapIcon,
-  CodeBracketIcon,
-  HeartIcon,
-  UserGroupIcon,
-} from "@heroicons/react/24/outline";
+import { CodeBracketIcon, HeartIcon } from "@heroicons/react/24/outline";
 import { defaultThemeSlug, themes } from "@/astryx-themes";
 import {
   CLONE_SNIPPET,
@@ -287,6 +282,31 @@ const SHOOTING_STARS = [
   { x: 420, y: 110, cycle: 9, delay: 11 },
 ] as const;
 
+/**
+ * The neural network behind the hero: lit nodes in sky units, and the
+ * curved connections between them. Each connection draws itself in once,
+ * then carries a small pulse of light from its first node to its second.
+ * The paths sweep from the copy's lower left up past the platform preview
+ * and down into the globe's corner.
+ */
+const NET_NODES = [
+  { x: 120, y: 560, tint: "indigo", r: 5 },
+  { x: 380, y: 420, tint: "purple", r: 4 },
+  { x: 640, y: 300, tint: "blue", r: 5 },
+  { x: 980, y: 120, tint: "teal", r: 4 },
+  { x: 1160, y: 300, tint: "purple", r: 5 },
+  { x: 1320, y: 520, tint: "blue", r: 6 },
+  { x: 860, y: 720, tint: "teal", r: 4 },
+] as const satisfies readonly { x: number; y: number; tint: Tint; r: number }[];
+
+const NET_LINKS = [
+  { d: "M120 560 C 260 540 420 330 640 300", cycle: 9, delay: 0 },
+  { d: "M640 300 C 760 280 860 150 980 120", cycle: 7, delay: 2.5 },
+  { d: "M980 120 C 1140 140 1260 340 1320 520", cycle: 8, delay: 1 },
+  { d: "M380 420 C 620 470 900 420 1160 300", cycle: 11, delay: 4 },
+  { d: "M860 720 C 1000 700 1200 640 1320 520", cycle: 8, delay: 5.5 },
+] as const;
+
 function HeroSky() {
   return (
     <svg
@@ -310,12 +330,42 @@ function HeroSky() {
             strokeOpacity="0.45"
           />
         </pattern>
+        {/* The same grid, lit in the section's color. It only shows through
+            the sweep mask below, a soft pool of light that wanders across
+            the sky, so the lines seem to catch a passing glow. */}
+        <pattern
+          id="wl-grid-lit"
+          width="48"
+          height="48"
+          patternUnits="userSpaceOnUse"
+        >
+          <path
+            d="M48 0H0V48"
+            fill="none"
+            stroke="var(--wl-scene-b)"
+            strokeOpacity="0.55"
+          />
+        </pattern>
         <radialGradient id="wl-fade" cx="0.5" cy="0.45" r="0.75">
           <stop offset="0" stopColor="white" />
           <stop offset="1" stopColor="white" stopOpacity="0" />
         </radialGradient>
+        <radialGradient id="wl-sweep-light">
+          <stop offset="0" stopColor="white" stopOpacity="0.9" />
+          <stop offset="0.5" stopColor="white" stopOpacity="0.35" />
+          <stop offset="1" stopColor="white" stopOpacity="0" />
+        </radialGradient>
         <mask id="wl-grid-mask">
           <rect width="100%" height="100%" fill="url(#wl-fade)" />
+        </mask>
+        <mask id="wl-sweep-mask">
+          <circle
+            className="wl-sweep"
+            cx="0"
+            cy="0"
+            r="360"
+            fill="url(#wl-sweep-light)"
+          />
         </mask>
         {/* The blobs take the active section's scene colors (set on .wl-hero
             and eased there), kept well under full strength so a change of
@@ -332,7 +382,14 @@ function HeroSky() {
           <stop offset="0" stopColor="var(--wl-scene-c)" stopOpacity="0.3" />
           <stop offset="1" stopColor="var(--wl-scene-c)" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="wl-stride-gradient" x1="0" y1="1" x2="1" y2="0">
+        <linearGradient
+          id="wl-net-gradient"
+          gradientUnits="userSpaceOnUse"
+          x1="0"
+          y1="800"
+          x2="1440"
+          y2="0"
+        >
           <stop offset="0" stopColor="var(--wl-scene-a)" />
           <stop offset="0.5" stopColor="var(--wl-scene-b)" />
           <stop offset="1" stopColor="var(--wl-scene-c)" />
@@ -367,74 +424,84 @@ function HeroSky() {
         fill="url(#wl-grid)"
         mask="url(#wl-grid-mask)"
       />
+      <rect
+        width="100%"
+        height="100%"
+        fill="url(#wl-grid-lit)"
+        mask="url(#wl-sweep-mask)"
+      />
 
+      {/* Ambient light: the section's first color pools behind the platform
+          preview, its second warms the upper right, and the third anchors
+          the lower left under the copy. */}
       <circle
         className="wl-blob wl-blob-a"
-        cx="300"
-        cy="220"
-        r="320"
+        cx="940"
+        cy="380"
+        r="420"
         fill="url(#wl-g-scene-a)"
       />
       <circle
         className="wl-blob wl-blob-b"
-        cx="1130"
-        cy="240"
-        r="360"
+        cx="1240"
+        cy="180"
+        r="340"
         fill="url(#wl-g-scene-b)"
       />
       <circle
         className="wl-blob wl-blob-c"
-        cx="760"
-        cy="680"
-        r="300"
+        cx="260"
+        cy="700"
+        r="320"
         fill="url(#wl-g-scene-c)"
       />
 
-      <path
-        className="wl-stride"
-        d="M -40 640 C 260 620 380 460 600 440 C 820 420 900 300 1480 120"
-        fill="none"
-        stroke="url(#wl-stride-gradient)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        opacity="0.45"
-      />
-      <g filter="url(#wl-node-glow)" opacity="0.7">
-        <circle
-          className="wl-node"
-          cx="156"
-          cy="603"
-          r="6"
-          fill="var(--wl-indigo)"
-        />
-        <circle
-          className="wl-node"
-          cx="366"
-          cy="513"
-          r="6"
-          fill="var(--wl-purple)"
-        />
-        <circle
-          className="wl-node"
-          cx="600"
-          cy="440"
-          r="6"
-          fill="var(--wl-blue)"
-        />
-        <circle
-          className="wl-node"
-          cx="870"
-          cy="356"
-          r="6"
-          fill="var(--wl-teal)"
-        />
-        <circle
-          className="wl-node"
-          cx="1187"
-          cy="220"
-          r="7"
-          fill="var(--wl-orange)"
-        />
+      <g className="wl-net">
+        {NET_LINKS.map((link, index) => (
+          <g
+            key={link.d}
+            style={
+              {
+                "--wl-i": index,
+                "--wl-pulse-cycle": link.cycle,
+                "--wl-pulse-delay": link.delay,
+              } as CSSProperties
+            }
+          >
+            <path
+              className="wl-net-link"
+              d={link.d}
+              pathLength={1000}
+              fill="none"
+              stroke="url(#wl-net-gradient)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              opacity="0.4"
+            />
+            <path
+              className="wl-net-pulse"
+              d={link.d}
+              pathLength={1000}
+              fill="none"
+              stroke="var(--color-text-primary)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              filter="url(#wl-node-glow)"
+            />
+          </g>
+        ))}
+        <g filter="url(#wl-node-glow)" opacity="0.75">
+          {NET_NODES.map((node) => (
+            <circle
+              key={`${node.x}-${node.y}`}
+              className="wl-node"
+              cx={node.x}
+              cy={node.y}
+              r={node.r}
+              fill={`var(--wl-${node.tint})`}
+            />
+          ))}
+        </g>
       </g>
 
       <g>
@@ -553,11 +620,16 @@ type HeroSection = {
   id: string;
   /** The tab label on the right. */
   tab: string;
-  /** Where the tab leads, shown under its label and as the panel eyebrow. */
+  /** Where the tab leads, read out with its label. */
   where: string;
   title: ReactNode;
   description: ReactNode;
-  ctas: HeroCta[];
+  /** The one button in the panel. */
+  cta: HeroCta;
+  /** The quieter way in, an underlined link under the button. */
+  link: { label: string; href: string };
+  /** The platform page the preview shows while this section is active. */
+  screenshot: { src: string; alt: string };
   icon: ComponentType<SVGProps<SVGSVGElement>>;
   /**
    * The tab's accent, and the pair the hero's sky and globe halo take on.
@@ -582,7 +654,7 @@ const [IDEA_STUDIO, BUILD_STUDIO, AGENT_STUDIO] = STUDIOS;
 const HERO_SECTIONS: HeroSection[] = [
   {
     id: "idea",
-    tab: IDEA_STUDIO.action,
+    tab: "Idea Workshop",
     where: IDEA_STUDIO.where,
     title: (
       <>
@@ -601,21 +673,23 @@ const HERO_SECTIONS: HeroSection[] = [
         single line of code.
       </>
     ),
-    ctas: [
-      {
-        label: IDEA_STUDIO.action,
-        href: IDEA_STUDIO.href,
-        icon: IDEA_STUDIO.icon,
-      },
-      { label: "Learn the basics", href: "/academy", icon: AcademicCapIcon },
-    ],
+    cta: {
+      label: IDEA_STUDIO.action,
+      href: IDEA_STUDIO.href,
+      icon: IDEA_STUDIO.icon,
+    },
+    link: { label: "Or learn the basics first", href: "/academy" },
+    screenshot: {
+      src: "/hero/idea.webp",
+      alt: "Idea Workshop in WeStride: a grid of your ideas with their pictures, kinds, and a card to start a new one.",
+    },
     icon: IDEA_STUDIO.icon,
     tints: IDEA_STUDIO.tints,
     globeScale: 1,
   },
   {
     id: "build",
-    tab: BUILD_STUDIO.action,
+    tab: "Build Studio",
     where: BUILD_STUDIO.where,
     title: (
       <>
@@ -634,21 +708,23 @@ const HERO_SECTIONS: HeroSection[] = [
         {" agents work the tickets and open pull requests, directly in GitHub."}
       </>
     ),
-    ctas: [
-      {
-        label: BUILD_STUDIO.action,
-        href: BUILD_STUDIO.href,
-        icon: BUILD_STUDIO.icon,
-      },
-      { label: "Find a mentor", href: "/mentorship", icon: UserGroupIcon },
-    ],
+    cta: {
+      label: BUILD_STUDIO.action,
+      href: BUILD_STUDIO.href,
+      icon: BUILD_STUDIO.icon,
+    },
+    link: { label: "Or find a mentor first", href: "/mentorship" },
+    screenshot: {
+      src: "/hero/build.webp",
+      alt: "Build Studio in WeStride: a project board with backlog, in progress, in review, roadblocked, and done columns of tickets.",
+    },
     icon: BUILD_STUDIO.icon,
     tints: BUILD_STUDIO.tints,
-    globeScale: 1.14,
+    globeScale: 1.08,
   },
   {
     id: "agent",
-    tab: AGENT_STUDIO.action,
+    tab: "AI Agent Fleet",
     where: AGENT_STUDIO.where,
     title: (
       <>
@@ -667,22 +743,24 @@ const HERO_SECTIONS: HeroSection[] = [
         }
       </>
     ),
-    ctas: [
-      {
-        label: AGENT_STUDIO.action,
-        href: AGENT_STUDIO.href,
-        icon: AGENT_STUDIO.icon,
-      },
-      { label: "Connect your Meta account", href: "/settings" },
-    ],
+    cta: {
+      label: AGENT_STUDIO.action,
+      href: AGENT_STUDIO.href,
+      icon: AGENT_STUDIO.icon,
+    },
+    link: { label: "Or connect your Meta account", href: "/settings" },
+    screenshot: {
+      src: "/hero/agent.webp",
+      alt: "AI Agent Fleet in WeStride: the new agent form, with a name, what it does, standing instructions, and the project it works in.",
+    },
     icon: AGENT_STUDIO.icon,
     tints: AGENT_STUDIO.tints,
-    globeScale: 1.3,
+    globeScale: 1.14,
   },
   {
     id: "support",
-    tab: "Support a project",
-    where: "Pledge tokens, computer or capital",
+    tab: "Support a Project",
+    where: "Pledge tokens, compute or capital",
     title: (
       <>
         Back an idea{" "}
@@ -693,14 +771,19 @@ const HERO_SECTIONS: HeroSection[] = [
     ),
     description:
       "Pledge tokens or compute to the ideas you choose, or contribute capital through a team's own links. WeStride never collects or holds money.",
-    ctas: SUPPORTER_WAYS.map((way) => ({
-      label: way.action,
-      href: way.href,
-      icon: way.icon,
-    })),
+    cta: {
+      label: SUPPORTER_WAYS[0].action,
+      href: SUPPORTER_WAYS[0].href,
+      icon: SUPPORTER_WAYS[0].icon,
+    },
+    link: { label: "Or pledge compute or capital", href: "/supporting" },
+    screenshot: {
+      src: "/hero/support.webp",
+      alt: "Supporting in WeStride: tokens, compute, and capital flowing into an idea, with counts of pledges and linked computers.",
+    },
     icon: HeartIcon,
     tints: ["teal", "green"],
-    globeScale: 0.86,
+    globeScale: 0.94,
   },
 ];
 
@@ -805,25 +888,66 @@ function HeroPanel({
       <Text type="large" color="secondary" textWrap="pretty" maxLines={0}>
         {section.description}
       </Text>
-      {section.ctas.length > 0 && (
-        <HStack gap={2} wrap="wrap">
-          {section.ctas.map((cta, index) => (
-            <Button
-              key={cta.href}
-              label={cta.label}
-              variant={index === 0 ? "primary" : undefined}
-              size="lg"
-              href={cta.href}
-              icon={
-                cta.icon != null ? (
-                  <Icon icon={cta.icon} color="inherit" />
-                ) : undefined
-              }
-            />
-          ))}
-        </HStack>
-      )}
+      <VStack gap={3} hAlign="start">
+        <Button
+          className="wl-hero-cta"
+          label={section.cta.label}
+          variant="primary"
+          size="lg"
+          href={section.cta.href}
+          icon={
+            section.cta.icon != null ? (
+              <Icon icon={section.cta.icon} color="inherit" />
+            ) : undefined
+          }
+        />
+        <Link
+          className="wl-hero-link"
+          href={section.link.href}
+          hasUnderline
+          isStandalone
+          color="primary"
+          weight="medium"
+        >
+          {section.link.label}
+        </Link>
+      </VStack>
     </VStack>
+  );
+}
+
+/**
+ * The platform, as it looks right now: a screenshot of the active
+ * section's page on a layered stand. Every section's picture is mounted so
+ * a change of tab crossfades rather than reloads, and only the active one
+ * is in the accessibility tree.
+ */
+function HeroShot({ activeId }: { activeId: string }) {
+  return (
+    <Center className="wl-hero-shot-stand">
+      <Grid className="wl-hero-shot" columns={1}>
+        {HERO_SECTIONS.map((section, index) => {
+          const isActive = section.id === activeId;
+          return (
+            <Image
+              key={section.id}
+              className="wl-hero-shot-image"
+              data-active={isActive ? "" : undefined}
+              aria-hidden={!isActive}
+              src={section.screenshot.src}
+              alt={section.screenshot.alt}
+              width={2160}
+              height={1350}
+              fetchPriority={index === 0 ? "high" : undefined}
+              loading={index === 0 ? "eager" : "lazy"}
+              // The optimizer fetches this file without a browser user
+              // agent, and the proxy refuses that request.
+              unoptimized
+            />
+          );
+        })}
+      </Grid>
+    </Center>
   );
 }
 
@@ -928,30 +1052,103 @@ function HeroTab({
     >
       <HStack
         className="wl-hero-tab-body"
-        gap={3}
+        gap={2}
         vAlign="center"
         wrap="nowrap"
       >
         <Center className="wl-hero-tab-icon">
-          <Icon icon={section.icon} size="md" color="inherit" />
+          <Icon icon={section.icon} size="sm" color="inherit" />
         </Center>
-        <VStack gap={0}>
-          <Text weight="semibold" textWrap="balance">
-            {section.tab}
-          </Text>
-          <Text type="supporting" size="xsm" textWrap="nowrap">
-            {section.where}
-          </Text>
-        </VStack>
+        <Text
+          className="wl-hero-tab-label"
+          size="sm"
+          weight="bold"
+          textWrap="balance"
+          style={eyebrowStyle}
+        >
+          {section.tab}
+        </Text>
       </HStack>
     </SelectableCard>
   );
 }
 
-const STUDIO_TAB_IDS = new Set(["idea", "build", "agent"]);
+const WAVE_WIDTH = 1440;
+const WAVE_HEIGHT = 144;
 
 /**
- * Tinted swells along the bottom of the hero. The last path traces the
+ * A wave along the bottom of the hero. Each one is drawn wider than the
+ * box by at least one full period and then slid sideways by exactly one
+ * period, so the loop is seamless. `flow` is the slide as a fraction of the
+ * path's own width, which is what the CSS transform needs.
+ */
+type Wave = {
+  d: string;
+  /** One period as a fraction of the path width, negative to slide left. */
+  flow: number;
+  /** Seconds for one period, so each layer moves at its own pace. */
+  seconds: number;
+  isReversed: boolean;
+  isFilled: boolean;
+  opacity: number;
+  strokeWidth?: number;
+};
+
+function makeWave({
+  baseline,
+  amplitude,
+  halfPeriod,
+  seconds,
+  isReversed = false,
+  isFilled,
+  opacity,
+  strokeWidth,
+}: {
+  baseline: number;
+  amplitude: number;
+  halfPeriod: number;
+  seconds: number;
+  isReversed?: boolean;
+  isFilled: boolean;
+  opacity: number;
+  strokeWidth?: number;
+}): Wave {
+  const period = halfPeriod * 2;
+  const periods = Math.ceil(WAVE_WIDTH / period) + 1;
+  const width = periods * period;
+  // Two control points a third of the way in, both at the same offset,
+  // peak at three quarters of that offset.
+  const control = amplitude / 0.75;
+  let d = `M0 ${baseline}`;
+  for (let i = 0; i < periods * 2; i++) {
+    const x = i * halfPeriod;
+    const cy = baseline + (i % 2 === 0 ? -control : control);
+    d += ` C${x + halfPeriod / 3} ${cy} ${x + (halfPeriod * 2) / 3} ${cy} ${x + halfPeriod} ${baseline}`;
+  }
+  if (isFilled) d += ` V${WAVE_HEIGHT} H0 Z`;
+  return {
+    d,
+    flow: period / width,
+    seconds,
+    isReversed,
+    isFilled,
+    opacity,
+    strokeWidth,
+  };
+}
+
+/** Back to front: broad slow swells behind, quicker thin lines in front. */
+const WAVES: Wave[] = [
+  makeWave({ baseline: 56, amplitude: 24, halfPeriod: 480, seconds: 46, isFilled: true, opacity: 0.16 }),
+  makeWave({ baseline: 86, amplitude: 20, halfPeriod: 360, seconds: 36, isReversed: true, isFilled: true, opacity: 0.22 }),
+  makeWave({ baseline: 112, amplitude: 14, halfPeriod: 720, seconds: 28, isFilled: true, opacity: 0.3 }),
+  makeWave({ baseline: 44, amplitude: 22, halfPeriod: 480, seconds: 40, isReversed: true, isFilled: false, opacity: 0.7, strokeWidth: 2 }),
+  makeWave({ baseline: 78, amplitude: 16, halfPeriod: 288, seconds: 32, isFilled: false, opacity: 0.5, strokeWidth: 1.5 }),
+];
+
+/**
+ * Layered swells and lines flowing along the bottom of the hero, each at
+ * its own pace and some against the rest. The last, still path traces the
  * wave the hero's mask cuts (see `.wl-hero` in the styles), so the two must
  * change together.
  */
@@ -959,7 +1156,7 @@ function HeroWave() {
   return (
     <svg
       className="wl-hero-wave"
-      viewBox="0 0 1440 144"
+      viewBox={`0 0 ${WAVE_WIDTH} ${WAVE_HEIGHT}`}
       preserveAspectRatio="none"
       aria-hidden="true"
       focusable="false"
@@ -969,7 +1166,7 @@ function HeroWave() {
           id="wl-wave-gradient"
           gradientUnits="userSpaceOnUse"
           x1="0"
-          x2="1440"
+          x2={WAVE_WIDTH}
           y1="0"
           y2="0"
         >
@@ -977,19 +1174,37 @@ function HeroWave() {
           <stop offset="0.5" stopColor="var(--wl-scene-b)" />
           <stop offset="1" stopColor="var(--wl-scene-c)" />
         </linearGradient>
+        <linearGradient
+          id="wl-wave-fade"
+          gradientUnits="userSpaceOnUse"
+          x1="0"
+          x2="0"
+          y1="0"
+          y2={WAVE_HEIGHT}
+        >
+          <stop offset="0" stopColor="var(--wl-scene-b)" stopOpacity="0.9" />
+          <stop offset="1" stopColor="var(--wl-scene-a)" stopOpacity="0.2" />
+        </linearGradient>
       </defs>
-      <path
-        className="wl-wave-swell"
-        d="M0 76C160 49.33 320 49.33 480 76C640 102.67 800 102.67 960 76C1120 49.33 1280 49.33 1440 76V144H0Z"
-        fill="url(#wl-wave-gradient)"
-        opacity="0.16"
-      />
-      <path
-        className="wl-wave-swell"
-        d="M0 100C120 78.67 240 78.67 360 100C480 121.33 600 121.33 720 100C840 78.67 960 78.67 1080 100C1200 121.33 1320 121.33 1440 100V144H0Z"
-        fill="url(#wl-wave-gradient)"
-        opacity="0.24"
-      />
+      {WAVES.map((wave) => (
+        <path
+          key={wave.d}
+          className="wl-wave-flow"
+          data-reversed={wave.isReversed ? "" : undefined}
+          d={wave.d}
+          fill={wave.isFilled ? "url(#wl-wave-fade)" : "none"}
+          stroke={wave.isFilled ? undefined : "url(#wl-wave-gradient)"}
+          strokeWidth={wave.strokeWidth}
+          vectorEffect={wave.isFilled ? undefined : "non-scaling-stroke"}
+          opacity={wave.opacity}
+          style={
+            {
+              "--wl-flow": `${(wave.flow * 100).toFixed(4)}%`,
+              "--wl-flow-time": `${wave.seconds}s`,
+            } as CSSProperties
+          }
+        />
+      ))}
       <path
         d="M0 120C120 146.67 240 146.67 360 120C480 93.33 600 93.33 720 120C840 146.67 960 146.67 1080 120C1200 93.33 1320 93.33 1440 120"
         fill="none"
@@ -1064,17 +1279,18 @@ function Hero({ importResume }: LandingProps) {
           style={sceneVars(activeSection)}
         >
           <HeroSky />
+          <HeroGlobe glowToken={`--wl-${activeSection.tints[1]}`} />
           <HeroWave />
           <VStack
             className="wl-hero-content"
             gap={10}
-            maxWidth={CONTENT_WIDTH}
+            maxWidth={CONTENT_WIDTH + 200}
             style={centered}
           >
             <Grid
               className="wl-hero-split"
               columns={{ minWidth: 484, max: 2 }}
-              gap={8}
+              gap={10}
               align="center"
             >
               <VStack className="wl-hero-copy" gap={6} hAlign="start">
@@ -1106,26 +1322,30 @@ function Hero({ importResume }: LandingProps) {
                 </Text>
               </VStack>
 
-              <Grid className="wl-hero-stage" columns={1} align="center">
-                <HeroGlobe glowToken={`--wl-${activeSection.tints[1]}`} />
-                <VStack
-                  className="wl-hero-tabs"
-                  gap={3}
-                  role="group"
-                  aria-label="What would you like to do?"
-                  data-autoplay={isAutoplaying ? "" : undefined}
+              {/* The platform preview with the section tabs tucked in
+                  behind its right edge, and the import bar under it. */}
+              <VStack className="wl-hero-stage" gap={4} hAlign="end">
+                <HStack
+                  className="wl-hero-stage-row"
+                  gap={0}
+                  vAlign="center"
+                  wrap="nowrap"
                 >
-                  <VStack className="wl-hero-tab-group" gap={0}>
-                    {HERO_SECTIONS.filter((section) =>
-                      STUDIO_TAB_IDS.has(section.id)
-                    ).map(tab)}
+                  <StackItem size="fill" className="wl-hero-stage-shot">
+                    <HeroShot activeId={activeId} />
+                  </StackItem>
+                  <VStack
+                    className="wl-hero-tabs"
+                    gap={2}
+                    role="group"
+                    aria-label="What would you like to do?"
+                    data-autoplay={isAutoplaying ? "" : undefined}
+                  >
+                    {HERO_SECTIONS.map(tab)}
                   </VStack>
-                  {HERO_SECTIONS.filter(
-                    (section) => section.id === "support"
-                  ).map(tab)}
-                  <HeroImportBar onOpen={openImport} />
-                </VStack>
-              </Grid>
+                </HStack>
+                <HeroImportBar onOpen={openImport} />
+              </VStack>
             </Grid>
           </VStack>
         </Section>

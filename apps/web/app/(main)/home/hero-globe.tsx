@@ -84,7 +84,7 @@ function themeColors(
     baseColor: read("--wl-indigo", 0.55),
     markerColor: read("--wl-teal"),
     glowColor: read(glowToken, GLOW_LEVEL),
-    arcColor: read("--wl-orange"),
+    arcColor: read("--wl-blue"),
   };
 }
 
@@ -141,13 +141,13 @@ export function HeroGlobe({
       theta: THETA,
       dark: 1,
       diffuse: 1.4,
-      mapSamples: 20_000,
+      mapSamples: 26_000,
       mapBrightness: 7,
       mapBaseBrightness: 0.06,
       baseColor: [0.3, 0.3, 0.45],
       markerColor: [0.3, 0.9, 0.9],
       glowColor: glow,
-      opacity: 0.72,
+      opacity: 0.64,
       markers: MARKERS,
       markerElevation: 0.01,
       arcs: ARCS,
@@ -266,9 +266,17 @@ export function HeroGlobe({
     retargetRef.current?.(glowToken);
   }, [glowToken]);
 
+  // The canvas sits in its own tilted frame: the sphere spins about an
+  // axis leaning back toward the corner, while the halo stays upright.
   return (
     <Center className="wl-globe">
-      <canvas ref={canvasRef} className="wl-globe-canvas" aria-hidden="true" />
+      <Center className="wl-globe-tilt">
+        <canvas
+          ref={canvasRef}
+          className="wl-globe-canvas"
+          aria-hidden="true"
+        />
+      </Center>
     </Center>
   );
 }
