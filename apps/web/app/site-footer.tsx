@@ -26,10 +26,11 @@ const META_AI_LOGO = "/logos/meta-ai.png";
 const META_AI_LOGO_LIGHT = "/logos/meta-ai-light.png";
 
 const LEGAL_LINKS = [
-  { label: "Pricing", href: "/pricing" },
   { label: "Terms of Service", href: "/terms" },
   { label: "Privacy", href: "/privacy" },
   { label: "Open Source", href: GITHUB_PROFILE_URL, isExternal: true },
+  { label: "API", href: "/settings/api" },
+  { label: "MCP", href: "/settings/mcp" },
 ] as const;
 
 /** Only English ships today; the menu is where other languages will appear. */
