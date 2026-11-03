@@ -24,6 +24,12 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [{ key: "X-Robots-Tag", value: ROBOTS_TAG }],
       },
+      // Fetched with `irm` / `curl`. Without a charset, static hosting serves
+      // these as application/octet-stream and PowerShell may mis-decode them.
+      {
+        source: "/:script(install\\.sh|install\\.ps1)",
+        headers: [{ key: "Content-Type", value: "text/plain; charset=utf-8" }],
+      },
     ];
   },
 };
