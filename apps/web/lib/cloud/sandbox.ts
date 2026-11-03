@@ -1,19 +1,24 @@
 import "server-only";
 
 import { Sandbox as VercelSandbox } from "@vercel/sandbox";
-import { ModalClient } from "modal";
 import type { RunnerKind } from "@westride/db";
 import { RUNNER_SCRIPT } from "../build/agent/runner-script";
-import { getModalConfig } from "./config";
+import {
+  isModalAuthError,
+  isModalNotFound,
+  withModalClient,
+  type ModalCredentials,
+} from "../modal/client";
 import type { SandboxAccess } from "./provider";
 
 /**
  * One way to start a Muse Code runner, whichever host it lands on. Vercel
  * Sandbox clones the repository itself and runs the runner as a detached
- * command on the member's account. A WeStride Cloud sandbox on Modal starts
- * from a plain Node image: its entrypoint waits for the files to land, then
- * the runner clones the repository and carries on exactly as it would on
- * Vercel. Either way, the runner reports back through the same events route.
+ * command on the member's account. A Modal sandbox, whether on the member's
+ * own workspace or on WeStride Cloud's, starts from a plain Node image: its
+ * entrypoint waits for the files to land, then the runner clones the
+ * repository and carries on exactly as it would on Vercel. Either way, the
+ * runner reports back through the same events route.
  */
 
 const WORK_DIR = "/tmp/westride";
@@ -57,7 +62,7 @@ export async function launchSandbox(input: SandboxLaunchInput): Promise<Launched
   if (input.access.kind === "VERCEL_SANDBOX") {
     return launchOnVercel(input, input.access.credentials);
   }
-  return launchOnModal(input);
+  return launchOnModal(input, input.access.credentials);
 }
 
 async function launchOnVercel(
@@ -106,23 +111,12 @@ async function launchOnVercel(
   return { runnerKind: "VERCEL_SANDBOX", sandboxName: input.sandboxName };
 }
 
-function modalClient(): { client: ModalClient; appName: string } {
-  const config = getModalConfig();
-  if (!config) {
-    throw new Error("WeStride Cloud compute is not configured on this server.");
-  }
-  const client = new ModalClient({
-    tokenId: config.tokenId,
-    tokenSecret: config.tokenSecret,
-    environment: config.environment,
-  });
-  return { client, appName: config.appName };
-}
-
-async function launchOnModal(input: SandboxLaunchInput): Promise<LaunchedSandbox> {
-  const { client, appName } = modalClient();
-  try {
-    const app = await client.apps.fromName(appName, { createIfMissing: true });
+async function launchOnModal(
+  input: SandboxLaunchInput,
+  credentials: ModalCredentials,
+): Promise<LaunchedSandbox> {
+  return withModalClient(credentials, async (client) => {
+    const app = await client.apps.fromName(credentials.appName, { createIfMissing: true });
     const image = client.images.fromRegistry(MODAL_IMAGE);
     // Secrets never appear in the sandbox's recorded spec, unlike plain env.
     const secret = await client.secrets.fromObject({
@@ -158,32 +152,28 @@ async function launchOnModal(input: SandboxLaunchInput): Promise<LaunchedSandbox
       throw error;
     }
     return { runnerKind: "MODAL_SANDBOX", sandboxName: sandbox.sandboxId };
-  } finally {
-    client.close();
-  }
+  });
 }
 
 /**
- * Terminates a WeStride Cloud sandbox by the id stored on its run or job.
- * A sandbox that already ended is treated as stopped.
+ * Terminates a Modal sandbox by the id stored on its run or job, with the
+ * credentials of whichever workspace it lives in. A sandbox that already
+ * ended is treated as stopped.
  */
-export async function terminateModalSandbox(sandboxId: string): Promise<void> {
-  const { client } = modalClient();
-  try {
-    const sandbox = await client.sandboxes.fromId(sandboxId);
-    await sandbox.terminate();
-  } catch (error) {
-    if (!isModalNotFound(error)) {
-      throw error;
+export async function terminateModalSandbox(
+  sandboxId: string,
+  credentials: ModalCredentials,
+): Promise<void> {
+  await withModalClient(credentials, async (client) => {
+    try {
+      const sandbox = await client.sandboxes.fromId(sandboxId);
+      await sandbox.terminate();
+    } catch (error) {
+      if (!isModalNotFound(error)) {
+        throw error;
+      }
     }
-  } finally {
-    client.close();
-  }
-}
-
-function isModalNotFound(error: unknown): boolean {
-  const name = (error as { name?: string } | null)?.name;
-  return name === "NotFoundError";
+  });
 }
 
 /** Whether a sandbox host rejected the credentials it was given. */
@@ -192,6 +182,5 @@ export function isSandboxCredentialError(error: unknown): boolean {
   if (response?.status === 401 || response?.status === 403) {
     return true;
   }
-  const name = (error as { name?: string } | null)?.name;
-  return name === "AuthError" || name === "UnauthenticatedError" || name === "PermissionDeniedError";
+  return isModalAuthError(error);
 }

@@ -32,9 +32,9 @@ export const agentRunStatus = pgEnum("agent_run_status", [
 ]);
 
 /**
- * Where a Muse Code job runs: a Vercel Sandbox on the payer's own account, a
- * supporter's computer running the WeStride runner, or a Modal sandbox that
- * WeStride Cloud pays for and bills to the member's balance.
+ * Which API a Muse Code job's sandbox is driven through: Vercel Sandbox, a
+ * supporter's computer running the WeStride runner, or a Modal Sandbox. Says
+ * how to stop it; `compute_source` says whose account it ran on.
  */
 export const runnerKind = pgEnum("runner_kind", [
   "VERCEL_SANDBOX",
@@ -48,3 +48,10 @@ export const runnerKind = pgEnum("runner_kind", [
  * which bills the member's balance.
  */
 export const museSource = pgEnum("muse_source", ["OWN", "WESTRIDE_CLOUD"]);
+
+/**
+ * Whose account a sandbox ran on: the payer's own connected Vercel or Modal
+ * account, which bills them directly, or WeStride Cloud's Modal account,
+ * which bills their balance. Only WESTRIDE_CLOUD work is ever charged.
+ */
+export const computeSource = pgEnum("compute_source", ["OWN", "WESTRIDE_CLOUD"]);

@@ -2,7 +2,7 @@
 // Build Studio: agent runs, their event streams, and ticket comments.
 // ---------------------------------------------------------------------------
 import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
-import type { MuseKeySource, RunnerKind } from "./agent-schema";
+import type { ComputeSource, MuseKeySource, RunnerKind } from "./agent-schema";
 import {
   agentRunEvents,
   agentRuns,
@@ -85,6 +85,7 @@ export type NewAgentRunInput = {
   maxSteps: number;
   callbackTokenHash: string;
   runnerKind?: RunnerKind;
+  computeSource?: ComputeSource;
   museSource?: MuseKeySource;
 };
 

@@ -8,11 +8,14 @@ import { VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import type { ChatPlatform } from "@westride/db";
 import { getPendingChatLinkCode, listChatConnections } from "@westride/db/chat";
+import { getSandboxProvider } from "@westride/db/cloud";
 import { getDiscordConfig, getSlackConfig, getWhatsAppConfig } from "@/lib/chat/config";
 import type { ChatFlowOutcome } from "@/lib/chat/oauth-routes";
+import { pickOwnSandboxProvider } from "@/lib/cloud/provider";
 import { isGithubAppConfigured } from "@/lib/github/config";
 import type { GithubFlowOutcome } from "@/lib/github/flow";
 import { getMetaConnectionSummary, isMetaConnectionConfigured } from "@/lib/meta/connection";
+import { getModalConnectionSummary, isModalConnectionConfigured } from "@/lib/modal/connection";
 import {
   getVercelConnectionSummary,
   isVercelConnectionConfigured,
@@ -25,6 +28,7 @@ import {
   githubNeedsReconnect,
   loadGithubState,
   MetaPanel,
+  ModalPanel,
   SlackPanel,
   VercelPanel,
   WhatsAppPanel,
@@ -153,17 +157,26 @@ export default async function ConnectionsPage({
   const githubConfigured = isGithubAppConfigured();
   const metaConfigured = isMetaConnectionConfigured();
   const vercelConfigured = isVercelConnectionConfigured();
+  const modalConfigured = isModalConnectionConfigured();
   const slackConfigured = getSlackConfig() !== null;
   const discordConfigured = getDiscordConfig() !== null;
   const whatsapp = getWhatsAppConfig();
 
-  const [githubState, meta, vercel, chatConnections, whatsappPending] = await Promise.all([
-    githubConfigured ? loadGithubState(userId) : null,
-    metaConfigured ? getMetaConnectionSummary(userId) : null,
-    vercelConfigured ? getVercelConnectionSummary(userId) : null,
-    listChatConnections(userId),
-    whatsapp ? getPendingChatLinkCode(userId, "WHATSAPP") : null,
-  ]);
+  const [githubState, meta, vercel, modal, sandboxPreference, chatConnections, whatsappPending] =
+    await Promise.all([
+      githubConfigured ? loadGithubState(userId) : null,
+      metaConfigured ? getMetaConnectionSummary(userId) : null,
+      vercelConfigured ? getVercelConnectionSummary(userId) : null,
+      modalConfigured ? getModalConnectionSummary(userId) : null,
+      getSandboxProvider(userId),
+      listChatConnections(userId),
+      whatsapp ? getPendingChatLinkCode(userId, "WHATSAPP") : null,
+    ]);
+  // Only worth showing when there is a choice to make.
+  const activeSandboxProvider =
+    vercel?.scope && modal
+      ? pickOwnSandboxProvider({ vercel: true, modal: true }, sandboxPreference)
+      : null;
   const chatAccount = (platform: ChatPlatform) =>
     chatConnections.find((connection) => connection.platform === platform) ?? null;
   const slackAccount = chatAccount("SLACK");
@@ -177,6 +190,7 @@ export default async function ConnectionsPage({
       vercelConfigured && vercel && !vercel.scope
         ? needsAttention("Choose a team")
         : accountStatus(vercelConfigured, vercel !== null),
+    modal: accountStatus(modalConfigured, modal !== null),
     slack: accountStatus(slackConfigured, slackAccount !== null),
     discord: accountStatus(discordConfigured, discordAccount !== null),
     whatsapp:
@@ -244,8 +258,8 @@ export default async function ConnectionsPage({
               title="AI and compute"
               description={
                 <>
-                  Bring your own Meta and Vercel accounts and WeStride is free; you pay them
-                  directly. No accounts?{" "}
+                  Bring your own Meta account and a Vercel or Modal account and WeStride is free;
+                  you pay them directly. No accounts?{" "}
                   <Link href="/cloud" type="inherit">
                     WeStride Cloud
                   </Link>{" "}
@@ -271,7 +285,24 @@ export default async function ConnectionsPage({
                 logo="/logos/vercel-mark.svg"
                 status={statuses.vercel}
               >
-                <VercelPanel configured={vercelConfigured} connection={vercel} />
+                <VercelPanel
+                  configured={vercelConfigured}
+                  connection={vercel}
+                  activeProvider={activeSandboxProvider}
+                />
+              </ConnectionRow>
+              <ConnectionRow
+                value="modal"
+                name="Modal"
+                purpose="Run Muse Code agents in sandboxes on your Modal workspace."
+                logo="/logos/modal.svg"
+                status={statuses.modal}
+              >
+                <ModalPanel
+                  configured={modalConfigured}
+                  connection={modal}
+                  activeProvider={activeSandboxProvider}
+                />
               </ConnectionRow>
             </ConnectionGroup>
 

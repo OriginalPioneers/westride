@@ -23,6 +23,7 @@ import {
 } from "drizzle-orm/pg-core";
 import {
   agentRunStatus,
+  computeSource,
   museSource,
   runnerKind,
   ticketPriority,
@@ -32,7 +33,7 @@ import { projects } from "./build-schema";
 import { ideas } from "./schema";
 
 // Shared with Build Studio's `agent_runs`; defined in build-enums.ts.
-export { museSource, runnerKind };
+export { computeSource, museSource, runnerKind };
 
 export const agentStatus = pgEnum("agent_status", ["ACTIVE", "PAUSED", "ARCHIVED"]);
 
@@ -189,6 +190,8 @@ export const agentJobs = pgTable(
     pledgeId: uuid("pledge_id"),
     // CODE jobs
     runnerKind: runnerKind("runner_kind"),
+    /** Whose account the sandbox ran on. WESTRIDE_CLOUD bills the payer's balance for its time. */
+    computeSource: computeSource("compute_source").notNull().default("OWN"),
     /** The supporter's device that ran it. Null for sandbox and report jobs. */
     deviceId: uuid("device_id"),
     /**
@@ -324,6 +327,7 @@ export type AgentJobKind = (typeof agentJobKind.enumValues)[number];
 export type AgentTicketSource = (typeof agentTicketSource.enumValues)[number];
 export type RunnerKind = (typeof runnerKind.enumValues)[number];
 export type MuseKeySource = (typeof museSource.enumValues)[number];
+export type ComputeSource = (typeof computeSource.enumValues)[number];
 export type Agent = typeof agents.$inferSelect;
 export type NewAgent = typeof agents.$inferInsert;
 export type AgentTicket = typeof agentTickets.$inferSelect;

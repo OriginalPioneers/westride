@@ -28,17 +28,17 @@ export { readFinishedPayload, type FinishedPayload } from "@/lib/build/agent/fin
 
 const MAX_SUMMARY = 20_000;
 
-/** A Vercel sandbox lives on the payer's account and is stopped with their credentials; a WeStride Cloud one with ours. */
+/** A sandbox on the payer's own account is stopped with their credentials; a WeStride Cloud one with ours. */
 async function stopSandbox(job: AgentJob) {
   if (!job.sandboxName) {
     return;
   }
-  await stopSandboxFor(job.sandboxName, job.paidByClerkUserId, job.runnerKind);
+  await stopSandboxFor(job.sandboxName, job.paidByClerkUserId, job.runnerKind, job.computeSource);
 }
 
 /** Bills a WeStride Cloud code job to the payer's balance. No-op for jobs on their own accounts. */
 async function settleCloudCharges(job: AgentJob) {
-  if (job.museSource !== "WESTRIDE_CLOUD" && job.runnerKind !== "MODAL_SANDBOX") {
+  if (job.museSource !== "WESTRIDE_CLOUD" && job.computeSource !== "WESTRIDE_CLOUD") {
     return;
   }
   const vcpus = getAgentRunnerConfig()?.vcpus ?? 2;

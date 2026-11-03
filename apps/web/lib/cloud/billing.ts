@@ -123,7 +123,8 @@ async function chargeCompute(
 
 /**
  * Settles a finished Agent Studio job: its model calls when they ran on the
- * shared key, and its sandbox time when it ran on Modal. Safe to call more
+ * shared key, and its sandbox time when it ran on WeStride Cloud's Modal
+ * account (a member's own Modal account is never charged). Safe to call more
  * than once.
  */
 export async function settleAgentJob(job: AgentJob, vcpus: number): Promise<void> {
@@ -138,7 +139,7 @@ export async function settleAgentJob(job: AgentJob, vcpus: number): Promise<void
       outputTokens: job.outputTokens,
     });
   }
-  if (job.runnerKind === "MODAL_SANDBOX") {
+  if (job.computeSource === "WESTRIDE_CLOUD") {
     await chargeCompute(job.paidByClerkUserId, {
       reference: `job-compute:${job.id}`,
       description: `Sandbox · ${title}`,
@@ -162,7 +163,7 @@ export async function settleAgentRun(run: AgentRun, vcpus: number, ticketTitle: 
       outputTokens: run.outputTokens,
     });
   }
-  if (run.runnerKind === "MODAL_SANDBOX") {
+  if (run.computeSource === "WESTRIDE_CLOUD") {
     await chargeCompute(run.startedByClerkUserId, {
       reference: `run-compute:${run.id}`,
       description: `Sandbox · ${title}`,

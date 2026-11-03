@@ -16,7 +16,7 @@ param(
   [string]$Name = "",
   [string]$Url = $(if ($env:WESTRIDE_URL) { $env:WESTRIDE_URL } else { "https://westride.org" }),
   [string]$MetaKey = $(if ($env:META_API_KEY) { $env:META_API_KEY } else { "" }),
-  [string]$Image = $(if ($env:WESTRIDE_RUNNER_IMAGE) { $env:WESTRIDE_RUNNER_IMAGE } else { "ghcr.io/originalpioneers/westride-runner:latest" }),
+  [string]$Image = $(if ($env:WESTRIDE_RUNNER_IMAGE) { $env:WESTRIDE_RUNNER_IMAGE } else { "ghcr.io/westrideorg/westride-runner:latest" }),
   [string]$Memory = "6g",
   [string]$Cpus = "4"
 )

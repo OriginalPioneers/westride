@@ -20,8 +20,8 @@ export type ProjectPageContext = {
   isOwner: boolean;
   /** Whether Muse can run for the viewer: a Meta account connected, or a funded WeStride Cloud balance. */
   hasMetaConnection: boolean;
-  /** Whether a sandbox can start for the viewer: their Vercel account, or WeStride Cloud. */
-  hasVercelConnection: boolean;
+  /** Whether a sandbox can start for the viewer: their Vercel or Modal account, or WeStride Cloud. */
+  hasComputeAccess: boolean;
   openTicketCount: number;
   /** An imported project that nobody owns yet. */
   isClaimable: boolean;
@@ -41,7 +41,7 @@ export async function loadProjectPage(id: string): Promise<ProjectPageContext | 
     userId === null
       ? null
       : (project.members.find((member) => member.clerkUserId === userId)?.role ?? null);
-  const [hasMetaConnection, hasVercelConnection] =
+  const [hasMetaConnection, hasComputeAccess] =
     role !== null && userId !== null
       ? await Promise.all([hasMuseAccess(userId), hasSandboxAccess(userId)])
       : [false, false];
@@ -56,7 +56,7 @@ export async function loadProjectPage(id: string): Promise<ProjectPageContext | 
     isMember: role !== null,
     isOwner: role === "OWNER",
     hasMetaConnection,
-    hasVercelConnection,
+    hasComputeAccess,
     openTicketCount,
     isClaimable: isClaimableProject(project),
   };

@@ -20,7 +20,7 @@ import { resolveJobPayer } from "@/lib/support/payer";
 
 export type RunJobResult =
   | { status: "ok"; jobId: string }
-  | (Failure & { needsConnection?: boolean; needsGithub?: boolean; needsVercel?: boolean });
+  | (Failure & { needsConnection?: boolean; needsGithub?: boolean; needsCompute?: boolean });
 
 export async function runJobAction(agentId: string, ticketId: string, input: unknown): Promise<RunJobResult> {
   const parsed = runJobSchema.safeParse(input);
@@ -44,7 +44,7 @@ export async function runJobAction(agentId: string, ticketId: string, input: unk
   try {
     // A sponsor's pledge pays when the owner allows it; otherwise the member who pressed Run.
     const payer = await resolveJobPayer(context.agent, context.userId, {
-      needsVercel: canRunCode(context.agent),
+      needsCompute: canRunCode(context.agent),
     });
     const started = await startAgentJob({
       agent: context.agent,
@@ -73,7 +73,7 @@ export async function runJobAction(agentId: string, ticketId: string, input: unk
         ...failure(error.message),
         needsConnection: error.needsConnection === "meta",
         needsGithub: error.needsConnection === "github",
-        needsVercel: error.needsConnection === "vercel",
+        needsCompute: error.needsConnection === "compute",
       };
     }
     console.error("Agent job start failed", error);

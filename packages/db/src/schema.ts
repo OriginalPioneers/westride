@@ -1218,6 +1218,38 @@ export const vercelConnections = pgTable("vercel_connections", {
 });
 
 // ---------------------------------------------------------------------------
+// Modal
+//
+// A member's own Modal account, the other host their Muse Code sandboxes can
+// run on, so Modal bills them and not WeStride. Modal has no sign-in flow for
+// third parties, so the member pastes an API token (an id and a secret) from
+// Modal's settings. The token is bound to one workspace; the member may also
+// pick the environment within it. Secrets arrive already encrypted by the
+// web app.
+// ---------------------------------------------------------------------------
+
+export const modalConnections = pgTable("modal_connections", {
+  /** Clerk user id. One Modal account per WeStride account. */
+  clerkUserId: text("clerk_user_id").primaryKey(),
+  /** Encrypted token id (`ak-…`). */
+  tokenId: text("token_id").notNull(),
+  /** Encrypted token secret (`as-…`). */
+  tokenSecret: text("token_secret").notNull(),
+  /** The last characters of the token id, so the member can tell which token this is. */
+  tokenIdSuffix: text("token_id_suffix").notNull(),
+  /** Modal environment the sandboxes run in. Null means the workspace's default (`main`). */
+  environment: text("environment"),
+  /** The Modal app sandboxes are created under; created on first use. */
+  appName: text("app_name").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // Chat platforms
 //
 // Slack, Discord, and WhatsApp accounts a member has linked, so messages that
@@ -1322,6 +1354,8 @@ export type NewMetaConnection = typeof metaConnections.$inferInsert;
 export type VercelCredentialKind = (typeof vercelCredentialKind.enumValues)[number];
 export type VercelConnection = typeof vercelConnections.$inferSelect;
 export type NewVercelConnection = typeof vercelConnections.$inferInsert;
+export type ModalConnection = typeof modalConnections.$inferSelect;
+export type NewModalConnection = typeof modalConnections.$inferInsert;
 export type ChatPlatform = (typeof chatPlatform.enumValues)[number];
 export type ChatConnection = typeof chatConnections.$inferSelect;
 export type NewChatConnection = typeof chatConnections.$inferInsert;
@@ -1420,6 +1454,7 @@ export {
   agentTickets,
   agentTicketSource,
   agentTicketsRelations,
+  computeSource,
   museSource,
   runnerKind,
 } from "./agent-schema";
@@ -1434,6 +1469,7 @@ export type {
   AgentStatus,
   AgentTicket,
   AgentTicketSource,
+  ComputeSource,
   MuseKeySource,
   NewAgent,
   NewAgentJob,
@@ -1453,6 +1489,7 @@ export {
   cloudProviderPreference,
   cloudRedemptionCodes,
   cloudRedemptionCodesRelations,
+  ownSandboxProvider,
 } from "./cloud-schema";
 export type {
   CloudAccount,
@@ -1464,6 +1501,7 @@ export type {
   NewCloudAccount,
   NewCloudLedgerEntry,
   NewCloudRedemptionCode,
+  OwnSandboxProvider,
 } from "./cloud-schema";
 
 // Supporter tables reference `ideas` and `agentJobs`.

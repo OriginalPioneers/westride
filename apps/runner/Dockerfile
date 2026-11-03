@@ -1,6 +1,6 @@
 # WeStride supporter runner.
 # Build from the repository root so the shared protocol package is in context:
-#   docker build -f apps/runner/Dockerfile -t ghcr.io/originalpioneers/westride-runner:latest .
+#   docker build -f apps/runner/Dockerfile -t ghcr.io/westrideorg/westride-runner:latest .
 #
 # The container runs as an unprivileged user, holds no GitHub credentials, and
 # only ever clones public repositories into /work. State (the device token)

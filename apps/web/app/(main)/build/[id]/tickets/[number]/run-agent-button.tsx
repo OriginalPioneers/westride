@@ -32,7 +32,7 @@ export function RunAgentButton({
   ticketRepoId,
   repos,
   hasMetaConnection,
-  hasVercelConnection,
+  hasComputeAccess,
   isConfigured,
   isDisabled,
   disabledReason,
@@ -42,8 +42,8 @@ export function RunAgentButton({
   ticketRepoId: string | null;
   repos: ProjectRepo[];
   hasMetaConnection: boolean;
-  /** Whether the viewer's Vercel account is connected with a team and project chosen. */
-  hasVercelConnection: boolean;
+  /** Whether a sandbox can start for the viewer: their Vercel or Modal account, or a WeStride Cloud balance. */
+  hasComputeAccess: boolean;
   /** Whether this server can launch sandboxes at all. */
   isConfigured: boolean;
   isDisabled?: boolean;
@@ -59,8 +59,8 @@ export function RunAgentButton({
   const [maxSteps, setMaxSteps] = useState<number>(DEFAULT_AGENT_STEPS);
   const [instructions, setInstructions] = useState("");
   const [message, setMessage] = useState<string | null>(null);
-  const [needs, setNeeds] = useState<"meta" | "github" | "vercel" | null>(
-    !hasMetaConnection ? "meta" : !hasVercelConnection ? "vercel" : null,
+  const [needs, setNeeds] = useState<"meta" | "github" | "compute" | null>(
+    !hasMetaConnection ? "meta" : !hasComputeAccess ? "compute" : null,
   );
 
   const modelOption = getMuseModel(model);
@@ -93,8 +93,8 @@ export function RunAgentButton({
           setNeeds(
             result.needsConnection
               ? "meta"
-              : result.needsVercel
-                ? "vercel"
+              : result.needsCompute
+                ? "compute"
                 : result.needsGithub
                   ? "github"
                   : null,
@@ -153,8 +153,8 @@ export function RunAgentButton({
                   <Text type="supporting">
                     A Muse Code agent clones the repository into a disposable sandbox, works the
                     ticket on a new branch, and opens a pull request when it is done. The model
-                    runs on your Meta account and the sandbox on your Vercel account, or both on
-                    WeStride Cloud from your balance; nothing runs on your machine.
+                    runs on your Meta account and the sandbox on your Vercel or Modal account, or
+                    both on WeStride Cloud from your balance; nothing runs on your machine.
                   </Text>
                   {needs === "meta" ? (
                     <Banner
@@ -167,11 +167,11 @@ export function RunAgentButton({
                       <Button label="WeStride Cloud" href="/cloud" variant="ghost" />
                     </Banner>
                   ) : null}
-                  {needs === "vercel" ? (
+                  {needs === "compute" ? (
                     <Banner
                       status="info"
-                      title="Connect your Vercel account, or add funds"
-                      description={message ?? "The sandbox runs on your Vercel account, so Vercel bills you, or on WeStride Cloud from your balance."}
+                      title="Connect a Vercel or Modal account, or add funds"
+                      description={message ?? "The sandbox runs on your own Vercel or Modal account, which bills you directly, or on WeStride Cloud from your balance."}
                       collapsible={false}
                     >
                       <Button label="Open settings" href="/settings" variant="secondary" />

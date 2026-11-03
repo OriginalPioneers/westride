@@ -6,12 +6,13 @@ import { Code } from "@astryxdesign/core/Code";
 import { Divider } from "@astryxdesign/core/Divider";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import type { ChatConnection } from "@westride/db";
+import type { ChatConnection, OwnSandboxProvider } from "@westride/db";
 import { getGithubConnection } from "@westride/db/github";
 import { whatsappLinkUrl } from "@/lib/chat/whatsapp";
 import { getGithubAccountAccess, type GithubAccountAccess } from "@/lib/github/repos";
 import { deviceClientId } from "@/lib/idea-factory/muse";
 import type { MetaConnectionSummary } from "@/lib/meta/connection";
+import type { ModalConnectionSummary } from "@/lib/modal/connection";
 import { vercelDeviceClientId } from "@/lib/vercel/api";
 import type { VercelConnectionSummary } from "@/lib/vercel/connection";
 import type { WhatsAppLinkStart } from "./actions";
@@ -19,6 +20,8 @@ import { DisconnectChatButton } from "./disconnect-chat-button";
 import { DisconnectGithubButton } from "./disconnect-github-button";
 import { GithubAccess } from "./github-access";
 import { MetaSettings } from "./meta-settings";
+import { ModalSettings } from "./modal-settings";
+import { SandboxProviderSwitch } from "./sandbox-provider-switch";
 import { VercelSettings } from "./vercel-settings";
 import { WhatsAppLink } from "./whatsapp-link";
 
@@ -143,7 +146,7 @@ export function GithubPanel({
 }
 
 // ---------------------------------------------------------------------------
-// Meta and Vercel
+// Meta, Vercel, and Modal
 // ---------------------------------------------------------------------------
 
 export function MetaPanel({
@@ -166,16 +169,41 @@ export function MetaPanel({
 export function VercelPanel({
   configured,
   connection,
+  activeProvider,
 }: {
   configured: boolean;
   connection: VercelConnectionSummary | null;
+  /** Which own account hosts sandboxes; set only when both Vercel and Modal are connected. */
+  activeProvider: OwnSandboxProvider | null;
 }) {
   if (!configured) {
     return notSetUp("Connecting Vercel");
   }
   return (
     <Panel about="Vercel bills you for sandbox time. WeStride keeps the token encrypted and only uses it for runs you or your scheduled agents start.">
+      {activeProvider ? <SandboxProviderSwitch thisProvider="VERCEL" active={activeProvider} /> : null}
       <VercelSettings connection={connection} canSignIn={vercelDeviceClientId() !== null} />
+    </Panel>
+  );
+}
+
+export function ModalPanel({
+  configured,
+  connection,
+  activeProvider,
+}: {
+  configured: boolean;
+  connection: ModalConnectionSummary | null;
+  /** Which own account hosts sandboxes; set only when both Vercel and Modal are connected. */
+  activeProvider: OwnSandboxProvider | null;
+}) {
+  if (!configured) {
+    return notSetUp("Connecting Modal");
+  }
+  return (
+    <Panel about="Modal bills your workspace for sandbox time. WeStride keeps the token encrypted and only uses it for runs you or your scheduled agents start.">
+      {activeProvider ? <SandboxProviderSwitch thisProvider="MODAL" active={activeProvider} /> : null}
+      <ModalSettings connection={connection} />
     </Panel>
   );
 }

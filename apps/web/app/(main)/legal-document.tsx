@@ -6,7 +6,7 @@ import { Text } from "@astryxdesign/core/Text";
 
 export const LEGAL_UPDATED = "October 26, 2026";
 
-export const PROJECT_REPOSITORY = "https://github.com/OriginalPioneers/westride";
+export const PROJECT_REPOSITORY = "https://github.com/WeStrideOrg/westride";
 
 export function LegalDocument({
   title,

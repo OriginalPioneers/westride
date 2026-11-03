@@ -14,6 +14,7 @@
     "./github": "./src/github.ts",
     "./meta": "./src/meta.ts",
     "./vercel": "./src/vercel.ts",
+    "./modal": "./src/modal.ts",
     "./chat": "./src/chat.ts",
     "./countries": "./src/country-catalog.ts",
     "./categories": "./src/tag-catalog.ts",

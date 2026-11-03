@@ -28,14 +28,21 @@ import {
 
 /**
  * Which provider the member wants used when both are available. OWN means
- * their connected Meta and Vercel accounts; WESTRIDE_CLOUD means the shared
- * key and Modal compute, billed to their balance. Either way, work falls
- * back to whichever one is actually available.
+ * their connected Meta and Vercel or Modal accounts; WESTRIDE_CLOUD means
+ * the shared key and Modal compute, billed to their balance. Either way,
+ * work falls back to whichever one is actually available.
  */
 export const cloudProviderPreference = pgEnum("cloud_provider_preference", [
   "OWN",
   "WESTRIDE_CLOUD",
 ]);
+
+/**
+ * Which of the member's own accounts hosts their sandboxes when both Vercel
+ * and Modal are connected. Connecting an account makes it the choice; with
+ * only one connected, that one is used regardless.
+ */
+export const ownSandboxProvider = pgEnum("own_sandbox_provider", ["VERCEL", "MODAL"]);
 
 /**
  * TOP_UP: paid through Stripe. CODE: a redeemed code. AI_USAGE: a metered
@@ -54,6 +61,8 @@ export const cloudAccounts = pgTable("cloud_accounts", {
   /** Clerk user id. One WeStride Cloud account per member. */
   clerkUserId: text("clerk_user_id").primaryKey(),
   providerPreference: cloudProviderPreference("provider_preference").notNull().default("OWN"),
+  /** Vercel or Modal, when both are connected. Null until the member connects one. */
+  sandboxProvider: ownSandboxProvider("sandbox_provider"),
   /** Stripe's customer id, once the member has paid at least once. */
   stripeCustomerId: text("stripe_customer_id"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
@@ -151,6 +160,7 @@ export const cloudCodeRedemptionsRelations = relations(cloudCodeRedemptions, ({ 
 }));
 
 export type CloudProviderPreference = (typeof cloudProviderPreference.enumValues)[number];
+export type OwnSandboxProvider = (typeof ownSandboxProvider.enumValues)[number];
 export type CloudLedgerKind = (typeof cloudLedgerKind.enumValues)[number];
 export type CloudAccount = typeof cloudAccounts.$inferSelect;
 export type NewCloudAccount = typeof cloudAccounts.$inferInsert;

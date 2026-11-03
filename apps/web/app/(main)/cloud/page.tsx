@@ -105,7 +105,8 @@ export default async function CloudPage({
               <Heading level={1}>WeStride Cloud</Heading>
               <Text type="supporting">
                 Meta AI models and sandbox compute on WeStride&apos;s accounts, paid from a balance
-                you top up. Bring your own Meta and Vercel accounts instead and WeStride stays free.
+                you top up. Bring your own Meta and Vercel or Modal accounts instead and WeStride stays
+                free.
               </Text>
             </VStack>
           </VStack>

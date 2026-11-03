@@ -1,14 +1,26 @@
 import "server-only";
 
-import type { CloudProviderPreference, MuseKeySource } from "@westride/db";
-import { getCloudBalanceMicros, getProviderPreference } from "@westride/db/cloud";
+import type {
+  CloudProviderPreference,
+  ComputeSource,
+  MuseKeySource,
+  OwnSandboxProvider,
+} from "@westride/db";
+import { getCloudBalanceMicros, getProviderPreference, getSandboxProvider } from "@westride/db/cloud";
 import { getMetaConnectionSummary, getMuseApiKey } from "../meta/connection";
+import type { ModalCredentials } from "../modal/client";
+import { getModalSandboxCredentials, hasModalSandboxAccess } from "../modal/connection";
 import {
   getVercelSandboxCredentials,
   hasVercelSandboxAccess,
   type VercelSandboxCredentials,
 } from "../vercel/connection";
-import { getCloudMetaApiKey, isCloudAiConfigured, isCloudComputeConfigured } from "./config";
+import {
+  getCloudMetaApiKey,
+  getModalConfig,
+  isCloudAiConfigured,
+  isCloudComputeConfigured,
+} from "./config";
 import { MIN_BALANCE_FOR_AI_MICROS, MIN_BALANCE_FOR_COMPUTE_MICROS } from "./pricing";
 
 /**
@@ -98,47 +110,105 @@ export async function hasMuseAccess(clerkUserId: string): Promise<boolean> {
 // Sandboxes
 // ---------------------------------------------------------------------------
 
+/**
+ * Where a sandbox runs and whose account it is on. `kind` is the API that
+ * drives it (and later stops it); `source` is who pays: OWN work is billed
+ * by Vercel or Modal directly to the member, WESTRIDE_CLOUD to their balance.
+ */
 export type SandboxAccess =
-  | { kind: "VERCEL_SANDBOX"; credentials: VercelSandboxCredentials; clerkUserId: string }
-  | { kind: "MODAL_SANDBOX"; clerkUserId: string };
+  | {
+      kind: "VERCEL_SANDBOX";
+      source: "OWN";
+      credentials: VercelSandboxCredentials;
+      clerkUserId: string;
+    }
+  | { kind: "MODAL_SANDBOX"; source: ComputeSource; credentials: ModalCredentials; clerkUserId: string };
 
 export type SandboxAccessResult =
   | { ok: true; access: SandboxAccess }
-  | { ok: false; message: string; needs: "vercel" };
+  | { ok: false; message: string; needs: "compute" };
 
-const COMPUTE_SETTINGS_HINT = "Connect your Vercel account in Settings";
+const COMPUTE_SETTINGS_HINT = "Connect your Vercel or Modal account in Settings";
 
 function computeRefusal(hasCloud: boolean, balanceMicros: number | null): SandboxAccessResult {
   if (!hasCloud) {
     return {
       ok: false,
-      needs: "vercel",
-      message: `${COMPUTE_SETTINGS_HINT} so the sandbox runs on your Vercel plan.`,
+      needs: "compute",
+      message: `${COMPUTE_SETTINGS_HINT} so the sandbox runs on your own plan.`,
     };
   }
   if (balanceMicros !== null && balanceMicros < MIN_BALANCE_FOR_COMPUTE_MICROS) {
     return {
       ok: false,
-      needs: "vercel",
+      needs: "compute",
       message: `Your WeStride Cloud balance is too low to start a sandbox. Add funds, or ${COMPUTE_SETTINGS_HINT.toLowerCase()}.`,
     };
   }
   return {
     ok: false,
-    needs: "vercel",
+    needs: "compute",
     message: `${COMPUTE_SETTINGS_HINT}, or add funds to WeStride Cloud, to run a sandbox.`,
+  };
+}
+
+/**
+ * Which of the member's own accounts would host a sandbox: the one they
+ * chose (or connected last) when both are connected, else whichever exists.
+ */
+export function pickOwnSandboxProvider(
+  available: { vercel: boolean; modal: boolean },
+  preference: OwnSandboxProvider | null,
+): OwnSandboxProvider | null {
+  if (available.vercel && available.modal) {
+    return preference ?? "MODAL";
+  }
+  return available.modal ? "MODAL" : available.vercel ? "VERCEL" : null;
+}
+
+/** The member's own sandbox host, with credentials, or null when they have none connected. */
+async function resolveOwnSandboxAccess(clerkUserId: string): Promise<SandboxAccess | null> {
+  const [vercel, modal, preference] = await Promise.all([
+    getVercelSandboxCredentials(clerkUserId),
+    getModalSandboxCredentials(clerkUserId),
+    getSandboxProvider(clerkUserId),
+  ]);
+  const provider = pickOwnSandboxProvider({ vercel: vercel !== null, modal: modal !== null }, preference);
+  if (provider === "MODAL" && modal) {
+    return { kind: "MODAL_SANDBOX", source: "OWN", credentials: modal, clerkUserId };
+  }
+  if (provider === "VERCEL" && vercel) {
+    return { kind: "VERCEL_SANDBOX", source: "OWN", credentials: vercel, clerkUserId };
+  }
+  return null;
+}
+
+/** WeStride Cloud's own Modal account, for sandboxes billed to a balance. */
+function cloudSandboxAccess(clerkUserId: string): SandboxAccess {
+  const config = getModalConfig();
+  if (!config) {
+    throw new Error("WeStride Cloud compute is not configured on this server.");
+  }
+  return {
+    kind: "MODAL_SANDBOX",
+    source: "WESTRIDE_CLOUD",
+    clerkUserId,
+    credentials: {
+      tokenId: config.tokenId,
+      tokenSecret: config.tokenSecret,
+      // WeStride's own workspace, so the SDK's fallback to MODAL_ENVIRONMENT is right.
+      environment: config.environment,
+      appName: config.appName,
+    },
   };
 }
 
 export async function resolveSandboxAccess(clerkUserId: string): Promise<SandboxAccessResult> {
   const hasCloud = isCloudComputeConfigured();
-  const [preference, credentials] = await Promise.all([
+  const [preference, own] = await Promise.all([
     hasCloud ? getProviderPreference(clerkUserId) : Promise.resolve<CloudProviderPreference>("OWN"),
-    getVercelSandboxCredentials(clerkUserId),
+    resolveOwnSandboxAccess(clerkUserId),
   ]);
-  const own: SandboxAccess | null = credentials
-    ? { kind: "VERCEL_SANDBOX", credentials, clerkUserId }
-    : null;
   if (!hasCloud) {
     return own ? { ok: true, access: own } : computeRefusal(false, null);
   }
@@ -147,7 +217,7 @@ export async function resolveSandboxAccess(clerkUserId: string): Promise<Sandbox
   }
   const balance = await getCloudBalanceMicros(clerkUserId);
   if (balance >= MIN_BALANCE_FOR_COMPUTE_MICROS) {
-    return { ok: true, access: { kind: "MODAL_SANDBOX", clerkUserId } };
+    return { ok: true, access: cloudSandboxAccess(clerkUserId) };
   }
   if (own) {
     return { ok: true, access: own };
@@ -157,10 +227,14 @@ export async function resolveSandboxAccess(clerkUserId: string): Promise<Sandbox
 
 /**
  * Whether a sandbox could start for this member right now, by any route.
- * Cheaper than resolving: it never refreshes a Vercel token.
+ * Cheaper than resolving: it never refreshes a Vercel token or opens a secret.
  */
 export async function hasSandboxAccess(clerkUserId: string): Promise<boolean> {
-  if (await hasVercelSandboxAccess(clerkUserId)) {
+  const [vercel, modal] = await Promise.all([
+    hasVercelSandboxAccess(clerkUserId),
+    hasModalSandboxAccess(clerkUserId),
+  ]);
+  if (vercel || modal) {
     return true;
   }
   if (!isCloudComputeConfigured()) {

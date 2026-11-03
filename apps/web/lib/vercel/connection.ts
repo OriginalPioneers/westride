@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { VercelConnection, VercelCredentialKind } from "@westride/db";
+import { setSandboxProvider } from "@westride/db/cloud";
 import {
   deleteVercelConnection,
   getVercelConnection,
@@ -88,7 +89,10 @@ function sealTokens(tokens: VercelTokenSet) {
   };
 }
 
-/** Keeps a token from Vercel's device sign-in, and the refresh token that renews it. */
+/**
+ * Keeps a token from Vercel's device sign-in, and the refresh token that
+ * renews it. A newly connected account becomes the one sandboxes run on.
+ */
 export async function saveVercelAccount(
   clerkUserId: string,
   tokens: VercelTokenSet,
@@ -101,6 +105,7 @@ export async function saveVercelAccount(
     username: user.username,
     ...sealTokens(tokens),
   });
+  await setSandboxProvider(clerkUserId, "VERCEL");
   const saved = await getVercelConnection(clerkUserId);
   if (!saved) {
     throw new Error("The Vercel connection was not saved.");
@@ -123,6 +128,7 @@ export async function saveVercelAccessToken(
     accessTokenExpiresAt: null,
     refreshToken: null,
   });
+  await setSandboxProvider(clerkUserId, "VERCEL");
   const saved = await getVercelConnection(clerkUserId);
   if (!saved) {
     throw new Error("The Vercel connection was not saved.");

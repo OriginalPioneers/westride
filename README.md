@@ -29,7 +29,7 @@ Members connect their own Meta account, with the same device sign-in Muse Code u
 
 ## Built during the hackathon
 
-Every line of WeStride was written by one person, [Garrett Hampton](https://www.linkedin.com/in/garretthampton/), during the hackathon, starting at kickoff on October 26, 2026. The repository's first commit is the initial commit of this project; there is no earlier codebase. The [full history](https://github.com/OriginalPioneers/westride/commits/main) is public. The first commit of each feature:
+Every line of WeStride was written by one person, [Garrett Hampton](https://www.linkedin.com/in/garretthampton/), during the hackathon, starting at kickoff on October 26, 2026. The repository's first commit is the initial commit of this project; there is no earlier codebase. The [full history](https://github.com/WeStrideOrg/westride/commits/main) is public. The first commit of each feature:
 
 | Date | Feature | First commit |
 | ---- | ------- | ------------ |

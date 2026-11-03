@@ -15,7 +15,7 @@ import { FOUNDER, SHIPPED_MILESTONES } from "../home/landing-content";
 import { DocPage, DocSection } from "../doc-page";
 import { OurStoryTabs } from "../section-tabs";
 
-const SOURCE_URL = "https://github.com/OriginalPioneers/westride";
+const SOURCE_URL = "https://github.com/WeStrideOrg/westride";
 const HACKATHON_URL = "https://cerebralvalley.ai/e/meta-ai-developer-hackathon";
 
 const FOUNDER_BIO =
