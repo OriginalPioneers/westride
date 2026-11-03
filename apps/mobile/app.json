@@ -6,13 +6,18 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/stamp.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0D1A2D"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
+      "icon": {
+        "light": "./assets/icon.png",
+        "dark": "./assets/icon-dark.png",
+        "tinted": "./assets/icon-tinted.png"
+      },
       "supportsTablet": true,
       "bundleIdentifier": "com.westride.org",
       "associatedDomains": [
@@ -28,7 +33,6 @@
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
@@ -48,7 +52,18 @@
       "expo-secure-store",
       "expo-web-browser",
       "expo-font",
-      "expo-splash-screen"
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/stamp.png",
+          "imageWidth": 240,
+          "dark": {
+            "image": "./assets/stamp.png",
+            "backgroundColor": "#0D1A2D"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

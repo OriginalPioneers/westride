@@ -1,5 +1,6 @@
 import { StyleSheet, TextInput, type TextInputProps, View } from "react-native";
-import { colors, fonts, fontSize, radius, spacing } from "@/theme";
+import { useColors, useTheme } from "@/lib/theme-preference";
+import { fonts, fontSize, radius, spacing } from "@/theme";
 import { Text } from "./text";
 
 export function Field({
@@ -7,15 +8,27 @@ export function Field({
   error,
   ...props
 }: TextInputProps & { label: string; error?: string }) {
+  const colors = useColors();
+  const { scheme } = useTheme();
+
   return (
     <View style={styles.field}>
       <Text variant="label">{label}</Text>
       <TextInput
+        keyboardAppearance={scheme === "dark" ? "dark" : "light"}
         placeholderTextColor={colors.textSecondary}
-        style={[styles.input, error ? styles.inputError : null, props.multiline && styles.multiline]}
+        style={[
+          styles.input,
+          {
+            backgroundColor: colors.backgroundCard,
+            borderColor: error ? colors.danger : colors.border,
+            color: colors.textPrimary,
+          },
+          props.multiline && styles.multiline,
+        ]}
         {...props}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <Text style={[styles.error, { color: colors.danger }]}>{error}</Text> : null}
     </View>
   );
 }
@@ -25,11 +38,8 @@ const styles = StyleSheet.create({
     gap: spacing(1),
   },
   input: {
-    backgroundColor: colors.backgroundCard,
-    borderColor: colors.border,
     borderRadius: radius.element,
     borderWidth: StyleSheet.hairlineWidth,
-    color: colors.textPrimary,
     fontFamily: fonts.regular,
     fontSize: fontSize.base,
     minHeight: 44,
@@ -40,11 +50,7 @@ const styles = StyleSheet.create({
     minHeight: 120,
     textAlignVertical: "top",
   },
-  inputError: {
-    borderColor: colors.danger,
-  },
   error: {
-    color: colors.danger,
     fontFamily: fonts.medium,
     fontSize: fontSize.small,
   },

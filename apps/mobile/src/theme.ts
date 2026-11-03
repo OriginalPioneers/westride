@@ -1,9 +1,26 @@
 /**
- * Light-mode values of the WeStride theme (packages/theme), which extends
- * Astryx Stone and which the web app uses. Astryx itself is DOM-only, so keep
- * these in sync by hand when the web theme changes.
+ * WeStride product colors, mirrored from the `light-dark()` pairs in
+ * `packages/theme/themes/westride/westride.css`. Astryx itself is DOM-only,
+ * so keep these in sync by hand when the web theme changes.
  */
-export const colors = {
+export type Palette = {
+  backgroundBody: string;
+  backgroundCard: string;
+  backgroundMuted: string;
+  backgroundInverted: string;
+  textPrimary: string;
+  textSecondary: string;
+  textOnInverted: string;
+  accent: string;
+  border: string;
+  danger: string;
+  green: { background: string; border: string; text: string };
+  blue: { background: string; border: string; text: string };
+  purple: { background: string; border: string; text: string };
+  gray: { background: string; border: string; text: string };
+};
+
+export const lightColors: Palette = {
   backgroundBody: "#f0f0f7",
   backgroundCard: "#ffffff",
   backgroundMuted: "#e2e2e8",
@@ -18,7 +35,27 @@ export const colors = {
   blue: { background: "#d3e4fc", border: "#c2d6f1", text: "#344861" },
   purple: { background: "#e7def5", border: "#d9cfea", text: "#4c405b" },
   gray: { background: "#e2e2e8", border: "#d4d3dd", text: "#46464e" },
-} as const;
+};
+
+export const darkColors: Palette = {
+  backgroundBody: "#101018",
+  backgroundCard: "#25252a",
+  backgroundMuted: "#3a3a42",
+  backgroundInverted: "#f0f0f9",
+  textPrimary: "#f0f0f9",
+  textSecondary: "#ababb3",
+  textOnInverted: "#25252a",
+  accent: "#f0f0f9",
+  border: "#3a3a42",
+  danger: "#e07a72",
+  green: { background: "#3e5d38", border: "#2f412c", text: "#d5e9d2" },
+  blue: { background: "#445469", border: "#2c3c52", text: "#d5e4f8" },
+  purple: { background: "#574e64", border: "#3f374c", text: "#e6def3" },
+  gray: { background: "#525159", border: "#3a3a42", text: "#e2e2e8" },
+};
+
+/** Light palette. Screens should read `useColors()` so the profile theme applies. */
+export const colors = lightColors;
 
 /**
  * The brand identity palette, mirrored from `brandColors` in
@@ -33,6 +70,12 @@ export const brand = {
   purple: "#885FF5",
   teal: "#10B3A5",
   orange: "#FF694B",
+} as const;
+
+/** Ink that sits on `brand.navy` — dark header, tab bar, and auth. */
+export const onNavy = {
+  muted: "#8B97A8",
+  hairline: "#24344C",
 } as const;
 
 export const brandPastel = {

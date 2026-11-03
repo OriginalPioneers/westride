@@ -16,8 +16,10 @@ import { LogBox, StyleSheet, View } from "react-native";
 LogBox.ignoreLogs(["Invalid prop `onLayout`"]);
 import { BrandMark } from "@/components/brand-mark";
 import { Text } from "@/components/text";
+import { Wordmark } from "@/components/wordmark";
 import { ApiProvider } from "@/lib/api-context";
-import { brand, colors, spacing } from "@/theme";
+import { ThemeProvider, useColors } from "@/lib/theme-preference";
+import { brand, spacing } from "@/theme";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -47,31 +49,37 @@ export default function RootLayout() {
 
   if (!publishableKey) {
     return (
-      <View style={styles.missing}>
-        <BrandMark size={88} />
-        <Text variant="title" style={styles.missingTitle}>
-          Add a Clerk key
-        </Text>
-        <Text variant="supporting" style={styles.missingCopy}>
-          Copy EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY into apps/mobile/.env. Use the
-          same Clerk instance as the website, and turn Native API on in the
-          Clerk dashboard.
-        </Text>
-        <StatusBar style="light" />
-      </View>
+      <ThemeProvider>
+        <View style={styles.missing}>
+          <BrandMark size={88} />
+          <Wordmark height={28} tone="white" />
+          <Text variant="title" style={styles.missingTitle}>
+            Add a Clerk key
+          </Text>
+          <Text variant="supporting" style={styles.missingCopy}>
+            Copy EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY into apps/mobile/.env. Use the
+            same Clerk instance as the website, and turn Native API on in the
+            Clerk dashboard.
+          </Text>
+          <StatusBar style="light" />
+        </View>
+      </ThemeProvider>
     );
   }
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <ApiProvider>
-        <RootNavigator />
-      </ApiProvider>
-    </ClerkProvider>
+    <ThemeProvider>
+      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <ApiProvider>
+          <RootNavigator />
+        </ApiProvider>
+      </ClerkProvider>
+    </ThemeProvider>
   );
 }
 
 function RootNavigator() {
+  const colors = useColors();
   const { isLoaded, isSignedIn } = useAuth();
 
   useEffect(() => {
@@ -100,7 +108,6 @@ function RootNavigator() {
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         </Stack.Protected>
       </Stack>
-      <StatusBar style="dark" />
     </>
   );
 }

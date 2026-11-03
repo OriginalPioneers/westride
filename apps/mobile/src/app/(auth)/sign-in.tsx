@@ -3,7 +3,6 @@ import { useHostedAuth } from "@clerk/expo/hosted-auth";
 import { Link } from "expo-router";
 import { useState } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,14 +11,16 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BrandMark, BrandStampRow } from "@/components/brand-mark";
 import { Button } from "@/components/button";
 import { Field } from "@/components/field";
 import { Text } from "@/components/text";
+import { Wordmark } from "@/components/wordmark";
 import { clerkMessage } from "@/lib/clerk-error";
-import { brand, colors, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { brand, spacing } from "@/theme";
 
 export default function SignInScreen() {
+  const colors = useColors();
   const { signIn, errors, fetchStatus } = useSignIn();
   const { startHostedAuth } = useHostedAuth();
   const [emailAddress, setEmailAddress] = useState("");
@@ -72,18 +73,11 @@ export default function SignInScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.brand}>
-            <BrandMark size={88} />
-            <Image
-              accessibilityLabel="WeStride"
-              resizeMode="contain"
-              source={require("../../../assets/wordmark-navy.png")}
-              style={styles.wordmark}
-            />
-            <BrandStampRow />
+            <Wordmark height={40} tone="white" />
             <Text style={styles.tagline}>Stride with AI. Build with community.</Text>
           </View>
 
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.backgroundBody }]}>
             <Text variant="title">Sign in</Text>
             <Text variant="supporting">
               Your ideas, builds, and agents — the same WeStride you use on the web.
@@ -106,7 +100,7 @@ export default function SignInScreen() {
               value={password}
             />
             {formError || fieldError ? (
-              <Text style={styles.error}>{formError ?? fieldError}</Text>
+              <Text style={[styles.error, { color: colors.danger }]}>{formError ?? fieldError}</Text>
             ) : null}
             <Button label="Sign in" loading={busy} onPress={() => void handleSignIn()} />
             <Button
@@ -146,24 +140,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing(3),
   },
-  wordmark: {
-    height: 36,
-    tintColor: brand.white,
-    width: 220,
-  },
   tagline: {
     color: brand.white,
     textAlign: "center",
   },
   card: {
-    backgroundColor: colors.backgroundBody,
     borderRadius: 16,
     gap: spacing(3),
     padding: spacing(5),
   },
-  error: {
-    color: colors.danger,
-  },
+  error: {},
   link: {
     alignItems: "center",
     paddingVertical: spacing(1),

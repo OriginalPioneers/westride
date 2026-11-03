@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { FlatList, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { colors, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { spacing } from "@/theme";
 
 export function Screen({ children }: { children: ReactNode }) {
   return (
@@ -31,6 +32,8 @@ export function ListScreen<T>({
   refreshing: boolean;
   onRefresh: () => void;
 }) {
+  const colors = useColors();
+
   return (
     <FlatList
       data={data}

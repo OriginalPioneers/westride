@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, StyleSheet } from "react-native";
-import { colors, fonts, radius, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { fonts, radius, spacing } from "@/theme";
 import { Text } from "./text";
 
 export function Segmented<T extends string>({
@@ -11,6 +12,8 @@ export function Segmented<T extends string>({
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
 }) {
+  const colors = useColors();
+
   return (
     <ScrollView
       horizontal
@@ -25,9 +28,20 @@ export function Segmented<T extends string>({
             accessibilityRole="button"
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
-            style={[styles.chip, selected && styles.selected]}
+            style={[
+              styles.chip,
+              {
+                backgroundColor: selected ? colors.backgroundInverted : colors.backgroundCard,
+                borderColor: selected ? colors.backgroundInverted : colors.border,
+              },
+            ]}
           >
-            <Text style={[styles.label, selected && styles.selectedLabel]}>
+            <Text
+              style={[
+                styles.label,
+                { color: selected ? colors.textOnInverted : colors.textPrimary },
+              ]}
+            >
               {option.label}
             </Text>
           </Pressable>
@@ -43,22 +57,12 @@ const styles = StyleSheet.create({
     gap: spacing(2),
   },
   chip: {
-    backgroundColor: colors.backgroundCard,
-    borderColor: colors.border,
     borderRadius: radius.full,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: spacing(3),
     paddingVertical: spacing(1.5),
   },
-  selected: {
-    backgroundColor: colors.backgroundInverted,
-    borderColor: colors.backgroundInverted,
-  },
   label: {
-    color: colors.textPrimary,
     fontFamily: fonts.medium,
-  },
-  selectedLabel: {
-    color: colors.textOnInverted,
   },
 });

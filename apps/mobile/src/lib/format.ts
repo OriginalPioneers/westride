@@ -36,6 +36,48 @@ export function formatCount(count: number, singular: string, plural = `${singula
   return count === 1 ? `1 ${singular}` : `${count} ${plural}`;
 }
 
+const RELATIVE_UNITS = [
+  { limit: 60, seconds: 1, unit: "second" },
+  { limit: 3_600, seconds: 60, unit: "minute" },
+  { limit: 86_400, seconds: 3_600, unit: "hour" },
+  { limit: 2_592_000, seconds: 86_400, unit: "day" },
+  { limit: Number.POSITIVE_INFINITY, seconds: 2_592_000, unit: "month" },
+] as const;
+
+type RelativeUnit = (typeof RELATIVE_UNITS)[number]["unit"];
+
+/** English phrases matching Intl.RelativeTimeFormat numeric "auto". Device Hermes often omits that constructor. */
+function formatRelativeUnit(value: number, unit: RelativeUnit): string {
+  if (unit === "second" && value === 0) {
+    return "now";
+  }
+  if (unit === "day") {
+    if (value === -1) {
+      return "yesterday";
+    }
+    if (value === 0) {
+      return "today";
+    }
+    if (value === 1) {
+      return "tomorrow";
+    }
+  }
+  if (unit === "month") {
+    if (value === -1) {
+      return "last month";
+    }
+    if (value === 0) {
+      return "this month";
+    }
+    if (value === 1) {
+      return "next month";
+    }
+  }
+  const abs = Math.abs(value);
+  const label = abs === 1 ? unit : `${unit}s`;
+  return value < 0 ? `${abs} ${label} ago` : `in ${abs} ${label}`;
+}
+
 export function formatRelativeTime(iso: string): string {
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) {
@@ -43,20 +85,8 @@ export function formatRelativeTime(iso: string): string {
   }
   const deltaSeconds = Math.round((then - Date.now()) / 1000);
   const abs = Math.abs(deltaSeconds);
-  const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-  if (abs < 60) {
-    return formatter.format(deltaSeconds, "second");
-  }
-  if (abs < 3600) {
-    return formatter.format(Math.round(deltaSeconds / 60), "minute");
-  }
-  if (abs < 86_400) {
-    return formatter.format(Math.round(deltaSeconds / 3600), "hour");
-  }
-  if (abs < 2_592_000) {
-    return formatter.format(Math.round(deltaSeconds / 86_400), "day");
-  }
-  return formatter.format(Math.round(deltaSeconds / 2_592_000), "month");
+  const match = RELATIVE_UNITS.find((entry) => abs < entry.limit) ?? RELATIVE_UNITS[4];
+  return formatRelativeUnit(Math.round(deltaSeconds / match.seconds), match.unit);
 }
 
 export function initials(name: string): string {

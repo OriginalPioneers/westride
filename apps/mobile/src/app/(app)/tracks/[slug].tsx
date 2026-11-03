@@ -14,9 +14,11 @@ import {
   formatLessonCount,
 } from "@/lib/format";
 import { useRequest } from "@/lib/use-request";
-import { colors, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { spacing } from "@/theme";
 
 export default function TrackDetailScreen() {
+  const colors = useColors();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const api = useApi();

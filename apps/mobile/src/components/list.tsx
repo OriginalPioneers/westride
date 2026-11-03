@@ -1,7 +1,8 @@
 import { useRouter, type Href } from "expo-router";
 import { Children, Fragment, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { colors, radius, spacing } from "@/theme";
+import { useColors } from "@/lib/theme-preference";
+import { radius, spacing } from "@/theme";
 import { Text } from "./text";
 
 export function ListSection({
@@ -11,15 +12,21 @@ export function ListSection({
   title: string;
   children: ReactNode;
 }) {
+  const colors = useColors();
   const rows = Children.toArray(children);
 
   return (
     <View style={styles.section}>
       <Text variant="heading">{title}</Text>
-      <View style={styles.card}>
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: colors.backgroundCard, borderColor: colors.border },
+        ]}
+      >
         {rows.map((row, index) => (
           <Fragment key={index}>
-            {index > 0 ? <View style={styles.divider} /> : null}
+            {index > 0 ? <View style={[styles.divider, { backgroundColor: colors.border }]} /> : null}
             {row}
           </Fragment>
         ))}
@@ -36,6 +43,7 @@ type ListRowProps = {
 };
 
 export function ListRow({ label, value, leading, href }: ListRowProps) {
+  const colors = useColors();
   const router = useRouter();
   const content = (
     <>
@@ -62,7 +70,10 @@ export function ListRow({ label, value, leading, href }: ListRowProps) {
     <Pressable
       accessibilityRole="link"
       onPress={() => router.push(href)}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+      style={({ pressed }) => [
+        styles.row,
+        pressed && { backgroundColor: colors.backgroundMuted },
+      ]}
     >
       {content}
     </Pressable>
@@ -74,14 +85,11 @@ const styles = StyleSheet.create({
     gap: spacing(2),
   },
   card: {
-    backgroundColor: colors.backgroundCard,
-    borderColor: colors.border,
     borderRadius: radius.container,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
   divider: {
-    backgroundColor: colors.border,
     height: StyleSheet.hairlineWidth,
     marginLeft: spacing(4),
   },
@@ -91,9 +99,6 @@ const styles = StyleSheet.create({
     gap: spacing(3),
     paddingHorizontal: spacing(4),
     paddingVertical: spacing(3),
-  },
-  rowPressed: {
-    backgroundColor: colors.backgroundMuted,
   },
   leading: {
     minWidth: spacing(5),
