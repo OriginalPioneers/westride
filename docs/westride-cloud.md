@@ -36,6 +36,8 @@ Redemption codes need nothing beyond the database.
 
 ### Redemption codes
 
+The WeStride team issues codes from the admin portal (`apps/admin`, Redemption codes page: amount, optional code text, redemption limit, expiry, and a note; a code can be switched off and back on there). The CLI below does the same from a terminal:
+
 ```sh
 bun run cloud:code -- --amount 25                      # a random $25 code, unlimited uses
 bun run cloud:code -- --amount 10 --code HACKATHON-2026 --uses 200 --expires 2026-12-31 --note "Meta hackathon"

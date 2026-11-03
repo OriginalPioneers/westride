@@ -112,15 +112,25 @@ const SIGNED_WEBHOOKS = new Set([
 // would otherwise refuse. Plain files from /public.
 const INSTALL_SCRIPTS = new Set(["/install.sh", "/install.ps1"]);
 
+// Legal pages stay fetchable. A trailing slash is the same page; Next
+// redirects it, and the crawler has to be allowed to ask for both.
+const CRAWLABLE_PAGES = new Set(["/privacy", "/terms"]);
+
+function isCrawlablePage(pathname: string): boolean {
+  const path = pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+  return CRAWLABLE_PAGES.has(path);
+}
+
 export function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl;
 
-  // Crawlers need to read the disallow policy. Everything else is refused.
+  // Crawlers need to read the disallow policy. Everything else is refused,
+  // except the legal pages listed above.
   if (pathname === "/robots.txt" || SIGNED_WEBHOOKS.has(pathname) || INSTALL_SCRIPTS.has(pathname)) {
     return NextResponse.next();
   }
 
-  if (isBlockedClient(request.headers.get("user-agent"))) {
+  if (isBlockedClient(request.headers.get("user-agent")) && !isCrawlablePage(pathname)) {
     return new NextResponse("This site is not open to crawlers.", {
       status: 403,
       headers: {

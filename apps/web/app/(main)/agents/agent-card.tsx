@@ -6,6 +6,7 @@ import { describeSchedule, totalTickets, type AgentWithDetails } from "@westride
 import { agentPath } from "@/lib/agents/labels";
 import { formatMicrosAsUsd, formatTokens } from "@/lib/idea-factory/pricing";
 import { markdownExcerpt } from "@/lib/ideas/excerpt";
+import { FeaturedBadge } from "../ideas/idea-badges";
 import { LibraryCard } from "../library-card";
 import { AgentStatusBadge, ScheduleBadge } from "./agent-badges";
 
@@ -23,6 +24,7 @@ export function AgentCard({ agent }: { agent: AgentWithDetails }) {
       meta={[repo, ...links].filter(Boolean).join(" · ")}
       footer={
         <>
+          {agent.isFeatured ? <FeaturedBadge /> : null}
           <AgentStatusBadge status={agent.status} />
           <ScheduleBadge schedule={agent.schedule} />
           {agent.activeJobs > 0 ? <Badge variant="blue" label="Working now" /> : null}

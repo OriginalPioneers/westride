@@ -244,11 +244,7 @@ export function SiteFooter() {
           <LanguageMenu />
           <Divider orientation="vertical" />
           <Link href="/our-story" isStandalone size="sm" color="secondary">
-            About WeStride
-          </Link>
-          <Divider orientation="vertical" />
-          <Link href="/mobile-apps" isStandalone size="sm" color="secondary">
-            Mobile apps
+            About
           </Link>
           <Divider orientation="vertical" />
           <HStack gap={3} wrap="nowrap" vAlign="center">

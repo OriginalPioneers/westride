@@ -42,17 +42,21 @@ Take a prompt you used recently and rewrite it with audience, length, tone, and 
         "Specify task, audience, format, and constraints to get usable output on the first try.",
       ],
       artifacts: [
-        lessonVideo(
-          "Why Prompts Matter",
-          "Explainer, 4 minutes. Side-by-side typing of Prompt A and Prompt B with outputs appearing underneath; the narrator highlights the four things B specified. Crisp, practical.",
-          240,
-        ),
+        lessonVideo({
+          title: "Lesson 6: A closer look at Description | AI Fluency: Framework & Foundations Course",
+          channel: "Anthropic",
+          url: "https://www.youtube.com/watch?v=DmgujoZ1mmk",
+          durationSeconds: 261,
+          brief:
+            "Anthropic's short lesson on 'Description' explains that the model only knows what you tell it, breaking a prompt into product (what you want: format, audience, length), process (how to approach it) and performance (how to behave) descriptions, which is exactly the 'prompt is the program' idea of this lesson.",
+        }),
         {
           key: "prompt-a-vs-b",
           kind: "IMAGE",
           title: "Vague versus specific prompt",
           brief:
             "Two stacked cards. Top: 'Write about dogs.' with a greyed generic paragraph. Bottom: the detailed shelter prompt with a vivid, formatted paragraph. Highlights on audience, length, tone, and format words.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/prompt-engineering-mastery/why-prompts-matter/prompt-a-vs-b.webp",
         },
       ],
     },
@@ -102,17 +106,21 @@ Write a prompt using all six parts for something you actually need this week. Th
         "Lead with the most important instruction and restate critical constraints at the end.",
       ],
       artifacts: [
-        lessonVideo(
-          "Anatomy of a Great Prompt",
-          "Explainer, 4 minutes. A prompt is assembled on screen block by block (role, task, audience, context, format, constraints); the output improves as each block snaps in.",
-          240,
-        ),
+        lessonVideo({
+          title: "Master the Perfect ChatGPT Prompt Formula (in just 8 minutes)!",
+          channel: "Jeff Su",
+          url: "https://www.youtube.com/watch?v=jC4v5AS4RIM",
+          durationSeconds: 510,
+          brief:
+            "Jeff Su builds a prompt block by block from six components (task, context, exemplars, persona, format, tone), explains their order of importance and shows the output improving as each is added, mirroring this lesson's six-part template.",
+        }),
         {
           key: "six-parts",
           kind: "DIAGRAM",
           title: "Six parts of a prompt",
           brief:
             "Six stacked, colour-coded blocks labelled Role, Task, Audience, Context, Format, Constraints, each with a one-line example from the photosynthesis prompt. Clean, printable.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/prompt-engineering-mastery/anatomy-of-a-great-prompt/six-parts.webp",
         },
       ],
     },
@@ -161,17 +169,21 @@ Find three vague words in a prompt you have written and replace each with someth
         "Number multiple requests so nothing gets skipped.",
       ],
       artifacts: [
-        lessonVideo(
-          "Writing Clear Instructions",
-          "Practical explainer, 4 minutes. Vague words glow red and are replaced one by one with concrete alternatives; the output tightens visibly each time.",
-          240,
-        ),
+        lessonVideo({
+          title: "Lesson 7: Effective prompting techniques (Deep Dive) | AI Fluency: Framework & Foundations Course",
+          channel: "Anthropic",
+          url: "https://www.youtube.com/watch?v=2YCaBqP8muw",
+          durationSeconds: 714,
+          brief:
+            "Anthropic's deep dive on effective prompting covers giving clear, specific instructions, stating output constraints explicitly, numbering multi-step requests and avoiding ambiguity, with before/after prompt examples.",
+        }),
         {
           key: "vague-to-concrete",
           kind: "IMAGE",
           title: "Vague to concrete",
           brief:
             "Two-column table graphic. Left 'Vague': brief, a few, simple, soon, better. Right 'Concrete': under 80 words, exactly three, readable by a twelve-year-old, within 30 days, shorter and jargon-free. Arrow between columns.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/prompt-engineering-mastery/clear-instructions/vague-to-concrete.webp",
         },
       ],
     },
@@ -224,17 +236,21 @@ Paste a long email thread into an assistant with markers around it, and ask for 
         "Constraints, including what to do when information is missing, make output dependable.",
       ],
       artifacts: [
-        lessonVideo(
-          "Context and Constraints",
-          "Explainer, 4 minutes. A prompt is shown as a page with three zones: instructions, fenced document, constraints. The narrator demonstrates a document that tries to hijack the task and how markers prevent it.",
-          240,
-        ),
+        lessonVideo({
+          title: "Prompting 101 | Code w/ Claude",
+          channel: "Anthropic",
+          url: "https://www.youtube.com/watch?v=ysPbXH0LpIE",
+          durationSeconds: 1492,
+          brief:
+            "Anthropic engineers walk through a real prompt layout: task up front, pasted content fenced with XML tags, background context, explicit constraints and a repeated key instruction at the end, which is the exact page structure this lesson teaches.",
+        }),
         {
           key: "context-layout",
           kind: "DIAGRAM",
           title: "Layout of a prompt with pasted data",
           brief:
             "Vertical page diagram: Instructions (top), fenced Document block with clear start/end markers (middle), Constraints and repeated key instruction (bottom). Annotate why each zone sits where it does.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/prompt-engineering-mastery/context-and-constraints/context-layout.webp",
         },
       ],
     },
@@ -281,17 +297,21 @@ Rewrite a recent prompt with a role that names expertise, audience, and prioriti
         "Define expertise, audience relationship, and priorities; try multiple roles to surface trade-offs.",
       ],
       artifacts: [
-        lessonVideo(
-          "Role-Based Prompting",
-          "Explainer, 4 minutes. The same question answered by three illustrated personas (nurse, investor, teacher) with the differences highlighted. Includes the warning that 'expert' does not equal 'accurate'.",
-          240,
-        ),
+        lessonVideo({
+          title: "Does Persona Prompting Actually Work?",
+          channel: "Dan Cleary",
+          url: "https://www.youtube.com/watch?v=Lc4Xn0WqCvY",
+          durationSeconds: 863,
+          brief:
+            "PromptHub's Dan Cleary reviews the research on role/persona prompting, showing it reliably shapes tone and perspective but does not add knowledge or accuracy, and gives guidance on writing specific, useful roles, matching this lesson's 'expert does not equal accurate' caution.",
+        }),
         {
           key: "role-examples",
           kind: "IMAGE",
           title: "Weak role versus strong role",
           brief:
             "Two cards. 'Weak: You are a world-class expert.' crossed with a caution icon. 'Strong: You are a career counsellor working with recent graduates; you prioritize practical next steps and ask one clarifying question first.' with a check icon.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/prompt-engineering-mastery/role-based-prompting/role-examples.webp",
         },
       ],
     },
@@ -343,17 +363,21 @@ Build a three-example prompt for a classification you actually need, including o
         "Vary example subject matter so the model learns the pattern, not the topic.",
       ],
       artifacts: [
-        lessonVideo(
-          "Few-Shot Examples",
-          "Explainer, 4 minutes. A classification prompt is built with zero, one, then three examples; accuracy on a test set climbs on a small on-screen counter. Ends with the voice-matching trick.",
-          240,
-        ),
+        lessonVideo({
+          title: "Discover Few-Shot Prompting | Google AI Essentials",
+          channel: "Grow with Google",
+          url: "https://www.youtube.com/watch?v=9qdgEBVkWR4",
+          durationSeconds: 271,
+          brief:
+            "Google's AI Essentials clip defines zero-, one- and few-shot prompting, builds a few-shot prompt with consistently formatted examples and a blank final input, and discusses how many examples to use and the risk of over-copying them.",
+        }),
         {
           key: "few-shot-layout",
           kind: "DIAGRAM",
           title: "Structure of a few-shot prompt",
           brief:
             "Vertical layout: Instruction line; three example blocks each with Input → Output in identical formatting; final block with Input → blank. Annotations: 'consistent labels', 'include an edge case', 'leave the answer blank'.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/prompt-engineering-mastery/few-shot-examples/few-shot-layout.webp",
         },
       ],
     },
@@ -409,17 +433,21 @@ Give an assistant a word problem twice: once plain, once with the five-step scaf
         "A numbered scaffold with a clearly marked final answer beats a loose 'think step by step'.",
       ],
       artifacts: [
-        lessonVideo(
-          "Chain-of-Thought and Step-by-Step Reasoning",
-          "Explainer, 4 minutes. A word problem solved twice: a one-line wrong answer, then a scaffolded solution that catches the slip at the check step. Narrator notes when not to use it.",
-          240,
-        ),
+        lessonVideo({
+          title: "Chain-of-thought prompting - Explained!",
+          channel: "CodeEmporium",
+          url: "https://www.youtube.com/watch?v=AFE6x81AP4k",
+          durationSeconds: 513,
+          brief:
+            "CodeEmporium explains chain-of-thought prompting with worked examples of a direct wrong answer versus step-by-step reasoning, why intermediate steps improve multi-step problems, and the original research behind it.",
+        }),
         {
           key: "reasoning-example",
           kind: "IMAGE",
           title: "Direct answer versus scaffolded reasoning",
           brief:
             "Two columns. Left: question and a single wrong numeric answer. Right: the five-step scaffold filled in, with the check step highlighted where the error is caught, ending in 'Answer: …'.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/prompt-engineering-mastery/chain-of-thought/reasoning-example.webp",
         },
       ],
     },
@@ -468,17 +496,21 @@ Draft a system prompt for an assistant that helps people plan community events. 
         "Test system prompts with a fixed set of conversations after every change.",
       ],
       artifacts: [
-        lessonVideo(
-          "System Prompts",
-          "Explainer, 4 minutes. A chat window with a hidden 'backstage' panel showing the system prompt; editing a rule backstage changes the assistant's replies on stage. Ends with the ten-test-conversation habit.",
-          240,
-        ),
+        lessonVideo({
+          title: "System Prompts Explained: The Hidden AI Instructions You Never See",
+          channel: "Thoughts Brewing, LLC",
+          url: "https://www.youtube.com/watch?v=kaBXp4JiESQ",
+          durationSeconds: 310,
+          brief:
+            "A concise explainer of what a system prompt is, how it sits 'backstage' before every user message, and a walk-through of Anthropic's published Claude system prompts to show the identity, tone, scope and behaviour rules that go into one.",
+        }),
         {
           key: "system-prompt-anatomy",
           kind: "DIAGRAM",
           title: "Anatomy of a system prompt",
           brief:
             "Document outline with sections in order: Identity & tone, Scope, Rules, Knowledge, Failure behaviour, Example exchange. Each section has one sample line. Small 'hidden from users' tag at the top.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/prompt-engineering-mastery/system-prompts/system-prompt-anatomy.webp",
         },
       ],
     },
@@ -527,17 +559,21 @@ Take a prompt that disappoints you. Name its failure type, make one change, and 
         "Ask the model to critique your prompt; if rules pile up, change approach.",
       ],
       artifacts: [
-        lessonVideo(
-          "Iterating and Debugging Prompts",
-          "Workflow explainer, 4 minutes. A prompt is debugged live: failure named, one edit made, five test inputs re-run with a pass/fail strip. Methodical, satisfying.",
-          240,
-        ),
+        lessonVideo({
+          title: "Evaluate prompts in the Anthropic Console",
+          channel: "Anthropic",
+          url: "https://www.youtube.com/watch?v=KIGBsQqZcNA",
+          durationSeconds: 200,
+          brief:
+            "Anthropic's official demo builds a small test set of representative inputs, grades the outputs, changes one line of the prompt, re-runs the same test set and compares versions side by side, which is precisely the diagnose-change-one-thing-measure loop of this lesson.",
+        }),
         {
           key: "failure-map",
           kind: "DIAGRAM",
           title: "Five prompt failures and their fixes",
           brief:
             "Two-column mapping: Wrong task → check verb and order; Wrong tone → sharpen role/audience; Wrong format → add example; Wrong facts → add sources and 'say unknown'; Ignored constraint → make measurable, restate at end.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/prompt-engineering-mastery/iterating-and-debugging-prompts/failure-map.webp",
         },
       ],
     },
@@ -582,17 +618,21 @@ Use the email pattern on a real message you need to send. Edit the draft, then n
         "Match your voice with samples, then edit until you would stand behind every line.",
       ],
       artifacts: [
-        lessonVideo(
-          "Prompting for Writing and Communication",
-          "Practical explainer, 4 minutes. Four quick demos (email, summary, outline, rewrite) using the patterns; the host edits one draft on screen and explains each change.",
-          240,
-        ),
+        lessonVideo({
+          title: "Google's 9 Hour AI Prompt Engineering Course In 20 Minutes",
+          channel: "Tina Huang",
+          url: "https://www.youtube.com/watch?v=p09yRj47kNM",
+          durationSeconds: 1217,
+          brief:
+            "Tina Huang condenses Google's prompting course with practical demos of drafting emails, summaries and other workplace writing, specifying tone and audience, supplying reference samples to match your voice, and iterating on drafts.",
+        }),
         {
           key: "writing-patterns",
           kind: "IMAGE",
           title: "Four writing prompt patterns",
           brief:
             "Four cards in a 2×2 grid: Email, Summary, Outline, Rewrite. Each shows its fill-in-the-blank pattern with placeholders highlighted. Clean, copyable look.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/prompt-engineering-mastery/prompting-for-writing-and-communication/writing-patterns.webp",
         },
       ],
     },
@@ -650,17 +690,21 @@ Paste a small function you wrote and ask for three unit tests plus one bug you m
         "Specify exact output formats for machine consumption, and always verify by running or checking.",
       ],
       artifacts: [
-        lessonVideo(
-          "Prompting for Code and Analysis",
-          "Explainer, 4 minutes. A bug report is turned into a precise prompt; the model returns a fix and tests; the tests run and one fails, which the narrator uses to make the verification point.",
-          240,
-        ),
+        lessonVideo({
+          title: "How to Write Better AI Prompts as a Software Developer in 2026",
+          channel: "JetBrains",
+          url: "https://www.youtube.com/watch?v=--XpNP6NsqE",
+          durationSeconds: 260,
+          brief:
+            "JetBrains covers prompting for code: assign a role, paste logs, errors and API signatures as context, define the output and constraints, ask for a plan, iterate, and review AI output like a teammate's pull request rather than trusting it.",
+        }),
         {
           key: "code-prompt",
           kind: "IMAGE",
           title: "A complete code prompt",
           brief:
             "Annotated prompt card: language/version, framework, pasted snippet, verbatim error, expected vs actual, constraints, 'include three tests'. Callouts explain why each part matters.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/prompt-engineering-mastery/prompting-for-code-and-analysis/code-prompt.webp",
         },
       ],
     },
@@ -712,17 +756,21 @@ Create your library with three entries from this track's exercises. Give each a 
         "Treat production prompts like code: versioned, reviewed, and free of private data.",
       ],
       artifacts: [
-        lessonVideo(
-          "Building a Prompt Library",
-          "Wrap-up, 4 minutes. A notebook of prompts becomes an organized library with cards; the host shows re-running a test set after a model switch. Closes the track and introduces Build with Llama.",
-          240,
-        ),
+        lessonVideo({
+          title: "3 AI Habits So Powerful It Feels Like Cheating",
+          channel: "Jeff Su",
+          url: "https://www.youtube.com/watch?v=31cp_OXKzkI",
+          durationSeconds: 650,
+          brief:
+            "Jeff Su shows how he keeps a reusable prompt library (a Notion database with one page per refined prompt, embedded where the work happens, plus text-expander shortcuts) and how to upgrade templates over time, which maps to this lesson's from-one-off-to-asset theme.",
+        }),
         {
           key: "library-card",
           kind: "IMAGE",
           title: "A prompt library entry",
           brief:
             "Index-card style template: Name, Purpose, Template (with {variables} highlighted), Examples (input → output), Model & settings, Version & notes, Known weaknesses. Tidy, monospace for the template.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/prompt-engineering-mastery/building-a-prompt-library/library-card.webp",
         },
       ],
     },

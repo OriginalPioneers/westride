@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
 
-// Pre-launch: every crawler that honors robots.txt is turned away.
-// Agents that ignore the `*` group (Google-Extended, Applebot-Extended, and
-// several AI crawlers) are named on their own so they still match a group.
+// Pre-launch: crawlers that honor robots.txt are turned away, except the
+// public legal pages. Agents that ignore the `*` group (Google-Extended,
+// Applebot-Extended, and several AI crawlers) are named on their own so they
+// still match a group. Allow is longer than `/`, so it wins over Disallow.
 const userAgents = [
   "*",
   "Googlebot",
@@ -73,6 +74,7 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: userAgents,
+      allow: ["/privacy", "/terms"],
       disallow: "/",
     },
   };

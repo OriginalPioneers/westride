@@ -38,11 +38,9 @@ import { CodeBracketIcon, HeartIcon } from "@heroicons/react/24/outline";
 import { defaultThemeSlug, themes } from "@/astryx-themes";
 import {
   CLONE_SNIPPET,
-  COMMITS_URL,
   CURRENT_MILESTONE_STEP,
   HACKATHON_LOGO,
   HACKATHON_NAME,
-  HACKATHON_URL,
   INTEGRATIONS,
   META_CAPABILITIES,
   META_MODELS,
@@ -50,6 +48,7 @@ import {
   MOBILE_APPS,
   PLATFORM_SURFACES,
   SOURCE_URL,
+  STACK_LINE,
   STACK_ROWS,
   STUDIOS,
   FOUNDER,
@@ -59,8 +58,6 @@ import {
   type StackLogo,
   type Tint,
 } from "./landing-content";
-import { useCreateIdea } from "../ideas/create-idea-button";
-import { HERO_CREATE_IDEA_SIGN_IN_HREF } from "../ideas/create-idea-return";
 import { HeroGlobe } from "./hero-globe";
 import { ImportRepoForm, type ImportResume } from "./import-repo-form";
 import { LANDING_STYLES } from "./landing-styles";
@@ -73,8 +70,6 @@ type LandingProps = {
   firstName: string | null;
   /** Set when someone comes back from sign-in or GitHub mid-import. Opens the importer. */
   importResume: ImportResume | null;
-  /** Returning from sign-in to workshop an idea. The dialog is already open. */
-  startCreateIdea: boolean;
   stats: LandingStats;
 };
 
@@ -623,8 +618,6 @@ type HeroCta = {
   label: string;
   href: string;
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
-  /** Opens the new-idea dialog. Signed-out visitors sign in first, then return here. */
-  opensCreateIdea?: boolean;
 };
 
 type HeroSection = {
@@ -681,7 +674,6 @@ const HERO_SECTIONS: HeroSection[] = [
       label: "Workshop an Idea",
       href: IDEA_STUDIO.href,
       icon: IDEA_STUDIO.icon,
-      opensCreateIdea: true,
     },
     link: { label: "Explore WeStride", href: "/#wl-studios" },
     screenshot: {
@@ -820,9 +812,9 @@ function tintVars(tints: [Tint, Tint]): CSSProperties {
  * focusing the tabs pauses the rail (and so the rotation), picking a tab
  * stops it, and reduced motion never starts it.
  */
-function useHeroSections(startsPaused = false) {
+function useHeroSections() {
   const [activeId, setActiveId] = useState(HERO_SECTIONS[0].id);
-  const [isAutoplaying, setIsAutoplaying] = useState(!startsPaused);
+  const [isAutoplaying, setIsAutoplaying] = useState(true);
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -866,45 +858,14 @@ function useHeroSections(startsPaused = false) {
 function HeroPanel({
   section,
   isActive,
-  openCreateIdea,
-  onOpenCreateIdea,
 }: {
   section: HeroSection;
   isActive: boolean;
-  openCreateIdea: (() => void) | null;
-  onOpenCreateIdea: () => void;
 }) {
   const ctaIcon =
     section.cta.icon != null ? (
       <Icon icon={section.cta.icon} color="inherit" />
     ) : undefined;
-  const ctaButton =
-    section.cta.opensCreateIdea && openCreateIdea ? (
-      <Button
-        className="wl-hero-cta"
-        label={section.cta.label}
-        variant="primary"
-        size="lg"
-        icon={ctaIcon}
-        onClick={() => {
-          onOpenCreateIdea();
-          openCreateIdea();
-        }}
-      />
-    ) : (
-      <Button
-        className="wl-hero-cta"
-        label={section.cta.label}
-        variant="primary"
-        size="lg"
-        icon={ctaIcon}
-        href={
-          section.cta.opensCreateIdea
-            ? HERO_CREATE_IDEA_SIGN_IN_HREF
-            : section.cta.href
-        }
-      />
-    );
 
   return (
     <VStack
@@ -930,7 +891,14 @@ function HeroPanel({
         {section.description}
       </Text>
       <VStack gap={3} hAlign="start">
-        {ctaButton}
+        <Button
+          className="wl-hero-cta"
+          label={section.cta.label}
+          variant="primary"
+          size="lg"
+          icon={ctaIcon}
+          href={section.cta.href}
+        />
         <Link
           className="wl-hero-link"
           href={section.link.href}
@@ -1275,10 +1243,9 @@ function CarryBar() {
   );
 }
 
-function Hero({ importResume, startCreateIdea }: LandingProps) {
-  const openCreateIdea = useCreateIdea();
+function Hero({ importResume }: LandingProps) {
   const { activeId, activeSection, isAutoplaying, pick, stop, onProgressEnd } =
-    useHeroSections(startCreateIdea);
+    useHeroSections();
   const [isImportOpen, setIsImportOpen] = useState(importResume !== null);
 
   function openImport() {
@@ -1341,8 +1308,6 @@ function Hero({ importResume, startCreateIdea }: LandingProps) {
                       key={section.id}
                       section={section}
                       isActive={section.id === activeId}
-                      openCreateIdea={openCreateIdea}
-                      onOpenCreateIdea={stop}
                     />
                   ))}
                 </Grid>
@@ -1656,38 +1621,34 @@ function HackathonSection() {
         <Container gap={10}>
           <Grid columns={{ minWidth: 320, max: 2 }} gap={8} align="center">
             <VStack gap={5} className="wl-reveal">
-              <Eyebrow>Where it started</Eyebrow>
+              <Eyebrow>Our origin</Eyebrow>
               <Heading level={2} type="display-3" textWrap="balance">
-                Born at the {HACKATHON_NAME}
+                Born at the {HACKATHON_NAME}.
               </Heading>
               <Text type="large" color="secondary" textWrap="pretty">
-                Hosted by Cerebral Valley, with kickoff on October 26, 2026 and
-                a building period that runs through November 4. We chose the
-                &ldquo;Build for Your World&rdquo; problem statement: bring
-                Meta&apos;s models into a domain you know firsthand.
+                WeStride began at the 2026 {HACKATHON_NAME}, hosted by Cerebral
+                Valley. Built from the ground up using Meta&apos;s AI
+                technologies, what started as a hackathon project became a
+                platform designed to make exploring, learning, and building with
+                AI more accessible.
               </Text>
               <Text textWrap="pretty">
-                Every line of WeStride was written during the hackathon,
-                starting at kickoff. The rules asked for a public repository. We
-                would have opened it anyway: a project that teaches people to
-                build with AI should let them read how it was built.
+                From workshopping an idea to writing real code, WeStride brings
+                the tools, knowledge, and opportunities of AI into one connected
+                experience.
               </Text>
               <HStack gap={2} wrap="wrap">
                 <Button
-                  label="Event details"
+                  label="Explore Our Story"
                   variant="primary"
-                  href={HACKATHON_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  endContent={
-                    <Icon icon={ArrowTopRightOnSquareIcon} color="inherit" />
-                  }
+                  href="/our-story"
                 />
                 <Button
-                  label="Commit history"
-                  href={COMMITS_URL}
+                  label="View on GitHub"
+                  href={SOURCE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
+                  endContent={<Icon icon={ArrowRightIcon} color="inherit" />}
                 />
               </HStack>
             </VStack>
@@ -1716,9 +1677,9 @@ function HackathonSection() {
                   />
                   <StackItem size="fill">
                     <VStack gap={0.5}>
-                      <Text weight="semibold">Build log</Text>
+                      <Text weight="semibold">Build Timeline</Text>
                       <Text type="supporting">
-                        Cerebral Valley · October 26 to November 4, 2026
+                        10 Days. One Vision. Built with Meta AI.
                       </Text>
                     </VStack>
                   </StackItem>
@@ -1745,15 +1706,22 @@ function HackathonSection() {
           <Grid columns={{ minWidth: 320, max: 2 }} gap={8} align="center">
             <VStack gap={3} className="wl-reveal">
               <Heading level={3} textWrap="balance">
-                One builder, one hackathon, and a problem I kept seeing in the
-                Discord
+                One builder, one hackathon, and a vision for what comes next.
               </Heading>
               <Text color="secondary" textWrap="pretty">
-                Team after team was ideating, vetting, and researching. The
-                people doing it could not have been more different: students on
-                a first project, people who had never written code, and
-                engineers with decades behind them. The project was not any one
-                of my ideas. It was the path all of them were walking.
+                WeStride began with a problem Garrett Hampton kept seeing
+                throughout the hackathon: people had ideas and ambitions, but
+                not everyone had the same experience, tools, or resources to
+                bring them to life.
+              </Text>
+              <Text color="secondary" textWrap="pretty">
+                Built during the 2026 {HACKATHON_NAME}, WeStride brings
+                learning, AI-powered advisors, development tools, and mentorship
+                into one platform designed to help people move forward, wherever
+                they are starting.
+              </Text>
+              <Text weight="semibold" textWrap="balance">
+                Every Idea. Every Ambition. Every Stride.
               </Text>
             </VStack>
             <VStack gap={5} className="wl-reveal" style={revealDelay(2)}>
@@ -1769,13 +1737,16 @@ function HackathonSection() {
                     {FOUNDER.name}
                   </Text>
                   <Text type="supporting" size="sm" justify="center">
-                    {FOUNDER.role}
+                    {FOUNDER.title}
+                  </Text>
+                  <Text size="sm" justify="center">
+                    {FOUNDER.tagline}
                   </Text>
                 </VStack>
               </VStack>
               <HStack hAlign="center">
                 <Button
-                  label="Read our story"
+                  label="Read Our Story"
                   href="/our-story"
                   endContent={<Icon icon={ArrowRightIcon} color="inherit" />}
                 />
@@ -1905,28 +1876,38 @@ function StackSection() {
       <Container gap={10}>
         <SectionIntro
           align="center"
-          eyebrow="Open source, all the way down"
-          title="One TypeScript monorepo, and you can read every line"
-          lede="The website, public API, MCP server, design site, and mobile app live side by side and share packages, so a database column defined once is typed all the way to every screen that shows it."
+          eyebrow="Open source. All the way down."
+          title="Built in the open. Made for everyone."
+          lede="WeStride is an open-source platform built with Meta's AI models and modern development tools. Explore the technology behind the platform, see how it works, contribute to its development, or build something of your own. The code is open, and the possibilities are yours to explore."
         />
 
         <VStack gap={4} className="wl-reveal" style={revealDelay(1)}>
+          <VStack gap={2} hAlign="center">
+            <Heading level={3} justify="center" textWrap="balance">
+              The technology behind WeStride
+            </Heading>
+            <Text type="supporting" justify="center">
+              {STACK_LINE}
+            </Text>
+          </VStack>
           <MarqueeRow items={STACK_ROWS[0]} direction="forward" />
           <MarqueeRow items={STACK_ROWS[1]} direction="reverse" />
         </VStack>
 
         <Grid columns={{ minWidth: 320, max: 2 }} gap={8} align="center">
           <VStack gap={4} className="wl-reveal">
-            <Heading level={3}>Clone it, run it, change it</Heading>
+            <Heading level={3} textWrap="balance">
+              Explore the code. Build what comes next.
+            </Heading>
             <Text type="supporting" textWrap="pretty">
-              WeStride teaches people to build with AI, and it is built that way
-              too. The repository holds the prompts we sent to Muse, the
-              conventions AI coding agents follow here, and the full commit
-              history from kickoff onward.
+              Go beyond using AI. Explore the WeStride GitHub repository,
+              understand how the platform works, and discover the tools and
+              architecture behind it. Clone the code, customize it, and make it
+              your own.
             </Text>
-            <HStack gap={2} wrap="wrap">
+            <HStack gap={3} wrap="wrap" vAlign="center">
               <Button
-                label="View the source"
+                label="Explore on GitHub"
                 variant="primary"
                 href={SOURCE_URL}
                 target="_blank"
@@ -1935,9 +1916,15 @@ function StackSection() {
                   <Icon icon={ArrowTopRightOnSquareIcon} color="inherit" />
                 }
               />
-              <Button label="Tech stack" href="/our-story/tech-stack" />
-              <Button label="API" variant="ghost" href="/settings/api" />
-              <Button label="MCP" variant="ghost" href="/settings/mcp" />
+              <Link href="/our-story/tech-stack" isStandalone>
+                Tech Stack
+              </Link>
+              <Link href="/settings/api" isStandalone>
+                API
+              </Link>
+              <Link href="/settings/mcp" isStandalone>
+                MCP
+              </Link>
             </HStack>
           </VStack>
           <VStack className="wl-reveal" style={revealDelay(2)}>

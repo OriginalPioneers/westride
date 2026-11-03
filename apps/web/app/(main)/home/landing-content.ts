@@ -21,10 +21,7 @@ import { PROJECT_REPOSITORY } from "../legal-document";
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
 export const SOURCE_URL = PROJECT_REPOSITORY;
-export const COMMITS_URL = `${PROJECT_REPOSITORY}/commits/main`;
 export const HACKATHON_NAME = "Meta Global AI Developer Hackathon";
-export const HACKATHON_URL =
-  "https://cerebralvalley.ai/e/meta-ai-developer-hackathon";
 export const HACKATHON_LOGO = "/logos/meta-global-ai-developer-hackathon.jpg";
 
 /** Brand accent aliases defined on the landing root: `--wl-<tint>`. */
@@ -289,7 +286,6 @@ export type StackLogo = { name: string; logo: string };
 /** Two marquee rows. Logos live under public/logos. */
 export const STACK_ROWS: StackLogo[][] = [
   [
-    { name: "Next.js", logo: "/logos/nextjs.png" },
     { name: "React", logo: "/logos/react.png" },
     { name: "TypeScript", logo: "/logos/typescript.png" },
     { name: "Astryx", logo: "/logos/astryx.svg" },
@@ -307,11 +303,14 @@ export const STACK_ROWS: StackLogo[][] = [
     { name: "Clerk", logo: "/logos/clerk.svg" },
     { name: "Vercel", logo: "/logos/vercel.svg" },
     { name: "Bun", logo: "/logos/bun.svg" },
-    { name: "Turborepo", logo: "/logos/turborepo.png" },
-    { name: "Node.js", logo: "/logos/nodejs.svg" },
-    { name: "Model Context Protocol", logo: "/logos/model-context-protocol.svg" },
+    { name: "Turbo", logo: "/logos/turborepo.png" },
   ],
 ];
+
+/** The technology line under the open-source heading. */
+export const STACK_LINE = STACK_ROWS.flat()
+  .map((item) => item.name)
+  .join(" · ");
 
 export type Milestone = {
   date: string;
@@ -391,10 +390,14 @@ export const CURRENT_MILESTONE_STEP = Math.max(
 /** The one person who built WeStride. */
 export const FOUNDER = {
   name: "Garrett Hampton",
+  /** Title on Our Story. */
   role: "Founder. Design, code, and AI",
+  /** Title on the home page. */
+  title: "Founder & CTO, WeStride",
+  tagline: "Built with experience. Driven by possibility.",
   photo: "/founder/garrett-hampton.jpg",
 } as const;
 
 export const CLONE_SNIPPET = `git clone ${SOURCE_URL}.git
 cd westride && bun install
-bun run dev:web   # http://localhost:3000`;
+bun run dev:web`;

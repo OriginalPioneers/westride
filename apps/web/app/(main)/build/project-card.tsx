@@ -9,7 +9,7 @@ import {
 import { isClaimableProject } from "@westride/db/claim-rules";
 import { projectPath } from "@/lib/build/labels";
 import { markdownExcerpt } from "@/lib/ideas/excerpt";
-import { UnclaimedBadge } from "../ideas/idea-badges";
+import { FeaturedBadge, UnclaimedBadge } from "../ideas/idea-badges";
 import { LibraryCard } from "../library-card";
 import { ProjectStatusBadge } from "./project-badges";
 
@@ -27,6 +27,7 @@ export function ProjectCard({ project }: { project: ProjectWithDetails }) {
       meta={repos.join(", ")}
       footer={
         <>
+          {project.isFeatured ? <FeaturedBadge /> : null}
           <ProjectStatusBadge status={project.status} />
           {isClaimableProject(project) ? <UnclaimedBadge /> : null}
           {!project.isPublic ? <Badge variant="neutral" label="Private" /> : null}

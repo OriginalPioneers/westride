@@ -49,17 +49,21 @@ Write one sentence: "I will build ___ for ___ so they can ___." Save it in Idea 
         "Use Idea Studio and Mentorship as you go; narrow scope wins.",
       ],
       artifacts: [
-        lessonVideo(
-          "The Capstone Journey",
-          "Motivating kickoff, 4 minutes. The nine stages appear as a path; a founder's one-sentence idea is written and revised across the stages in a quick montage; Idea Studio and Mentorship are introduced as supports.",
-          240,
-        ),
+        lessonVideo({
+          title: "Michael Seibel - How to Plan an MVP",
+          channel: "Y Combinator",
+          url: "https://www.youtube.com/watch?v=1hHMwLxN6EM",
+          durationSeconds: 830,
+          brief:
+            "Seibel lays out the whole pre-launch arc the capstone follows: talk to users, scope something ridiculously small, launch quickly, get feedback and iterate, which is exactly the mindset the kickoff needs to set.",
+        }),
         {
           key: "capstone-map",
           kind: "DIAGRAM",
           title: "The nine capstone stages",
           brief:
             "Numbered path with nine stops: Problem, Audience, Value & positioning, Trustworthy design, Prototype, User testing, Safety & oversight, Launch, Iterate. Small checkpoint flags where Idea Studio and a mentor are suggested.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/idea-to-launch-ai-product/the-capstone-journey/capstone-map.webp",
         },
       ],
     },
@@ -110,17 +114,21 @@ Write your problem statement and schedule five conversations this week.`,
         "Write a fill-in-the-blanks statement and validate it with five unprompted conversations.",
       ],
       artifacts: [
-        lessonVideo(
-          "Finding a Problem Worth Solving",
-          "Explainer, 4 minutes. A feature idea is reframed into a problem statement on a whiteboard; the five signs are checked off; a quick role-play shows a non-pitching customer conversation.",
-          240,
-        ),
+        lessonVideo({
+          title: "How to Get Startup Ideas",
+          channel: "Y Combinator",
+          url: "https://www.youtube.com/watch?v=uvw-u99yj8w",
+          durationSeconds: 1124,
+          brief:
+            "YC's Startup School lecture on starting from real problems rather than solutions, with concrete filters for whether a problem is frequent, painful, and one you can reach, mirroring the lesson's five signs of a good problem.",
+        }),
         {
           key: "problem-statement",
           kind: "IMAGE",
           title: "Problem statement template",
           brief:
             "Fill-in-the-blanks card: '{Specific people} struggle to {task} because {root cause}. Today they {workaround}, which costs them {cost}.' with one completed example beneath about small non-profits and grant applications.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/idea-to-launch-ai-product/finding-a-problem-worth-solving/problem-statement.webp",
         },
       ],
     },
@@ -172,17 +180,21 @@ Run three interviews using the questions above and draw the journey map. Circle 
         "Map the journey and pick the biggest pain point with the clearest AI fit.",
       ],
       artifacts: [
-        lessonVideo(
-          "Know Your Audience",
-          "Explainer, 4 minutes. An interview role-play with good and bad questions annotated; the narrator then draws a journey map and circles the first feature. Emphasizes behaviour over enthusiasm.",
-          240,
-        ),
+        lessonVideo({
+          title: "How To Talk To Users | Startup School",
+          channel: "Y Combinator",
+          url: "https://www.youtube.com/watch?v=z1iF1c8w5Lg",
+          durationSeconds: 1051,
+          brief:
+            "Gustaf Alstromer covers who to interview, how to find them, which questions to ask (specific past behaviour, current workarounds) and which to avoid (pitching, hypotheticals), matching the lesson's interviewing guidance and 'behaviour over enthusiasm' warning.",
+        }),
         {
           key: "journey-map",
           kind: "DIAGRAM",
           title: "A user journey map",
           brief:
             "Horizontal journey with six steps from trigger to outcome; rows beneath for tools, time, emotion (simple face icons), and pain points; one step circled 'first feature here' with an AI icon.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/idea-to-launch-ai-product/know-your-audience/journey-map.webp",
         },
       ],
     },
@@ -232,17 +244,21 @@ Write three versions of your value proposition with different leading benefits. 
         "Lead with outcomes, mention AI where it builds trust, and test the message with real people.",
       ],
       artifacts: [
-        lessonVideo(
-          "Value Proposition and Positioning",
-          "Explainer, 4 minutes. The template fills in live for the garden example; three variants are read aloud and a small audience panel repeats them back; the clearest wins.",
-          240,
-        ),
+        lessonVideo({
+          title: "Alexander Osterwalder: Mapping Customer Pains to Value Proposition",
+          channel: "Stanford eCorner",
+          url: "https://www.youtube.com/watch?v=xTtvwAmjais",
+          durationSeconds: 269,
+          brief:
+            "Alexander Osterwalder sketches the Value Proposition Canvas live: customer jobs, pains, and gains on one side, your pain relievers and gain creators on the other.",
+        }),
         {
           key: "value-prop",
           kind: "IMAGE",
           title: "Value proposition template",
           brief:
             "Card: 'For {audience} who {situation}, {product} {does what} so they {outcome}, unlike {alternative}.' with the PlotPal example filled in beneath. Each blank colour-coded.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/idea-to-launch-ai-product/value-proposition-and-positioning/value-prop.webp",
         },
       ],
     },
@@ -295,17 +311,21 @@ Write the ten exchanges for your product. Mark where each trust pattern appears.
         "Script ten exchanges by hand before building; they become your prompt, tests, and demo.",
       ],
       artifacts: [
-        lessonVideo(
-          "Designing Trustworthy AI Experiences",
-          "Design walkthrough, 4 minutes. A mock interface is annotated with each trust pattern; an anti-pattern version is shown briefly for contrast; the host scripts a few exchanges on paper.",
-          240,
-        ),
+        lessonVideo({
+          title: "Research@ NYC: PAIR Guidebook",
+          channel: "Google Research",
+          url: "https://www.youtube.com/watch?v=fgk_mK9XlRs",
+          durationSeconds: 993,
+          brief:
+            "Google's PAIR team on their human-centred AI guidebook: user needs, mental models, explainability and trust, feedback and control, and failing gracefully.",
+        }),
         {
           key: "trust-patterns",
           kind: "IMAGE",
           title: "Trust patterns in an AI interface",
           brief:
             "Annotated mock chat interface: 'AI assistant' label, answer with [1][2] source chips, an 'I'm not sure' phrase highlighted, a preview card with Confirm/Cancel, edit and report icons, a 'Talk to a person' link, and a 'What I remember' panel. Numbered callouts.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/idea-to-launch-ai-product/designing-trustworthy-ai-experiences/trust-patterns.webp",
         },
       ],
     },
@@ -364,17 +384,21 @@ Build the core exchange in a playground today and from code tomorrow. Share a sc
         "Keep the model call behind one function so you can switch hosting; timebox to two weeks.",
       ],
       artifacts: [
-        lessonVideo(
-          "Prototyping with Llama",
-          "Build-along, 5 minutes. The garden assistant prototype is assembled in the five-step order with a recreated UI; the narrator cuts a tempting feature to stay in the timebox.",
-          300,
-        ),
+        lessonVideo({
+          title: "The Llama Stack Tutorial: Episode Three - Llama Stack & RAG: Chat with your documents",
+          channel: "Red Hat Developer",
+          url: "https://www.youtube.com/watch?v=K9JW3DzURh0",
+          durationSeconds: 781,
+          brief:
+            "A hands-on build of the lesson's recommended first prototype (system prompt plus RAG over your own documents) using Meta's Llama Stack, whose single API lets you swap between local and hosted Llama exactly as the lesson advises.",
+        }),
         {
           key: "prototype-stack",
           kind: "DIAGRAM",
           title: "Choosing prototype building blocks",
           brief:
             "Stack of optional layers: System prompt (always), RAG (if documents), Structured outputs & tools (if actions), Bounded agent (if exploration), Multimodal input (if images/voice). Left side: 'hosted or local Llama' switch behind one function.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/idea-to-launch-ai-product/prototyping-with-llama/prototype-stack.webp",
         },
       ],
     },
@@ -429,17 +453,21 @@ Schedule five sessions this week. Write the task script and the five follow-up q
         "Fix the top three problems per round; if users succeed but do not care, revisit the problem and audience.",
       ],
       artifacts: [
-        lessonVideo(
-          "Testing with Real Users",
-          "Explainer, 4 minutes. A test session is shown with the tester thinking aloud; the observer takes notes; problems are grouped on sticky notes and the top three chosen. Honest moment where a tester shrugs at the value.",
-          240,
-        ),
+        lessonVideo({
+          title: "Usability Test Demo by Steve Krug",
+          channel: "Steve Krug",
+          url: "https://www.youtube.com/watch?v=1UCDUOB_aS8",
+          durationSeconds: 1466,
+          brief:
+            "A full recorded think-aloud session run by the author of Rocket Surgery Made Easy: realistic tasks, the facilitator staying quiet, and watching where the user hesitates or misreads, which is the session format the lesson asks learners to run.",
+        }),
         {
           key: "session-plan",
           kind: "IMAGE",
           title: "User test session plan",
           brief:
             "One-page plan: Intro (2 min), Task 1, Task 2, Task 3 (20 min, think aloud), Five follow-up questions (8 min), Observer notes columns: hesitations, misreads, trust checks, quotes. Clean form layout.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/idea-to-launch-ai-product/testing-with-real-users/session-plan.webp",
         },
       ],
     },
@@ -498,17 +526,21 @@ Complete the checklist for your prototype. Anything unchecked is a blocker for i
         "Write down oversight level, monitoring, incident process, and terms before inviting strangers.",
       ],
       artifacts: [
-        lessonVideo(
-          "Safety, Privacy, and Oversight",
-          "Checklist walkthrough, 4 minutes. Each section is ticked off against the garden assistant; an adversarial prompt is blocked; a user deletes their memory; the incident process is sketched on a whiteboard.",
-          240,
-        ),
+        lessonVideo({
+          title: "Building an AI Agent Governance Framework: 5 Essential Pillars",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=5hK7pQsvpy0",
+          durationSeconds: 604,
+          brief:
+            "A five-pillar governance framework for shipping AI responsibly: alignment, control (approvals, logs, kill switch), visibility, security, and ongoing evaluation.",
+        }),
         {
           key: "launch-safety-checklist",
           kind: "IMAGE",
           title: "Pre-launch safety and privacy checklist",
           brief:
             "Printable checklist in three columns: Safety (guards, grounding, refusals, approvals, rate limits, kill switch), Privacy (minimum data, plain notice, view/delete, no training without consent, encryption, legal check), Oversight (level, monitoring, incident process, review cadence). Tidy tick boxes.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/idea-to-launch-ai-product/safety-privacy-and-oversight/launch-safety-checklist.webp",
         },
       ],
     },
@@ -563,17 +595,21 @@ Write your three-wave plan with dates, your single channel, and the names of you
         "Personal invitations and hands-on onboarding win the first hundred; track activation and retention.",
       ],
       artifacts: [
-        lessonVideo(
-          "Launch Planning",
-          "Explainer, 4 minutes. Three waves on a calendar; a landing page and demo clip assembled; personal invitations sent; an activation/retention chart for month one. Practical, calm.",
-          240,
-        ),
+        lessonVideo({
+          title: "The Best Way To Launch Your Startup | Startup School",
+          channel: "Y Combinator",
+          url: "https://www.youtube.com/watch?v=u36A-YTxiOw",
+          durationSeconds: 1267,
+          brief:
+            "Kat Manalac argues launch is something you do repeatedly, walking through friends-and-family, stranger, community and press launches with simple assets, which maps onto the lesson's three-wave plan, single channel and first hundred users.",
+        }),
         {
           key: "launch-waves",
           kind: "DIAGRAM",
           title: "Three-wave launch plan",
           brief:
             "Three expanding circles labelled Circle (10), Community (100), Public, each with a date slot and a 'learn and fix' arrow to the next. Side list of assets: landing page, demo video, FAQ, feedback channel, onboarding.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/idea-to-launch-ai-product/launch-planning/launch-waves.webp",
         },
       ],
     },
@@ -633,17 +669,21 @@ Run your first weekly loop. Write the three things you shipped or decided, and p
         "Sustain costs, re-evaluate on model changes, keep a steady cadence, and know when to stop or pivot.",
       ],
       artifacts: [
-        lessonVideo(
-          "Feedback, Iteration, and What's Next",
-          "Celebratory wrap-up, 5 minutes. The weekly loop runs on screen with real-feeling feedback; the roadmap gains one item from three matching requests; the founder posts a launch story to the Community and offers to mentor. Warm close for the whole Academy.",
-          300,
-        ),
+        lessonVideo({
+          title: "How To Build Product As A Small Startup - Michael Seibel",
+          channel: "Y Combinator",
+          url: "https://www.youtube.com/watch?v=kzVvjKLdAbk",
+          durationSeconds: 501,
+          brief:
+            "Seibel describes a lightweight recurring product cycle: pick one KPI, list and rank ideas by impact and effort, ship on a one-to-two-week cadence, measure, and repeat, which is the lesson's weekly iteration loop.",
+        }),
         {
           key: "iteration-loop",
           kind: "DIAGRAM",
           title: "The weekly iteration loop",
           brief:
             "Five-step cycle: Review (metrics, feedback, transcripts) → Rank → Pick 1–3 → Ship (update golden set) → Tell users → back to Review. A small roadmap sidebar showing a request promoted after three independent asks.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/idea-to-launch-ai-product/feedback-iteration-and-whats-next/iteration-loop.webp",
         },
       ],
     },

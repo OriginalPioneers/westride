@@ -38,17 +38,21 @@ Open Meta AI in any Meta app or on the web and ask it to explain Llama in two se
         "Open Llama releases let anyone build with the same model family.",
       ],
       artifacts: [
-        lessonVideo(
-          "What Is Meta AI?",
-          "Overview, 3 minutes. Three panels slide in: the assistant inside a chat app, a research lab, and a downloadable model file. Narrator connects them. Clean, product-tour feel without real UI screenshots.",
-          180,
-        ),
+        lessonVideo({
+          title: "How To Use Meta AI For Beginners",
+          channel: "Learn With Shopify",
+          url: "https://www.youtube.com/watch?v=gVOW1Zw6_bY",
+          durationSeconds: 771,
+          brief:
+            "Beginner overview of what Meta AI is, that it is built on the open Llama model family, and how it shows up in WhatsApp, Instagram, Messenger and on the web, matching the lesson's assistant-plus-open-models framing.",
+        }),
         {
           key: "meta-ai-map",
           kind: "DIAGRAM",
           title: "Meta AI: assistant, research, open models",
           brief:
             "Three connected circles labelled Assistant (chat bubble icon), Research (flask icon), Open models / Llama (llama icon). Short captions beneath each. Brand-neutral colours.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/meet-meta-ai-and-llama/what-is-meta-ai/meta-ai-map.webp",
         },
       ],
     },
@@ -90,17 +94,21 @@ Visit the Llama website and find the newest release. Write down its sizes and on
         "Model names encode generation, size, and tuning.",
       ],
       artifacts: [
-        lessonVideo(
-          "The Llama Family",
-          "Timeline explainer, 3 minutes. A family tree grows generation by generation with a one-line caption for each. Ends by decoding a model name on screen.",
-          180,
-        ),
+        lessonVideo({
+          title: "Unpack the Latest Llama 4 Herd",
+          channel: "Meta Developers",
+          url: "https://www.youtube.com/watch?v=DKPpe-cESkI",
+          durationSeconds: 706,
+          brief:
+            "Official Meta walkthrough that opens with the evolution from Llama 1 and 2 through Llama 3.x (405B, Llama Guard, Vision) and then explains the Llama 4 Scout/Maverick mixture-of-experts, native multimodal, long-context generation.",
+        }),
         {
           key: "lineage",
           kind: "DIAGRAM",
           title: "Llama generations and what they added",
           brief:
             "Vertical timeline: Llama (research release), Llama 2 (commercial use, chat), Llama 3 (reasoning, longer context), Llama 3.1 (405B, tool calling), Llama 3.2 (vision, small models), Llama 4 (native multimodal, very long context). One short caption each; leave room for future entries.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/meet-meta-ai-and-llama/the-llama-family/lineage.webp",
         },
       ],
     },
@@ -144,17 +152,21 @@ Write two sentences: one making the strongest case for open models, one making t
         "The open-versus-closed debate is about safety, scrutiny, and who controls the technology.",
       ],
       artifacts: [
-        lessonVideo(
-          "Open versus Closed Models",
-          "Balanced explainer, 3 minutes. Two doors: one leads to a service counter (closed), the other to a workshop where you take the model home (open). Pros and cons appear as cards. Ends inviting the viewer to form a view.",
-          180,
-        ),
+        lessonVideo({
+          title: "Should You Use Open Source Large Language Models?",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=y9k-U9AuDeM",
+          durationSeconds: 400,
+          brief:
+            "Balanced IBM explainer contrasting proprietary and open LLMs, covering transparency, fine-tuning, community contributions, cost, and the risks of each, using Llama as the primary open example.",
+        }),
         {
           key: "open-closed",
           kind: "DIAGRAM",
           title: "Open-weights versus closed models",
           brief:
             "Two-column comparison table: Control, Privacy, Cost, Transparency, Ease of use, Frontier performance, Provider safety systems. Checkmarks and dashes per column. Neutral, factual tone.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/meet-meta-ai-and-llama/open-vs-closed-models/open-closed.webp",
         },
       ],
     },
@@ -197,17 +209,21 @@ For a study-notes summarizer that must work offline on a laptop, choose a size a
         "Long context windows let whole documents fit in one prompt, at a cost.",
       ],
       artifacts: [
-        lessonVideo(
-          "Llama Sizes and Capabilities",
-          "Explainer, 3 minutes. A ladder with devices on each rung (phone, laptop, GPU workstation, data centre) and the model size that fits. Variants shown as badges clipped onto a model.",
-          180,
-        ),
+        lessonVideo({
+          title: "Small vs. Large AI Models: Trade-offs & Use Cases Explained",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=0Wwn5IEqFcg",
+          durationSeconds: 571,
+          brief:
+            "Explains what parameter counts mean and how to match small on-device models versus large server/cloud models to the task, hardware and budget, which is the size-ladder decision this lesson teaches.",
+        }),
         {
           key: "size-ladder",
           kind: "DIAGRAM",
           title: "Which Llama fits which device",
           brief:
             "Four rungs: 1B–3B with a phone icon; 8B–11B with a laptop/GPU icon; 70B–90B with a server icon; 400B+ with a cloud icon. One example task per rung. Simple, legible.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/meet-meta-ai-and-llama/llama-sizes-and-capabilities/size-ladder.webp",
         },
       ],
     },
@@ -252,17 +268,21 @@ Use Meta AI on two different surfaces for the same small task, such as planning 
         "The assistant only sees what you send it; encrypted personal chats stay private.",
       ],
       artifacts: [
-        lessonVideo(
-          "Meta AI in Your Apps",
-          "Product tour, 3 minutes. Stylized (not real) phone screens for each app show a short task completed; a pair of glasses translates a street sign. Upbeat, no spoken dialogue from actors.",
-          180,
-        ),
+        lessonVideo({
+          title: "Tips for using Meta AI with TechMe0ut | Meta AI Tutorial | WhatsApp",
+          channel: "WhatsApp",
+          url: "https://www.youtube.com/watch?v=xITdllqr0c0",
+          durationSeconds: 458,
+          brief:
+            "Official WhatsApp (Meta) tutorial showing Meta AI inside a Meta app: chatting with it, tagging it in conversations, image generation and writing help, demonstrating how the assistant lives inside apps you already use.",
+        }),
         {
           key: "app-surfaces",
           kind: "IMAGE",
           title: "Where Meta AI lives",
           brief:
             "Hub-and-spoke illustration: Meta AI at the centre; spokes to stylized icons for WhatsApp, Instagram, Messenger, Facebook, Web, and Ray-Ban Meta glasses. No trademarked logos; use simple abstract glyphs with labels.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/meet-meta-ai-and-llama/meta-ai-in-your-apps/app-surfaces.webp",
         },
       ],
     },
@@ -309,17 +329,21 @@ Write down which of the five steps gave the most useful result and which needed 
         "For current events, use web search and verify a cited source.",
       ],
       artifacts: [
-        lessonVideo(
-          "Hands-On with Meta AI",
-          "Screen-recording-style walkthrough (recreated UI), 4 minutes. Follows the five steps with the host narrating what to notice at each step.",
-          240,
-        ),
+        lessonVideo({
+          title: "How To Use Meta.AI (Meta.AI Tutorial For Beginners 2025)",
+          channel: "TheAIGRID",
+          url: "https://www.youtube.com/watch?v=0rpvWaNWiD0",
+          durationSeconds: 733,
+          brief:
+            "Screen-recorded walkthrough of meta.ai on Llama 4: asking and refining questions, generating and restyling images, and exploring the Discover feed, closely mirroring the lesson's guided ask-refine-imagine session.",
+        }),
         {
           key: "imagine-example",
           kind: "IMAGE",
           title: "Three styles from one prompt",
           brief:
             "Triptych of the same reading nook with a window seat and morning light rendered in watercolor, flat vector, and photoreal styles. Labels beneath each panel naming the style word used.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/meet-meta-ai-and-llama/hands-on-with-meta-ai/imagine-example.webp",
         },
       ],
     },
@@ -365,17 +389,21 @@ Find the Responsible Use Guide and read its section on evaluation. Write down on
         "Model cards and the Responsible Use Guide are your first reading before deploying.",
       ],
       artifacts: [
-        lessonVideo(
-          "Responsible Open AI",
-          "Explainer, 3 minutes. Concentric shields drawn around a model: input guard, model, output guard, human oversight. Narrator names each Purple Llama tool and ends on 'possible, not automatic'.",
-          180,
-        ),
+        lessonVideo({
+          title: "Open Approach to Trust & Safety: Llama Guard 3, Prompt Guard & More | Llama for Developers",
+          channel: "AI at Meta",
+          url: "https://www.youtube.com/watch?v=IvjLXGR7-vM",
+          durationSeconds: 1628,
+          brief:
+            "Meta's own safety team explains the Purple Llama tools named in the lesson (Llama Guard, Prompt Guard, Code Shield) and the system-level, developer-owned approach to safety for open-weight models.",
+        }),
         {
           key: "safety-layers",
           kind: "DIAGRAM",
           title: "Safety layers around an open model",
           brief:
             "User prompt → Prompt Guard → Llama Guard (input) → Llama model → Llama Guard (output) / Code Shield → response → human review loop. Boxes in a row with a dashed 'your policy' bracket over the guards.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/meet-meta-ai-and-llama/responsible-open-ai/safety-layers.webp",
         },
       ],
     },
@@ -418,17 +446,21 @@ Join one community space from the list and introduce yourself with one sentence 
         "Small, specific contributions are the best way to start.",
       ],
       artifacts: [
-        lessonVideo(
-          "The Llama Community",
-          "Warm montage, 3 minutes. Illustrated people around the world running models on laptops, sharing notes, and meeting up. Narrator lists where to find things and how to contribute. Closes the track and points to prompt engineering.",
-          180,
-        ),
+        lessonVideo({
+          title: "The Llama Ecosystem: Past, Present and Future",
+          channel: "Meta Developers",
+          url: "https://www.youtube.com/watch?v=dPF-OYcjBrA",
+          durationSeconds: 1209,
+          brief:
+            "Meta talk framing Llama as a community rather than just a set of models, covering its history, why Meta releases openly, the PyTorch/Llama developer ecosystem and how the community builds on and contributes back.",
+        }),
         {
           key: "community-map",
           kind: "DIAGRAM",
           title: "The Llama ecosystem at a glance",
           brief:
             "Map-style diagram with five regions: Official site (downloads, docs, license), Model hubs (weights, fine-tunes), Runtimes (laptop and server), SDKs and Llama Stack, Community spaces (forums, chats, meetups). Generic icons, no logos.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/meet-meta-ai-and-llama/the-llama-community/community-map.webp",
         },
       ],
     },

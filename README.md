@@ -72,17 +72,19 @@ This repo is a [Turborepo](https://turborepo.com) using Bun workspaces.
 | Path | Description |
 | ---- | ----------- |
 | `apps/web` | WeStride Next.js web app |
+| `apps/admin` | WeStride Admin, the team's portal: members, studios, pledges, devices, Featured picks, and WeStride Cloud codes. Opens only for Clerk accounts whose public metadata carries `{"role": "admin"}` (see `apps/admin/.env.example`) |
 | `packages/db` | Shared Postgres models (Drizzle) and migrations |
 
 ## Development
 
 ```bash
 bun install
-cp apps/web/.env.example apps/web/.env   # then fill in values
-bun run dev                              # runs all apps via turbo
+cp apps/web/.env.example apps/web/.env       # then fill in values
+cp apps/admin/.env.example apps/admin/.env   # same database and Clerk keys as web
+bun run dev                                  # runs all apps via turbo
 ```
 
-Other root scripts: `bun run build`, `bun run lint`, `bun run start`, `bun run db:generate`, `bun run db:migrate`. To target a single app, use `bunx turbo run dev --filter=web`.
+Other root scripts: `bun run build`, `bun run lint`, `bun run start`, `bun run db:generate`, `bun run db:migrate`, `bun run dev:web`, `bun run dev:admin`. To target a single app, use `bunx turbo run dev --filter=web`. The web app listens on port 3000 and the admin portal on 3003.
 
 ## Tech Used
 

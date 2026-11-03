@@ -42,17 +42,21 @@ List three AI features you have used. Mark each as discriminative, generative, o
         "Real products mix the two, so learn to tell which part is which.",
       ],
       artifacts: [
-        lessonVideo(
-          "Generative versus Traditional AI",
-          "Explainer, 3 minutes. Split screen: a sorting machine stamps labels on photos (discriminative) while an easel paints a new picture from a sentence (generative). Narration explains why the second feels like a leap.",
-          180,
-        ),
+        lessonVideo({
+          title: "Introduction to Generative AI",
+          channel: "Google Cloud Tech",
+          url: "https://www.youtube.com/watch?v=G2fqAlgmoPo",
+          durationSeconds: 1327,
+          brief:
+            "Google's introduction to generative AI contrasts discriminative models that classify with generative models that create, and shows how foundation models fit in.",
+        }),
         {
           key: "discriminative-generative",
           kind: "DIAGRAM",
           title: "Discriminative versus generative",
           brief:
             "Two panels. Left 'Discriminative': many photos → model → labels (cat, dog). Right 'Generative': short prompt → model → brand-new picture. Arrow styles differ to emphasize input/output direction.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/generative-ai-explained/generative-vs-traditional-ai/discriminative-generative.webp",
         },
       ],
     },
@@ -93,17 +97,21 @@ Ask an assistant to name a colour three times in separate chats. Then ask it to 
         "Everything the model considers must be in its context window.",
       ],
       artifacts: [
-        lessonVideo(
-          "How Text Generation Works",
-          "Explainer, 3 minutes. A sentence grows one token at a time; each step shows a bar chart of the top candidates. A temperature dial is turned and the bars flatten; the output gets more surprising.",
-          180,
-        ),
+        lessonVideo({
+          title: "Large Language Models explained briefly",
+          channel: "3Blue1Brown",
+          url: "https://www.youtube.com/watch?v=LPZh9BOjkQs",
+          durationSeconds: 478,
+          brief:
+            "An 8-minute animated, non-technical explanation of how an LLM assigns probabilities to every possible next word, samples one, appends it and repeats, including why sampling less-likely words makes output vary; the clearest beginner version of next-token generation and context.",
+        }),
         {
           key: "sampling",
           kind: "DIAGRAM",
           title: "Temperature and top-p",
           brief:
             "Two small bar charts of next-token probabilities. Left labelled 'low temperature' with one tall bar; right 'high temperature' with flatter bars. A bracket on each shows the top-p cutoff.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/generative-ai-explained/how-text-generation-works/sampling.webp",
         },
       ],
     },
@@ -144,17 +152,21 @@ Write a prompt for an image with five concrete details: subject, setting, lighti
         "Inpainting, outpainting, and restyling reuse the same process.",
       ],
       artifacts: [
-        lessonVideo(
-          "How Image Generation Works",
-          "Visual explainer, 3 minutes. A square of static slowly resolves into a red bicycle on a beach over about 30 steps while the prompt's words light up as they take effect. Calm electronic score.",
-          180,
-        ),
+        lessonVideo({
+          title: "Diffusion Models for AI Image Generation",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=x2GRE-RzmD8",
+          durationSeconds: 724,
+          brief:
+            "Walks through forward noising during training and reverse denoising at generation time, how text conditioning steers each step, and why outputs look the way they do, which is exactly the lesson's 'pictures hiding in noise' explanation.",
+        }),
         {
           key: "diffusion-steps",
           kind: "IMAGE",
           title: "From noise to picture",
           brief:
             "Filmstrip of six frames showing pure noise gradually becoming a red bicycle on a beach at sunset. Frames evenly spaced; last frame fully clear. Caption under each: step 0, 10, 20, 30, 40, 50.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/generative-ai-explained/how-image-generation-works/diffusion-steps.webp",
         },
       ],
     },
@@ -195,17 +207,21 @@ Listen to an AI-narrated clip and a human one. Note two things that gave the AI 
         "Voice cloning requires consent; be skeptical of unexpected voice requests.",
       ],
       artifacts: [
-        lessonVideo(
-          "Audio, Music, and Voice",
-          "Explainer, 3 minutes. Waveform becomes a spectrogram becomes tokens; a narrator demonstrates text to speech and a short generated music loop. Closes with a consent and safety message.",
-          180,
-        ),
+        lessonVideo({
+          title: "AI Music, Explained with Spotify CEO",
+          channel: "Cleo Abram",
+          url: "https://www.youtube.com/watch?v=Ey75Xw_ikqs",
+          durationSeconds: 814,
+          brief:
+            "A general-audience explainer (with Grimes and Spotify's CEO) of AI voice cloning, fake collaborations and text-to-music generation, plus the consent, credit and payment questions they raise, covering the lesson's voice/music categories and its responsibility message.",
+        }),
         {
           key: "audio-pipeline",
           kind: "DIAGRAM",
           title: "How audio generation flows",
           brief:
             "Pipeline: text or description → audio tokens / spectrogram generated by the model → decoder → waveform → speaker icon. Small waveform and spectrogram thumbnails inline.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/generative-ai-explained/audio-music-and-voice/audio-pipeline.webp",
         },
       ],
     },
@@ -248,17 +264,21 @@ Watch a short AI-generated clip and pause it at three points. Write down one inc
         "Check frames for drifting details and look for content credentials.",
       ],
       artifacts: [
-        lessonVideo(
-          "Video Generation",
-          "Explainer, 3 minutes. A stack of frames fans out to show how each is generated with its neighbours. Side-by-side: a convincing landscape clip and a clip with telltale glitches, with annotations.",
-          180,
-        ),
+        lessonVideo({
+          title: "OpenAI's Sora Made Me Crazy AI Videos—Then the CTO Answered (Most of) My Questions | WSJ",
+          channel: "The Wall Street Journal",
+          url: "https://www.youtube.com/watch?v=mAUpxN-EIgU",
+          durationSeconds: 638,
+          brief:
+            "Explains that video models are diffusion extended across frames, shows what today's tools do well (smooth, consistent scenes) and where they fail (hands, morphing objects, cars changing colour, physics), which maps directly onto the lesson's 'what works, what struggles, how to spot a fake'.",
+        }),
         {
           key: "video-timeline",
           kind: "IMAGE",
           title: "Where video generation stands",
           brief:
             "Two-row chart. Top row 'Works well': short clips, camera moves, atmosphere, restyling. Bottom row 'Still hard': long stories, hands and liquids, legible text. Simple icons, muted palette.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/generative-ai-explained/video-generation/video-timeline.webp",
         },
       ],
     },
@@ -300,17 +320,21 @@ Pick one job from the list and try two tools on the same task today. Which would
         "Compare tools on the same task and record what you find.",
       ],
       artifacts: [
-        lessonVideo(
-          "The Generative AI Toolbox",
-          "Tour, 3 minutes. A physical toolbox opens; each drawer is a job with illustrated tools inside. The host explains open versus hosted using two drawers side by side.",
-          180,
-        ),
+        lessonVideo({
+          title: "Should You Use Open Source Large Language Models?",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=y9k-U9AuDeM",
+          durationSeconds: 400,
+          brief:
+            "Explains the proprietary (hosted) versus open-model split using Llama as the example, with the benefits (control, fine-tuning, transparency) and risks of each, which is the lesson's core 'open versus hosted' decision for choosing tools.",
+        }),
         {
           key: "toolbox",
           kind: "DIAGRAM",
           title: "The generative AI toolbox by job",
           brief:
             "Toolbox illustration with six labelled drawers: Writing, Images, Audio, Video, Code, Building blocks. Each drawer shows two or three generic tool icons, no brand logos.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/generative-ai-explained/the-generative-ai-toolbox/toolbox.webp",
         },
       ],
     },
@@ -355,17 +379,21 @@ Take any AI answer you received this week and score it on the four parts, one to
         "Ask for sources and uncertainties, then verify; formatting is not evidence.",
       ],
       artifacts: [
-        lessonVideo(
-          "Judging AI Output",
-          "Practical explainer, 3 minutes. The host grades three AI answers live on a four-part scorecard, catching an invented citation along the way. Clear, methodical.",
-          180,
-        ),
+        lessonVideo({
+          title: "How to Fact-Check ChatGPT and Other AI Tools",
+          channel: "UDC Library",
+          url: "https://www.youtube.com/watch?v=imBL73lFwbk",
+          durationSeconds: 368,
+          brief:
+            "Hands-on demonstration of fact-checking a chatbot's answer: pull each claim and citation, trace it to a trusted source, and catch the detail it got wrong.",
+        }),
         {
           key: "four-part-check",
           kind: "DIAGRAM",
           title: "The four-part output check",
           brief:
             "Scorecard graphic with four rows: Accuracy, Completeness, Fit, Safety. Each row has five empty circles for scoring and a one-line prompt question. Brand accent colour.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/generative-ai-explained/judging-ai-output/four-part-check.webp",
         },
       ],
     },
@@ -407,17 +435,21 @@ Write the one-line disclosure you would put on a blog post where AI drafted the 
         "Disclose AI help, avoid passing off imitation, and keep records of your process.",
       ],
       artifacts: [
-        lessonVideo(
-          "Originality, Copyright, and Credit",
-          "Explainer, 3 minutes. An artist's studio where an AI collaborator sketches ideas; the artist chooses, edits, and signs. Neutral treatment of unsettled legal questions; practical fairness tips at the end.",
-          180,
-        ),
+        lessonVideo({
+          title: "A.I. Versus The Law",
+          channel: "LegalEagle",
+          url: "https://www.youtube.com/watch?v=G08hY8dSrUY",
+          durationSeconds: 1236,
+          brief:
+            "A lawyer's plain-English tour of the three questions the lesson raises: whether machine-made output can be copyrighted, who owns AI-assisted work, and whether training on artists' work or imitating their style is lawful, framed as unsettled law rather than firm answers.",
+        }),
         {
           key: "rights-map",
           kind: "DIAGRAM",
           title: "Who can own AI-assisted work?",
           brief:
             "Spectrum bar from 'Fully machine-made' (left) to 'Substantial human creativity' (right), with a note that protection generally increases to the right and varies by country. No specific legal claims.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/generative-ai-explained/originality-copyright-and-credit/rights-map.webp",
         },
       ],
     },
@@ -457,17 +489,21 @@ Choose one habit you do not yet follow and apply it to your next AI-assisted pie
         "Some moments deserve a wholly human voice; know when to put the tool down.",
       ],
       artifacts: [
-        lessonVideo(
-          "Creating Responsibly",
-          "Reflective wrap-up, 3 minutes. The host finishes a small project (a newsletter) applying each habit in turn, then shows the published piece with its disclosure line. Encouraging close into the next track.",
-          180,
-        ),
+        lessonVideo({
+          title: "Watch this before using generative AI",
+          channel: "Google",
+          url: "https://www.youtube.com/watch?v=unPKJJjQP0A",
+          durationSeconds: 190,
+          brief:
+            "Google's 3-minute primer on using generative AI well: it can make things up, so check the output, stay in charge of decisions, and use it as a collaborator rather than an authority, mirroring the lesson's 'draft with AI, decide as a human, verify before you publish' habits.",
+        }),
         {
           key: "habits",
           kind: "IMAGE",
           title: "Six habits for responsible creation",
           brief:
             "Poster-style card with six numbered habits: Know your purpose; Draft with AI, decide as a human; Verify before you publish; Protect people; Disclose honestly; Keep the receipts. Minimal icons, generous whitespace.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/generative-ai-explained/creating-responsibly/habits.webp",
         },
       ],
     },

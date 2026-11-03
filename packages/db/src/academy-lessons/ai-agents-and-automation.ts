@@ -45,17 +45,21 @@ Write a goal you would hand to an agent. List the steps it would need and mark w
         "Errors compound across steps, so safety, stopping rules, and human review are essential.",
       ],
       artifacts: [
-        lessonVideo(
-          "From Chatbots to Agents",
-          "Explainer, 4 minutes. A chatbot answers a venue question with advice; an agent actually searches, extracts, and drafts, shown as a loop animation. Ends on the compounding-errors warning.",
-          240,
-        ),
+        lessonVideo({
+          title: "What are AI Agents?",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=F8NKVhkZZWI",
+          durationSeconds: 748,
+          brief:
+            "Walks from a plain LLM to a compound system to an agent that reasons, calls tools, observes results and iterates, matching the lesson's chatbot-versus-agent framing and the observe/think/act loop.",
+        }),
         {
           key: "agent-loop",
           kind: "DIAGRAM",
           title: "The agent loop",
           brief:
             "Circular diagram with four stages: Observe → Think → Act → (result) → Observe, with an exit arrow labelled 'Done or stop'. Tools shown as a tray beside Act.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-agents-and-automation/from-chatbots-to-agents/agent-loop.webp",
         },
       ],
     },
@@ -102,17 +106,21 @@ Write a plan for the venue-finding goal with six steps, each naming a tool, an i
         "Insert approval steps before consequential actions.",
       ],
       artifacts: [
-        lessonVideo(
-          "How Agents Plan",
-          "Explainer, 4 minutes. Two agents attempt the same goal: one with a rigid upfront plan that breaks, one adapting step by step that wanders; a third blends both. Stopping rules shown as a dashboard.",
-          240,
-        ),
+        lessonVideo({
+          title: "ReAct vs Plan-and-Execute for AI Agents",
+          channel: "What's AI by Louis-François Bouchard",
+          url: "https://www.youtube.com/watch?v=Y-VCZ_KTuzo",
+          durationSeconds: 977,
+          brief:
+            "Contrasts step-by-step ReAct (thought/action/observation) with plan-first plan-and-execute using a research-assistant example, which is exactly the lesson's two planning styles and their trade-offs.",
+        }),
         {
           key: "planning-styles",
           kind: "DIAGRAM",
           title: "Plan-first versus step-by-step",
           brief:
             "Left: a fixed numbered list executed top to bottom. Right: a branching path chosen one node at a time. Centre: a hybrid with a plan that gets revised mid-way. Pros/cons as short bullets beneath each.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-agents-and-automation/how-agents-plan/planning-styles.webp",
         },
       ],
     },
@@ -159,17 +167,21 @@ Design the scratchpad for your venue agent: list the five fields it should carry
         "Filter what gets remembered, and give users visibility and control over it.",
       ],
       artifacts: [
-        lessonVideo(
-          "Memory: Short-Term and Long-Term",
-          "Explainer, 4 minutes. A scratchpad updates step by step beside the agent; after the task, two facts are proposed for long-term memory and one is rejected. A user views and deletes a stored memory.",
-          240,
-        ),
+        lessonVideo({
+          title: "The Four Types of Memory Every AI Agent Needs",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=BacJ6sEhqMo",
+          durationSeconds: 640,
+          brief:
+            "Explains short-term working memory in the context window versus long-term memory stored outside the model (facts, episodes, procedures) and how each is fed back into prompts, mirroring the lesson's scratchpad and external-store split.",
+        }),
         {
           key: "memory-types",
           kind: "DIAGRAM",
           title: "Kinds of agent memory",
           brief:
             "Two tiers. Short-term: scratchpad (goal, plan, recent results). Long-term: key-value facts, vector memory, structured records. Arrows show what flows into each prompt. A small 'user can view/edit/delete' badge on long-term.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-agents-and-automation/memory-short-and-long-term/memory-types.webp",
         },
       ],
     },
@@ -221,17 +233,21 @@ Write the full definition for a \`send_inquiry_email\` tool, including its risk 
         "Classify tools by risk; irreversible actions need human approval enforced by the runtime.",
       ],
       artifacts: [
-        lessonVideo(
-          "Tool Use and Function Calling",
-          "Explainer, 4 minutes. A tool definition is written on screen with callouts; the model sends a bad argument, validation catches it, the model corrects; a risky tool triggers an approval prompt.",
-          240,
-        ),
+        lessonVideo({
+          title: "What is Tool Calling? Connecting LLMs to Your Data",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=h8gMhXYAv1k",
+          durationSeconds: 296,
+          brief:
+            "Shows how a tool definition (name, description, parameter schema) is sent to the model, how the model returns a structured call that your code executes, and how the result is fed back, the core mechanics the lesson builds on.",
+        }),
         {
           key: "tool-definition",
           kind: "IMAGE",
           title: "Anatomy of a tool definition",
           brief:
             "Annotated JSON schema for search_venues: name, description with 'use when…', parameters (city: string, capacity: integer 1–500, max_price: number), required list, and a custom risk_tier: read_only field. Callouts explain each.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-agents-and-automation/tool-use-and-function-calling/tool-definition.webp",
         },
       ],
     },
@@ -280,17 +296,21 @@ Write the prompt wrapper your agent will use around fetched page text, including
         "Use narrow tools, allow-lists, scoped credentials, and polite crawling.",
       ],
       artifacts: [
-        lessonVideo(
-          "Browsing and Working with APIs",
-          "Explainer, 4 minutes. An agent reads a page that contains a hidden instruction; layered defenses (untrusted marker, fixed permissions, approval gate, classifier) each stop it in turn.",
-          240,
-        ),
+        lessonVideo({
+          title: "Securing AI Agents: How to Prevent Hidden Prompt Injection Attacks",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=5ZA1lTxTH3c",
+          durationSeconds: 607,
+          brief:
+            "A browsing shopping agent is hijacked by hidden text on a web page (indirect prompt injection), then layered defenses that inspect fetched content and agent actions are added, matching the lesson's untrusted-content and defense-in-depth message.",
+        }),
         {
           key: "injection-defense",
           kind: "DIAGRAM",
           title: "Defending against prompt injection",
           brief:
             "Fetched page → 'untrusted content' wrapper → Prompt Guard classifier → agent (tools with fixed permissions) → approval gate before irreversible actions → user. Layers drawn as concentric or sequential shields.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-agents-and-automation/browsing-and-apis/injection-defense.webp",
         },
       ],
     },
@@ -340,17 +360,21 @@ Take the venue goal and redesign it as a workflow with one bounded agent step. W
         "Validate between steps, make steps idempotent, persist state, and log everything.",
       ],
       artifacts: [
-        lessonVideo(
-          "Designing Multi-Step Workflows",
-          "Explainer, 4 minutes. Five pattern diagrams animate in turn with a tiny example each; the feedback-processing design is assembled from them; a bounded agent is slotted into one node.",
-          240,
-        ),
+        lessonVideo({
+          title: "Building Effective Agents with LangGraph",
+          channel: "LangChain",
+          url: "https://www.youtube.com/watch?v=aHCDrAbH_go",
+          durationSeconds: 1909,
+          brief:
+            "Builds each pattern from Anthropic's 'Building Effective Agents' post (prompt chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer) and contrasts fixed workflows with free agents, which is the lesson's pattern catalogue.",
+        }),
         {
           key: "workflow-patterns",
           kind: "DIAGRAM",
           title: "Five workflow patterns",
           brief:
             "Five small diagrams in a row: Chain (A→B→C), Router (classifier fanning to three paths), Parallel (three calls merging), Evaluator loop (generate↔critique), Orchestrator (planner over workers). Consistent node style.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-agents-and-automation/multi-step-workflows/workflow-patterns.webp",
         },
       ],
     },
@@ -402,17 +426,21 @@ Sketch a three-agent version of the venue task (researcher, writer, critic). Wri
         "Multi-agent systems cost more and are harder to debug; add agents only when a problem demands it.",
       ],
       artifacts: [
-        lessonVideo(
-          "Multi-Agent Systems",
-          "Explainer, 4 minutes. One overloaded agent struggles; the task is split among a coordinator, two specialists, and a critic exchanging typed messages. Costs shown on a meter. References Idea Factory's advisory team.",
-          240,
-        ),
+        lessonVideo({
+          title: "Multi Agent Systems Explained: How AI Agents & LLMs Work Together",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=sWH0T4Zez6I",
+          durationSeconds: 477,
+          brief:
+            "Covers coordinator/hierarchical versus network structures, specialisation benefits, and the costs (coordination complexity, shared failure modes, unpredictability) plus when a single agent is enough, matching the lesson's roles and trade-offs.",
+        }),
         {
           key: "multi-agent",
           kind: "DIAGRAM",
           title: "A small multi-agent team",
           brief:
             "Coordinator at top; arrows to Researcher and Writer specialists (each with two tool icons); both feed a Critic; Critic feeds back to Writer and up to Coordinator; Coordinator outputs result. Message arrows labelled with types.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-agents-and-automation/multi-agent-systems/multi-agent.webp",
         },
       ],
     },
@@ -468,17 +496,21 @@ Build the research agent. Record how many steps each of your five topics took an
         "Test on easy, niche, and scarce-source topics and confirm it stops cleanly.",
       ],
       artifacts: [
-        lessonVideo(
-          "Build Your First Agent",
-          "Build-along, 5 minutes. The research agent is assembled component by component and run on a topic; the scratchpad updates live; it finishes with a cited brief. A scarce-source topic shows a clean stop.",
-          300,
-        ),
+        lessonVideo({
+          title: "Build an AI Agent From Scratch in Python - Tutorial for Beginners",
+          channel: "Tech With Tim",
+          url: "https://www.youtube.com/watch?v=bTMPwUgLZf0",
+          durationSeconds: 2059,
+          brief:
+            "Build-along that assembles a bounded research assistant with a system prompt, search and Wikipedia tools, a tool-calling loop and structured output with sources used, closely paralleling the lesson's research-agent project.",
+        }),
         {
           key: "research-agent",
           kind: "DIAGRAM",
           title: "Research agent architecture",
           brief:
             "Loop diagram: Scratchpad → Llama (decide) → tool call (web_search / fetch_page) → validate → execute → update Scratchpad; exit to 'Write brief' when 3 sources found or 8 steps reached.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-agents-and-automation/build-your-first-agent/research-agent.webp",
         },
       ],
     },
@@ -527,17 +559,21 @@ List the seven layers for your research agent and mark which are already in plac
         "Log everything for reconstruction and test adversarially before and after changes.",
       ],
       artifacts: [
-        lessonVideo(
-          "Guardrails and Safety",
-          "Explainer, 4 minutes. Seven layers appear as rings around an agent; an attack scenario is stopped at a different ring each time. Ends on the kill switch and adversarial testing.",
-          240,
-        ),
+        lessonVideo({
+          title: "Understanding AI Agent Security: Safeguard LLM Systems Effectively",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=SAYmsKxNDF4",
+          durationSeconds: 525,
+          brief:
+            "Lays out the layers needed to keep agents in bounds: scoped credentials and identities for tools, a vault for secrets, explicit policies (including drift and harmful-output checks) and a runtime enforcement layer, echoing the lesson's policies-as-code and layered defences.",
+        }),
         {
           key: "guardrail-layers",
           kind: "DIAGRAM",
           title: "Seven layers of agent safety",
           brief:
             "Concentric rings around 'Agent': Limits & kill switch (outer), Input guards, Scoped tools, Permission gates, Sandboxes, Output guards, Logging (base layer drawn beneath). Clear labels.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-agents-and-automation/guardrails-and-safety/guardrail-layers.webp",
         },
       ],
     },
@@ -592,17 +628,21 @@ Define "done" precisely for your research agent and write ten test topics. Run t
         "Widen autonomy gradually as success rates prove out; keep approvals for irreversible actions.",
       ],
       artifacts: [
-        lessonVideo(
-          "Reliability and Evaluation for Agents",
-          "Workflow explainer, 4 minutes. A dashboard of agent metrics; a test suite runs with pass/fail; a loop is caught by step count; fixes are applied and the success rate climbs.",
-          240,
-        ),
+        lessonVideo({
+          title: "Agent evaluation with ADK & Vertex AI | The Agent Factory Podcast",
+          channel: "Google Cloud Tech",
+          url: "https://www.youtube.com/watch?v=vTjlLiFgFno",
+          durationSeconds: 1238,
+          brief:
+            "Explains what to measure for agents (task success rate, tool selection and argument correctness, redundant-call loops, memory), offline golden test sets versus online drift monitoring, and code/LLM-judge/human graders, matching the lesson's metrics and test-suite approach.",
+        }),
         {
           key: "agent-metrics",
           kind: "IMAGE",
           title: "Agent reliability dashboard",
           brief:
             "Mock dashboard with five tiles: Task success 84%, Avg steps 5.2, Tool error rate 3%, Intervention rate 9%, Safety incidents 0. A small line chart showing success improving over weeks. Clean, neutral UI style.",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-agents-and-automation/reliability-and-evaluation/agent-metrics.webp",
         },
       ],
     },
@@ -652,17 +692,21 @@ Choose the oversight level for your research agent today and write the one-parag
         "Open standards and open models keep agents portable and inspectable.",
       ],
       artifacts: [
-        lessonVideo(
-          "Human Oversight and the Future of Agents",
-          "Reflective wrap-up, 4 minutes. Four oversight levels shown as a slider; a well-designed approval card is walked through; a brief look ahead at open standards. Closes the track and points to the capstone.",
-          240,
-        ),
+        lessonVideo({
+          title: "Why AI Agents Need A Human in the Loop Now",
+          channel: "IBM Technology",
+          url: "https://www.youtube.com/watch?v=cmEJ-5zYKHA",
+          durationSeconds: 447,
+          brief:
+            "Argues for deliberately designed human checkpoints, walks a human-in-the-loop architecture where people set intent, review plans and approve before execution, and frames controlled autonomy, matching the lesson's oversight levels and approval-moment design.",
+        }),
         {
           key: "oversight-levels",
           kind: "DIAGRAM",
           title: "Four levels of human oversight",
           brief:
             "Horizontal slider with four stops: Approve every action; Approve risky actions; Review after the fact; Set policy and monitor. Risk arrow above (high → low), autonomy arrow below (low → high).",
+          url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/ai-agents-and-automation/human-oversight-and-the-future/oversight-levels.webp",
         },
       ],
     },
