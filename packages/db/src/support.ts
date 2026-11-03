@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { agentJobs, agents } from "./agent-schema";
+import { agentRuns, projects, tickets } from "./build-schema";
 import { getDb } from "./client";
 import { DEVICE_ONLINE_WINDOW_MS } from "./devices";
 import { ideaMembers, ideas, type Idea } from "./schema";
@@ -239,7 +240,9 @@ export function remainingMicros(pledge: Pledge): number | null {
 
 export type ContributionInput = {
   pledgeId: string;
-  jobId: string;
+  /** The Agent Studio job, or the Build Studio run, the pledge made possible. Exactly one is set. */
+  jobId: string | null;
+  runId?: string | null;
   deviceId: string | null;
   estimatedCostMicros: number;
   inputTokens: number;
@@ -248,13 +251,16 @@ export type ContributionInput = {
 };
 
 /**
- * Credits a finished job to its pledge. Once per job: a second call for the
- * same job is ignored, so finishing twice never double counts.
+ * Credits a finished job or run to its pledge. Once per job or run: a second
+ * call for the same one is ignored, so finishing twice never double counts.
  */
 export async function recordContribution(input: ContributionInput): Promise<PledgeContribution | null> {
   const db = getDb();
   const pledge = await getPledge(input.pledgeId);
   if (!pledge) {
+    return null;
+  }
+  if (!input.jobId && !input.runId) {
     return null;
   }
   const [row] = await db
@@ -265,13 +271,14 @@ export async function recordContribution(input: ContributionInput): Promise<Pled
       clerkUserId: pledge.clerkUserId,
       kind: pledge.kind,
       jobId: input.jobId,
+      runId: input.runId ?? null,
       deviceId: input.deviceId,
       estimatedCostMicros: input.estimatedCostMicros,
       inputTokens: input.inputTokens,
       outputTokens: input.outputTokens,
       wallClockSeconds: input.wallClockSeconds,
     })
-    .onConflictDoNothing({ target: pledgeContributions.jobId })
+    .onConflictDoNothing()
     .returning();
   if (!row) {
     return null;
@@ -502,19 +509,25 @@ export async function listContributionsForSupporter(
       ideaName: ideas.name,
       agentName: agents.name,
       ticketTitle: agentJobs.ticketTitle,
+      projectName: projects.name,
+      runTicketTitle: tickets.title,
     })
     .from(pledgeContributions)
     .innerJoin(ideas, eq(ideas.id, pledgeContributions.ideaId))
     .leftJoin(agentJobs, eq(agentJobs.id, pledgeContributions.jobId))
     .leftJoin(agents, eq(agents.id, agentJobs.agentId))
+    .leftJoin(agentRuns, eq(agentRuns.id, pledgeContributions.runId))
+    .leftJoin(projects, eq(projects.id, agentRuns.projectId))
+    .leftJoin(tickets, eq(tickets.id, agentRuns.ticketId))
     .where(eq(pledgeContributions.clerkUserId, clerkUserId))
     .orderBy(desc(pledgeContributions.createdAt))
     .limit(limit);
   return rows.map((row) => ({
     ...row.contribution,
     ideaName: row.ideaName,
-    agentName: row.agentName,
-    ticketTitle: row.ticketTitle,
+    // A Build Studio run reads as "<project> · <ticket>" where an agent job reads "<agent> · <ticket>".
+    agentName: row.agentName ?? row.projectName,
+    ticketTitle: row.ticketTitle ?? row.runTicketTitle,
   }));
 }
 

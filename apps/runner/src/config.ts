@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
 import type { DeviceFacts } from "@westride/runner-protocol";
 
@@ -21,6 +22,13 @@ export type RunnerConfig = {
   workDir: string;
   /** Where Muse Code is installed. */
   binDir: string;
+  /**
+   * Advertise Ollama models to WeStride. Off by default: the Muse Code build
+   * the image ships cannot talk to Ollama (its `local` provider is Muse's own
+   * on-device runtime, macOS only, and it has no OpenAI-compatible provider),
+   * so offering those models would only produce failed jobs.
+   */
+  offerOllamaModels: boolean;
 };
 
 function env(name: string, fallback: string): string {
@@ -28,8 +36,35 @@ function env(name: string, fallback: string): string {
   return value && value.trim() ? value.trim() : fallback;
 }
 
+function isTruthy(value: string | undefined): boolean {
+  return /^(1|true|yes|on)$/i.test(value?.trim() ?? "");
+}
+
+/**
+ * Inside a container, "localhost" is the container itself. A developer who
+ * pairs against a WeStride dev server on their own machine means the host,
+ * which Docker exposes as host.docker.internal (the installer adds the
+ * host-gateway mapping).
+ */
+export function resolveBaseUrl(raw: string, inContainer = existsSync("/.dockerenv")): string {
+  const trimmed = raw.replace(/\/+$/, "");
+  if (!inContainer) {
+    return trimmed;
+  }
+  try {
+    const url = new URL(trimmed);
+    if (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]") {
+      url.hostname = "host.docker.internal";
+      return url.toString().replace(/\/+$/, "");
+    }
+  } catch {
+    // Not a URL we can parse; let the API client report it.
+  }
+  return trimmed;
+}
+
 export function loadConfig(): RunnerConfig {
-  const baseUrl = env("WESTRIDE_URL", "https://www.westride.org").replace(/\/+$/, "");
+  const baseUrl = resolveBaseUrl(env("WESTRIDE_URL", "https://www.westride.org"));
   return {
     baseUrl,
     stateDir: env("WESTRIDE_STATE_DIR", "/state"),
@@ -39,6 +74,7 @@ export function loadConfig(): RunnerConfig {
     metaApiKey: process.env.META_API_KEY?.trim() || null,
     workDir: env("WESTRIDE_WORK_DIR", "/work"),
     binDir: env("MUSE_INSTALL_DIR", "/opt/muse/bin"),
+    offerOllamaModels: isTruthy(process.env.WESTRIDE_OFFER_OLLAMA_MODELS),
   };
 }
 

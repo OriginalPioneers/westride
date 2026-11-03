@@ -55,3 +55,18 @@ export const museSource = pgEnum("muse_source", ["OWN", "WESTRIDE_CLOUD"]);
  * which bills their balance. Only WESTRIDE_CLOUD work is ever charged.
  */
 export const computeSource = pgEnum("compute_source", ["OWN", "WESTRIDE_CLOUD"]);
+
+/**
+ * Where the member asked a Build Studio run to execute. WESTRIDE_CLOUD is a
+ * sandbox on WeStride's Modal account billed to their balance; LOCAL is one
+ * of their own linked computers running the WeStride runner; SPONSORS is a
+ * supporter's linked computer pledged to the project's idea; THIRD_PARTY is
+ * the member's own Vercel or Modal account. `runner_kind` and
+ * `compute_source` say how it actually ran and who paid.
+ */
+export const computeTarget = pgEnum("compute_target", [
+  "WESTRIDE_CLOUD",
+  "LOCAL",
+  "SPONSORS",
+  "THIRD_PARTY",
+]);

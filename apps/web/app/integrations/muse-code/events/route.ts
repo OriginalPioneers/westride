@@ -1,14 +1,16 @@
 import { after, type NextRequest } from "next/server";
 import { z } from "zod";
 import { appendAgentRunEvents, getAgentRun, isRunActive } from "@westride/db/build-agents";
-import { isAgentRunnerConfigured } from "@/lib/build/agent/config";
+import { isBuildRunnerConfigured } from "@/lib/build/agent/config";
 import { completeAgentRun, readFinishedPayload } from "@/lib/build/agent/finish";
 import { runTokenMatches } from "@/lib/build/agent/token";
 
 /**
- * The sandbox runner posts its work log here, a batch at a time, with the
- * run's own bearer token. proxy.ts lets this path through its user-agent
- * filter; the token is the whole of the authentication.
+ * The runner (a sandbox, or a linked computer) posts its work log here, a
+ * batch at a time, with the run's own bearer token. proxy.ts lets this path
+ * through its user-agent filter; the token is the whole of the
+ * authentication. A linked computer ends its run through the runner result
+ * route instead of a `finished` event, so that path is ignored for it.
  */
 
 const EVENT_TYPES = ["setup", "muse", "git", "log", "finished"] as const;
@@ -35,7 +37,7 @@ function json(status: number, body: unknown) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAgentRunnerConfigured()) {
+  if (!isBuildRunnerConfigured()) {
     return json(503, { error: "Agent runs are not set up on this server." });
   }
   const authorization = request.headers.get("authorization") ?? "";
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
   );
 
   const finished = parsed.events.find((event) => event.type === "finished");
-  if (finished) {
+  if (finished && run.runnerKind !== "VOLUNTEER_DEVICE") {
     const payload = readFinishedPayload(finished.payload) ?? {
       exitCode: 1,
       error: "The runner's final report could not be read.",

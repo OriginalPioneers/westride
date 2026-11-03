@@ -2,6 +2,7 @@ import "server-only";
 
 import { isCloudComputeConfigured } from "@/lib/cloud/config";
 import { isGithubAppConfigured } from "@/lib/github/config";
+import { isModalConnectionConfigured } from "@/lib/modal/connection";
 import { isVercelConnectionConfigured } from "@/lib/vercel/connection";
 
 /**
@@ -26,6 +27,23 @@ function env(name: string): string {
   return process.env[name]?.trim() ?? "";
 }
 
+/**
+ * `BUILD_RUNNER_CALLBACK_URL` as an origin. Paths are dropped: the events
+ * path is appended by the code, so a value like
+ * `https://host/integrations/muse-code/events` would otherwise double it.
+ */
+function callbackOrigin(): string | null {
+  const raw = env("BUILD_RUNNER_CALLBACK_URL");
+  if (!/^https?:\/\//.test(raw)) {
+    return null;
+  }
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return null;
+  }
+}
+
 const DEFAULT_TIMEOUT_MINUTES = 45;
 const MAX_TIMEOUT_MINUTES = 5 * 60;
 const DEFAULT_VCPUS = 2;
@@ -35,11 +53,11 @@ export function getAgentRunnerConfig(): AgentRunnerConfig | null {
   if (!isGithubAppConfigured()) {
     return null;
   }
-  if (!isVercelConnectionConfigured() && !isCloudComputeConfigured()) {
+  if (!isVercelConnectionConfigured() && !isModalConnectionConfigured() && !isCloudComputeConfigured()) {
     return null;
   }
-  const callbackBaseUrl = env("BUILD_RUNNER_CALLBACK_URL").replace(/\/+$/, "");
-  if (!/^https?:\/\//.test(callbackBaseUrl)) {
+  const callbackBaseUrl = callbackOrigin();
+  if (!callbackBaseUrl) {
     return null;
   }
   const minutes = Number(env("BUILD_RUNNER_SANDBOX_TIMEOUT_MINUTES")) || DEFAULT_TIMEOUT_MINUTES;
@@ -71,8 +89,8 @@ export function getVolunteerRunnerConfig(): VolunteerRunnerConfig | null {
   if (!isGithubAppConfigured()) {
     return null;
   }
-  const callbackBaseUrl = env("BUILD_RUNNER_CALLBACK_URL").replace(/\/+$/, "");
-  if (!/^https?:\/\//.test(callbackBaseUrl)) {
+  const callbackBaseUrl = callbackOrigin();
+  if (!callbackBaseUrl) {
     return null;
   }
   const minutes = Number(env("BUILD_RUNNER_SANDBOX_TIMEOUT_MINUTES")) || DEFAULT_TIMEOUT_MINUTES;
@@ -84,6 +102,15 @@ export function getVolunteerRunnerConfig(): VolunteerRunnerConfig | null {
 
 export function isVolunteerRunnerConfigured(): boolean {
   return getVolunteerRunnerConfig() !== null;
+}
+
+/**
+ * Whether a Build Studio ticket can be handed to Muse Code by any route: a
+ * sandbox (the member's Vercel or Modal account, or WeStride Cloud) or a
+ * linked computer running the WeStride runner. Gates the Run button.
+ */
+export function isBuildRunnerConfigured(): boolean {
+  return isAgentRunnerConfigured() || isVolunteerRunnerConfigured();
 }
 
 /** The path the sandbox posts its work log to. Listed in proxy.ts. */

@@ -3,10 +3,15 @@
 import { getTicketById } from "@westride/db/build";
 import { getAgentRun, listAgentRunEvents } from "@westride/db/build-agents";
 import { failure, isFailure, requireProjectMember, revalidateProject, type Failure } from "@/lib/build/access";
-import { isAgentRunnerConfigured } from "@/lib/build/agent/config";
+import { isBuildRunnerConfigured } from "@/lib/build/agent/config";
 import { cancelAgentRun, reconcileStaleRun } from "@/lib/build/agent/finish";
 import { toRunSnapshot, type RunSnapshot } from "@/lib/build/agent/snapshot";
-import { AgentStartError, FIRST_EVENT_SEQUENCE, startAgentRun } from "@/lib/build/agent/start";
+import {
+  AgentStartError,
+  FIRST_EVENT_SEQUENCE,
+  startAgentRun,
+  type AgentConnection,
+} from "@/lib/build/agent/start";
 import { fieldErrorsFrom, startRunSchema, uuidSchema } from "@/lib/build/schema";
 import { isMuseModelId } from "@/lib/idea-factory/pricing";
 
@@ -15,7 +20,10 @@ import { isMuseModelId } from "@/lib/idea-factory/pricing";
 
 export type StartRunResult =
   | { status: "ok"; runId: string }
-  | (Failure & { needsConnection?: boolean; needsGithub?: boolean; needsCompute?: boolean });
+  | (Failure & {
+      /** What the member has to connect, fund, or link before this can start. */
+      needs?: AgentConnection | null;
+    });
 
 export async function startRunAction(
   projectId: string,
@@ -29,9 +37,12 @@ export async function startRunAction(
   if (!isMuseModelId(parsed.data.model)) {
     return failure("Choose a supported Muse model.", { model: "Choose a supported Muse model." });
   }
-  if (!isAgentRunnerConfigured()) {
+  if (!isBuildRunnerConfigured()) {
     return failure("Muse Code agents are not set up on this WeStride server.");
   }
+  const deviceTarget = parsed.data.computeTarget === "LOCAL" || parsed.data.computeTarget === "SPONSORS";
+  // A local model only means something on a linked computer.
+  const localModel = deviceTarget ? parsed.data.localModel : null;
   const context = await requireProjectMember(projectId);
   if (isFailure(context)) {
     return context;
@@ -67,17 +78,14 @@ export async function startRunAction(
       model: parsed.data.model,
       maxSteps: parsed.data.maxSteps,
       instructions: parsed.data.instructions,
+      computeTarget: parsed.data.computeTarget,
+      localModel,
     });
     revalidateProject(projectId);
     return { status: "ok", runId };
   } catch (error) {
     if (error instanceof AgentStartError) {
-      return {
-        ...failure(error.message),
-        needsConnection: error.needsConnection === "meta",
-        needsGithub: error.needsConnection === "github",
-        needsCompute: error.needsConnection === "compute",
-      };
+      return { ...failure(error.message), needs: error.needsConnection };
     }
     console.error("Agent run start failed", error);
     return failure("The agent could not be started. Try again.");

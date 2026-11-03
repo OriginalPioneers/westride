@@ -10,6 +10,7 @@ import {
   type AgentRun,
   type AgentRunEvent,
   type AgentRunStatus,
+  type ComputeTarget,
   type TicketComment,
 } from "./build-schema";
 import { getDb } from "./client";
@@ -87,6 +88,11 @@ export type NewAgentRunInput = {
   runnerKind?: RunnerKind;
   computeSource?: ComputeSource;
   museSource?: MuseKeySource;
+  computeTarget?: ComputeTarget;
+  /** Device runs keep the brief so the computer can fetch it when it leases the run. */
+  prompt?: string | null;
+  localModel?: string | null;
+  pledgeId?: string | null;
 };
 
 export async function createAgentRun(input: NewAgentRunInput): Promise<AgentRun> {
@@ -170,6 +176,10 @@ export type AgentRunPatch = Partial<
     | "error"
     | "startedAt"
     | "finishedAt"
+    | "callbackTokenHash"
+    | "deviceId"
+    | "leaseExpiresAt"
+    | "pledgeId"
   > &
     AgentRunUsagePatch
 >;

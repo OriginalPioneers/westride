@@ -25,6 +25,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { agentJobs } from "./agent-schema";
+import { agentRuns } from "./build-schema";
 import { ideas } from "./schema";
 
 /**
@@ -98,6 +99,8 @@ export const pledgeContributions = pgTable(
     clerkUserId: text("clerk_user_id").notNull(),
     kind: pledgeKind("kind").notNull(),
     jobId: uuid("job_id").references(() => agentJobs.id, { onDelete: "set null" }),
+    /** A Build Studio run a sponsor's computer took, when the work was a ticket run rather than an agent job. */
+    runId: uuid("run_id").references(() => agentRuns.id, { onDelete: "set null" }),
     deviceId: uuid("device_id").references(() => devices.id, { onDelete: "set null" }),
     estimatedCostMicros: bigint("estimated_cost_micros", { mode: "number" }).notNull().default(0),
     inputTokens: integer("input_tokens").notNull().default(0),
@@ -110,6 +113,7 @@ export const pledgeContributions = pgTable(
   },
   (table) => [
     uniqueIndex("pledge_contributions_job_unique").on(table.jobId),
+    uniqueIndex("pledge_contributions_run_unique").on(table.runId),
     index("pledge_contributions_idea_idx").on(table.ideaId, table.createdAt),
     index("pledge_contributions_pledge_idx").on(table.pledgeId, table.createdAt),
     index("pledge_contributions_user_idx").on(table.clerkUserId),
@@ -187,6 +191,7 @@ export const pledgeContributionsRelations = relations(pledgeContributions, ({ on
   pledge: one(pledges, { fields: [pledgeContributions.pledgeId], references: [pledges.id] }),
   idea: one(ideas, { fields: [pledgeContributions.ideaId], references: [ideas.id] }),
   job: one(agentJobs, { fields: [pledgeContributions.jobId], references: [agentJobs.id] }),
+  run: one(agentRuns, { fields: [pledgeContributions.runId], references: [agentRuns.id] }),
   device: one(devices, { fields: [pledgeContributions.deviceId], references: [devices.id] }),
 }));
 

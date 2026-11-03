@@ -21,9 +21,9 @@ import { createRunToken } from "@/lib/build/agent/token";
 import { settleMuseRequest } from "@/lib/cloud/billing";
 import { resolveMuseAccess, resolveSandboxAccess, type MuseAccess } from "@/lib/cloud/provider";
 import { isSandboxCredentialError, launchSandbox } from "@/lib/cloud/sandbox";
-import { installationToken, publicReadToken, repoInstallationId } from "@/lib/github/app";
+import { agentTokenFailureMessage, installationToken, publicReadToken, repoInstallationId } from "@/lib/github/app";
 import { requireGithubAppConfig } from "@/lib/github/config";
-import { githubJson, isGithubStatus } from "@/lib/github/http";
+import { githubJson, isGithubStatus, type GithubApiError } from "@/lib/github/http";
 import { getGithubUserToken } from "@/lib/github/user";
 import { callMuse } from "@/lib/idea-factory/muse";
 import { getMuseModel } from "@/lib/idea-factory/pricing";
@@ -218,7 +218,7 @@ async function startCodeJob(
     });
   } catch (error) {
     if (isGithubStatus(error, 404, 422)) {
-      throw new AgentJobError("Install the WeStride GitHub App on this repository first.", "github");
+      throw new AgentJobError(agentTokenFailureMessage((error as GithubApiError).status), "github");
     }
     throw error;
   }

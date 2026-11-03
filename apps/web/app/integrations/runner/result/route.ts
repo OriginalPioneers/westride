@@ -1,6 +1,7 @@
 import { after, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getAgentJob, isJobActive } from "@westride/db/agents";
+import { getAgentRun, isRunActive } from "@westride/db/build-agents";
 import {
   MAX_FILE_BYTES,
   MAX_RESULT_BYTES,
@@ -9,12 +10,14 @@ import {
   type ResultResponse,
 } from "@westride/runner-protocol";
 import { completeVolunteerJob } from "@/lib/agents/finish";
+import { completeDeviceRun } from "@/lib/build/agent/finish";
 import { authenticateDevice, json } from "@/lib/runner/auth";
 
 /**
  * The device's final report: how Muse Code ended and every file it changed.
  * The files are committed by WeStride, never pushed by the device, so the
- * device never needs write access to the repository.
+ * device never needs write access to the repository. The id names an Agent
+ * Studio job or a Build Studio ticket run; both close the same way.
  */
 
 export const maxDuration = 60;
@@ -92,18 +95,36 @@ export async function POST(request: NextRequest) {
   }
 
   const job = await getAgentJob(parsed.jobId);
-  if (!job || job.deviceId !== device.id || job.runnerKind !== "VOLUNTEER_DEVICE") {
-    return json(404, { error: "Unknown job." });
-  }
-  if (!isJobActive(job.status)) {
-    return json(410, { error: "This job is closed." });
+  if (job) {
+    if (job.deviceId !== device.id || job.runnerKind !== "VOLUNTEER_DEVICE") {
+      return json(404, { error: "Unknown job." });
+    }
+    if (!isJobActive(job.status)) {
+      return json(410, { error: "This job is closed." });
+    }
+    after(async () => {
+      try {
+        await completeVolunteerJob(job, parsed);
+      } catch (error) {
+        console.error("Completing a volunteer job failed", job.id, error);
+      }
+    });
+    const body: ResultResponse = { ok: true, prUrl: null };
+    return json(200, body);
   }
 
+  const run = await getAgentRun(parsed.jobId);
+  if (!run || run.deviceId !== device.id || run.runnerKind !== "VOLUNTEER_DEVICE") {
+    return json(404, { error: "Unknown job." });
+  }
+  if (!isRunActive(run.status)) {
+    return json(410, { error: "This run is closed." });
+  }
   after(async () => {
     try {
-      await completeVolunteerJob(job, parsed);
+      await completeDeviceRun(run, parsed);
     } catch (error) {
-      console.error("Completing a volunteer job failed", job.id, error);
+      console.error("Completing a device run failed", run.id, error);
     }
   });
   const body: ResultResponse = { ok: true, prUrl: null };

@@ -26,8 +26,24 @@ type InstallationToken = { token: string; expires_at: string };
 
 type TokenRequest = {
   repository_ids?: number[];
+  /** Repository names (without the owner) within the installation, as an alternative to ids. */
+  repositories?: string[];
   permissions?: Record<string, "read" | "write">;
 };
+
+/**
+ * What members see when a token request for an agent run fails. GitHub answers
+ * 404 when the app is not installed on the repository and 422 when the
+ * installation lacks a permission the token asks for (agents need Pull
+ * requests: read & write, which the app's settings on GitHub must grant and
+ * each installation must then accept).
+ */
+export function agentTokenFailureMessage(status: number): string {
+  if (status === 422) {
+    return "The WeStride GitHub App is missing a permission agents need (Pull requests: read & write). Grant it in the app's settings on GitHub, then accept the new permissions for this account.";
+  }
+  return "Install the WeStride GitHub App on this repository first.";
+}
 
 const REFRESH_MARGIN_MS = 5 * 60 * 1000;
 const tokenCache = new Map<string, { token: string; expiresAt: number }>();

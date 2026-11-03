@@ -92,6 +92,31 @@ export async function resolveMuseAccess(clerkUserId: string): Promise<MuseAccess
 }
 
 /**
+ * Muse access with the source the member's compute choice implies, rather
+ * than their standing preference: a WeStride Cloud run prefers WeStride's
+ * key against their balance, a run on their own accounts prefers their own
+ * key. Either falls back to the other route when the preferred one cannot.
+ */
+export async function resolveMuseAccessFor(
+  clerkUserId: string,
+  prefer: MuseKeySource,
+): Promise<MuseAccessResult> {
+  const cloudKey = getCloudMetaApiKey();
+  const ownKey = await getMuseApiKey(clerkUserId);
+  const own: MuseAccess | null = ownKey ? { apiKey: ownKey, source: "OWN", clerkUserId } : null;
+  if (!cloudKey) {
+    return own ? { ok: true, access: own } : aiRefusal(false, null);
+  }
+  const balance = await getCloudBalanceMicros(clerkUserId);
+  const cloud: MuseAccess | null =
+    balance >= MIN_BALANCE_FOR_AI_MICROS ? { apiKey: cloudKey, source: "WESTRIDE_CLOUD", clerkUserId } : null;
+  const first = prefer === "WESTRIDE_CLOUD" ? cloud : own;
+  const second = prefer === "WESTRIDE_CLOUD" ? own : cloud;
+  const access = first ?? second;
+  return access ? { ok: true, access } : aiRefusal(true, balance);
+}
+
+/**
  * Whether Muse can run for this member right now, by any route. Cheaper
  * than resolving: it never re-mints a Meta key.
  */
@@ -223,6 +248,44 @@ export async function resolveSandboxAccess(clerkUserId: string): Promise<Sandbox
     return { ok: true, access: own };
   }
   return computeRefusal(true, balance);
+}
+
+/**
+ * The sandbox for a target the member chose explicitly, rather than the
+ * preference order above: WESTRIDE_CLOUD needs a funded balance and a server
+ * that offers compute; THIRD_PARTY needs their own Vercel or Modal account.
+ */
+export async function resolveSandboxAccessFor(
+  clerkUserId: string,
+  target: "WESTRIDE_CLOUD" | "THIRD_PARTY",
+): Promise<SandboxAccessResult> {
+  if (target === "WESTRIDE_CLOUD") {
+    if (!isCloudComputeConfigured()) {
+      return {
+        ok: false,
+        needs: "compute",
+        message: "WeStride Cloud compute is not offered on this server. Choose another place to run.",
+      };
+    }
+    const balance = await getCloudBalanceMicros(clerkUserId);
+    if (balance < MIN_BALANCE_FOR_COMPUTE_MICROS) {
+      return {
+        ok: false,
+        needs: "compute",
+        message: "Your WeStride Cloud balance is too low to start a sandbox. Add funds, or choose another place to run.",
+      };
+    }
+    return { ok: true, access: cloudSandboxAccess(clerkUserId) };
+  }
+  const own = await resolveOwnSandboxAccess(clerkUserId);
+  if (!own) {
+    return {
+      ok: false,
+      needs: "compute",
+      message: `${COMPUTE_SETTINGS_HINT} to run the sandbox on your own plan, or choose another place to run.`,
+    };
+  }
+  return { ok: true, access: own };
 }
 
 /**

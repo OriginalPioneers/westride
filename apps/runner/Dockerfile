@@ -32,7 +32,10 @@ RUN useradd --create-home --uid 10001 runner \
  && chown -R runner:runner /work /state /app
 USER runner
 
+# MUSE_NO_AUTO_UPDATE: the launcher must not try to update (or write its
+# update-check stamp into root-owned /opt/muse/bin) at job time.
 ENV PATH="/opt/muse/bin:${PATH}" \
+    MUSE_NO_AUTO_UPDATE=1 \
     WESTRIDE_STATE_DIR=/state \
     WESTRIDE_WORK_DIR=/work \
     OLLAMA_URL=http://host.docker.internal:11434 \

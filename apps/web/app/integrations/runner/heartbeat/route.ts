@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { getAgentJob } from "@westride/db/agents";
-import { extendJobLease, recordHeartbeat } from "@westride/db/devices";
+import { getAgentRun } from "@westride/db/build-agents";
+import { extendJobLease, extendRunLease, recordHeartbeat } from "@westride/db/devices";
 import type { HeartbeatResponse } from "@westride/runner-protocol";
 import { authenticateDevice, json } from "@/lib/runner/auth";
 
@@ -38,9 +39,16 @@ export async function POST(request: NextRequest) {
 
   let dropJob = false;
   if (currentJobId) {
+    // The id is an Agent Studio job or a Build Studio run; the runner does not know which.
     const job = await getAgentJob(currentJobId);
-    const stillOurs = job && job.deviceId === device.id && job.status === "RUNNING";
-    dropJob = !stillOurs || !(await extendJobLease(currentJobId, device.id));
+    if (job) {
+      const stillOurs = job.deviceId === device.id && job.status === "RUNNING";
+      dropJob = !stillOurs || !(await extendJobLease(currentJobId, device.id));
+    } else {
+      const run = await getAgentRun(currentJobId);
+      const stillOurs = run !== null && run.deviceId === device.id && run.status === "RUNNING";
+      dropJob = !stillOurs || !(await extendRunLease(currentJobId, device.id));
+    }
   }
   const body: HeartbeatResponse = { ok: true, dropJob };
   return json(200, body);

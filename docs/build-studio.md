@@ -12,6 +12,7 @@ Apply the migrations with the normal workflow (`bun run db:migrate` from `packag
 - `0014_build_studio_agents.sql`: `ticket_comments`, `agent_runs`, `agent_run_events`; makes `muse_requests.idea_id` nullable and adds `muse_requests.project_id` so planning requests are logged against a project.
 - `0020_vercel_connections.sql`: `vercel_connections`, the member's Vercel account that hosts their sandboxes.
 - `0026_modal_connections.sql`: `modal_connections`, the member's own Modal account as the other sandbox host, and `compute_source` on runs and jobs. See `docs/westride-cloud.md`.
+- `0029_build_compute_targets.sql`: the `compute_target` enum and, on `agent_runs`, `compute_target`, `device_id`, `lease_expires_at`, `prompt`, `local_model`, `pledge_id`, so a ticket run can go to a linked computer; `pledge_contributions.run_id` so a sponsor's computer is credited for it. Existing WeStride Cloud runs are backfilled to `WESTRIDE_CLOUD`; everything else reads `THIRD_PARTY`.
 
 What each feature needs:
 
@@ -20,7 +21,26 @@ What each feature needs:
 | Projects, tickets, board, comments | Nothing beyond the database. |
 | Private repositories, GitHub activity for private repos | The member's GitHub connection (Settings), as for ideas. |
 | Plan with Muse | The member's Meta account connected in Settings (`META_TOKEN_ENCRYPTION_KEY` on the server). WeStride never calls Muse with its own key for member work. |
-| Run with Muse Code | On the server: the GitHub App (`GITHUB_APP_*`), `BUILD_RUNNER_CALLBACK_URL`, and at least one sandbox host: `VERCEL_TOKEN_ENCRYPTION_KEY` (members' Vercel accounts), `MODAL_TOKEN_ENCRYPTION_KEY` (members' Modal accounts), or WeStride Cloud compute. For the member: a Meta account, GitHub, and a Vercel or Modal account connected in Settings, or a WeStride Cloud balance. See below. |
+| Run with Muse Code | On the server: the GitHub App (`GITHUB_APP_*`) and `BUILD_RUNNER_CALLBACK_URL`, plus at least one place to run: a sandbox host (`VERCEL_TOKEN_ENCRYPTION_KEY`, `MODAL_TOKEN_ENCRYPTION_KEY`, or WeStride Cloud compute) or linked computers running the supporter runner (`apps/runner/README.md`). For the member: GitHub connected, and whatever the chosen compute target needs (below). |
+
+### Where a run can go
+
+The run dialog asks where the compute runs. The choice is stored on the run as `compute_target` and shown in the work log and on the Agent runs page. Shared constants live in `apps/web/lib/build/compute-target.ts`; `apps/web/lib/build/compute-availability.ts` works out, per member and project, which targets are ready right now and why the others are not, and the dialog disables those with the reason.
+
+| Target | Where | Model | Needs |
+| --- | --- | --- | --- |
+| **WeStride Cloud** | A Modal sandbox on WeStride's account | WeStride's Meta key | A WeStride Cloud balance of at least `MIN_BALANCE_FOR_COMPUTE_MICROS` ($0.50). Charged per `docs/westride-cloud.md`. |
+| **Local** | The member's own computer, running the supporter runner in Docker | Muse models through the `META_API_KEY` set on that runner (Ollama models only when the runner opts in with `WESTRIDE_OFFER_OLLAMA_MODELS=1`; the bundled Muse Code cannot use them yet, see `apps/runner/README.md`) | A computer linked from Supporting and online. Nothing is charged by WeStride. |
+| **Sponsors** | A supporter's computer with an active compute pledge to the project's idea | The supporter's Ollama models or Meta key | The project linked to an idea, a sponsor's computer online, and a **public** repository. The run is credited to the pledge. |
+| **3rd party** | A Vercel or Modal sandbox on the member's own account | The member's Meta key | Vercel or Modal and Meta connected in Settings. |
+
+The default is WeStride Cloud when the member's cloud preference says so and the balance allows, otherwise the first ready target in the order 3rd party, WeStride Cloud, Local, Sponsors.
+
+Local and Sponsors runs do not use a sandbox. `startAgentRun` queues the run with `runner_kind = VOLUNTEER_DEVICE` and the eligible computer leases it through the same protocol Agent Studio jobs use (`apps/web/lib/runner/lease.ts`, `packages/runner-protocol`): the runner long-polls `/integrations/runner/lease`, `leaseForDevice` tries an Agent Studio job first and then `leaseBuildRun`, which hands over the clone URL, base branch, prompt, model, and a run token minted at lease time; the runner posts its work log to `/integrations/muse-code/events` and the changed files to `/integrations/runner/result`, and WeStride commits them to the branch (`completeDeviceRun`) and opens the pull request. Heartbeats extend `lease_expires_at`; `reconcileStaleRun` fails a run no computer picked up within `VOLUNTEER_QUEUE_TIMEOUT_MS`, or whose lease expired. Local runs go only to computers owned by the member who started the run; Sponsors runs only to computers of supporters with an active COMPUTE pledge to the idea.
+
+Runners post their work log to the WeStride they are paired with, keeping only the path from `eventsUrl`, so a development server works without a tunnel for Local runs; sandboxes still need `BUILD_RUNNER_CALLBACK_URL` to be a publicly reachable origin (no path; a path is dropped).
+
+Credentials never leave WeStride for a sponsor's computer: the repository must be public and is cloned anonymously. For a **Local** run on a private repository, the member's own computer receives a short-lived installation token limited to that one repository with `contents: read` and `metadata: read`, embedded in the clone URL; pushing and the pull request are still done by WeStride.
 
 ### Agent runner environment
 
@@ -54,7 +74,7 @@ All build tables live in `packages/db/src/build-schema.ts`. Queries: `packages/d
 - `project_milestones`: roadmap entries with status PLANNED, ACTIVE, COMPLETED and optional `target_date` (`YYYY-MM-DD`).
 - `tickets`: per-project `number`, title, description (Markdown), `status`, `priority`, `sort_order`, optional milestone, repository, assignee, `blocked_reason`, `source` (MEMBER or MUSE), `muse_request_id`, creator, `completed_at`.
 - `ticket_comments`: ticket, optional `author_clerk_user_id` (null for comments an agent run leaves), optional `agent_run_id`, Markdown body.
-- `agent_runs`: project, ticket, repository, who started it, `status` (QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED), sandbox name, branch and base branch, model, `max_steps`, `callback_token_hash` (SHA-256 of the per-run bearer token; the token itself is never stored), Muse session id, exit code, head SHA, pull request number and URL, summary, error, event count, and timestamps.
+- `agent_runs`: project, ticket, repository, who started it, `status` (QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED), `compute_target` (WESTRIDE_CLOUD, LOCAL, SPONSORS, THIRD_PARTY), sandbox name, branch and base branch, model, `max_steps`, `callback_token_hash` (SHA-256 of the per-run bearer token; the token itself is never stored), Muse session id, exit code, head SHA, pull request number and URL, summary, error, event count, and timestamps. Runs on a linked computer also carry `device_id`, `lease_expires_at`, the `prompt` (handed over at lease time), `local_model` (the Ollama tag, when not a Muse model), and `pledge_id` for Sponsors runs.
 - `agent_run_events`: run, `sequence` (unique per run, so a retried delivery never duplicates a line), `type` (`setup`, `muse`, `git`, `log`, `finished`), JSON payload.
 
 Ticket statuses are `BACKLOG`, `IN_PROGRESS`, `IN_REVIEW`, `BLOCKED`, `DONE`; the UI labels `BLOCKED` as "Roadblocked". `ticketStatusChange` enforces that BLOCKED needs a reason, clears it on leaving, and stamps or clears `completed_at`. Ticket keys are derived: `ticketKey(projectName, number)` uses the project's initials ("Grow Together" → `GT-1`).
@@ -92,7 +112,7 @@ Every call uses the member's own key (`getMuseApiKey`) and is logged to `muse_re
 
 Code in `apps/web/lib/build/agent/`:
 
-- `config.ts`: environment and `isAgentRunnerConfigured()`.
+- `config.ts`: environment, `isAgentRunnerConfigured()` (sandboxes), `isVolunteerRunnerConfigured()` (linked computers), and `isBuildRunnerConfigured()` (either).
 - `token.ts`: per-run bearer token (random, stored hashed, compared in constant time).
 - `prompt.ts`: the brief (`buildAgentPrompt`) and branch name (`agentBranchName`).
 - `runner-script.ts`: the Node script that runs inside the sandbox.
@@ -102,9 +122,9 @@ Code in `apps/web/lib/build/agent/`:
 
 What happens on **Run with Muse Code**:
 
-1. `startRunAction` (`run-actions.ts`) checks the member may edit the project, that the ticket is not done, and picks the repository (chosen → ticket's → primary).
-2. `startAgentRun` requires the member's Meta key, their Vercel sandbox credentials, and a GitHub connection with push rights to the repository (the same rule as committing from WeStride), allows one active run per ticket and `BUILD_RUNNER_MAX_ACTIVE_RUNS` per project, and mints an installation token scoped to that one repository with `contents: write`, `pull_requests: write`, `metadata: read`.
-3. It records the run, then creates a non-persistent sandbox **on the member's Vercel team and project** that clones the repository at its default branch (`x-access-token` + the installation token), writes the runner and the prompt under `/tmp/westride/`, and starts the runner detached. The ticket moves to IN_PROGRESS and gets a comment.
+1. `startRunAction` (`run-actions.ts`) checks the member may edit the project, that the ticket is not done, and picks the repository (chosen → ticket's → primary). It passes the chosen `computeTarget` and, for Local and Sponsors, the `localModel`.
+2. `startAgentRun` resolves the placement for the target (`resolveSandboxAccessFor` and `resolveMuseAccessFor` for the sandbox targets; an online eligible computer for the device targets), requires a GitHub connection with push rights to the repository (the same rule as committing from WeStride), allows one active run per ticket and `BUILD_RUNNER_MAX_ACTIVE_RUNS` per project, and for sandbox targets mints an installation token scoped to that one repository with `contents: write`, `pull_requests: write`, `metadata: read`. A refusal is an `AgentStartError` whose `needsConnection` (`meta`, `github`, `compute`, `cloud`, `device`) picks the banner the dialog shows.
+3. For a sandbox target it records the run, then creates a non-persistent sandbox (on the member's Vercel team and project, their Modal workspace, or WeStride's Modal account) that clones the repository at its default branch (`x-access-token` + the installation token), writes the runner and the prompt under `/tmp/westride/`, and starts the runner detached. For a device target it records the run as QUEUED with `runner_kind = VOLUNTEER_DEVICE` and waits for the computer to lease it (see "Where a run can go"). Either way the ticket moves to IN_PROGRESS and gets a comment.
 4. The runner installs Muse Code (`curl -fsSL https://dev.meta.ai/install.sh | sh` into `/tmp/westride/bin`), creates the branch, and runs `muse exec --json --yolo --no-session-log --max-model-steps <n> --model <model> --contributor-mode <on|off> --prompt-file …` with `META_API_KEY` set. `--yolo` is appropriate because the sandbox is a disposable microVM that holds nothing but this checkout. Every JSONL line is forwarded as a `muse` event; non-JSON output and stderr become `log` events; events are batched and posted with retries to `POST /integrations/muse-code/events` with the run token.
 5. After Muse exits, the runner commits anything left in the working tree, and if the branch is ahead of the base, pushes it with the installation token. It then sends a `finished` event with the exit code, head SHA, whether it pushed, the Muse session id, and the agent's final message.
 6. The events route verifies the token, appends the batch (idempotent on `sequence`), and on `finished` runs `completeAgentRun` after the response: opens the pull request as the WeStride app (title `<key>: <ticket title>`, body = the agent's report), marks the run SUCCEEDED or FAILED, posts a comment with the report, moves the ticket to IN_REVIEW (pull request opened), back to BACKLOG (finished with no changes), or to BLOCKED with the error, and stops the sandbox.
@@ -114,6 +134,7 @@ Other behaviour:
 - **Stop** on the ticket page cancels: the run is marked CANCELLED, the ticket returns to BACKLOG if it was IN_PROGRESS, and the sandbox is stopped. The route then answers the runner with `410`, and the runner stops posting.
 - Stopping uses the Vercel credentials of the member who started the run (`agent_runs.started_by_clerk_user_id`; `agent_jobs.paid_by_clerk_user_id` for Agent Studio). If they have disconnected Vercel since, the stop is skipped with a warning and the sandbox ends at its timeout.
 - A sandbox that hits Vercel's timeout never reports back. `reconcileStaleRun` closes any run still active more than five minutes past the timeout as FAILED; it runs whenever a run is read.
+- Runs on a linked computer finish through `/integrations/runner/result` rather than a `finished` event: `completeDeviceRun` commits the returned files to the branch as WeStride, then `completeAgentRun` opens the pull request and, for Sponsors runs, records a `pledge_contributions` row against the pledge. Stop clears the computer's current job so it can take the next one; the runner learns of the cancel on its next heartbeat (`410`).
 - `proxy.ts` lists `/integrations/muse-code/events` with the other signed webhooks so the user-agent filter lets the runner through; the bearer token is the whole authentication.
 - The work log view polls `readRunAction` every three seconds while a run is active and refreshes the page when it ends.
 

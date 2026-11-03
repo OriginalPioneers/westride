@@ -19,6 +19,7 @@ const config = loadConfig();
 const tokenFile = join(config.stateDir, "device-token");
 const api = new WeStrideApi(config.baseUrl, null, (baseUrl) => {
   log(`WeStride redirected to ${baseUrl}; using that from now on.`);
+  config.baseUrl = baseUrl;
 });
 
 const shutdown = new AbortController();
@@ -56,8 +57,13 @@ async function ensurePaired(): Promise<void> {
   log(`Paired. Device ${paired.deviceId}.`);
 }
 
+/** Ollama models WeStride may offer for this computer; none unless opted in (see RunnerConfig). */
+async function offeredModels(): Promise<string[]> {
+  return config.offerOllamaModels ? listOllamaModels(config.ollamaUrl) : [];
+}
+
 async function heartbeat(): Promise<void> {
-  const models = await listOllamaModels(config.ollamaUrl);
+  const models = await offeredModels();
   const response = await api.heartbeat({
     ...deviceFacts(),
     models,
@@ -146,13 +152,25 @@ async function main(): Promise<void> {
   log(`WeStride runner ${RUNNER_VERSION} → ${config.baseUrl}`);
   await mkdir(config.workDir, { recursive: true });
   await ensurePaired();
-  const models = await listOllamaModels(config.ollamaUrl);
+  const ollama = await listOllamaModels(config.ollamaUrl);
+  if (!config.offerOllamaModels) {
+    log(
+      ollama.length > 0
+        ? `Ollama has ${ollama.length} model(s), but this Muse Code build cannot use Ollama, so they are not offered. Set WESTRIDE_OFFER_OLLAMA_MODELS=1 to offer them anyway.`
+        : `Ollama not reachable at ${config.ollamaUrl}.`,
+    );
+  } else {
+    log(
+      ollama.length > 0
+        ? `Ollama offers ${ollama.length} model(s): ${ollama.slice(0, 6).join(", ")}${ollama.length > 6 ? "…" : ""}`
+        : `Ollama not reachable at ${config.ollamaUrl}.`,
+    );
+  }
   log(
-    models.length > 0
-      ? `Ollama offers ${models.length} model(s): ${models.slice(0, 6).join(", ")}${models.length > 6 ? "…" : ""}`
-      : `Ollama not reachable at ${config.ollamaUrl}; only Meta-key jobs can run.`,
+    config.metaApiKey
+      ? "A Meta key is set on this runner."
+      : "No Meta key on this runner; jobs need one. Restart with META_API_KEY set, or rerun the installer.",
   );
-  log(config.metaApiKey ? "A Meta key is set on this runner." : "No Meta key on this runner.");
   startHeartbeats();
   await workLoop();
   log("Runner stopped.");
