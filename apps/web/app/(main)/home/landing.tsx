@@ -723,22 +723,27 @@ const HERO_SECTIONS: HeroSection[] = [
     where: IDEA_STUDIO.where,
     title: (
       <>
-        Explore ideas with<br/>
+        Have an idea?
+        <br />
         <Text type="inherit" display="inline" className="wl-gradient-text">
-          Meta AI advisors.
+          Let&apos;s explore what&apos;s possible.
         </Text>
       </>
     ),
     description:
-      "Bring your ideas to life with WeStride. Collaborate with AI-powered advisors to brainstorm, research, and refine your vision. Build real projects in GitHub with AI coding agents, create your own AI agents, and connect with a community of learners, creators, and builders.",
+      "From your first spark of inspiration to a researched concept, Idea Workshop helps you move forward with confidence. Explore possibilities with specialized Meta AI advisors, evaluate opportunities, challenge assumptions, and shape your next big idea.",
     ctas: [
       {
         label: "Workshop an Idea",
         href: IDEA_STUDIO.href,
         icon: IDEA_STUDIO.icon,
       },
+      {
+        label: "Explore Ideas",
+        href: "/ideas",
+      },
     ],
-    links: [{ label: "Explore WeStride", href: "/#wl-studios" }],
+    links: [],
     screenshot: {
       src: "/hero/idea.webp",
       alt: "Idea Workshop in WeStride: a grid of your ideas with their pictures, kinds, and a card to start a new one.",
@@ -958,7 +963,7 @@ function HeroPanel({
         <HStack gap={3} wrap="wrap">
           {section.ctas.map((cta, index) => (
             <Button
-              key={cta.href}
+              key={cta.label}
               className="wl-hero-cta"
               label={cta.label}
               variant={index === 0 ? "primary" : "secondary"}
@@ -972,22 +977,24 @@ function HeroPanel({
             />
           ))}
         </HStack>
-        <HStack gap={5} wrap="wrap">
-          {section.links.map((link) => (
-            <Link
-              key={link.href}
-              className="wl-hero-link"
-              href={link.href}
-              isStandalone
-              color="accent"
-              weight="semibold"
-              size="sm"
-            >
-              {link.label}
-              <Icon icon={ArrowRightIcon} size="xsm" color="accent" />
-            </Link>
-          ))}
-        </HStack>
+        {section.links.length > 0 ? (
+          <HStack gap={5} wrap="wrap">
+            {section.links.map((link) => (
+              <Link
+                key={link.href}
+                className="wl-hero-link"
+                href={link.href}
+                isStandalone
+                color="accent"
+                weight="semibold"
+                size="sm"
+              >
+                {link.label}
+                <Icon icon={ArrowRightIcon} size="xsm" color="accent" />
+              </Link>
+            ))}
+          </HStack>
+        ) : null}
       </VStack>
     </VStack>
   );
@@ -1482,16 +1489,6 @@ function Hero({ importResume }: LandingProps) {
                 align="center"
               >
                 <VStack className="wl-hero-copy" gap={6} hAlign="start">
-                  <Image
-                    className="wl-wordmark"
-                    src="/logos/westride/WeStride_landscape_white.png"
-                    alt="WeStride"
-                    width={2582}
-                    height={788}
-                    preload
-                    unoptimized
-                  />
-
                   <Grid className="wl-hero-panels" columns={1} align="start">
                     {HERO_SECTIONS.map((section) => (
                       <HeroPanel
