@@ -1,6 +1,7 @@
 "use client";
 
-import { APIKeys, Show } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
+import { APIKeys, Show, useClerk } from "@clerk/nextjs";
 import { Button } from "@astryxdesign/core/Button";
 import { Code } from "@astryxdesign/core/Code";
 import { CodeBlock } from "@astryxdesign/core/CodeBlock";
@@ -177,6 +178,49 @@ const REQUEST_FLOW = [
   "The rows are mapped to the public response shape, member ids become names and avatars, and the result is returned as JSON.",
 ];
 
+type ApiKeysClient = {
+  environment?: { apiKeysSettings?: { user_api_keys_enabled?: boolean } } | null;
+};
+
+/**
+ * Clerk throws from `<APIKeys />` when user API keys are disabled, and that
+ * error takes down the whole page. The flag is on the browser client, which
+ * the Next.js `useClerk()` wrapper does not expose.
+ */
+function userApiKeysEnabled(clerk: ApiKeysClient | null | undefined): boolean | null {
+  const enabled = clerk?.environment?.apiKeysSettings?.user_api_keys_enabled;
+  return typeof enabled === "boolean" ? enabled : null;
+}
+
+function ApiKeysManager() {
+  const clerk = useClerk();
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const read = () => {
+      const browserClerk =
+        typeof window === "undefined"
+          ? null
+          : (window as Window & { Clerk?: ApiKeysClient }).Clerk;
+      setEnabled(userApiKeysEnabled(clerk) ?? userApiKeysEnabled(browserClerk));
+    };
+    read();
+    return clerk.addListener(read);
+  }, [clerk]);
+
+  if (enabled == null) return null;
+  if (!enabled) {
+    return (
+      <Text type="supporting">
+        API keys are turned off for this site, so they cannot be created here.
+        Apps that sign in with OAuth, such as MCP clients, can still call the
+        API as you.
+      </Text>
+    );
+  }
+  return <APIKeys />;
+}
+
 export function ApiOverview() {
   return (
     <DocPage
@@ -275,7 +319,7 @@ for (const project of projects) {
           it here if it leaks.
         </Text>
         <Show when="signed-in">
-          <APIKeys />
+          <ApiKeysManager />
         </Show>
         <Show when="signed-out">
           <VStack gap={3}>
@@ -301,7 +345,7 @@ for (const project of projects) {
               <Heading level={3}>{group.name}</Heading>
               <Table
                 data={group.endpoints}
-                idKey="path"
+                idKey={(row) => `${row.method} ${row.path}`}
                 density="compact"
                 verticalAlign="top"
                 columns={[

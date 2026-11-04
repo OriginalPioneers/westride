@@ -39,6 +39,10 @@ test("settings/api gates API keys with Show, not removed Clerk components", () =
   assert.ok(source.includes('<Show when="signed-in">'), "expected <Show when=\"signed-in\"> around <APIKeys />");
   assert.ok(source.includes('<Show when="signed-out">'), "expected <Show when=\"signed-out\"> around the sign-in CTA");
   assert.ok(source.includes("<APIKeys"), "expected the <APIKeys /> manager to remain on the page");
+  assert.ok(
+    source.includes("user_api_keys_enabled"),
+    "mount <APIKeys /> only when Clerk user API keys are enabled; otherwise it throws and the page fails",
+  );
 });
 
 test("no removed Clerk control components remain in app source", () => {
