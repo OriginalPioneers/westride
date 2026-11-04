@@ -9,6 +9,7 @@ import { Divider } from "@astryxdesign/core/Divider";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { Layout } from "@astryxdesign/core/Layout";
+import { Stack } from "@astryxdesign/core/Stack";
 import {
   TopNav,
   TopNavHeading,
@@ -159,6 +160,33 @@ function Wordmark() {
   );
 }
 
+/**
+ * Wordmark, then a short rule, then the color-mode control. The drawer
+ * repeats this lockup as its header, so the control stays in the bar only.
+ */
+function BrandLockup() {
+  const renderMode = useTopNavRenderMode();
+
+  return (
+    <Stack direction="horizontal" gap={2} align="center">
+      <TopNavHeading
+        headingHref="/"
+        logo={<Wordmark />}
+        logoLabel="WeStride"
+      />
+      {renderMode === "drawer" ? null : (
+        <>
+          <Divider
+            orientation="vertical"
+            style={{ height: "var(--spacing-4)", alignSelf: "center" }}
+          />
+          <ThemeToggle />
+        </>
+      )}
+    </Stack>
+  );
+}
+
 function ProfileLink() {
   return (
     <IconButton
@@ -184,14 +212,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           // Center the bar's content in the site column; the shell keeps
           // the divider full-bleed.
           style={{ maxWidth: SITE_CONTAINER_WIDTH, marginInline: "auto" }}
-          heading={
-            // The lockup carries the name, so no heading text beside it.
-            <TopNavHeading
-              headingHref="/"
-              logo={<Wordmark />}
-              logoLabel="WeStride"
-            />
-          }
+          heading={<BrandLockup />}
           // Items sit directly in the slot (no wrapper) so TopNav can lay
           // them out as a row in the bar and as a column in the phone drawer.
           startContent={
@@ -212,7 +233,6 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
             <>
               <SecondaryNav slot="end" pathname={pathname} />
               <JudgeNav slot="end" pathname={pathname} />
-              <ThemeToggle />
               <Show when="signed-out">
                 <Button label="Sign In" variant="secondary" href={signInPath} />
               </Show>
