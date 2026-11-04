@@ -21,7 +21,6 @@ import {
 } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
-import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { listAgentsForIdea } from "@westride/db/agents";
 import { listProjectsForIdea } from "@westride/db/build";
 import { getIdea, listCategoryOptions } from "@westride/db/ideas";
@@ -207,7 +206,7 @@ export default async function IdeaPage({
                   href={idea.prototypeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  endContent={<Icon icon={ArrowTopRightOnSquareIcon} />}
+                  endContent={<Icon icon="externalLink" />}
                 />
               </VStack>
             </Center>
