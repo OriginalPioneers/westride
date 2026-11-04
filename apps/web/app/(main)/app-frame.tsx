@@ -1,6 +1,6 @@
 "use client";
 
-import { Show } from "@clerk/nextjs";
+import { Show, useAuth } from "@clerk/nextjs";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@astryxdesign/core/AppShell";
@@ -9,6 +9,7 @@ import { Divider } from "@astryxdesign/core/Divider";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { Layout } from "@astryxdesign/core/Layout";
+import { Stack } from "@astryxdesign/core/Stack";
 import {
   TopNav,
   TopNavHeading,
@@ -17,7 +18,7 @@ import {
 } from "@astryxdesign/core/TopNav";
 import { TrophyIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import { signInPath } from "@/lib/auth-paths";
-import { isJudgeAccessShown, judgeAccessPath } from "@/lib/judge-access";
+import { isJudgeNavVisible, judgeAccessPath } from "@/lib/judge-access";
 import { ThemeToggle } from "../theme-toggle";
 import { SITE_CONTAINER_WIDTH, SiteFooter } from "../site-footer";
 
@@ -90,13 +91,30 @@ const JUDGE_LABEL = "Hackathon Judge Access";
 
 /**
  * Temporary entry for hackathon judges, present only while
- * NEXT_PUBLIC_HACKATHON_JUDGE_ACCESS is set. It is the one primary button in
- * the bar so it reads as the special thing it is. The phone bar gets the icon
- * alone; the drawer gets a plain item with the studios.
+ * NEXT_PUBLIC_HACKATHON_JUDGE_ACCESS is set. Signed-out visitors see it. A
+ * signed-in visitor sees it only when they are the shared judge account.
+ * It is the one primary button in the bar so it reads as the special thing
+ * it is. The phone bar gets the icon alone; the drawer gets a plain item
+ * with the studios.
  */
-function JudgeNav({ slot, pathname }: { slot: "start" | "end"; pathname: string }) {
+function JudgeNav({
+  slot,
+  pathname,
+  judgeUserId,
+}: {
+  slot: "start" | "end";
+  pathname: string;
+  judgeUserId: string | null;
+}) {
+  const auth = useAuth();
   const renderMode = useTopNavRenderMode();
-  if (!isJudgeAccessShown()) {
+  if (
+    !isJudgeNavVisible({
+      authLoaded: auth.isLoaded,
+      userId: auth.userId,
+      judgeUserId,
+    })
+  ) {
     return null;
   }
   const isDrawer = renderMode === "drawer";
@@ -159,6 +177,33 @@ function Wordmark() {
   );
 }
 
+/**
+ * Wordmark, then a short rule, then the color-mode control. The drawer
+ * repeats this lockup as its header, so the control stays in the bar only.
+ */
+function BrandLockup() {
+  const renderMode = useTopNavRenderMode();
+
+  return (
+    <Stack direction="horizontal" gap={2} align="center">
+      <TopNavHeading
+        headingHref="/"
+        logo={<Wordmark />}
+        logoLabel="WeStride"
+      />
+      {renderMode === "drawer" ? null : (
+        <>
+          <Divider
+            orientation="vertical"
+            style={{ height: "var(--spacing-4)", alignSelf: "center" }}
+          />
+          <ThemeToggle />
+        </>
+      )}
+    </Stack>
+  );
+}
+
 function ProfileLink() {
   return (
     <IconButton
@@ -171,7 +216,13 @@ function ProfileLink() {
   );
 }
 
-export function AppFrame({ children }: { children: React.ReactNode }) {
+export function AppFrame({
+  children,
+  judgeUserId,
+}: {
+  children: React.ReactNode;
+  judgeUserId: string | null;
+}) {
   const pathname = usePathname();
 
   return (
@@ -184,14 +235,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           // Center the bar's content in the site column; the shell keeps
           // the divider full-bleed.
           style={{ maxWidth: SITE_CONTAINER_WIDTH, marginInline: "auto" }}
-          heading={
-            // The lockup carries the name, so no heading text beside it.
-            <TopNavHeading
-              headingHref="/"
-              logo={<Wordmark />}
-              logoLabel="WeStride"
-            />
-          }
+          heading={<BrandLockup />}
           // Items sit directly in the slot (no wrapper) so TopNav can lay
           // them out as a row in the bar and as a column in the phone drawer.
           startContent={
@@ -205,14 +249,13 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
                 />
               ))}
               <SecondaryNav slot="start" pathname={pathname} />
-              <JudgeNav slot="start" pathname={pathname} />
+              <JudgeNav slot="start" pathname={pathname} judgeUserId={judgeUserId} />
             </>
           }
           endContent={
             <>
               <SecondaryNav slot="end" pathname={pathname} />
-              <JudgeNav slot="end" pathname={pathname} />
-              <ThemeToggle />
+              <JudgeNav slot="end" pathname={pathname} judgeUserId={judgeUserId} />
               <Show when="signed-out">
                 <Button label="Sign In" variant="secondary" href={signInPath} />
               </Show>

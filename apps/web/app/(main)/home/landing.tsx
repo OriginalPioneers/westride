@@ -1495,7 +1495,7 @@ function Hero({ importResume }: LandingProps) {
                 gap={10}
                 align="center"
               >
-                <VStack className="wl-hero-copy" gap={6} hAlign="start">
+                <VStack className="wl-hero-copy" gap={3} hAlign="start">
                   <Grid className="wl-hero-panels" columns={1} align="start">
                     {HERO_SECTIONS.map((section) => (
                       <HeroPanel
@@ -1506,7 +1506,7 @@ function Hero({ importResume }: LandingProps) {
                     ))}
                   </Grid>
 
-                  <Text type="supporting" textWrap="pretty">
+                  <Text className="wl-hero-source" type="supporting" textWrap="pretty">
                     {"Open source. Powered by "}
                     <MetaLink href={META_MODELS_URL}>
                       Meta&apos;s AI models

@@ -47,7 +47,7 @@ export function ColorModeProvider({
   );
 }
 
-/** Switches the whole app between light and dark. Sits at the right of the top bar. */
+/** Switches the whole app between light and dark. Sits beside the wordmark. */
 export function ThemeToggle() {
   const { mode } = useTheme();
   const colorMode = use(ColorModeContext);

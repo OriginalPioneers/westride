@@ -1,3 +1,4 @@
+import { judgeClerkUserId } from "@/lib/judge-access";
 import { AppFrame } from "./app-frame";
 
 export default function MainLayout({
@@ -5,5 +6,5 @@ export default function MainLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <AppFrame>{children}</AppFrame>;
+  return <AppFrame judgeUserId={judgeClerkUserId()}>{children}</AppFrame>;
 }

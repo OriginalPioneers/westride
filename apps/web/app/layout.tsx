@@ -8,6 +8,16 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { COLOR_MODE_COOKIE, parseThemeMode } from "./theme-mode";
 
+const description = `${brandTagline} Shape an idea, build it for real, and give it AI agents, powered by Meta's models.`;
+
+const shareImage = {
+  url: "/westride-og.png",
+  width: 1200,
+  height: 630,
+  alt: "WeStride. Every Idea. Every Ambition. Every Stride.",
+  type: "image/png",
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const host = (await headers()).get("host");
   return {
@@ -17,8 +27,18 @@ export async function generateMetadata(): Promise<Metadata> {
       default: "WeStride",
       template: "%s · WeStride",
     },
-    description: `${brandTagline} Shape an idea, build it for real, and give it AI agents, powered by Meta's models.`,
+    description,
     robots: isProductionHost(host) ? undefined : NO_INDEX,
+    openGraph: {
+      type: "website",
+      siteName: "WeStride",
+      locale: "en_US",
+      images: [shareImage],
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: [shareImage],
+    },
   };
 }
 

@@ -584,9 +584,22 @@ export const LANDING_STYLES = `
 
 /* The title is sized from its own column, so it wraps to two balanced
    lines at most and never runs under the tabs beside it. */
+.wl-hero .wl-hero-copy,
+.wl-hero .wl-hero-stage {
+  /* Center each column on the split, so a shorter section lines up with
+     the preview instead of sitting at the top of the row. */
+  align-self: center;
+}
+
 .wl-hero .wl-hero-copy {
   container-type: inline-size;
   /* Above the globe, which can spill under this column, so links stay clickable. */
+  position: relative;
+  z-index: 1;
+}
+
+/* The source line closes the left column, directly under the section. */
+.wl-hero-source {
   position: relative;
   z-index: 1;
 }
@@ -622,17 +635,18 @@ export const LANDING_STYLES = `
 
 /* ---------- Hero panels ---------- */
 
-/* Every panel shares one grid cell, so the column is as tall as the
-   tallest panel and nothing below it jumps when the section changes. The
-   outgoing panel fades first; the incoming one rises in behind it. */
+/* Panels share one cell and crossfade. Only the active panel is in flow,
+   so the column is as tall as the section on screen and the source line
+   sits directly under it. The outgoing panel fades first; the incoming
+   one rises in behind it. */
 .wl-hero-panels {
+  position: relative;
   width: 100%;
   max-width: calc(var(--spacing-12) * 14);
 }
 
 .wl-hero-panels > .wl-hero-panel {
   grid-area: 1 / 1;
-  align-self: start;
   width: 100%;
   box-sizing: border-box;
   opacity: 0;
@@ -642,6 +656,12 @@ export const LANDING_STYLES = `
     opacity var(--duration-medium) var(--ease-standard),
     transform var(--duration-medium) var(--ease-standard),
     visibility 0s linear var(--duration-medium);
+}
+
+.wl-hero-panels > .wl-hero-panel:not([data-active]) {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
 }
 
 .wl-hero-panels > .wl-hero-panel[data-active] {
