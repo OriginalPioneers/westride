@@ -9,6 +9,7 @@
     "./academy": "./src/academy.ts",
     "./mentorship": "./src/mentorship.ts",
     "./ideas": "./src/ideas.ts",
+    "./idea-slug": "./src/idea-slug.ts",
     "./idea-factory": "./src/idea-factory.ts",
     "./feedback": "./src/feedback.ts",
     "./github": "./src/github.ts",

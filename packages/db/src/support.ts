@@ -153,13 +153,13 @@ export async function setPledgeStatus(
 }
 
 export type PledgeWithIdea = Pledge & {
-  idea: Pick<Idea, "id" | "name" | "imageUrl" | "isPublic">;
+  idea: Pick<Idea, "id" | "slug" | "name" | "imageUrl" | "isPublic">;
 };
 
 /** Everything one supporter has pledged, newest first. Revoked pledges are kept for the record. */
 export async function listPledgesForSupporter(clerkUserId: string): Promise<PledgeWithIdea[]> {
   const rows = await getDb()
-    .select({ pledge: pledges, idea: { id: ideas.id, name: ideas.name, imageUrl: ideas.imageUrl, isPublic: ideas.isPublic } })
+    .select({ pledge: pledges, idea: { id: ideas.id, slug: ideas.slug, name: ideas.name, imageUrl: ideas.imageUrl, isPublic: ideas.isPublic } })
     .from(pledges)
     .innerJoin(ideas, eq(ideas.id, pledges.ideaId))
     .where(eq(pledges.clerkUserId, clerkUserId))

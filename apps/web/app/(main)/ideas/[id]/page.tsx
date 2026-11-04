@@ -23,6 +23,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
 import { listAgentsForIdea } from "@westride/db/agents";
 import { listProjectsForIdea } from "@westride/db/build";
+import { isUuid, isValidIdeaSlug } from "@westride/db/idea-slug";
 import { getIdea, listCategoryOptions } from "@westride/db/ideas";
 import { PROJECT_STATUS_LABELS, projectPath } from "@/lib/build/labels";
 import { claimCardProps } from "@/lib/claims/view";
@@ -47,14 +48,13 @@ type Params = Promise<{ id: string }>;
 // reasoning can take a couple of minutes per advisor).
 export const maxDuration = 180;
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-async function loadIdea(id: string) {
-  if (!UUID.test(id)) {
+// The address is /ideas/<slug> or /ideas/<uuid>; both open the same page.
+async function loadIdea(ref: string) {
+  if (!isUuid(ref) && !isValidIdeaSlug(ref)) {
     return null;
   }
   const { userId } = await auth();
-  return getIdea(id, { clerkUserId: userId });
+  return getIdea(ref, { clerkUserId: userId });
 }
 
 export async function generateMetadata({
@@ -63,7 +63,15 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const idea = await loadIdea((await params).id);
-  return { title: idea?.name ?? "Idea" };
+  if (!idea) {
+    return { title: "Idea" };
+  }
+  return {
+    title: idea.name,
+    // The slug address is the one search engines should keep.
+    alternates: { canonical: ideaPath(idea.slug) },
+    robots: idea.isPublic ? undefined : { index: false, follow: false },
+  };
 }
 
 export default async function IdeaPage({
@@ -95,7 +103,7 @@ export default async function IdeaPage({
       listProjectsForIdea(idea.id, { clerkUserId: userId }),
       listAgentsForIdea(idea.id, { clerkUserId: userId }),
       isMember ? currentUser() : Promise.resolve(null),
-      claimCardProps(idea, userId, { returnTo: ideaPath(idea.id), surface: "idea" }),
+      claimCardProps(idea, userId, { returnTo: ideaPath(idea.slug), surface: "idea" }),
       isFounder && userId ? getMetaConnectionSummary(userId) : Promise.resolve(null),
       isFounder ? listCategoryOptions() : Promise.resolve([]),
     ]);
@@ -107,6 +115,7 @@ export default async function IdeaPage({
     : null;
   const editableIdea = {
     id: idea.id,
+    slug: idea.slug,
     prototypeUrl: idea.prototypeUrl,
     prototypeInstructions: idea.prototypeInstructions,
     isPublic: idea.isPublic,
@@ -183,6 +192,7 @@ export default async function IdeaPage({
     ) : (
       <FollowButton
         ideaId={idea.id}
+        returnTo={ideaPath(idea.slug)}
         isFollowing={idea.isFollowing}
         viewerId={userId}
       />

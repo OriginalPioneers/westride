@@ -43,7 +43,7 @@ const ANYONE: AgentViewer = { clerkUserId: null };
 export type AgentLink = { id: string; name: string };
 
 export type AgentWithDetails = Agent & {
-  idea: AgentLink | null;
+  idea: (AgentLink & { slug: string }) | null;
   project: AgentLink | null;
   ticketCounts: TicketCounts;
   usage: UsageTotals;
@@ -260,7 +260,7 @@ async function findAgents(
     orderBy,
     limit,
     with: {
-      idea: { columns: { id: true, name: true } },
+      idea: { columns: { id: true, slug: true, name: true } },
       project: { columns: { id: true, name: true } },
     },
   });

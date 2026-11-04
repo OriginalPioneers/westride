@@ -164,7 +164,7 @@ export function createMcpServer(api: WestrideApi, me: Me): McpServer {
     async (input) => {
       try {
         const idea = await api.createIdea(input);
-        return ok({ idea }, `Created idea "${idea.name}" (${idea.id}). View it at https://westride.org/ideas/${idea.id}\n\n${JSON.stringify(idea, null, 2)}`);
+        return ok({ idea }, `Created idea "${idea.name}" (${idea.id}). View it at https://www.westride.org/ideas/${idea.slug}\n\n${JSON.stringify(idea, null, 2)}`);
       } catch (error) {
         return failed(error, "Could not create the idea.");
       }

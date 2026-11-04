@@ -1,6 +1,11 @@
 import type { MetadataRoute } from "next";
+import { headers } from "next/headers";
+import { PRODUCTION_ORIGIN, isProductionHost } from "@/lib/crawl-policy";
 
-// Pre-launch: crawlers that honor robots.txt are turned away, except the
+// Webhooks and per-account pages have nothing for a crawler to index.
+const privatePaths = ["/integrations/", "/settings", "/profile", "/claims/", "/judge"];
+
+// Off production, crawlers that honor robots.txt are turned away, except the
 // public legal pages. Agents that ignore the `*` group (Google-Extended,
 // Applebot-Extended, and several AI crawlers) are named on their own so they
 // still match a group. Allow is longer than `/`, so it wins over Disallow.
@@ -70,7 +75,18 @@ const userAgents = [
   "VelenPublicWebCrawler",
 ];
 
-export default function robots(): MetadataRoute.Robots {
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  if (isProductionHost((await headers()).get("host"))) {
+    return {
+      rules: {
+        userAgent: "*",
+        allow: "/",
+        disallow: privatePaths,
+      },
+      sitemap: `${PRODUCTION_ORIGIN}/sitemap.xml`,
+    };
+  }
+
   return {
     rules: {
       userAgent: userAgents,

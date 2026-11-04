@@ -465,7 +465,7 @@ function ComposerSession({
         return;
       }
       // Land on the idea with the Idea Workshop already open so the work starts right away.
-      router.push(`${ideaPath(result.id)}?factory=open`);
+      router.push(`${ideaPath(result.slug)}?factory=open`);
     });
   }
 

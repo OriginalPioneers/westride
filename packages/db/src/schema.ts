@@ -380,6 +380,8 @@ export const ideas = pgTable(
   "ideas",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    /** Address name: /ideas/<slug>. Unique; see idea-slug.ts. */
+    slug: text("slug").notNull(),
     name: text("name").notNull(),
     /** Markdown. */
     description: text("description").notNull(),
@@ -403,6 +405,7 @@ export const ideas = pgTable(
       .defaultNow(),
   },
   (table) => [
+    uniqueIndex("ideas_slug_idx").on(table.slug),
     index("ideas_name_idx").on(table.name),
     index("ideas_origin_idx").on(table.origin),
     index("ideas_type_idx").on(table.type),
