@@ -22,6 +22,9 @@ const api = new WeStrideApi(config.baseUrl, null, (baseUrl) => {
   config.baseUrl = baseUrl;
 });
 
+const REPAIR_HINT =
+  "WeStride no longer recognises this device (unlinked, or paired with a different WeStride host). Run the installer again with a new pairing code from Settings → Devices.";
+
 const shutdown = new AbortController();
 let currentJob: LeasedJob | null = null;
 let jobAbort: AbortController | null = null;
@@ -36,14 +39,30 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 
 async function ensurePaired(): Promise<void> {
   await mkdir(config.stateDir, { recursive: true });
-  const stored = await readFile(tokenFile, "utf8").catch(() => "");
-  if (stored.trim()) {
-    api.setToken(stored.trim());
-    return;
+  const stored = (await readFile(tokenFile, "utf8").catch(() => "")).trim();
+  if (stored) {
+    api.setToken(stored);
+    if (!config.pairingCode) {
+      return;
+    }
+    // A pairing code next to a stored token means the installer ran again. The
+    // token stays if WeStride still accepts it (a restart with the old code in
+    // the environment). If it is refused, it came from another WeStride host or
+    // an unlinked device, and the new code is the way back in.
+    try {
+      await heartbeat();
+      return;
+    } catch (error) {
+      if (!(error instanceof ApiError && error.isUnauthorized)) {
+        // Network trouble, not a bad token: keep it and let the loop retry.
+        return;
+      }
+      warn(`${config.baseUrl} does not accept the stored device token; pairing again with the new code.`);
+    }
   }
   if (!config.pairingCode) {
     throw new Error(
-      "This runner is not paired. Start it with WESTRIDE_PAIRING_CODE set to a code from WeStride → WePledge™ → Link a computer.",
+      "This runner is not paired. Start it with WESTRIDE_PAIRING_CODE set to a code from WeStride → Settings → Devices → Add a device.",
     );
   }
   log(`Pairing with ${config.baseUrl} as "${config.deviceName}"…`);
@@ -82,7 +101,7 @@ function startHeartbeats(): void {
       await heartbeat();
     } catch (error) {
       if (error instanceof ApiError && error.isUnauthorized) {
-        warn("WeStride no longer recognises this device. Unlinked in WePledge™? Pair it again.");
+        warn(REPAIR_HINT);
         shutdown.abort();
         return;
       }
@@ -102,7 +121,7 @@ async function workLoop(): Promise<void> {
       backoff = 2000;
     } catch (error) {
       if (error instanceof ApiError && error.isUnauthorized) {
-        warn("WeStride no longer recognises this device. Pair it again.");
+        warn(REPAIR_HINT);
         return;
       }
       warn(`Lease poll failed: ${String(error)}; retrying in ${backoff / 1000}s.`);
