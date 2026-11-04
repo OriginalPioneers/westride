@@ -26,7 +26,7 @@ import {
 import { DocPage, DocSection } from "../doc-page";
 
 const FREE_INCLUDES = [
-  { label: "Every WeStride feature", detail: "Idea Factory, Build Studio, Agent Studio, the academy, MCP, and the API." },
+  { label: "Every WeStride feature", detail: "Idea Workshop, Project Factory, Agent Studio, the academy, MCP, and the API." },
   { label: "Muse on your Meta account", detail: "Connect Meta in Settings. Meta bills you at its list prices." },
   { label: "Sandboxes on your Vercel or Modal account", detail: "Connect either in Settings. Vercel bills your team, Modal your workspace, for sandbox time." },
   { label: "Volunteer devices", detail: "Supporters can run jobs for an idea on their own machines." },

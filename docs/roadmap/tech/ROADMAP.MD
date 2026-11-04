@@ -5,7 +5,6 @@
 - Enable rate limiting for API and MCP.
 - Ensure apps are GDPR compliant.
 - Allow the designer/etc agents to access Muse Wonder to generate images, etc and then store the artifacts/attach them to the idea/project/etc.
-- Allow the Muse companion to chat back to the user.
 - We should offer more ways to run Muse Code to complete a ticket:
 -- Cloud : AWS, Google Cloud, Azure, etc. (Vercel Sandbox and supporter computers are done.)
 - Supporter runner follow-ups: publish the Docker image to GHCR from CI (`apps/runner/Dockerfile`, built from the repo root), add a cron that calls `reconcileStaleVolunteerJob` for jobs no device picked up, and let a volunteer job stream large results in chunks instead of one 8 MB request.

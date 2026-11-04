@@ -240,7 +240,7 @@ export function remainingMicros(pledge: Pledge): number | null {
 
 export type ContributionInput = {
   pledgeId: string;
-  /** The Agent Studio job, or the Build Studio run, the pledge made possible. Exactly one is set. */
+  /** The Agent Studio job, or the Project Factory run, the pledge made possible. Exactly one is set. */
   jobId: string | null;
   runId?: string | null;
   deviceId: string | null;
@@ -373,7 +373,7 @@ export async function summarizeSupporter(clerkUserId: string): Promise<Supporter
 }
 
 /**
- * What the whole platform has behind it, for the supporting page. Pledged
+ * What the whole platform has behind it, for the WePledge™ page. Pledged
  * amounts are the standing offers (the caps on active token pledges, the
  * computers linked right now); used amounts come from the ledger.
  */
@@ -525,7 +525,7 @@ export async function listContributionsForSupporter(
   return rows.map((row) => ({
     ...row.contribution,
     ideaName: row.ideaName,
-    // A Build Studio run reads as "<project> · <ticket>" where an agent job reads "<agent> · <ticket>".
+    // A Project Factory run reads as "<project> · <ticket>" where an agent job reads "<agent> · <ticket>".
     agentName: row.agentName ?? row.projectName,
     ticketTitle: row.ticketTitle ?? row.runTicketTitle,
   }));

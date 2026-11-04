@@ -20,7 +20,7 @@ export function revealDelay(step: number): CSSProperties {
 }
 
 /**
- * Supporting page motion and decoration. Every value is a theme token so the
+ * WePledge™ page motion and decoration. Every value is a theme token so the
  * page retunes with the theme, and every animation stops under
  * prefers-reduced-motion. Rendered once through a <style> element.
  *
@@ -28,7 +28,7 @@ export function revealDelay(step: number): CSSProperties {
  * styles; the two pages share a vocabulary (rise, drift, reveal) but can
  * change on their own.
  */
-export const SUPPORTING_STYLES = `
+export const WEPLEDGE_STYLES = `
 @keyframes sp-rise {
   from {
     opacity: 0;
@@ -475,25 +475,6 @@ export const SUPPORTING_STYLES = `
   mask: var(--sp-dot-mask);
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
-}
-
-/* ---------- Your support ---------- */
-
-.sp-mine {
-  position: relative;
-  isolation: isolate;
-  background:
-    radial-gradient(ellipse at 10% 0%, color-mix(in srgb, var(--sp-teal) 14%, transparent), transparent 55%),
-    radial-gradient(ellipse at 90% 100%, color-mix(in srgb, var(--sp-indigo) 12%, transparent), transparent 55%),
-    var(--color-background-body);
-}
-
-.sp-mine-stat {
-  height: 100%;
-}
-
-.sp-mine-stat .sp-stat-value {
-  color: var(--sp-tint);
 }
 
 /* ---------- Dark bands ---------- */

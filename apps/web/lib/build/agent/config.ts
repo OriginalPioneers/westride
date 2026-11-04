@@ -105,7 +105,7 @@ export function isVolunteerRunnerConfigured(): boolean {
 }
 
 /**
- * Whether a Build Studio ticket can be handed to Muse Code by any route: a
+ * Whether a Project Factory ticket can be handed to Muse Code by any route: a
  * sandbox (the member's Vercel or Modal account, or WeStride Cloud) or a
  * linked computer running the WeStride runner. Gates the Run button.
  */

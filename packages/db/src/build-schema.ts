@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Build Studio
+// Project Factory
 //
 // A project is where an idea gets built. It has a team, one or more GitHub
 // repositories, a roadmap of milestones, and tickets that move from the

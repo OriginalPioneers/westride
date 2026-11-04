@@ -351,7 +351,7 @@ export async function hasEligibleDevice(agent: Agent): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
-// Build Studio runs on linked computers
+// Project Factory runs on linked computers
 //
 // A ticket run whose compute target is LOCAL waits for one of the starter's
 // own computers; SPONSORS waits for a computer whose owner has an active
@@ -414,7 +414,7 @@ async function queuedRunsForDevice(device: Device): Promise<LeasedRun[]> {
 }
 
 /**
- * Hands the device one queued Build Studio run it may take. Claiming is a
+ * Hands the device one queued Project Factory run it may take. Claiming is a
  * conditional update, so two computers never take the same run.
  */
 export async function leaseRunForDevice(device: Device): Promise<LeasedRun | null> {

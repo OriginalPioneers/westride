@@ -507,7 +507,7 @@ export async function deleteArtifactRow(id: string, ideaId: string): Promise<Ide
 }
 
 // ---------------------------------------------------------------------------
-// Suggested Build Studio projects
+// Suggested Project Factory projects
 // ---------------------------------------------------------------------------
 
 export async function getLatestBuildSuggestion(
@@ -535,7 +535,7 @@ export async function createBuildSuggestion(input: {
   return suggestion;
 }
 
-/** Records which Build Studio project a suggestion turned into. */
+/** Records which Project Factory project a suggestion turned into. */
 export async function linkBuildSuggestionProject(input: {
   suggestionId: string;
   ideaId: string;

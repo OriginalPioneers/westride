@@ -13,7 +13,7 @@ import {
 } from "./schema";
 
 /**
- * Muse planning for Build Studio. Two modes:
+ * Muse planning for Project Factory. Two modes:
  *
  * - `backlog`: draft milestones and tickets from the project description,
  *   the linked idea, and what is already on the board. The member reviews
@@ -136,7 +136,7 @@ export const RANKING_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-const PLANNER_ROLE = `You are Muse, the planning partner in WeStride's Build Studio. WeStride helps first-time founders turn an idea into working software. The member has a project with a description, maybe a linked idea from the Idea Studio, one or more GitHub repositories, and a board of tickets. Tickets are later handed to a Muse Code coding agent, so every ticket description must be a self-contained brief: context, what to build, acceptance criteria as a Markdown checklist, and anything to leave out.
+const PLANNER_ROLE = `You are Muse, the planning partner in WeStride's Project Factory. WeStride helps first-time founders turn an idea into working software. The member has a project with a description, maybe a linked idea from the Idea Workshop, one or more GitHub repositories, and a board of tickets. Tickets are later handed to a Muse Code coding agent, so every ticket description must be a self-contained brief: context, what to build, acceptance criteria as a Markdown checklist, and anything to leave out.
 
 Rules:
 - Work from the material given. Do not invent features the description does not support; when something is unclear, make the smallest reasonable assumption and say so in the ticket.

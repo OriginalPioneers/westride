@@ -11,8 +11,8 @@ export const MAX_LINK_LABEL = 60;
 export const MAX_CAP_DOLLARS = 10_000;
 export const MICROS_PER_DOLLAR = 1_000_000;
 
-export const supportingPath = (kind?: "tokens" | "compute" | "capital") =>
-  kind ? `/supporting?kind=${kind}` : "/supporting";
+export const wePledgePath = (kind?: "tokens" | "compute" | "capital") =>
+  kind ? `/wepledge?kind=${kind}` : "/wepledge";
 // ---------------------------------------------------------------------------
 // Pledges
 // ---------------------------------------------------------------------------

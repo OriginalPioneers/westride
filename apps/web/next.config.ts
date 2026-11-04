@@ -12,11 +12,12 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   async redirects() {
     return [
-      { source: "/achievements", destination: "/profile/achievements", permanent: true },
       { source: "/tech-stack", destination: "/our-story/tech-stack", permanent: true },
       { source: "/design", destination: "/our-story/design", permanent: true },
       { source: "/api", destination: "/settings/api", permanent: true },
       { source: "/mcp", destination: "/settings/mcp", permanent: true },
+      // The pledge system became WePledge™; query strings (?kind=) carry over.
+      { source: "/supporting", destination: "/wepledge", permanent: true },
     ];
   },
   async headers() {

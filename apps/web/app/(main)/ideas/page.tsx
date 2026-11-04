@@ -9,6 +9,7 @@ import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
 import {
+  isSupportWant,
   listCategoryOptions,
   listIdeaFilterOptions,
   listIdeas,
@@ -17,6 +18,7 @@ import {
 import { signInPath } from "@/lib/auth-paths";
 import {
   IDEA_VIEW_LABELS,
+  SUPPORT_WANT_LABELS,
   ideasPath,
   readIdeaFilterValues,
   resolveIdeaCollection,
@@ -26,7 +28,11 @@ import {
 } from "@/lib/ideas/filters";
 import { IdeaCard } from "./idea-card";
 import { IdeaComposer } from "./idea-composer";
-import { IdeaCollectionTabs, IdeaSearchBar } from "./idea-filters";
+import {
+  IdeaCollectionTabs,
+  IdeaSearchBar,
+  IdeaSupportFilter,
+} from "./idea-filters";
 
 export const metadata: Metadata = {
   title: "Idea Workshop",
@@ -87,6 +93,42 @@ function CollectionEmptyState({
   values: IdeaFilterValues;
   isSignedIn: boolean;
 }) {
+  if (
+    !isSignedIn &&
+    collection.kind === "view" &&
+    collection.view !== "featured"
+  ) {
+    return (
+      <EmptyState
+        title={
+          collection.view === "mine"
+            ? "Sign in to see your ideas"
+            : "Sign in to follow ideas"
+        }
+        description={
+          collection.view === "mine"
+            ? "Your own ideas, including private ones, show up here once you are signed in."
+            : "Follow any idea to keep up with it here."
+        }
+        actions={<Button label="Sign in" href={signInHref(values)} />}
+      />
+    );
+  }
+  if (isSupportWant(values.wants)) {
+    const label = SUPPORT_WANT_LABELS[values.wants].toLowerCase();
+    return (
+      <EmptyState
+        title={`No ideas looking for ${label}`}
+        description="Nothing in this view is asking for that right now. Clear the filter to see the rest of the collection."
+        actions={
+          <Button
+            label="Clear support filter"
+            href={ideasPath({ ...values, wants: "" })}
+          />
+        }
+      />
+    );
+  }
   if (collection.kind === "search") {
     return (
       <EmptyState
@@ -117,23 +159,6 @@ function CollectionEmptyState({
       />
     );
   }
-  if (!isSignedIn) {
-    return (
-      <EmptyState
-        title={
-          collection.view === "mine"
-            ? "Sign in to see your ideas"
-            : "Sign in to follow ideas"
-        }
-        description={
-          collection.view === "mine"
-            ? "Your own ideas, including private ones, show up here once you are signed in."
-            : "Follow any idea to keep up with it here."
-        }
-        actions={<Button label="Sign in" href={signInHref(values)} />}
-      />
-    );
-  }
   if (collection.view === "following") {
     return (
       <EmptyState
@@ -142,7 +167,11 @@ function CollectionEmptyState({
         actions={
           <Button
             label="Browse Best of WeStride"
-            href={ideasPath({ view: "featured", sort: values.sort })}
+            href={ideasPath({
+              view: "featured",
+              sort: values.sort,
+              wants: values.wants,
+            })}
           />
         }
       />
@@ -218,6 +247,7 @@ export default async function IdeaWorkshopPage({
                 name: tag.name,
               }))}
             />
+            <IdeaSupportFilter values={values} />
           </VStack>
         </LayoutHeader>
       }
@@ -245,6 +275,13 @@ export default async function IdeaWorkshopPage({
                       label={`In ${countryFilter?.name ?? values.country}`}
                       href={ideasPath({ ...values, country: "" })}
                       description="Remove the geography filter"
+                    />
+                  ) : null}
+                  {isSupportWant(values.wants) ? (
+                    <Token
+                      label={`Needing ${SUPPORT_WANT_LABELS[values.wants].toLowerCase()}`}
+                      href={ideasPath({ ...values, wants: "" })}
+                      description="Remove the support filter"
                     />
                   ) : null}
                   {ideas.length > 0 ? (

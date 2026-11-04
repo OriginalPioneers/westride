@@ -37,7 +37,7 @@ import { AgentCollectionTabs, AgentSearchBar } from "./agent-filters";
 import { CreateAgentButton, CreateAgentCard, CreateAgentProvider } from "./create-agent-button";
 
 export const metadata: Metadata = {
-  title: "AI Agent Fleet",
+  title: "Agent Studio",
 };
 
 export const dynamic = "force-dynamic";
@@ -141,7 +141,7 @@ function AgentGrid({
   );
 }
 
-export default async function AgentFleetPage({
+export default async function AgentStudioPage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;

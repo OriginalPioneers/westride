@@ -1,16 +1,8 @@
 import { neon } from "@neondatabase/serverless";
 import { eq, inArray } from "drizzle-orm";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
-import type { AchievementSlug } from "./achievement-catalog";
 import * as schema from "./schema";
-import {
-  achievements,
-  tracks,
-  userAchievements,
-  type Achievement,
-  type Lesson,
-  type Track,
-} from "./schema";
+import { tracks, type Lesson, type Track } from "./schema";
 
 export type TrackWithLessons = Track & {
   lessons: Lesson[];
@@ -76,68 +68,4 @@ export async function listTrackNamesBySlug(
     where: inArray(tracks.slug, slugs),
     columns: { slug: true, name: true },
   });
-}
-
-export type AchievementWithProgress = Achievement & {
-  earnedAt: Date | null;
-};
-
-export async function awardAchievement(
-  clerkUserId: string,
-  slug: AchievementSlug,
-): Promise<void> {
-  if (!clerkUserId) {
-    throw new Error("A signed-in user is required to earn an achievement.");
-  }
-
-  const db = getDb();
-  const achievement = await db.query.achievements.findFirst({
-    where: eq(achievements.slug, slug),
-    columns: { id: true },
-  });
-
-  if (!achievement) {
-    throw new Error(`Unknown achievement: ${slug}`);
-  }
-
-  await db
-    .insert(userAchievements)
-    .values({
-      clerkUserId,
-      achievementId: achievement.id,
-    })
-    .onConflictDoNothing({
-      target: [userAchievements.clerkUserId, userAchievements.achievementId],
-    });
-}
-
-export async function listAchievementsForUser(
-  clerkUserId: string | null,
-): Promise<AchievementWithProgress[]> {
-  const db = getDb();
-  const catalog = await db.query.achievements.findMany({
-    orderBy: (achievement, { asc }) => [
-      asc(achievement.sortOrder),
-      asc(achievement.name),
-    ],
-  });
-
-  if (!clerkUserId) {
-    return catalog.map((achievement) => ({
-      ...achievement,
-      earnedAt: null,
-    }));
-  }
-
-  const earned = await db.query.userAchievements.findMany({
-    where: eq(userAchievements.clerkUserId, clerkUserId),
-  });
-  const earnedAtByAchievement = new Map(
-    earned.map((row) => [row.achievementId, row.earnedAt]),
-  );
-
-  return catalog.map((achievement) => ({
-    ...achievement,
-    earnedAt: earnedAtByAchievement.get(achievement.id) ?? null,
-  }));
 }

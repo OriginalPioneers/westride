@@ -1,5 +1,3 @@
-export { socialPosts } from "./social-schema";
-export { learningAttempts, learningMuseBudgets } from "./learning-schema";
 import { relations } from "drizzle-orm";
 import { contentOrigin, type ContentOrigin } from "./origin-schema";
 import {
@@ -40,7 +38,6 @@ export const tracks = pgTable(
     tags: text("tags").array().notNull(),
     prerequisiteSlugs: text("prerequisite_slugs").array().notNull(),
     learningObjectives: text("learning_objectives").array().notNull(),
-    achievementTitle: text("achievement_title").notNull(),
   },
   (table) => [
     uniqueIndex("tracks_slug_unique").on(table.slug),
@@ -167,62 +164,6 @@ export const lessonCompletionsRelations = relations(
     lesson: one(lessons, {
       fields: [lessonCompletions.lessonId],
       references: [lessons.id],
-    }),
-  }),
-);
-
-export const achievements = pgTable(
-  "achievements",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    slug: text("slug").notNull(),
-    name: text("name").notNull(),
-    description: text("description").notNull(),
-    badgeUrl: text("badge_url").notNull(),
-    sortOrder: integer("sort_order").notNull(),
-  },
-  (table) => [
-    uniqueIndex("achievements_slug_unique").on(table.slug),
-    index("achievements_sort_order_idx").on(table.sortOrder),
-  ],
-);
-
-export const userAchievements = pgTable(
-  "user_achievements",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    /** Clerk user id. Guests are never written here. */
-    clerkUserId: text("clerk_user_id").notNull(),
-    achievementId: uuid("achievement_id")
-      .notNull()
-      .references(() => achievements.id, { onDelete: "cascade" }),
-    celebratedAt: timestamp("celebrated_at", {
-      withTimezone: true,
-      mode: "date",
-    }),
-    earnedAt: timestamp("earned_at", { withTimezone: true, mode: "date" })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("user_achievements_user_achievement_unique").on(
-      table.clerkUserId,
-      table.achievementId,
-    ),
-    index("user_achievements_clerk_user_id_idx").on(table.clerkUserId),
-  ],
-);
-
-export const achievementsRelations = relations(achievements, ({ many }) => ({
-  userAchievements: many(userAchievements),
-}));
-
-export const userAchievementsRelations = relations(
-  userAchievements,
-  ({ one }) => ({
-    achievement: one(achievements, {
-      fields: [userAchievements.achievementId],
-      references: [achievements.id],
     }),
   }),
 );
@@ -471,29 +412,6 @@ export const ideas = pgTable(
   ],
 );
 
-/** Durable evidence of a saved builder action, credited only to its actor. */
-export const ideaBuilderEvents = pgTable(
-  "idea_builder_events",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    ideaId: uuid("idea_id")
-      .notNull()
-      .references(() => ideas.id, { onDelete: "cascade" }),
-    clerkUserId: text("clerk_user_id").notNull(),
-    achievementSlug: text("achievement_slug").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("idea_builder_events_actor_idea_slug_unique").on(
-      table.clerkUserId,
-      table.ideaId,
-      table.achievementSlug,
-    ),
-  ],
-);
-
 export const ideaMembers = pgTable(
   "idea_members",
   {
@@ -706,7 +624,7 @@ export const ideaTagsRelations = relations(ideaTags, ({ one }) => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Idea Factory
+// Idea Workshop
 //
 // Each idea gets an advisory team of specialised Muse agents. Conversations
 // are shared by the whole team (one thread per agent per idea). Every call
@@ -770,10 +688,10 @@ export const museRequests = pgTable(
   "muse_requests",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    /** The idea this call was for. Null for Build Studio planning calls. */
+    /** The idea this call was for. Null for Project Factory planning calls. */
     ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }),
     /**
-     * The Build Studio project this call was for, when it was planning work.
+     * The Project Factory project this call was for, when it was planning work.
      * Not a foreign key: the log outlives the project for cost accounting.
      */
     projectId: uuid("project_id"),
@@ -996,7 +914,7 @@ export const ideaFactoryArtifacts = pgTable(
   ],
 );
 
-/** How a suggested Build Studio project fits the idea. */
+/** How a suggested Project Factory project fits the idea. */
 export type BuildSuggestionKind =
   | "web"
   | "mobile"
@@ -1022,12 +940,12 @@ export type BuildSuggestion = {
   firstMilestones: string[];
   /** Keys of other suggestions this one needs first. */
   dependsOn: string[];
-  /** Build Studio project started from this suggestion, if any. */
+  /** Project Factory project started from this suggestion, if any. */
   projectId: string | null;
 };
 
 /**
- * One set of suggested Build Studio projects for an idea, drafted by Muse
+ * One set of suggested Project Factory projects for an idea, drafted by Muse
  * from the idea and its latest evaluation. The newest set is the one shown.
  */
 export const ideaBuildSuggestions = pgTable(
@@ -1450,10 +1368,6 @@ export type LessonArtifact = typeof lessonArtifacts.$inferSelect;
 export type NewLessonArtifact = typeof lessonArtifacts.$inferInsert;
 export type LessonCompletion = typeof lessonCompletions.$inferSelect;
 export type NewLessonCompletion = typeof lessonCompletions.$inferInsert;
-export type Achievement = typeof achievements.$inferSelect;
-export type NewAchievement = typeof achievements.$inferInsert;
-export type UserAchievement = typeof userAchievements.$inferSelect;
-export type NewUserAchievement = typeof userAchievements.$inferInsert;
 export type MentorProfile = typeof mentorProfiles.$inferSelect;
 export type NewMentorProfile = typeof mentorProfiles.$inferInsert;
 export type Skill = typeof skills.$inferSelect;
@@ -1517,7 +1431,7 @@ export type NewFeedbackVote = typeof feedbackVotes.$inferInsert;
 export type FeedbackComment = typeof feedbackComments.$inferSelect;
 export type NewFeedbackComment = typeof feedbackComments.$inferInsert;
 
-// Build Studio tables reference `ideas` above, so they live in their own file
+// Project Factory tables reference `ideas` above, so they live in their own file
 // and are re-exported here for drizzle-kit and the relational query API.
 export {
   agentRunEvents,
@@ -1578,7 +1492,7 @@ export type {
   TicketStatus,
 } from "./build-schema";
 
-// Agent Studio tables reference `ideas` and the Build Studio enums.
+// Agent Studio tables reference `ideas` and the Project Factory enums.
 export {
   agentJobEvents,
   agentJobEventsRelations,

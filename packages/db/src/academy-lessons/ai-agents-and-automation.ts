@@ -397,7 +397,7 @@ One agent with twenty tools and a giant system prompt gets confused. Several age
 - **Critic**: reviews another agent's output against a rubric and requests changes.
 - **Safety reviewer**: checks planned actions against policy before execution.
 
-WeStride's Idea Factory works this way: a team of advisory agents each examines an idea from one angle, then a synthesis step reconciles them.
+WeStride's Idea Workshop works this way: a team of advisory agents each examines an idea from one angle, then a synthesis step reconciles them.
 
 [artifact:multi-agent]
 

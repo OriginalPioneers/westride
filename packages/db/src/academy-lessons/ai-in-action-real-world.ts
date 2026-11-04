@@ -207,7 +207,7 @@ Pick one business function you know. Write the narrow task, the measure, and whe
 ## For learners
 
 - **Patient tutoring**: explanations at any level, as many times as needed, in any language. Best when the tutor asks questions rather than giving answers, which a system prompt can enforce.
-- **Practice and feedback**: generate exercises, check work, explain mistakes. WeStride's own challenges use this pattern: Muse gives one observation and one suggestion, never a grade.
+- **Practice and feedback**: generate exercises, check work, explain mistakes. A good pattern is one observation and one suggestion per answer, never a grade.
 - **Accessibility**: text to speech, live captions, simplified explanations, translation.
 
 ## For teachers
@@ -496,7 +496,7 @@ Prompt and workflow designers, AI product managers, evaluation and safety specia
 
 ## WeStride's role
 
-The Academy for skills, Mentorship for guidance, and Idea Studio for turning what you learn into something real.
+The Academy for skills, Mentorship for guidance, and Idea Workshop for turning what you learn into something real.
 
 ### Try it
 

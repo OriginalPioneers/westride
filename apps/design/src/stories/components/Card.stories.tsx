@@ -27,7 +27,7 @@ export const Default: Story = {
   render: () => (
     <Card padding={4}>
       <VStack gap={1}>
-        <Heading level={3}>Idea Studio</Heading>
+        <Heading level={3}>Idea Workshop</Heading>
         <Text type="supporting">
           Start with a spark, then shape it into a plan.
         </Text>

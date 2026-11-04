@@ -43,6 +43,7 @@ import {
   HACKATHON_NAME,
   INTEGRATIONS,
   META_CAPABILITIES,
+  META_MODEL_LINEUP,
   META_MODELS,
   MILESTONES,
   MOBILE_APPS,
@@ -58,6 +59,7 @@ import {
   type StackLogo,
   type Tint,
 } from "./landing-content";
+import { youtubeEmbedUrl, youtubeVideoId } from "../academy/format";
 import { HeroGlobe } from "./hero-globe";
 import { ImportRepoForm, type ImportResume } from "./import-repo-form";
 import { LANDING_STYLES } from "./landing-styles";
@@ -240,8 +242,8 @@ function LogoTile({
     size === "xs"
       ? "var(--spacing-6)"
       : size === "sm"
-        ? "var(--spacing-8)"
-        : "var(--spacing-12)";
+      ? "var(--spacing-8)"
+      : "var(--spacing-12)";
   return (
     <Theme theme={themes[defaultThemeSlug]} mode="light">
       <Card
@@ -628,13 +630,19 @@ type HeroSection = {
   where: string;
   title: ReactNode;
   description: ReactNode;
-  /** The one button in the panel. */
-  cta: HeroCta;
-  /** The quieter way in, an underlined link under the button. */
-  link: { label: string; href: string };
+  /** The panel's buttons; the first is the primary one. */
+  ctas: HeroCta[];
+  /** The quieter ways in: text links with an arrow, under the buttons. */
+  links: { label: string; href: string }[];
   /** The platform page the preview shows while this section is active. */
   screenshot: { src: string; alt: string };
-  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  /**
+   * A YouTube video that plays in the preview instead of the screenshot.
+   * The screenshot stands in until the URL is a YouTube video.
+   */
+  video?: { url: string; title: string };
+  /** The tab's icon, or "stamp" for the WeStride stamp in its place. */
+  icon: ComponentType<SVGProps<SVGSVGElement>> | "stamp";
   /**
    * The tab's accent, and the pair the hero's sky and globe halo take on.
    * The globe's atmosphere glows in the second one.
@@ -653,29 +661,87 @@ const [IDEA_STUDIO, BUILD_STUDIO, AGENT_STUDIO] = STUDIOS;
  *
  * Each section also frames the hero: its tints wash the sky, and the globe
  * pulls in or out. An idea sees the whole world; building moves in; a
- * fleet of agents closer still; supporting steps back to take it all in.
+ * fleet of agents closer still; WePledge steps back to take it all in.
  */
 const HERO_SECTIONS: HeroSection[] = [
+  {
+    id: "westride",
+    tab: "WeStride",
+    where: "Explore WeStride",
+    title: (
+      <>
+        Workshop ideas.
+        <br />
+        Build projects.
+        <br />
+        Launch agents.
+        <br />{" "}
+        <Text type="inherit" display="inline" className="wl-gradient-text">
+          All with Meta AI.
+        </Text>
+      </>
+    ),
+    description:
+      "Bring your ideas to life with WeStride. Collaborate with AI-powered advisors to brainstorm, research, and refine your vision. Build real projects in GitHub with AI coding agents, create your own AI agents, and connect with a community of learners, creators, and builders.",
+    ctas: [
+      {
+        label: "Workshop an Idea",
+        href: IDEA_STUDIO.href,
+        icon: IDEA_STUDIO.icon,
+      },
+      {
+        label: "Build a Project",
+        href: BUILD_STUDIO.href,
+        icon: BUILD_STUDIO.icon,
+      },
+      {
+        label: "Launch an Agent",
+        href: AGENT_STUDIO.href,
+        icon: AGENT_STUDIO.icon,
+      },
+    ],
+    links: [
+      { label: "Explore WeStride", href: "/#wl-studios" },
+      {
+        label: "Pledge tokens, compute or capital with WePledge™",
+        href: "/wepledge",
+      },
+    ],
+    screenshot: {
+      src: "/hero/idea.webp",
+      alt: "Idea Workshop in WeStride: a grid of your ideas with their pictures, kinds, and a card to start a new one.",
+    },
+    video: {
+      url: "https://youtu.be/FwOTs4UxQS4",
+      title:
+        "WeStride: workshop ideas, build projects, and launch agents with Meta AI",
+    },
+    icon: "stamp",
+    tints: ["indigo", "purple"],
+    globeScale: 1,
+  },
   {
     id: "idea",
     tab: "Idea Workshop",
     where: IDEA_STUDIO.where,
     title: (
       <>
-        Explore ideas. Build projects.{" "}
+        Explore ideas with<br/>
         <Text type="inherit" display="inline" className="wl-gradient-text">
-          Create with Meta AI.
+          Meta AI advisors.
         </Text>
       </>
     ),
     description:
       "Bring your ideas to life with WeStride. Collaborate with AI-powered advisors to brainstorm, research, and refine your vision. Build real projects in GitHub with AI coding agents, create your own AI agents, and connect with a community of learners, creators, and builders.",
-    cta: {
-      label: "Workshop an Idea",
-      href: IDEA_STUDIO.href,
-      icon: IDEA_STUDIO.icon,
-    },
-    link: { label: "Explore WeStride", href: "/#wl-studios" },
+    ctas: [
+      {
+        label: "Workshop an Idea",
+        href: IDEA_STUDIO.href,
+        icon: IDEA_STUDIO.icon,
+      },
+    ],
+    links: [{ label: "Explore WeStride", href: "/#wl-studios" }],
     screenshot: {
       src: "/hero/idea.webp",
       alt: "Idea Workshop in WeStride: a grid of your ideas with their pictures, kinds, and a card to start a new one.",
@@ -686,7 +752,7 @@ const HERO_SECTIONS: HeroSection[] = [
   },
   {
     id: "build",
-    tab: "Build Studio",
+    tab: "Project Factory",
     where: BUILD_STUDIO.where,
     title: (
       <>
@@ -705,15 +771,17 @@ const HERO_SECTIONS: HeroSection[] = [
         }
       </>
     ),
-    cta: {
-      label: "Build a Project",
-      href: BUILD_STUDIO.href,
-      icon: BUILD_STUDIO.icon,
-    },
-    link: { label: "Find a Mentor", href: "/mentorship" },
+    ctas: [
+      {
+        label: "Build a Project",
+        href: BUILD_STUDIO.href,
+        icon: BUILD_STUDIO.icon,
+      },
+    ],
+    links: [{ label: "Find a Mentor", href: "/mentorship" }],
     screenshot: {
       src: "/hero/build.webp",
-      alt: "Build Studio in WeStride: a project board with backlog, in progress, in review, roadblocked, and done columns of tickets.",
+      alt: "Project Factory in WeStride: a project board with backlog, in progress, in review, roadblocked, and done columns of tickets.",
     },
     icon: BUILD_STUDIO.icon,
     tints: BUILD_STUDIO.tints,
@@ -721,7 +789,7 @@ const HERO_SECTIONS: HeroSection[] = [
   },
   {
     id: "agent",
-    tab: "AI Agent Fleet",
+    tab: "Agent Studio",
     where: AGENT_STUDIO.where,
     title: (
       <>
@@ -740,15 +808,17 @@ const HERO_SECTIONS: HeroSection[] = [
         }
       </>
     ),
-    cta: {
-      label: "Create an AI Agent",
-      href: AGENT_STUDIO.href,
-      icon: AGENT_STUDIO.icon,
-    },
-    link: { label: "Connect Your Meta Account", href: "/settings" },
+    ctas: [
+      {
+        label: "Create an AI Agent",
+        href: AGENT_STUDIO.href,
+        icon: AGENT_STUDIO.icon,
+      },
+    ],
+    links: [{ label: "Connect Your Meta Account", href: "/settings" }],
     screenshot: {
       src: "/hero/agent.webp",
-      alt: "AI Agent Fleet in WeStride: the new agent form, with a name, what it does, standing instructions, and the project it works in.",
+      alt: "Agent Studio in WeStride: the new agent form, with a name, what it does, standing instructions, and the project it works in.",
     },
     icon: AGENT_STUDIO.icon,
     tints: AGENT_STUDIO.tints,
@@ -756,7 +826,7 @@ const HERO_SECTIONS: HeroSection[] = [
   },
   {
     id: "support",
-    tab: "Support a Project",
+    tab: "WePledge™",
     where: "Explore projects",
     title: (
       <>
@@ -768,15 +838,17 @@ const HERO_SECTIONS: HeroSection[] = [
     ),
     description:
       "Discover ideas and projects worth supporting across the WeStride community. Help creators move their projects forward by contributing AI tokens, computing resources, or capital. Choose how you want to support, connect with the people building, and be part of what comes next.",
-    cta: {
-      label: "Explore Projects",
-      href: "/supporting#looking-for-support",
-      icon: HeartIcon,
-    },
-    link: { label: "Pledge Tokens, Compute or Capital", href: "/supporting" },
+    ctas: [
+      {
+        label: "Explore Projects",
+        href: "/wepledge#looking-for-support",
+        icon: HeartIcon,
+      },
+    ],
+    links: [{ label: "Pledge Tokens, Compute or Capital", href: "/wepledge" }],
     screenshot: {
       src: "/hero/support.webp",
-      alt: "Supporting in WeStride: tokens, compute, and capital flowing into an idea, with counts of pledges and linked computers.",
+      alt: "WePledge™ in WeStride: tokens, compute, and capital flowing into an idea, with counts of pledges and linked computers.",
     },
     icon: HeartIcon,
     tints: ["teal", "green"],
@@ -862,11 +934,6 @@ function HeroPanel({
   section: HeroSection;
   isActive: boolean;
 }) {
-  const ctaIcon =
-    section.cta.icon != null ? (
-      <Icon icon={section.cta.icon} color="inherit" />
-    ) : undefined;
-
   return (
     <VStack
       className="wl-hero-panel"
@@ -891,24 +958,39 @@ function HeroPanel({
         {section.description}
       </Text>
       <VStack gap={3} hAlign="start">
-        <Button
-          className="wl-hero-cta"
-          label={section.cta.label}
-          variant="primary"
-          size="lg"
-          icon={ctaIcon}
-          href={section.cta.href}
-        />
-        <Link
-          className="wl-hero-link"
-          href={section.link.href}
-          hasUnderline
-          isStandalone
-          color="primary"
-          weight="medium"
-        >
-          {section.link.label}
-        </Link>
+        <HStack gap={3} wrap="wrap">
+          {section.ctas.map((cta, index) => (
+            <Button
+              key={cta.href}
+              className="wl-hero-cta"
+              label={cta.label}
+              variant={index === 0 ? "primary" : "secondary"}
+              size="lg"
+              icon={
+                cta.icon != null ? (
+                  <Icon icon={cta.icon} color="inherit" />
+                ) : undefined
+              }
+              href={cta.href}
+            />
+          ))}
+        </HStack>
+        <HStack gap={5} wrap="wrap">
+          {section.links.map((link) => (
+            <Link
+              key={link.href}
+              className="wl-hero-link"
+              href={link.href}
+              isStandalone
+              color="accent"
+              weight="semibold"
+              size="sm"
+            >
+              {link.label}
+              <Icon icon={ArrowRightIcon} size="xsm" color="accent" />
+            </Link>
+          ))}
+        </HStack>
       </VStack>
     </VStack>
   );
@@ -919,13 +1001,56 @@ function HeroPanel({
  * section's page on a layered stand. Every section's picture is mounted so
  * a change of tab crossfades rather than reloads, and only the active one
  * is in the accessibility tree.
+ *
+ * A section with a video plays it here instead. The player mounts only
+ * while its section is active, so leaving the tab stops playback, and
+ * clicking into it calls `onEngage` so the tabs stop rotating away.
  */
-function HeroShot({ activeId }: { activeId: string }) {
+function HeroShot({
+  activeId,
+  onEngage,
+}: {
+  activeId: string;
+  onEngage: () => void;
+}) {
+  const playerRef = useRef<HTMLIFrameElement>(null);
+
+  // A click inside a cross-origin player never reaches this page; the
+  // window losing focus to the iframe is the only sign of it.
+  useEffect(() => {
+    function onBlur() {
+      if (
+        playerRef.current != null &&
+        document.activeElement === playerRef.current
+      ) {
+        onEngage();
+      }
+    }
+    window.addEventListener("blur", onBlur);
+    return () => window.removeEventListener("blur", onBlur);
+  }, [onEngage]);
+
   return (
     <Center className="wl-hero-shot-stand">
       <Grid className="wl-hero-shot" columns={1}>
         {HERO_SECTIONS.map((section, index) => {
           const isActive = section.id === activeId;
+          const videoId =
+            section.video != null ? youtubeVideoId(section.video.url) : null;
+          if (section.video != null && videoId != null) {
+            return isActive ? (
+              <iframe
+                key={section.id}
+                ref={playerRef}
+                className="wl-hero-shot-video"
+                src={youtubeEmbedUrl(videoId)}
+                title={section.video.title}
+                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            ) : null;
+          }
           return (
             <Image
               key={section.id}
@@ -950,33 +1075,21 @@ function HeroShot({ activeId }: { activeId: string }) {
 }
 
 /**
- * A short bar under Support. It is not a carousel tab, and it never
+ * A quiet row under the section tabs. It is not a carousel tab and never
  * auto-advances. Clicking it opens the importer.
  */
 function HeroImportBar({ onOpen }: { onOpen: () => void }) {
   return (
-    <SelectableCard
-      className="wl-hero-tab wl-hero-import-bar"
+    <Button
+      className="wl-hero-import"
       label="Import a GitHub"
-      isSelected={false}
-      onChange={onOpen}
-      padding={2}
-      style={
-        {
-          ...tintVars(["yellow", "orange"]),
-          "--wl-i": HERO_SECTIONS.length,
-        } as CSSProperties
-      }
-    >
-      <HStack className="wl-hero-tab-body" gap={2} vAlign="center" wrap="nowrap">
-        <Center className="wl-hero-tab-icon">
-          <Icon icon={CodeBracketIcon} size="sm" color="inherit" />
-        </Center>
-        <Text size="sm" weight="semibold" textWrap="nowrap">
-          Import a GitHub
-        </Text>
-      </HStack>
-    </SelectableCard>
+      variant="ghost"
+      width="100%"
+      icon={<Icon icon={CodeBracketIcon} size="sm" color="inherit" />}
+      endContent={<Icon icon={ArrowRightIcon} size="xsm" color="inherit" />}
+      onClick={onOpen}
+      style={{ "--wl-i": HERO_SECTIONS.length } as CSSProperties}
+    />
   );
 }
 
@@ -1054,8 +1167,24 @@ function HeroTab({
         vAlign="center"
         wrap="nowrap"
       >
-        <Center className="wl-hero-tab-icon">
-          <Icon icon={section.icon} size="sm" color="inherit" />
+        <Center
+          className="wl-hero-tab-icon"
+          data-stamp={section.icon === "stamp" ? "" : undefined}
+        >
+          {section.icon === "stamp" ? (
+            <Image
+              className="wl-hero-tab-stamp"
+              src="/westride-stamp.png"
+              alt=""
+              width={1156}
+              height={778}
+              // The optimizer fetches this file without a browser user
+              // agent, and the proxy refuses that request.
+              unoptimized
+            />
+          ) : (
+            <Icon icon={section.icon} size="sm" color="inherit" />
+          )}
         </Center>
         <Text
           className="wl-hero-tab-label"
@@ -1121,7 +1250,9 @@ function makeWave({
   for (let i = 0; i < periods * 2; i++) {
     const x = i * halfPeriod;
     const cy = baseline + (i % 2 === 0 ? -control : control);
-    d += ` C${x + halfPeriod / 3} ${cy} ${x + (halfPeriod * 2) / 3} ${cy} ${x + halfPeriod} ${baseline}`;
+    d += ` C${x + halfPeriod / 3} ${cy} ${x + (halfPeriod * 2) / 3} ${cy} ${
+      x + halfPeriod
+    } ${baseline}`;
   }
   if (isFilled) d += ` V${WAVE_HEIGHT} H0 Z`;
   return {
@@ -1137,11 +1268,50 @@ function makeWave({
 
 /** Back to front: broad slow swells behind, quicker thin lines in front. */
 const WAVES: Wave[] = [
-  makeWave({ baseline: 56, amplitude: 24, halfPeriod: 480, seconds: 46, isFilled: true, opacity: 0.16 }),
-  makeWave({ baseline: 86, amplitude: 20, halfPeriod: 360, seconds: 36, isReversed: true, isFilled: true, opacity: 0.22 }),
-  makeWave({ baseline: 112, amplitude: 14, halfPeriod: 720, seconds: 28, isFilled: true, opacity: 0.3 }),
-  makeWave({ baseline: 44, amplitude: 22, halfPeriod: 480, seconds: 40, isReversed: true, isFilled: false, opacity: 0.7, strokeWidth: 2 }),
-  makeWave({ baseline: 78, amplitude: 16, halfPeriod: 288, seconds: 32, isFilled: false, opacity: 0.5, strokeWidth: 1.5 }),
+  makeWave({
+    baseline: 56,
+    amplitude: 24,
+    halfPeriod: 480,
+    seconds: 46,
+    isFilled: true,
+    opacity: 0.16,
+  }),
+  makeWave({
+    baseline: 86,
+    amplitude: 20,
+    halfPeriod: 360,
+    seconds: 36,
+    isReversed: true,
+    isFilled: true,
+    opacity: 0.22,
+  }),
+  makeWave({
+    baseline: 112,
+    amplitude: 14,
+    halfPeriod: 720,
+    seconds: 28,
+    isFilled: true,
+    opacity: 0.3,
+  }),
+  makeWave({
+    baseline: 44,
+    amplitude: 22,
+    halfPeriod: 480,
+    seconds: 40,
+    isReversed: true,
+    isFilled: false,
+    opacity: 0.7,
+    strokeWidth: 2,
+  }),
+  makeWave({
+    baseline: 78,
+    amplitude: 16,
+    halfPeriod: 288,
+    seconds: 32,
+    isFilled: false,
+    opacity: 0.5,
+    strokeWidth: 1.5,
+  }),
 ];
 
 /**
@@ -1269,94 +1439,94 @@ function Hero({ importResume }: LandingProps) {
   return (
     <>
       <Theme theme={themes[defaultThemeSlug]} mode="dark">
-      <VStack className="wl-hero-frame" gap={0}>
-        <Section
-          className="wl-hero"
-          variant="transparent"
-          padding={0}
-          style={sceneVars(activeSection)}
-        >
-          <HeroSky />
-          <HeroGlobe glowToken={`--wl-${activeSection.tints[1]}`} />
-          <HeroWave />
-          <VStack
-            className="wl-hero-content"
-            gap={10}
-            maxWidth={CONTENT_WIDTH + 200}
-            style={centered}
+        <VStack className="wl-hero-frame" gap={0}>
+          <Section
+            className="wl-hero"
+            variant="transparent"
+            padding={0}
+            style={sceneVars(activeSection)}
           >
-            <Grid
-              className="wl-hero-split"
-              columns={{ minWidth: 484, max: 2 }}
+            <HeroSky />
+            <HeroGlobe glowToken={`--wl-${activeSection.tints[1]}`} />
+            <HeroWave />
+            <VStack
+              className="wl-hero-content"
               gap={10}
-              align="center"
+              maxWidth={CONTENT_WIDTH + 200}
+              style={centered}
             >
-              <VStack className="wl-hero-copy" gap={6} hAlign="start">
-                <Image
-                  className="wl-wordmark"
-                  src="/logos/westride/WeStride_landscape_white.png"
-                  alt="WeStride"
-                  width={2582}
-                  height={788}
-                  preload
-                  unoptimized
-                />
+              <Grid
+                className="wl-hero-split"
+                columns={{ minWidth: 484, max: 2 }}
+                gap={10}
+                align="center"
+              >
+                <VStack className="wl-hero-copy" gap={6} hAlign="start">
+                  <Image
+                    className="wl-wordmark"
+                    src="/logos/westride/WeStride_landscape_white.png"
+                    alt="WeStride"
+                    width={2582}
+                    height={788}
+                    preload
+                    unoptimized
+                  />
 
-                <Grid className="wl-hero-panels" columns={1} align="start">
-                  {HERO_SECTIONS.map((section) => (
-                    <HeroPanel
-                      key={section.id}
-                      section={section}
-                      isActive={section.id === activeId}
-                    />
-                  ))}
-                </Grid>
+                  <Grid className="wl-hero-panels" columns={1} align="start">
+                    {HERO_SECTIONS.map((section) => (
+                      <HeroPanel
+                        key={section.id}
+                        section={section}
+                        isActive={section.id === activeId}
+                      />
+                    ))}
+                  </Grid>
 
-                <Text type="supporting" textWrap="pretty">
-                  {"Open source. Powered by "}
-                  <MetaLink href={META_MODELS_URL}>
-                    Meta&apos;s AI models
-                  </MetaLink>
-                </Text>
-              </VStack>
+                  <Text type="supporting" textWrap="pretty">
+                    {"Open source. Powered by "}
+                    <MetaLink href={META_MODELS_URL}>
+                      Meta&apos;s AI models
+                    </MetaLink>
+                  </Text>
+                </VStack>
 
-              {/* The platform preview with the section tabs tucked in
-                  behind its right edge, and the import bar under it. */}
-              <VStack className="wl-hero-stage" gap={4} hAlign="end">
-                <HStack
-                  className="wl-hero-stage-row"
-                  gap={0}
-                  vAlign="center"
-                  wrap="nowrap"
-                >
-                  <StackItem size="fill" className="wl-hero-stage-shot">
-                    <HeroShot activeId={activeId} />
-                  </StackItem>
-                  <VStack
-                    className="wl-hero-tabs"
-                    gap={2}
-                    role="group"
-                    aria-label="What would you like to do?"
-                    data-autoplay={isAutoplaying ? "" : undefined}
+                {/* The platform preview with the section tabs tucked in
+                  behind its right edge, and import under the tabs. */}
+                <VStack className="wl-hero-stage" gap={4} hAlign="end">
+                  <HStack
+                    className="wl-hero-stage-row"
+                    gap={0}
+                    vAlign="center"
+                    wrap="nowrap"
                   >
-                    {HERO_SECTIONS.map(tab)}
-                  </VStack>
-                </HStack>
-                <HeroImportBar onOpen={openImport} />
-              </VStack>
-            </Grid>
-          </VStack>
-        </Section>
-        <CarryBar />
-      </VStack>
-    </Theme>
-    {isImportOpen ? (
-      <ImportGithubDialog
-        isOpen={isImportOpen}
-        resume={importResume}
-        onOpenChange={setIsImportOpen}
-      />
-    ) : null}
+                    <StackItem size="fill" className="wl-hero-stage-shot">
+                      <HeroShot activeId={activeId} onEngage={stop} />
+                    </StackItem>
+                    <VStack
+                      className="wl-hero-tabs"
+                      gap={2}
+                      role="group"
+                      aria-label="What would you like to do?"
+                      data-autoplay={isAutoplaying ? "" : undefined}
+                    >
+                      {HERO_SECTIONS.map(tab)}
+                      <HeroImportBar onOpen={openImport} />
+                    </VStack>
+                  </HStack>
+                </VStack>
+              </Grid>
+            </VStack>
+          </Section>
+          <CarryBar />
+        </VStack>
+      </Theme>
+      {isImportOpen ? (
+        <ImportGithubDialog
+          isOpen={isImportOpen}
+          resume={importResume}
+          onOpenChange={setIsImportOpen}
+        />
+      ) : null}
     </>
   );
 }
@@ -1510,6 +1680,7 @@ function StudiosSection() {
                       {
                         "--wl-tint-a": `var(--wl-${studio.tints[0]})`,
                         "--wl-tint-b": `var(--wl-${studio.tints[1]})`,
+                        "--wl-tint-ink": `var(--wl-${studio.tints[0]}-ink)`,
                       } as CSSProperties
                     }
                   >
@@ -1546,7 +1717,27 @@ function MetaAiSection() {
       <Container>
         <SectionIntro
           eyebrow="Powered by Meta AI"
-          title="From your first idea to working code. Powered by Meta."
+          title={
+            <>
+              From your first idea to working code. Powered by{" "}
+              <Image
+                className="wl-title-logo wl-title-logo-light"
+                src="/logos/meta-ai.png"
+                alt="Meta AI"
+                width={1084}
+                height={209}
+                unoptimized
+              />
+              <Image
+                className="wl-title-logo wl-title-logo-dark"
+                src="/logos/meta-ai-light.png"
+                alt=""
+                width={1084}
+                height={209}
+                unoptimized
+              />
+            </>
+          }
           lede="WeStride brings Meta's Muse AI models into every stage of your journey. Explore possibilities with AI advisors, turn ideas into actionable development plans, and build real projects in GitHub with Muse Code agents. All in one open-source platform."
         />
         <Grid columns={{ minWidth: 280, max: 3 }} gap={4}>
@@ -1595,9 +1786,9 @@ function MetaAiSection() {
           </VStack>
           <VStack gap={2}>
             <Text type="supporting">
-              Start exploring WeStride with free learning resources and a daily
-              Muse allowance. Connect your own Meta account to use your API key
-              and credits for additional AI-powered work.
+              Start exploring WeStride with free learning resources. Connect
+              your own Meta account to use your API key and credits for
+              AI-powered work.
             </Text>
             <HStack gap={1} vAlign="center">
               <Link href="/settings" isStandalone>
@@ -1606,6 +1797,38 @@ function MetaAiSection() {
               <Icon icon={ArrowRightIcon} size="xsm" color="accent" />
             </HStack>
           </VStack>
+        </VStack>
+        <VStack className="wl-reveal" gap={5}>
+          <VStack gap={2}>
+            <Eyebrow>Inside WeStride</Eyebrow>
+            <Heading level={3} textWrap="balance">
+              Meta&apos;s models, at every step.
+            </Heading>
+          </VStack>
+          <Grid columns={{ minWidth: 220, max: 3 }} gap={4}>
+            {META_MODEL_LINEUP.map((model) => (
+              <Card
+                key={model.name}
+                className="wl-feature wl-model-card"
+                padding={5}
+              >
+                <VStack gap={2}>
+                  <Heading
+                    level={4}
+                    className="wl-model-name"
+                    style={
+                      { "--wl-dot": `var(--wl-${model.tint})` } as CSSProperties
+                    }
+                  >
+                    {model.name}
+                  </Heading>
+                  <Text type="supporting" size="sm">
+                    {model.detail}
+                  </Text>
+                </VStack>
+              </Card>
+            ))}
+          </Grid>
         </VStack>
       </Container>
     </Section>

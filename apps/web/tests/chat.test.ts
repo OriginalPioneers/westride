@@ -32,7 +32,6 @@ function track(overrides: Partial<AcademyTrack> = {}): AcademyTrack {
     tags: [],
     prerequisiteSlugs: [],
     learningObjectives: [],
-    achievementTitle: "AI Explorer",
     ...overrides,
   };
 }

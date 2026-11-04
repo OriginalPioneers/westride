@@ -71,7 +71,7 @@ export async function getComputeAvailability(
     if (devices.length === 0) {
       return {
         ready: false,
-        reason: "None of your computers is online. Link one from Supporting, or start the WeStride runner on one you have linked.",
+        reason: "None of your computers is online. Link one from WePledge™, or start the WeStride runner on one you have linked.",
         devices,
       };
     }

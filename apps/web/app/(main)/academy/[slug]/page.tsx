@@ -96,8 +96,7 @@ export default async function TrackPage({ params }: { params: Params }) {
               <Heading level={1}>{track.name}</Heading>
               <Text type="supporting">
                 {pluralize(total, "lesson")} ·{" "}
-                {formatDuration(track.estimatedDurationMinutes)} · Earns the{" "}
-                {track.achievementTitle} badge
+                {formatDuration(track.estimatedDurationMinutes)}
               </Text>
             </VStack>
             <Text textWrap="pretty">{track.description}</Text>

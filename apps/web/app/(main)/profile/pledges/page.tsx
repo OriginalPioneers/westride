@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
+import { Grid } from "@astryxdesign/core/Grid";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
 import { Link } from "@astryxdesign/core/Link";
 import { List, ListItem } from "@astryxdesign/core/List";
-import { MetadataList, MetadataListItem } from "@astryxdesign/core/MetadataList";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Text } from "@astryxdesign/core/Text";
@@ -24,16 +25,48 @@ import {
   PLEDGE_STATUS_VARIANT,
   pledgeDetail,
 } from "@/lib/support/describe";
-import { formatMicros, formatSeconds, supportingPath } from "@/lib/support/schema";
+import { formatMicros, formatSeconds, wePledgePath } from "@/lib/support/schema";
 import { EntityImage } from "../../entity-image";
 import { AccountTabs } from "../../section-tabs";
-import { PledgeActions } from "../../supporting/pledge-actions";
+import { PledgeActions } from "../../wepledge/pledge-actions";
 
 export const metadata: Metadata = {
   title: "Pledges",
 };
 
-const FIND_IDEA_HREF = `${supportingPath()}#looking-for-support`;
+const FIND_IDEA_HREF = `${wePledgePath()}#looking-for-support`;
+
+function PledgeStats({
+  totals,
+}: {
+  totals: { ideas: number; sponsoredMicros: number; computeSeconds: number; jobs: number };
+}) {
+  const stats = [
+    {
+      value: totals.ideas.toLocaleString(),
+      label: totals.ideas === 1 ? "Idea backed" : "Ideas backed",
+    },
+    { value: formatMicros(totals.sponsoredMicros), label: "Tokens covered" },
+    { value: formatSeconds(totals.computeSeconds), label: "Compute given" },
+    {
+      value: totals.jobs.toLocaleString(),
+      label: totals.jobs === 1 ? "Job made possible" : "Jobs made possible",
+    },
+  ];
+
+  return (
+    <Grid columns={{ minWidth: 180, max: 4 }} gap={4}>
+      {stats.map((stat) => (
+        <Card key={stat.label}>
+          <VStack gap={1}>
+            <Heading level={2}>{stat.value}</Heading>
+            <Text type="supporting">{stat.label}</Text>
+          </VStack>
+        </Card>
+      ))}
+    </Grid>
+  );
+}
 
 function PledgeList({ pledges, showStatus }: { pledges: PledgeWithIdea[]; showStatus: boolean }) {
   return (
@@ -108,58 +141,50 @@ export default async function PledgesPage() {
       }
       content={
         <LayoutContent>
-          {pledges.length === 0 ? (
-            <EmptyState
-              title="No pledges yet"
-              description="Back an idea without joining its team. Pick one that is looking for support and choose what to give from its page."
-              actions={<Button label="Find an idea" variant="primary" href={FIND_IDEA_HREF} />}
-            />
-          ) : (
-            <VStack gap={8}>
-              {computeWithoutDevice ? (
-                <Banner
-                  status="info"
-                  title="Add a device to run your compute pledges"
-                  description="Compute pledges run on computers you link to your account. Until you add one, they cannot take jobs."
-                  endContent={<Button label="Go to Devices" size="sm" href={DEVICES_PATH} />}
-                />
-              ) : null}
+          <VStack gap={8}>
+            <PledgeStats totals={totals} />
+            {pledges.length === 0 ? (
+              <EmptyState
+                title="No pledges yet"
+                description="Back an idea without joining its team. Pick one that is looking for support and choose what to give from its page."
+                actions={<Button label="Find an idea" variant="primary" href={FIND_IDEA_HREF} />}
+              />
+            ) : (
+              <VStack gap={8}>
+                {computeWithoutDevice ? (
+                  <Banner
+                    status="info"
+                    title="Add a device to run your compute pledges"
+                    description="Compute pledges run on computers you link to your account. Until you add one, they cannot take jobs."
+                    endContent={<Button label="Go to Devices" size="sm" href={DEVICES_PATH} />}
+                  />
+                ) : null}
 
-              <MetadataList columns={4}>
-                <MetadataListItem label="Ideas backed">{totals.ideas}</MetadataListItem>
-                <MetadataListItem label="Tokens covered">
-                  {formatMicros(totals.sponsoredMicros)}
-                </MetadataListItem>
-                <MetadataListItem label="Compute given">
-                  {formatSeconds(totals.computeSeconds)}
-                </MetadataListItem>
-                <MetadataListItem label="Jobs made possible">{totals.jobs}</MetadataListItem>
-              </MetadataList>
-
-              <VStack gap={3}>
-                <Heading level={2}>Current</Heading>
-                {current.length === 0 ? (
-                  <Text type="supporting">
-                    None right now. Pledge again below, or find a new idea to back.
-                  </Text>
-                ) : (
-                  <PledgeList pledges={current} showStatus />
-                )}
-              </VStack>
-
-              {ended.length > 0 ? (
                 <VStack gap={3}>
-                  <VStack gap={1}>
-                    <Heading level={2}>Ended</Heading>
+                  <Heading level={2}>Current</Heading>
+                  {current.length === 0 ? (
                     <Text type="supporting">
-                      Kept for the record. Pledge again to pick up where you left off.
+                      None right now. Pledge again below, or find a new idea to back.
                     </Text>
-                  </VStack>
-                  <PledgeList pledges={ended} showStatus={false} />
+                  ) : (
+                    <PledgeList pledges={current} showStatus />
+                  )}
                 </VStack>
-              ) : null}
-            </VStack>
-          )}
+
+                {ended.length > 0 ? (
+                  <VStack gap={3}>
+                    <VStack gap={1}>
+                      <Heading level={2}>Ended</Heading>
+                      <Text type="supporting">
+                        Kept for the record. Pledge again to pick up where you left off.
+                      </Text>
+                    </VStack>
+                    <PledgeList pledges={ended} showStatus={false} />
+                  </VStack>
+                ) : null}
+              </VStack>
+            )}
+          </VStack>
         </LayoutContent>
       }
     />

@@ -17,7 +17,7 @@ import { authenticateDevice, json } from "@/lib/runner/auth";
  * The device's final report: how Muse Code ended and every file it changed.
  * The files are committed by WeStride, never pushed by the device, so the
  * device never needs write access to the repository. The id names an Agent
- * Studio job or a Build Studio ticket run; both close the same way.
+ * Studio job or a Project Factory ticket run; both close the same way.
  */
 
 export const maxDuration = 60;

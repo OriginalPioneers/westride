@@ -66,6 +66,8 @@ export function buildAgentPrompt(input: {
     `**${project.name}** — ${project.description.trim()}`,
     "",
     `Repository: ${repo.owner}/${repo.name} (default branch \`${repo.defaultBranch}\`). You are on branch \`${branch}\`.`,
+    "",
+    "The repository is checked out in your current working directory. Refer to files by paths relative to it, such as `src/main.ts` or `index.html`. Do not guess absolute paths; a file written anywhere else is lost.",
   );
 
   if (instructions.trim()) {

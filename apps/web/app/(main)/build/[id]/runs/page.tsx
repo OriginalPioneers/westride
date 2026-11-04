@@ -61,7 +61,7 @@ export default async function RunsPage({ params }: { params: Params }) {
               <Banner
                 status="info"
                 title="Agents are not set up on this server"
-                description="Muse Code runs need the GitHub App and a public callback URL, plus either sandbox credentials or linked computers running the WeStride runner. See docs/build-studio.md."
+                description="Muse Code runs need the GitHub App and a public callback URL, plus either sandbox credentials or linked computers running the WeStride runner. See docs/project-factory.md."
               />
             ) : null}
             {runs.length === 0 ? (

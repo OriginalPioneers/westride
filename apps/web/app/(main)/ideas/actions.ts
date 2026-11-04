@@ -11,8 +11,6 @@ import {
   unfollowIdea,
   updateIdeaDetails,
 } from "@westride/db/ideas";
-import { syncLearningAwards } from "@westride/db/learning";
-import { awardAchievement } from "@westride/db/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { isGithubAppConfigured } from "@/lib/github/config";
@@ -381,20 +379,17 @@ export async function createIdeaFromStudio(
   }
 
   try {
-    const created = await createIdea(
-      {
-        name: parsed.data.name,
-        description: parsed.data.description,
-        type: parsed.data.type,
-        isFeatured: false,
-        isPublic: parsed.data.isPublic,
-        countryCodes: [],
-        tagNames: parsed.data.categories,
-        // Founder is last so a repeated id cannot replace that role.
-        members: [...invites, { clerkUserId: userId, role: "FOUNDER" }],
-      },
-      userId,
-    );
+    const created = await createIdea({
+      name: parsed.data.name,
+      description: parsed.data.description,
+      type: parsed.data.type,
+      isFeatured: false,
+      isPublic: parsed.data.isPublic,
+      countryCodes: [],
+      tagNames: parsed.data.categories,
+      // Founder is last so a repeated id cannot replace that role.
+      members: [...invites, { clerkUserId: userId, role: "FOUNDER" }],
+    });
     if (repo) {
       await linkIdeaGithubRepo(created.id, {
         repoId: repo.id,
@@ -408,9 +403,6 @@ export async function createIdeaFromStudio(
         console.error("Idea GitHub link failed", error);
       });
     }
-    await syncLearningAwards(userId).catch(() => undefined);
-    await awardAchievement(userId, "first-spark").catch(() => undefined);
-    revalidatePath("/profile/achievements");
     revalidatePath("/ideas");
     return { status: "created", id: created.id };
   } catch (error) {
@@ -503,8 +495,6 @@ export async function updateIdeaFromStudio(
 
   revalidatePath("/ideas");
   revalidatePath(`/ideas/${ideaId}`);
-  await syncLearningAwards(userId).catch(() => undefined);
-  revalidatePath("/profile/achievements");
   const stillMember = parsed.data.members.some(
     (member) => member.clerkUserId === userId,
   );

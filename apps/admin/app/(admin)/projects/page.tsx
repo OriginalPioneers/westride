@@ -49,7 +49,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Lis
   return (
     <PageFrame
       title="Builds"
-      description="Every project in the Build Studio. Featured builds are called out on the member site."
+      description="Every project in the Project Factory. Featured builds are called out on the member site."
     >
       <ListSearch placeholder="Search by name, description, or project id" filter={FILTER} />
       <ContentTable

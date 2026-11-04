@@ -471,7 +471,7 @@ The system prompt is where product behaviour lives. Users rarely see it.
 
 ## What goes in a system prompt
 
-- Identity and tone: "You are Muse, WeStride's learning companion. Warm, concise, never condescending."
+- Identity and tone: "You are a study helper for an online academy. Warm, concise, never condescending."
 - Scope: what it helps with, and what it politely declines.
 - Rules: formatting, language, length, safety boundaries.
 - Knowledge: key facts about the product, with a note on what it does not know.

@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
   let dropJob = false;
   if (currentJobId) {
-    // The id is an Agent Studio job or a Build Studio run; the runner does not know which.
+    // The id is an Agent Studio job or a Project Factory run; the runner does not know which.
     const job = await getAgentJob(currentJobId);
     if (job) {
       const stillOurs = job.deviceId === device.id && job.status === "RUNNING";

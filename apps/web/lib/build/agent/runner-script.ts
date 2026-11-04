@@ -138,7 +138,8 @@ async function finish(payload) {
 
 async function installMuse() {
   emit("setup", { step: "install", message: "Installing Muse Code" });
-  const install = sh("sh", ["-c", "curl -fsSL https://dev.meta.ai/install.sh | sh"], {
+  // Meta's installer is a bash script (set -o pipefail); Debian's /bin/sh is dash.
+  const install = sh("bash", ["-c", "mkdir -p " + BIN_DIR + " && curl -fsSL https://dev.meta.ai/install.sh | bash"], {
     cwd: "/tmp",
     env: { MUSE_INSTALL_DIR: BIN_DIR, MUSE_NO_MODIFY_PATH: "1" },
   });

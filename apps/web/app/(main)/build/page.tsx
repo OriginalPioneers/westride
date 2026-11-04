@@ -35,7 +35,7 @@ import { ProjectCard } from "./project-card";
 import { ProjectCollectionTabs, ProjectSearchBar } from "./project-filters";
 
 export const metadata: Metadata = {
-  title: "Build Studio",
+  title: "Project Factory",
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -142,7 +142,7 @@ function ProjectGrid({
   );
 }
 
-export default async function BuildStudioPage({
+export default async function ProjectFactoryPage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;

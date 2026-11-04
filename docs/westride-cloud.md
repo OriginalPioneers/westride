@@ -28,7 +28,7 @@ Members' own Modal accounts need only `MODAL_TOKEN_ENCRYPTION_KEY` (32 random by
 | Part | Variables | Notes |
 | --- | --- | --- |
 | Meta AI through WeStride Cloud | `WESTRIDE_CLOUD_META_API_KEY` | An API key from WeStride's own [dev.meta.ai](https://dev.meta.ai/) account. |
-| Compute through WeStride Cloud | `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET`; optional `MODAL_ENVIRONMENT`, `WESTRIDE_CLOUD_MODAL_APP_NAME` (default `westride-cloud`) | A token from WeStride's own Modal workspace (Settings → API Tokens); unrelated to members' tokens. WeStride creates the app on first use. Code runs also need everything Build Studio's runner needs (`GITHUB_APP_*`, `BUILD_RUNNER_CALLBACK_URL`); a run needs only one of this, `VERCEL_TOKEN_ENCRYPTION_KEY`, or `MODAL_TOKEN_ENCRYPTION_KEY` to be possible. |
+| Compute through WeStride Cloud | `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET`; optional `MODAL_ENVIRONMENT`, `WESTRIDE_CLOUD_MODAL_APP_NAME` (default `westride-cloud`) | A token from WeStride's own Modal workspace (Settings → API Tokens); unrelated to members' tokens. WeStride creates the app on first use. Code runs also need everything Project Factory's runner needs (`GITHUB_APP_*`, `BUILD_RUNNER_CALLBACK_URL`); a run needs only one of this, `VERCEL_TOKEN_ENCRYPTION_KEY`, or `MODAL_TOKEN_ENCRYPTION_KEY` to be possible. |
 | Adding funds by card | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Stripe Checkout in payment mode. Add a webhook endpoint at `<origin>/integrations/stripe/webhook` for `checkout.session.completed` and `checkout.session.async_payment_succeeded`. Without the webhook secret, balances are credited only when the member returns from Stripe. Locally: `stripe listen --forward-to localhost:3000/integrations/stripe/webhook`. |
 | Prices | optional `WESTRIDE_CLOUD_AI_MARKUP_PERCENT` (default 20), `WESTRIDE_CLOUD_COMPUTE_VCPU_HOUR_CENTS` (default 20) | Markup on Meta's list prices, and what a vCPU-hour of sandbox time costs the member. |
 
@@ -58,14 +58,14 @@ The balance is the sum of `cloud_ledger_entries.amount_micros` for the member (U
 
 `apps/web/lib/cloud/provider.ts` is the single place that decides. `resolveMuseAccess(userId)` returns the key to call Muse with and where it came from (`OWN` or `WESTRIDE_CLOUD`); `resolveSandboxAccess(userId)` returns a `SandboxAccess` whose `kind` is the API that drives the sandbox (`VERCEL_SANDBOX` or `MODAL_SANDBOX`, with credentials) and whose `source` is who pays (`OWN` for the member's Vercel or Modal account, `WESTRIDE_CLOUD` for WeStride's Modal account). Both honour the member's preference (`cloud_accounts.provider_preference`, set on `/cloud`): with **My own accounts** first, their connection is used when it exists and WeStride Cloud when it does not; with **WeStride Cloud** first, the balance is used when it covers at least one call (`$0.05`) or one sandbox start (`$0.50`), and their own connection otherwise. The member who decides is always the payer, which for a sponsored job is the sponsor.
 
-Every former call to `getMuseApiKey` / `getVercelSandboxCredentials` for running work now goes through these: Idea Factory, planning, images, dictation, agent report jobs, code jobs, and Build Studio runs.
+Every former call to `getMuseApiKey` / `getVercelSandboxCredentials` for running work now goes through these: Idea Workshop, planning, images, dictation, agent report jobs, code jobs, and Project Factory runs.
 
 ### Charging
 
 Charges are recorded when work finishes, never estimated up front:
 
 - Muse calls through the Model API log a `muse_requests` row as before; `settleMuseRequest` (`apps/web/lib/cloud/billing.ts`) then writes a negative `AI_USAGE` entry of the request's estimated cost times the markup. Dictation uses `settleMuseUsage` with its per-hour price.
-- Code jobs and Build Studio runs charge their reported token usage (`job:<id>`, `run:<id>`) and, when their `compute_source` is `WESTRIDE_CLOUD`, their wall-clock seconds × vCPUs at the compute rate with a 60-second minimum (`job-compute:<id>`, `run-compute:<id>`). Cancelled runs still pay for compute used.
+- Code jobs and Project Factory runs charge their reported token usage (`job:<id>`, `run:<id>`) and, when their `compute_source` is `WESTRIDE_CLOUD`, their wall-clock seconds × vCPUs at the compute rate with a 60-second minimum (`job-compute:<id>`, `run-compute:<id>`). Cancelled runs still pay for compute used.
 - Work on the member's own accounts (`muse_source` or `compute_source` of `OWN`, which covers both Vercel and a member's own Modal account) is never charged.
 
 A balance can go slightly negative when a long run outspends it; the member simply cannot start more work until they top up.

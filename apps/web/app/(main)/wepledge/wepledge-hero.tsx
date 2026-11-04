@@ -20,10 +20,11 @@ import {
 } from "@heroicons/react/24/outline";
 import type { PlatformSupportSummary } from "@westride/db/support";
 import { defaultThemeSlug, themes } from "@/astryx-themes";
-import { formatMicros, formatSeconds, supportingPath } from "@/lib/support/schema";
+import { PLEDGES_PATH } from "@/lib/account-paths";
+import { formatMicros, formatSeconds, wePledgePath } from "@/lib/support/schema";
 import { CountUp, formatCount, type CountFormat } from "./count-up";
-import { Eyebrow, SUPPORTING_CONTENT_WIDTH, centered } from "./supporting-shared";
-import { kindTint, type SupportKind } from "./supporting-styles";
+import { Eyebrow, WEPLEDGE_CONTENT_WIDTH, centered } from "./wepledge-shared";
+import { kindTint, type SupportKind } from "./wepledge-styles";
 
 const KIND_LABEL: Record<SupportKind, string> = { tokens: "Tokens", compute: "Compute", capital: "Capital" };
 const KINDS: SupportKind[] = ["tokens", "compute", "capital"];
@@ -331,7 +332,7 @@ function StatTile({ stat, index }: { stat: Stat; index: number }) {
 
 /* ----------------------------- Hero ----------------------------- */
 
-export function SupportingHero({
+export function WePledgeHero({
   stats,
   kind,
   isSignedIn,
@@ -346,10 +347,10 @@ export function SupportingHero({
     <Theme theme={themes[defaultThemeSlug]} mode="dark">
       <Section className="sp-hero" variant="transparent" padding={0}>
         <HeroSky />
-        <VStack className="sp-hero-content" gap={10} maxWidth={SUPPORTING_CONTENT_WIDTH} style={centered}>
+        <VStack className="sp-hero-content" gap={10} maxWidth={WEPLEDGE_CONTENT_WIDTH} style={centered}>
           <Grid columns={{ minWidth: 440, max: 2 }} gap={8} align="center">
             <VStack className="sp-hero-copy" gap={5} hAlign="start">
-              <Eyebrow>Supporting</Eyebrow>
+              <Eyebrow>WePledge™</Eyebrow>
               <Heading level={1} type="display-1" textWrap="balance" className="sp-hero-title">
                 Back an idea{" "}
                 <Text type="inherit" display="inline" className="sp-gradient-text">
@@ -366,7 +367,7 @@ export function SupportingHero({
                   label="All support"
                   variant={kind === null ? "primary" : "secondary"}
                   size="lg"
-                  href={supportingPath()}
+                  href={wePledgePath()}
                 />
                 {KINDS.map((entry) => (
                   <Button
@@ -374,7 +375,7 @@ export function SupportingHero({
                     label={KIND_LABEL[entry]}
                     variant={kind === entry ? "primary" : "secondary"}
                     size="lg"
-                    href={supportingPath(entry)}
+                    href={wePledgePath(entry)}
                     icon={
                       <Icon
                         icon={entry === "tokens" ? SparklesIcon : entry === "compute" ? ComputerDesktopIcon : BanknotesIcon}
@@ -386,8 +387,8 @@ export function SupportingHero({
               </HStack>
               {isSignedIn ? (
                 <Text type="supporting" textWrap="pretty">
-                  Your pledges and computers are further down this page.{" "}
-                  <Link href="#your-support">Jump to your support</Link>
+                  Your pledges live on your profile.{" "}
+                  <Link href={PLEDGES_PATH}>Open your pledges</Link>
                 </Text>
               ) : (
                 <Text type="supporting" textWrap="pretty">

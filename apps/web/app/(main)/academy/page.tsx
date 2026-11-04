@@ -9,13 +9,11 @@ import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
 import { Link } from "@astryxdesign/core/Link";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { ACHIEVEMENT_SLUG } from "@westride/db";
 import {
   listCompletedLessonIds,
   listTracksForAcademy,
   type TrackWithLessonSummaries,
 } from "@westride/db/academy";
-import { awardIfSignedIn } from "@/lib/achievements";
 import { signInPath } from "@/lib/auth-paths";
 import {
   DIFFICULTY_BADGE,
@@ -39,7 +37,6 @@ function completedCount(
 
 export default async function AcademyPage() {
   await connection();
-  await awardIfSignedIn(ACHIEVEMENT_SLUG.curiousCat);
   const { userId } = await auth();
   const [tracks, completed] = await Promise.all([
     listTracksForAcademy(),

@@ -15,7 +15,6 @@ export type AcademyTrackSeed = {
   tags: string[];
   prerequisites: string[];
   learningObjectives: string[];
-  achievementTitle: string;
 };
 
 export const academyTracks = [
@@ -38,7 +37,6 @@ export const academyTracks = [
       "Identify common AI applications in everyday products and services",
       "Recognize the limitations, risks, and ethical considerations of AI",
     ],
-    achievementTitle: "AI Explorer",
   },
   {
     slug: "how-ai-models-learn",
@@ -59,7 +57,6 @@ export const academyTracks = [
       "Describe how transformers power modern large language models like Llama",
       "Compare different types of AI models and their use cases",
     ],
-    achievementTitle: "Model Thinker",
   },
   {
     slug: "generative-ai-explained",
@@ -80,7 +77,6 @@ export const academyTracks = [
       "Explore popular generative AI tools and their capabilities",
       "Evaluate the quality, originality, and limitations of AI-generated content",
     ],
-    achievementTitle: "Generative Creator",
   },
   {
     slug: "meet-meta-ai-and-llama",
@@ -101,7 +97,6 @@ export const academyTracks = [
       "Use Meta AI across chat, search, and creative workflows",
       "Understand Meta's approach to responsible and open AI development",
     ],
-    achievementTitle: "Llama Insider",
   },
   {
     slug: "prompt-engineering-mastery",
@@ -122,7 +117,6 @@ export const academyTracks = [
       "Iterate and debug prompts to fix poor or inconsistent results",
       "Build reusable prompt templates for writing, coding, analysis, and learning",
     ],
-    achievementTitle: "Prompt Master",
   },
   {
     slug: "build-with-llama",
@@ -143,7 +137,6 @@ export const academyTracks = [
       "Understand embeddings, vector search, and retrieval-augmented generation (RAG)",
       "Learn the basics of fine-tuning, evaluation, cost, and deployment",
     ],
-    achievementTitle: "Llama Builder",
   },
   {
     slug: "ai-agents-and-automation",
@@ -164,7 +157,6 @@ export const academyTracks = [
       "Design multi-step automated workflows powered by LLMs",
       "Identify safety, reliability, and human-oversight requirements for agents",
     ],
-    achievementTitle: "Agent Architect",
   },
   {
     slug: "multimodal-creative-ai",
@@ -185,7 +177,6 @@ export const academyTracks = [
       "Explore AI workflows for voice, music, and video content",
       "Combine multiple AI tools into a complete creative pipeline",
     ],
-    achievementTitle: "Multimodal Creator",
   },
   {
     slug: "ai-in-action-real-world",
@@ -206,7 +197,6 @@ export const academyTracks = [
       "Evaluate AI tools and opportunities using ROI and feasibility criteria",
       "Understand how AI is changing careers and the skills employers value",
     ],
-    achievementTitle: "AI Practitioner",
   },
   {
     slug: "idea-to-launch-ai-product",
@@ -231,6 +221,5 @@ export const academyTracks = [
       "Build and test a working prototype using Meta AI and Llama",
       "Create a launch, feedback, and iteration plan for your product",
     ],
-    achievementTitle: "AI Founder",
   },
 ] satisfies AcademyTrackSeed[];

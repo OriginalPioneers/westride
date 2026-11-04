@@ -204,18 +204,18 @@ export const AGENTS: AgentDefinition[] = [
     name: "Execution Planner",
     tagline: "From idea to launch",
     description:
-      "Roadmaps, milestones, responsibilities, dependencies, and Build Factory handoff.",
+      "Roadmaps, milestones, responsibilities, dependencies, and Project Factory handoff.",
     group: "core",
     icon: "execution",
     usesWebSearch: false,
     inDefaultEvaluation: true,
     brief: `You are the Execution Planner. You turn the idea into a sequenced plan.
 - Produce a roadmap with milestones, owners (by role), dependencies, and rough durations. Start with the smallest version that tests the riskiest assumption.
-- Identify what needs to be built in software and write a handoff brief for the WeStride Build Studio: the product in one paragraph, the core user flows, the data it stores, integrations, and what is explicitly out of scope for version one.
+- Identify what needs to be built in software and write a handoff brief for the WeStride Project Factory: the product in one paragraph, the core user flows, the data it stores, integrations, and what is explicitly out of scope for version one.
 - Call out dependencies on the other specialists' work (legal review before launch, pricing before the landing page, and so on).`,
     starters: [
       "Lay out a 90-day roadmap.",
-      "Write the Build Studio handoff brief.",
+      "Write the Project Factory handoff brief.",
       "What is the smallest version we could launch?",
     ],
   },

@@ -15,6 +15,7 @@ import {
 import type { RunnerConfig } from "./config";
 import { EventStream } from "./events";
 import { log, warn } from "./log";
+import { describeOllamaModel } from "./ollama";
 
 type Exec = { code: number; stdout: string; stderr: string };
 
@@ -62,6 +63,52 @@ type MuseOutcome = {
 
 type Envelope = { payload_type?: unknown; payload?: unknown; stream?: unknown };
 
+// Muse Code's only provider that reaches a network endpoint is `meta`, and it
+// starts by fetching a model catalog from that endpoint, which Ollama does not
+// serve. Both have settings-file answers: `endpoint_transport` repoints the
+// provider at Ollama's OpenAI-compatible API with no credential, and
+// `model_catalog` supplies the catalog row the fetch would have returned. This
+// is what `ollama launch muse` writes. Muse checks each row against its own
+// provider and profile ids and drops rows that disagree, hence "meta"/"tbh".
+const MUSE_PROVIDER_ID = "meta";
+const MUSE_PROFILE_ID = "tbh";
+const FALLBACK_CONTEXT_LIMIT = 32768;
+const FALLBACK_OUTPUT_LIMIT = 32768;
+
+/**
+ * Writes a settings file under a config root used only for this job, so Muse
+ * reads it through XDG_CONFIG_HOME and nothing else on the runner changes.
+ */
+async function writeOllamaSettings(configHome: string, ollamaUrl: string, model: string): Promise<string> {
+  const info = await describeOllamaModel(ollamaUrl, model);
+  const contextLimit = info?.contextLength ?? FALLBACK_CONTEXT_LIMIT;
+  const settings = {
+    schema_version: 1,
+    provider: MUSE_PROVIDER_ID,
+    model,
+    endpoint_transport: { base_url: `${ollamaUrl}/v1`, auth: "none" },
+    model_catalog: [
+      {
+        model_id: model,
+        provider_id: MUSE_PROVIDER_ID,
+        profile_id: MUSE_PROFILE_ID,
+        display_label: model,
+        visibility: "visible",
+        display_order: 0,
+        is_default: true,
+        context_limit: contextLimit,
+        output_limit: Math.min(contextLimit, FALLBACK_OUTPUT_LIMIT),
+        description: "Served by Ollama",
+      },
+    ],
+  };
+  const dir = join(configHome, "muse");
+  await mkdir(dir, { recursive: true });
+  const file = join(dir, "settings.json");
+  await writeFile(file, JSON.stringify(settings, null, 2), { encoding: "utf8", mode: 0o600 });
+  return file;
+}
+
 function findSessionId(event: Envelope & Record<string, unknown>): string | null {
   const stream = event.stream && typeof event.stream === "object" ? (event.stream as Record<string, unknown>) : null;
   if (stream && (stream.kind === "session" || stream.kind === "exec.usage") && typeof stream.id === "string" && stream.id.length >= 8) {
@@ -78,6 +125,7 @@ function runMuse(
   config: RunnerConfig,
   repoDir: string,
   promptFile: string,
+  configHome: string | null,
   events: EventStream,
   signal: AbortSignal,
 ): Promise<MuseOutcome> {
@@ -100,6 +148,8 @@ function runMuse(
       TERM: "dumb",
       NO_COLOR: "1",
       HOME: process.env.HOME ?? "/tmp",
+      // The launcher must not try to update the image's pinned Muse Code.
+      MUSE_NO_AUTO_UPDATE: "1",
     };
     if (job.model.provider === "meta") {
       if (!config.metaApiKey) {
@@ -110,16 +160,22 @@ function runMuse(
       env.META_API_KEY = config.metaApiKey;
       args.push("--contributor-mode", job.model.contributorMode ? "on" : "off");
     } else {
-      // Ollama on the host, through its OpenAI-compatible endpoint. Muse Code
-      // 1.4 refuses this (its `local` provider is an on-device runtime and it
-      // ships no OpenAI-compatible provider); the runner only offers Ollama
-      // models when WESTRIDE_OFFER_OLLAMA_MODELS is set, for trying newer builds.
-      args.push("--provider", "local", "--base-url", `${config.ollamaUrl}/v1`);
-      env.MUSE_EXPERIMENTAL_LOCAL_MODELS = "1";
+      // Ollama on the host. The settings file under configHome (see
+      // writeOllamaSettings) repoints Muse's provider at Ollama's
+      // OpenAI-compatible endpoint; no key is involved.
+      if (!configHome) {
+        resolve({ code: 1, summary: null, sessionId: null, usage: null, eventCount: 0 });
+        events.emit("log", { stream: "runner", text: "The Ollama settings for this job were not written." });
+        return;
+      }
+      env.XDG_CONFIG_HOME = configHome;
     }
     events.emit("setup", {
       step: "muse",
-      message: `Starting Muse Code with ${job.model.provider === "local" ? "local model" : "model"} ${job.model.model}`,
+      message:
+        job.model.provider === "local"
+          ? `Starting Muse Code with Ollama model ${job.model.model} at ${config.ollamaUrl}`
+          : `Starting Muse Code with model ${job.model.model}`,
       args: args.filter((arg) => arg !== promptFile),
     });
 
@@ -250,6 +306,7 @@ export async function runJob(job: LeasedJob, config: RunnerConfig, signal: Abort
   const events = new EventStream(resolveEventsUrl(job.eventsUrl, config.baseUrl), job.jobId, job.runToken);
   const repoDir = join(config.workDir, job.jobId.slice(0, 8));
   const promptFile = join(config.workDir, `${job.jobId.slice(0, 8)}.prompt.md`);
+  const configHome = join(config.workDir, `${job.jobId.slice(0, 8)}.config`);
   let baseSha = "0".repeat(40);
   let error: string | null = null;
   let exitCode = 1;
@@ -289,12 +346,29 @@ export async function runJob(job: LeasedJob, config: RunnerConfig, signal: Abort
     must(await run("git", ["checkout", "-B", job.repo.branch], { cwd: repoDir }), "git checkout");
     events.emit("setup", { step: "branch", message: `On ${job.repo.branch}`, baseSha });
 
-    await writeFile(promptFile, job.prompt, "utf8");
+    // Smaller local models invent absolute paths when left to guess, and a
+    // file written outside the checkout never reaches the pull request. Tell
+    // the agent exactly where the repository is.
+    const whereYouAre = [
+      "",
+      "## Where you are",
+      "",
+      `The repository is checked out at \`${repoDir}\`, which is your current working directory. Create and edit files with paths relative to it (for example \`index.html\`, \`src/main.ts\`), never under any other directory.`,
+      "",
+    ].join("\n");
+    await writeFile(promptFile, job.prompt + whereYouAre, "utf8");
     if (!existsSync(join(config.binDir, "muse"))) {
       throw new Error("Muse Code is not installed in this runner image.");
     }
+    let museConfigHome: string | null = null;
+    if (job.model.provider === "local") {
+      await rm(configHome, { recursive: true, force: true });
+      await writeOllamaSettings(configHome, config.ollamaUrl, job.model.model);
+      museConfigHome = configHome;
+      events.emit("setup", { step: "muse", message: `Muse Code will use Ollama at ${config.ollamaUrl}` });
+    }
 
-    const outcome = await runMuse(job, config, repoDir, promptFile, events, stop);
+    const outcome = await runMuse(job, config, repoDir, promptFile, museConfigHome, events, stop);
     exitCode = outcome.code;
     summary = outcome.summary;
     sessionId = outcome.sessionId;
@@ -325,6 +399,7 @@ export async function runJob(job: LeasedJob, config: RunnerConfig, signal: Abort
     await events.flush();
     await rm(repoDir, { recursive: true, force: true }).catch(() => undefined);
     await rm(promptFile, { force: true }).catch(() => undefined);
+    await rm(configHome, { recursive: true, force: true }).catch(() => undefined);
   }
 
   return {

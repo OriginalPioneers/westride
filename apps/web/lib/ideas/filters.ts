@@ -2,9 +2,11 @@ import type { IdeaMemberRole, IdeaType } from "@westride/db";
 import {
   isIdeaSort,
   isIdeaView,
+  isSupportWant,
   type IdeaFilters,
   type IdeaSort,
   type IdeaView,
+  type SupportWant,
 } from "@westride/db/ideas";
 
 export const IDEA_TYPE_LABELS: Record<IdeaType, string> = {
@@ -37,6 +39,13 @@ export const IDEA_SORT_OPTIONS: { value: IdeaSort; label: string }[] = [
 
 export const DEFAULT_IDEA_SORT: IdeaSort = "newest";
 
+/** What an idea can ask supporters for, in the order the filters show them. */
+export const SUPPORT_WANT_LABELS: Record<SupportWant, string> = {
+  tokens: "Tokens",
+  compute: "Compute",
+  capital: "Capital",
+};
+
 /**
  * Raw values as they appear in the URL. Empty string means unset.
  *
@@ -52,6 +61,8 @@ export type IdeaFilterValues = {
   category: string;
   country: string;
   sort: string;
+  /** `tokens`, `compute`, or `capital`. Empty means every idea. */
+  wants: string;
 };
 
 export const EMPTY_IDEA_FILTERS: IdeaFilterValues = {
@@ -60,6 +71,7 @@ export const EMPTY_IDEA_FILTERS: IdeaFilterValues = {
   category: "",
   country: "",
   sort: "",
+  wants: "",
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -76,6 +88,7 @@ export function readIdeaFilterValues(params: SearchParams): IdeaFilterValues {
     category: firstParam(params, "category"),
     country: firstParam(params, "country"),
     sort: firstParam(params, "sort"),
+    wants: firstParam(params, "wants"),
   };
 }
 
@@ -120,15 +133,20 @@ export function toIdeaFilters(
     view: collection.kind === "view" ? collection.view : undefined,
     countryCode: values.country || undefined,
     sort: isIdeaSort(values.sort) ? values.sort : DEFAULT_IDEA_SORT,
+    wants: isSupportWant(values.wants) ? values.wants : undefined,
   };
 }
 
 export function ideaFiltersQuery(values: IdeaFilterValues): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(values)) {
-    if (value && !(key === "sort" && value === DEFAULT_IDEA_SORT)) {
-      params.set(key, value);
+    if (!value || (key === "sort" && value === DEFAULT_IDEA_SORT)) {
+      continue;
     }
+    if (key === "wants" && !isSupportWant(value)) {
+      continue;
+    }
+    params.set(key, value);
   }
   return params.toString();
 }

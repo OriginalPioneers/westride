@@ -748,7 +748,7 @@ export function IdeaFactoryDialog({
     if (!data) {
       return (
         <VStack height="100%" vAlign="center" hAlign="center">
-          <Spinner size="lg" label="Opening the Idea Factory…" />
+          <Spinner size="lg" label="Opening the Idea Workshop…" />
         </VStack>
       );
     }
@@ -918,7 +918,7 @@ export function IdeaFactoryDialog({
           header={
             <VStack>
               <DialogHeader
-                title="Idea Factory"
+                title="Idea Workshop"
                 subtitle={idea.name}
                 hasDivider={!showStepper}
                 onOpenChange={onOpenChange}

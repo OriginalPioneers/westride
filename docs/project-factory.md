@@ -1,6 +1,6 @@
-# Build Studio
+# Project Factory
 
-Build Studio is where an idea from the Idea Studio becomes software. A member creates a **project**, optionally linked to an idea, links one or more GitHub repositories, and tracks the work as **tickets**. Muse drafts the backlog and roadmap and ranks the work; a Muse Code agent can take a ticket and open a pull request, without the member running Muse Code locally; and the project shows what is happening in its repositories.
+Project Factory is where an idea from the Idea Workshop becomes software. A member creates a **project**, optionally linked to an idea, links one or more GitHub repositories, and tracks the work as **tickets**. Muse drafts the backlog and roadmap and ranks the work; a Muse Code agent can take a ticket and open a pull request, without the member running Muse Code locally; and the project shows what is happening in its repositories.
 
 This document records the setup, the data model, and every delivered surface.
 
@@ -30,7 +30,7 @@ The run dialog asks where the compute runs. The choice is stored on the run as `
 | Target | Where | Model | Needs |
 | --- | --- | --- | --- |
 | **WeStride Cloud** | A Modal sandbox on WeStride's account | WeStride's Meta key | A WeStride Cloud balance of at least `MIN_BALANCE_FOR_COMPUTE_MICROS` ($0.50). Charged per `docs/westride-cloud.md`. |
-| **Local** | The member's own computer, running the supporter runner in Docker | Muse models through the `META_API_KEY` set on that runner (Ollama models only when the runner opts in with `WESTRIDE_OFFER_OLLAMA_MODELS=1`; the bundled Muse Code cannot use them yet, see `apps/runner/README.md`) | A computer linked from Supporting and online. Nothing is charged by WeStride. |
+| **Local** | The member's own computer, running the supporter runner in Docker | Muse models through the `META_API_KEY` set on that runner (Ollama models only when the runner opts in with `WESTRIDE_OFFER_OLLAMA_MODELS=1`; the bundled Muse Code cannot use them yet, see `apps/runner/README.md`) | A computer linked from WePledge™ and online. Nothing is charged by WeStride. |
 | **Sponsors** | A supporter's computer with an active compute pledge to the project's idea | The supporter's Ollama models or Meta key | The project linked to an idea, a sponsor's computer online, and a **public** repository. The run is credited to the pledge. |
 | **3rd party** | A Vercel or Modal sandbox on the member's own account | The member's Meta key | Vercel or Modal and Meta connected in Settings. |
 
@@ -51,7 +51,7 @@ Muse Code agents run in [Vercel Sandbox](https://vercel.com/docs/vercel-sandbox)
 - Optional: `VERCEL_DEVICE_CLIENT_ID` turns on **Sign in with Vercel** (the OAuth device flow Vercel's CLI and Sandbox SDK use). Without it, members paste an access token from their Vercel account settings.
 - Optional tuning: `BUILD_RUNNER_SANDBOX_TIMEOUT_MINUTES` (default 45, max 300), `BUILD_RUNNER_SANDBOX_VCPUS` (default 2), `BUILD_RUNNER_MAX_ACTIVE_RUNS` (default 2 per project).
 
-`isAgentRunnerConfigured()` in `apps/web/lib/build/agent/config.ts` gates the UI: without these, the **Run with Muse Code** button is disabled with a note, and everything else in Build Studio still works.
+`isAgentRunnerConfigured()` in `apps/web/lib/build/agent/config.ts` gates the UI: without these, the **Run with Muse Code** button is disabled with a note, and everything else in Project Factory still works.
 
 ### The member's Vercel connection
 
@@ -148,6 +148,6 @@ Muse Code's JSONL event shape is Muse's own and not documented in detail; `descr
 
 ## Checks
 
-From the repository root: `bun test packages/db/tests/build-rules.test.ts`, `bunx tsc --noEmit -p apps/web`, and `bun run lint`. From `apps/web`: `npx @astryxdesign/cli@0.7.4 doctor --built "app/(main)/build"`. The two `theme-*` doctor findings are pre-existing repository-wide theme checks, not Build Studio findings.
+From the repository root: `bun test packages/db/tests/build-rules.test.ts`, `bunx tsc --noEmit -p apps/web`, and `bun run lint`. From `apps/web`: `npx @astryxdesign/cli@0.7.4 doctor --built "app/(main)/build"`. The two `theme-*` doctor findings are pre-existing repository-wide theme checks, not Project Factory findings.
 
-The agent runner cannot be exercised without a member's connected Vercel account and a public callback URL; the rest of Build Studio is covered by the checks above and a browser smoke test.
+The agent runner cannot be exercised without a member's connected Vercel account and a public callback URL; the rest of Project Factory is covered by the checks above and a browser smoke test.

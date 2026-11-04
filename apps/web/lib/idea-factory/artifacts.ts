@@ -185,7 +185,7 @@ export function artifactInstructions(canDrawImages: boolean): string {
 `
     : "";
   return `## Making files
-You can hand the team files. To make one, put a fenced code block tagged \`artifact\` in your reply containing exactly one JSON object. The Idea Factory turns each block into a file shown beside your reply and removes the block from the text, so write the prose as if the file is attached ("Here is the brief" rather than the brief itself).
+You can hand the team files. To make one, put a fenced code block tagged \`artifact\` in your reply containing exactly one JSON object. The Idea Workshop turns each block into a file shown beside your reply and removes the block from the text, so write the prose as if the file is attached ("Here is the brief" rather than the brief itself).
 ${image}- A document (brief, guidelines, copy deck, checklist, budget, plan): {"kind":"document","title":"Brand brief v1","collection":"brand-brief","format":"markdown","content":"<the full document>"}. format may be markdown, text, csv, or json. At most ${MAX_DOCUMENT_BLOCKS} documents per reply.
 - Only make a file when the member asked for a deliverable or clearly wants one to keep. Otherwise answer in prose.
 - Reuse the collection name when iterating on the same deliverable so versions sit together; the team picks the one they like and archives the rest. Archived files are no longer listed in "Files the team has"; treat them as gone and build on the ones marked chosen.

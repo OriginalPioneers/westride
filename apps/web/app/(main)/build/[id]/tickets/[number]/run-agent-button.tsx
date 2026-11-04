@@ -68,8 +68,8 @@ const NEEDS_BANNERS: Record<
   device: {
     title: "Link a computer",
     description:
-      "Start the WeStride runner on your computer and link it from Supporting. It picks up runs while it is online.",
-    primary: { label: "Open Supporting", href: "/supporting" },
+      "Start the WeStride runner on your computer and link it from WePledge™. It picks up runs while it is online.",
+    primary: { label: "Open WePledge™", href: "/wepledge" },
   },
 };
 

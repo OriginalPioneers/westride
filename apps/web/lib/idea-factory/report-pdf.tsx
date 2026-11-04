@@ -296,7 +296,7 @@ function Cover({
       </Text>
       <Text style={styles.meta}>
         {formatDate(evaluation.completedAt ?? evaluation.createdAt)} · {model} · Prepared by the AI
-        Advisory Team in WeStride&apos;s Idea Factory
+        Advisory Team in WeStride&apos;s Idea Workshop
       </Text>
 
       <View style={styles.hero}>
@@ -489,7 +489,7 @@ function Report({ idea, evaluation }: { idea: IdeaWithDetails; evaluation: Evalu
   return (
     <Document
       title={`${idea.name} — Idea Workshop report`}
-      author="WeStride Idea Factory"
+      author="WeStride Idea Workshop"
       subject="AI advisory team evaluation"
     >
       <Page size="LETTER" style={styles.page}>
@@ -507,7 +507,7 @@ function Report({ idea, evaluation }: { idea: IdeaWithDetails; evaluation: Evalu
           <Advisor key={finding.id} finding={finding} score={scores.get(finding.agentSlug) ?? null} />
         ))}
         <View style={styles.footer} fixed>
-          <Text>WeStride · Idea Factory · {idea.name}</Text>
+          <Text>WeStride · Idea Workshop · {idea.name}</Text>
           <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>
       </Page>

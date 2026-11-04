@@ -267,7 +267,7 @@ export async function setIdeaFeatured(id: string, isFeatured: boolean): Promise<
 }
 
 // ---------------------------------------------------------------------------
-// Projects (Build Studio)
+// Projects (Project Factory)
 // ---------------------------------------------------------------------------
 
 export type AdminProjectRow = Pick<

@@ -21,7 +21,7 @@ out/
 build
 dist
 storybook-static
-# Build Studio source directories happen to be named "build"
+# Project Factory source directories happen to be named "build"
 !apps/web/app/(main)/build/
 !apps/web/lib/build/
 

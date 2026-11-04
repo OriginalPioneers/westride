@@ -35,15 +35,15 @@ export const SCREENSHOTS: Shot[] = [
   },
   {
     src: "/mobile-app/screenshots/build-studio.jpeg",
-    title: "Build Studio",
+    title: "Project Factory",
     caption: "Projects, open tickets, and the repository.",
-    alt: "Build Studio on a phone, with a list of projects and a button to start a new build.",
+    alt: "Project Factory on a phone, with a list of projects and a button to start a new build.",
   },
   {
     src: "/mobile-app/screenshots/ai-agent-fleet.jpeg",
-    title: "AI Agent Fleet",
+    title: "Agent Studio",
     caption: "Standing Muse agents, with a backlog you can see.",
-    alt: "AI Agent Fleet on a phone, showing an empty state and a button to create an agent.",
+    alt: "Agent Studio on a phone, showing an empty state and a button to create an agent.",
   },
   {
     src: "/mobile-app/screenshots/academy.jpeg",
@@ -72,12 +72,12 @@ export const TRY_ITEMS: GuideItem[] = [
   {
     title: "Open a build",
     detail:
-      "In Build Studio, open a project and read its tickets. Check that the name, status, and repository match the website.",
+      "In Project Factory, open a project and read its tickets. Check that the name, status, and repository match the website.",
   },
   {
     title: "Check an agent",
     detail:
-      "Open AI Agent Fleet. If you have an agent, confirm its brief is there. If you do not, try creating one.",
+      "Open Agent Studio. If you have an agent, confirm its brief is there. If you do not, try creating one.",
   },
   {
     title: "Start a lesson",

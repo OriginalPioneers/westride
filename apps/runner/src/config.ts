@@ -23,10 +23,9 @@ export type RunnerConfig = {
   /** Where Muse Code is installed. */
   binDir: string;
   /**
-   * Advertise Ollama models to WeStride. Off by default: the Muse Code build
-   * the image ships cannot talk to Ollama (its `local` provider is Muse's own
-   * on-device runtime, macOS only, and it has no OpenAI-compatible provider),
-   * so offering those models would only produce failed jobs.
+   * Advertise Ollama's tool-capable models to WeStride so jobs can run on them
+   * with no API key. On by default; WESTRIDE_OFFER_OLLAMA_MODELS=0 turns it off
+   * for a runner that should only use its Meta key.
    */
   offerOllamaModels: boolean;
 };
@@ -36,8 +35,8 @@ function env(name: string, fallback: string): string {
   return value && value.trim() ? value.trim() : fallback;
 }
 
-function isTruthy(value: string | undefined): boolean {
-  return /^(1|true|yes|on)$/i.test(value?.trim() ?? "");
+function isFalsy(value: string | undefined): boolean {
+  return /^(0|false|no|off)$/i.test(value?.trim() ?? "");
 }
 
 /**
@@ -74,7 +73,7 @@ export function loadConfig(): RunnerConfig {
     metaApiKey: process.env.META_API_KEY?.trim() || null,
     workDir: env("WESTRIDE_WORK_DIR", "/work"),
     binDir: env("MUSE_INSTALL_DIR", "/opt/muse/bin"),
-    offerOllamaModels: isTruthy(process.env.WESTRIDE_OFFER_OLLAMA_MODELS),
+    offerOllamaModels: !isFalsy(process.env.WESTRIDE_OFFER_OLLAMA_MODELS),
   };
 }
 

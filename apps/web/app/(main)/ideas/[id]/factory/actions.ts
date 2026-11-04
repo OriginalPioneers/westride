@@ -159,7 +159,7 @@ type MemberContext = { userId: string; idea: IdeaWithDetails };
 async function requireMember(ideaId: string): Promise<MemberContext | Failure> {
   const { userId } = await auth();
   if (!userId) {
-    return failure("Sign in to use the Idea Factory.");
+    return failure("Sign in to use the Idea Workshop.");
   }
   if (!uuid.safeParse(ideaId).success) {
     return failure("That idea does not exist.");
@@ -169,7 +169,7 @@ async function requireMember(ideaId: string): Promise<MemberContext | Failure> {
     isIdeaMember(ideaId, userId),
   ]);
   if (!idea || !member) {
-    return failure("Only members of this idea can open its Idea Factory.");
+    return failure("Only members of this idea can open its Idea Workshop.");
   }
   return { userId, idea };
 }
@@ -237,7 +237,7 @@ function today(): string {
 // Loading
 // ---------------------------------------------------------------------------
 
-/** A Build Studio project linked to the idea, as the factory shows it. */
+/** A Project Factory project linked to the idea, as the factory shows it. */
 export type LinkedProject = {
   id: string;
   name: string;
@@ -255,7 +255,7 @@ export type FactoryData = {
   members: MemberProfile[];
   /** Every file the team made, archived ones included. */
   artifacts: IdeaFactoryArtifact[];
-  /** Build Studio projects already linked to this idea. */
+  /** Project Factory projects already linked to this idea. */
   projects: LinkedProject[];
   /** The newest set of suggested projects, if Muse has drafted one. */
   buildSuggestion: IdeaBuildSuggestion | null;
@@ -801,7 +801,7 @@ export async function generateEvaluationReport(input: unknown): Promise<ReportRe
 }
 
 // ---------------------------------------------------------------------------
-// Suggested Build Studio projects
+// Suggested Project Factory projects
 // ---------------------------------------------------------------------------
 
 const suggestSchema = z.object({
@@ -868,7 +868,7 @@ export type SuggestResult =
   | { status: "ok"; suggestion: IdeaBuildSuggestion; request: MuseRequestSummary | null }
   | (Failure & { request?: MuseRequestSummary | null });
 
-/** Asks Muse how to split the idea into Build Studio projects. */
+/** Asks Muse how to split the idea into Project Factory projects. */
 export async function suggestBuildProjects(input: unknown): Promise<SuggestResult> {
   const parsed = suggestSchema.safeParse(input);
   if (!parsed.success) {
@@ -922,7 +922,7 @@ export async function suggestBuildProjects(input: unknown): Promise<SuggestResul
   if (!cleaned) {
     return {
       ...failure(
-        result.attempt.error ?? "Muse answered in a shape the Idea Factory could not read.",
+        result.attempt.error ?? "Muse answered in a shape the Idea Workshop could not read.",
       ),
       request,
     };
@@ -1231,7 +1231,7 @@ export async function runEvaluationAgent(input: unknown): Promise<RunAgentResult
   const answer = result.text ? cleanAnswer(parseJsonOutput(result.text)) : null;
   if (!answer) {
     const message =
-      result.attempt.error ?? "Muse answered in a shape the Idea Factory could not read.";
+      result.attempt.error ?? "Muse answered in a shape the Idea Workshop could not read.";
     const finding = await failFinding({
       evaluationId,
       agentSlug,
@@ -1356,7 +1356,7 @@ export async function synthesizeEvaluation(input: unknown): Promise<SynthesizeRe
   const synthesis = result.text ? cleanSynthesis(parseJsonOutput(result.text)) : null;
   if (!synthesis) {
     const message =
-      result.attempt.error ?? "Muse answered in a shape the Idea Factory could not read.";
+      result.attempt.error ?? "Muse answered in a shape the Idea Workshop could not read.";
     await failEvaluation({ evaluationId, error: message, requestId: request?.id ?? null });
     const failed = await getEvaluation(evaluationId);
     return { status: "error", message, evaluation: failed ?? evaluation, request };

@@ -75,7 +75,6 @@ export default function TrackDetailScreen() {
           value={formatDuration(track.estimatedDurationMinutes)}
         />
         <ListRow label="Lessons" value={String(track.lessonCount)} />
-        <ListRow label="Completion badge" value={track.achievementTitle} />
       </ListSection>
 
       {track.prerequisites.length > 0 ? (

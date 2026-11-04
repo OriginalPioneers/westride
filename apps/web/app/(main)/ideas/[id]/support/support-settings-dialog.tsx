@@ -97,7 +97,7 @@ export function SupportSettingsDialog({
                   What this idea is looking for
                 </Heading>
                 <Text type="supporting">
-                  These show on the idea and in the Supporting page, so people who want to help can find you.
+                  These show on the idea and on the WePledge™ page, so people who want to help can find you.
                   Supporters still choose what to pledge.
                 </Text>
                 <CheckboxInput

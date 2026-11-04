@@ -1,16 +1,7 @@
-export {
-  achievementCatalog,
-  mainAchievementCatalog,
-  achievementGroups,
-} from "./achievement-catalog";
-export { ACHIEVEMENT_SLUG } from "./achievement-catalog";
-export type { AchievementSlug } from "./achievement-catalog";
 export { skillCatalog, skillSlug } from "./skill-catalog";
 export { tagCatalog, tagSlug } from "./tag-catalog";
 
 export {
-  achievements,
-  achievementsRelations,
   artifactKind,
   agentJobEvents,
   agentJobEventsRelations,
@@ -151,14 +142,11 @@ export {
   trackDifficulty,
   tracks,
   tracksRelations,
-  userAchievements,
-  userAchievementsRelations,
   vercelConnections,
   vercelCredentialKind,
 } from "./schema";
 
 export type {
-  Achievement,
   Agent,
   AgentJob,
   AgentJobEvent,
@@ -275,7 +263,6 @@ export type {
   TicketPriority,
   TicketSource,
   TicketStatus,
-  NewAchievement,
   NewChatConnection,
   NewClaimRequest,
   NewCountry,
@@ -299,11 +286,9 @@ export type {
   NewSkill,
   NewTag,
   NewTrack,
-  NewUserAchievement,
   Skill,
   Tag,
   Track,
-  UserAchievement,
   VercelConnection,
   VercelCredentialKind,
   NewVercelConnection,

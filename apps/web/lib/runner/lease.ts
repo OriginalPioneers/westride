@@ -18,7 +18,7 @@ const DEVICE_EVENT_SEQUENCE = -900;
  * Gives a device one piece of work it may run, with everything it needs and
  * nothing more: a clone URL, the prompt, the model to use, and a run token
  * that only works for that work's event stream. Agent Studio jobs come
- * first, then Build Studio ticket runs; both ride the same protocol.
+ * first, then Project Factory ticket runs; both ride the same protocol.
  */
 export async function leaseForDevice(device: Device): Promise<LeasedJob | null> {
   const config = getVolunteerRunnerConfig();
@@ -110,11 +110,11 @@ async function leaseAgentJob(device: Device, callbackBaseUrl: string, timeoutMs:
 }
 
 // ---------------------------------------------------------------------------
-// Build Studio ticket runs
+// Project Factory ticket runs
 // ---------------------------------------------------------------------------
 
 /**
- * A Build Studio run on a linked computer. LOCAL runs belong to the member
+ * A Project Factory run on a linked computer. LOCAL runs belong to the member
  * whose computer this is, so a private repository may be cloned with a
  * short-lived, read-only token of WeStride's that is scoped to that one
  * repository; it lives in the clone URL for the clone and is wiped with the

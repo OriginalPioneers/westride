@@ -15,8 +15,8 @@ import { DEVICES_PATH, PLEDGES_PATH } from "@/lib/account-paths";
 import { isVolunteerRunnerConfigured } from "@/lib/build/agent/config";
 import { deviceDetail } from "@/lib/support/describe";
 import { AccountTabs } from "../../section-tabs";
-import { DeviceActions } from "../../supporting/device-actions";
-import { LinkDeviceButton } from "../../supporting/link-device-dialog";
+import { DeviceActions } from "../../wepledge/device-actions";
+import { LinkDeviceButton } from "../../wepledge/link-device-dialog";
 
 export const metadata: Metadata = {
   title: "Devices",

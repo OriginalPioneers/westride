@@ -112,7 +112,7 @@ export function buildAgentInstructions(input: {
     input.artifacts === null
       ? ""
       : `\n\n${artifactInstructions(Boolean(input.agent.createsImages))}\n\n${filesContext(input.artifacts)}`;
-  return `You are one specialist on the AI Advisory Team inside WeStride's Idea Factory, helping a founding team develop an early-stage ${IDEA_TYPE_LABELS[input.idea.type].toLowerCase()} idea. Today is ${input.today}.
+  return `You are one specialist on the AI Advisory Team inside WeStride's Idea Workshop, helping a founding team develop an early-stage ${IDEA_TYPE_LABELS[input.idea.type].toLowerCase()} idea. Today is ${input.today}.
 
 ${input.agent.brief}
 
@@ -196,7 +196,7 @@ export const EVALUATION_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-export const SYNTHESIS_INSTRUCTIONS = `You are Muse, the lead of the AI Advisory Team in WeStride's Idea Factory. Several specialists have just evaluated the same idea independently. Your job is to synthesise their findings for the founding team.
+export const SYNTHESIS_INSTRUCTIONS = `You are Muse, the lead of the AI Advisory Team in WeStride's Idea Workshop. Several specialists have just evaluated the same idea independently. Your job is to synthesise their findings for the founding team.
 
 - Read every specialist's verdict and findings. Treat them as colleagues who may be right or wrong.
 - Surface where they agree, and where they disagree or where one specialist's finding undermines another's (for example a promising market but unprofitable unit economics, or a regulatory barrier that changes the launch plan). Explain each disagreement and how the team could resolve it.
@@ -244,7 +244,7 @@ export const SYNTHESIS_SCHEMA = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Suggested Build Studio projects
+// Suggested Project Factory projects
 // ---------------------------------------------------------------------------
 
 export const BUILD_SUGGESTION_KINDS = [
@@ -258,9 +258,9 @@ export const BUILD_SUGGESTION_KINDS = [
   "other",
 ] as const;
 
-export const BUILD_SUGGESTIONS_INSTRUCTIONS = `You are Muse, lead of the AI Advisory Team in WeStride's Idea Factory, preparing the handoff to WeStride's Build Studio, where each software project gets its own board, tickets, and GitHub repository, and coding agents work from the tickets.
+export const BUILD_SUGGESTIONS_INSTRUCTIONS = `You are Muse, lead of the AI Advisory Team in WeStride's Idea Workshop, preparing the handoff to WeStride's Project Factory, where each software project gets its own board, tickets, and GitHub repository, and coding agents work from the tickets.
 
-Split what this idea needs built into separate Build Studio projects, one per repository.
+Split what this idea needs built into separate Project Factory projects, one per repository.
 - Think in deployable units: a web app, a mobile app, an API or backend, background workers, a shared library or SDK, infrastructure, documentation or marketing site. Merge things that would sensibly live in one repository; split things with different release cadences, runtimes, or teams.
 - Prefer the smallest set that lets the team ship a first version. Two to five projects is typical; one is fine for a simple idea. Mark anything that can wait as a later project by putting it after the essentials and explaining in its description.
 - For each project, write a description a coding agent could start from: what it is, its core user flows or responsibilities, the data it owns, integrations, the stack you recommend and why, and what is out of scope for version one. Markdown, under 2,500 characters.
@@ -342,10 +342,10 @@ export function buildSuggestionsInput(input: {
 
 ${sharedContext(input.latestEvaluation)}
 
-## Build Studio projects that already exist for this idea
+## Project Factory projects that already exist for this idea
 ${existing}
 
-Propose the Build Studio projects this idea needs.`;
+Propose the Project Factory projects this idea needs.`;
 }
 
 export function buildSynthesisInput(evaluation: EvaluationWithFindings): string {

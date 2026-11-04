@@ -32,7 +32,7 @@ import {
 import { projects } from "./build-schema";
 import { ideas } from "./schema";
 
-// Shared with Build Studio's `agent_runs`; defined in build-enums.ts.
+// Shared with Project Factory's `agent_runs`; defined in build-enums.ts.
 export { computeSource, museSource, runnerKind };
 
 export const agentStatus = pgEnum("agent_status", ["ACTIVE", "PAUSED", "ARCHIVED"]);
