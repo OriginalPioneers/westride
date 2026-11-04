@@ -33,9 +33,6 @@ import { Theme } from "@astryxdesign/core/theme";
 import {
   ArrowRightIcon,
   ArrowTopRightOnSquareIcon,
-  ArrowsPointingOutIcon,
-  PlayIcon,
-  SpeakerWaveIcon,
 } from "@heroicons/react/20/solid";
 import { CodeBracketIcon, HeartIcon } from "@heroicons/react/24/outline";
 import { defaultThemeSlug, themes } from "@/astryx-themes";
@@ -62,7 +59,7 @@ import {
   type StackLogo,
   type Tint,
 } from "./landing-content";
-import { youtubeEmbedUrl, youtubeVideoId } from "../academy/format";
+import { youtubeEmbedUrl } from "../academy/format";
 import { HeroGlobe } from "./hero-globe";
 import { ImportRepoForm, type ImportResume } from "./import-repo-form";
 import { LANDING_STYLES } from "./landing-styles";
@@ -639,11 +636,8 @@ type HeroSection = {
   links: { label: string; href: string }[];
   /** The platform page the preview shows while this section is active. */
   screenshot: { src: string; alt: string };
-  /**
-   * A YouTube video that plays in the preview instead of the screenshot.
-   * Until `url` is a YouTube video, `poster` is shown as the player.
-   */
-  video?: { url?: string; title: string; poster?: string };
+  /** A YouTube video that plays in the preview instead of the screenshot. */
+  video?: { id: string; title: string };
   /** The tab's icon, or "stamp" for the WeStride stamp in its place. */
   icon: ComponentType<SVGProps<SVGSVGElement>> | "stamp";
   /**
@@ -715,11 +709,9 @@ const HERO_SECTIONS: HeroSection[] = [
       alt: "WeStride intro: What if anyone could tap into Meta AI.",
     },
     video: {
-      // Add a YouTube `url` once the intro is published. Until then the
-      // poster stands in, so the page can be screenshotted as a video.
+      id: "YfN8RQ1bZfs",
       title:
         "WeStride: workshop ideas, build projects, and launch agents with Meta AI",
-      poster: "/intro-1-question.png",
     },
     icon: "stamp",
     tints: ["indigo", "purple"],
@@ -1002,122 +994,51 @@ function HeroPanel({
 }
 
 /**
- * The red play mark from a YouTube thumbnail, drawn to the player's
- * 68×48 proportions so a still reads as a video.
- */
-function YouTubePlayMark() {
-  return (
-    <svg
-      className="wl-yt-play"
-      viewBox="0 0 68 48"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <rect width="68" height="48" rx="14" fill="var(--wl-yt-red)" />
-      <path d="M27 14.5v19l18-9.5z" fill="white" />
-    </svg>
-  );
-}
-
-/** Small wordmark for the corner of the stand-in player. */
-function YouTubeWordmark() {
-  return (
-    <svg
-      className="wl-yt-wordmark"
-      viewBox="0 0 116 22"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <text
-        x="0"
-        y="16"
-        fill="white"
-        fontFamily="Arial, Helvetica, sans-serif"
-        fontSize="15"
-        fontWeight="700"
-      >
-        You
-      </text>
-      <rect x="34" y="2" width="78" height="18" rx="5" fill="var(--wl-yt-red)" />
-      <text
-        x="44"
-        y="16"
-        fill="white"
-        fontFamily="Arial, Helvetica, sans-serif"
-        fontSize="14"
-        fontWeight="700"
-      >
-        Tube
-      </text>
-    </svg>
-  );
-}
-
-/**
- * A paused YouTube player drawn over the section's poster. It stands in
- * for the embed until the intro video exists, so a screenshot of the page
- * shows a video rather than an empty frame.
- */
-function HeroVideoPoster({ title, src }: { title: string; src: string }) {
-  return (
-    <Grid
-      className="wl-hero-shot-video wl-hero-poster"
-      columns={1}
-      role="img"
-      aria-label={title}
-    >
-      <Image
-        className="wl-hero-poster-image"
-        src={src}
-        alt=""
-        width={1920}
-        height={1080}
-        fetchPriority="high"
-        unoptimized
-      />
-      <Center className="wl-hero-poster-play" aria-hidden>
-        <YouTubePlayMark />
-      </Center>
-      <VStack
-        className="wl-hero-poster-chrome"
-        gap={1}
-        width="100%"
-        aria-hidden
-      >
-        <HStack className="wl-hero-poster-track" />
-        <HStack
-          className="wl-hero-poster-controls"
-          gap={2}
-          hAlign="between"
-          vAlign="center"
-          width="100%"
-        >
-          <HStack gap={2} vAlign="center">
-            <Icon icon={PlayIcon} size="sm" color="inherit" />
-            <Icon icon={SpeakerWaveIcon} size="sm" color="inherit" />
-            <Text className="wl-hero-poster-time">0:00 / 1:24</Text>
-          </HStack>
-          <HStack gap={2} vAlign="center">
-            <Icon icon={ArrowsPointingOutIcon} size="sm" color="inherit" />
-            <YouTubeWordmark />
-          </HStack>
-        </HStack>
-      </VStack>
-    </Grid>
-  );
-}
-
-/**
  * The platform, as it looks right now: a screenshot of the active
  * section's page on a layered stand. Every section's picture is mounted so
  * a change of tab crossfades rather than reloads, and only the active one
  * is in the accessibility tree.
  *
- * A section with a video plays it here instead. The player mounts only
+ * A section with a video embeds it here instead. The player mounts only
  * while its section is active, so leaving the tab stops playback, and
- * clicking into it calls `onEngage` so the tabs stop rotating away.
- * Until that URL exists, the poster is shown in its place.
+ * using the player calls `onEngage` so the tabs stop rotating away.
  */
+function HeroYoutube({
+  videoId,
+  title,
+  onEngage,
+}: {
+  videoId: string;
+  title: string;
+  onEngage: () => void;
+}) {
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const onEngageRef = useRef(onEngage);
+  onEngageRef.current = onEngage;
+
+  useEffect(() => {
+    // A click inside the player focuses the frame and blurs this window.
+    // That is the signal the visitor is watching, so the tabs should stay.
+    function onWindowBlur() {
+      if (document.activeElement === frameRef.current) onEngageRef.current();
+    }
+    window.addEventListener("blur", onWindowBlur);
+    return () => window.removeEventListener("blur", onWindowBlur);
+  }, []);
+
+  return (
+    <iframe
+      ref={frameRef}
+      className="wl-hero-shot-video"
+      src={`${youtubeEmbedUrl(videoId)}&playsinline=1`}
+      title={title}
+      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+      referrerPolicy="strict-origin-when-cross-origin"
+      allowFullScreen
+    />
+  );
+}
+
 function HeroShot({
   activeId,
   onEngage,
@@ -1125,52 +1046,18 @@ function HeroShot({
   activeId: string;
   onEngage: () => void;
 }) {
-  const playerRef = useRef<HTMLIFrameElement>(null);
-
-  // A click inside a cross-origin player never reaches this page; the
-  // window losing focus to the iframe is the only sign of it.
-  useEffect(() => {
-    function onBlur() {
-      if (
-        playerRef.current != null &&
-        document.activeElement === playerRef.current
-      ) {
-        onEngage();
-      }
-    }
-    window.addEventListener("blur", onBlur);
-    return () => window.removeEventListener("blur", onBlur);
-  }, [onEngage]);
-
   return (
     <Center className="wl-hero-shot-stand">
       <Grid className="wl-hero-shot" columns={1}>
         {HERO_SECTIONS.map((section, index) => {
           const isActive = section.id === activeId;
-          const videoId =
-            section.video?.url != null
-              ? youtubeVideoId(section.video.url)
-              : null;
-          if (section.video != null && videoId != null) {
+          if (section.video != null) {
             return isActive ? (
-              <iframe
+              <HeroYoutube
                 key={section.id}
-                ref={playerRef}
-                className="wl-hero-shot-video"
-                src={youtubeEmbedUrl(videoId)}
+                videoId={section.video.id}
                 title={section.video.title}
-                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allowFullScreen
-              />
-            ) : null;
-          }
-          if (section.video?.poster != null) {
-            return isActive ? (
-              <HeroVideoPoster
-                key={section.id}
-                title={section.video.title}
-                src={section.video.poster}
+                onEngage={onEngage}
               />
             ) : null;
           }

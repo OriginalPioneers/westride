@@ -2,7 +2,11 @@
 
 WeStride.org takes an idea from a hunch to a shipped product with AI agents of its own, and lets anyone back it with tokens or compute instead of money. A team of Muse advisors pressure-tests the idea with live, cited research; Muse plans the backlog; Muse Code works the tickets in isolated sandboxes and opens pull requests; standing Muse agents keep the product running after launch. Every step runs on Meta's models, on the member's own key or on a supporter's.
 
-Built in public for the [Meta Global AI Developer Hackathon](https://cerebralvalley.ai/e/meta-ai-developer-hackathon), October 26 to November 4, 2026. Licensed under [Apache 2.0](LICENSE).
+Built in public for the [Meta Global AI Developer Hackathon](https://cerebralvalley.ai/e/meta-ai-developer-hackathon), October 26 to November 4, 2026, as a Startup-track entry. Licensed under [Apache 2.0](LICENSE).
+
+- Live: [westride.org](https://www.westride.org)
+- Demo video: [Watch on YouTube](https://youtu.be/YfN8RQ1bZfs)
+- Hackathon write-up: [HACKATHON.MD](HACKATHON.MD) covers exactly what was built during the event, how it uses the Meta Model API and Muse Code, how it maps to the judging rubric, and the case for the Startup track.
 
 ## Features
 
@@ -71,20 +75,90 @@ This repo is a [Turborepo](https://turborepo.com) using Bun workspaces.
 
 | Path | Description |
 | ---- | ----------- |
-| `apps/web` | WeStride Next.js web app |
+| `apps/web` | WeStride Next.js web app: the studios, WePledge, Academy, Mentorship, settings, and the integration routes (Meta, GitHub, Vercel, Modal, Slack, Discord, WhatsApp, Stripe) |
 | `apps/admin` | WeStride Admin, the team's portal: members, studios, pledges, devices, Featured picks, and WeStride Cloud codes. Opens only for Clerk accounts whose public metadata carries `{"role": "admin"}` (see `apps/admin/.env.example`) |
-| `packages/db` | Shared Postgres models (Drizzle) and migrations |
+| `apps/api` | Public REST API (Hono, zod-openapi) with the OpenAPI explorer |
+| `apps/mcp` | MCP server exposing WeStride to agents and MCP clients |
+| `apps/mobile` | iOS and Android app (Expo, React Native) |
+| `apps/runner` | Supporter runner: the Docker container a supporter runs to lend compute, working Muse Code jobs on a Meta key or a local Ollama model |
+| `apps/design` | Storybook for the WeStride theme and components |
+| `packages/db` | Shared Postgres models (Drizzle), migrations, seeds, and the domain rules the apps share |
+| `packages/api-client` | Typed client for the public API, used by web, mobile, and the MCP server |
+| `packages/runner-protocol` | Message types shared by the web app and the supporter runner |
+| `packages/theme` | Astryx theme and tokens |
+| `docs` | Design notes for [Project Factory](docs/project-factory.md), [Agent Studio](docs/agent-studio.md), and [WeStride Cloud](docs/westride-cloud.md), plus the prompts used to make the brand assets |
 
-## Development
+## Getting Started
+
+The fastest way to try WeStride is the live site at [westride.org](https://www.westride.org): sign in, connect your Meta account in Settings (device sign-in or a pasted key from [dev.meta.ai](https://dev.meta.ai/)), and bring an idea to the Idea Workshop. Everything below is for running it yourself.
+
+### Prerequisites
+
+- [Bun](https://bun.sh) 1.4 or newer (the repo's package manager and runtime)
+- A Postgres database. [Neon](https://neon.tech) is what the app is built against; any Postgres URL works.
+- A [Clerk](https://clerk.com) application for sign-in
+- Docker, only if you want to run the supporter runner locally
+- A Meta Model API key from [dev.meta.ai](https://dev.meta.ai/). WeStride never calls Muse with a server key; each member connects their own account in the UI, so you will connect yours after signing in.
+
+### 1. Install and configure
 
 ```bash
+git clone https://github.com/WeStrideOrg/westride.git
+cd westride
 bun install
 cp apps/web/.env.example apps/web/.env       # then fill in values
 cp apps/admin/.env.example apps/admin/.env   # same database and Clerk keys as web
-bun run dev                                  # runs all apps via turbo
 ```
 
-Other root scripts: `bun run build`, `bun run lint`, `bun run start`, `bun run db:generate`, `bun run db:migrate`, `bun run dev:web`, `bun run dev:admin`. To target a single app, use `bunx turbo run dev --filter=web`. The web app listens on port 3000 and the admin portal on 3003.
+The only values the web app needs to boot are `DATABASE_URL` and the Clerk keys. Every integration is optional and turns on when its variables are set; `apps/web/.env.example` documents each one, including which features it unlocks:
+
+| To use | Set |
+| ------ | --- |
+| Connect a Meta account (Idea Workshop, planning, reports, dictation) | `META_TOKEN_ENCRYPTION_KEY` (and optionally `META_DEVICE_CLIENT_ID` for device sign-in) |
+| GitHub repositories, imports, and pull requests | `GITHUB_APP_*` and `GITHUB_TOKEN_ENCRYPTION_KEY` |
+| Muse Code runs from a ticket | `BUILD_RUNNER_CALLBACK_URL` (a public URL; use a tunnel on localhost) plus `VERCEL_TOKEN_ENCRYPTION_KEY` or `MODAL_TOKEN_ENCRYPTION_KEY` so members can connect a sandbox host |
+| Scheduled Agent Studio work | `CRON_SECRET` |
+| WeStride Cloud (members without their own accounts) | `WESTRIDE_CLOUD_META_API_KEY`, Modal, and Stripe keys |
+| Slack, Discord, WhatsApp bots | The matching `SLACK_*`, `DISCORD_*`, `WHATSAPP_*` values |
+
+### 2. Create the database
+
+```bash
+bun run db:migrate   # applies the Drizzle migrations in packages/db
+bun run db:seed      # Academy tracks, lessons, and mentorship catalogs
+```
+
+`bun run db:reset -- --yes` wipes, migrates, and reseeds in one step.
+
+### 3. Run
+
+```bash
+bun run dev          # every app through turbo
+```
+
+Or one at a time: `bun run dev:web`, `bun run dev:admin`, `bun run dev:api`, `bun run dev:mcp`, or `bunx turbo run dev --filter=<app>`. The web app listens on port 3000, the admin portal on 3003, and Storybook on 6006. For the mobile app, `cd apps/mobile && bun run start` opens Expo.
+
+Sign in, open Settings, and connect your Meta account. From there the Idea Workshop, Project Factory, and Agent Studio all run on your key, and every request shows what it cost.
+
+### 4. Run a supporter runner (optional)
+
+The runner is how a supporter pledges compute. In the app, open WePledge → Link a computer and copy the command shown; it pairs the machine and starts the container with Docker. To build the image from source instead:
+
+```bash
+bun --cwd apps/runner run docker:build
+```
+
+The runner works jobs with a Meta key you give it, or with no key at all on a local Ollama model that supports tool calls. See [`apps/runner/README.md`](apps/runner/README.md).
+
+### Tests, lint, and build
+
+```bash
+bun test             # unit tests in apps/web/tests and packages/db/tests
+bun run lint
+bun run build
+```
+
+Other root scripts: `bun run start`, `bun run db:generate` (after changing a schema), and the `:production` variants of the `db:*` scripts, which read `apps/web/.env.production`.
 
 ## Tech Used
 

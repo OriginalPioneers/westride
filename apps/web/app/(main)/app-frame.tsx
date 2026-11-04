@@ -15,8 +15,9 @@ import {
   TopNavItem,
   useTopNavRenderMode,
 } from "@astryxdesign/core/TopNav";
-import { UserCircleIcon } from "@heroicons/react/24/outline";
+import { TrophyIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import { signInPath } from "@/lib/auth-paths";
+import { isJudgeAccessShown, judgeAccessPath } from "@/lib/judge-access";
 import { ThemeToggle } from "../theme-toggle";
 import { SITE_CONTAINER_WIDTH, SiteFooter } from "../site-footer";
 
@@ -82,6 +83,49 @@ function SecondaryNav({
       {items}
       <Divider orientation="vertical" />
     </>
+  );
+}
+
+const JUDGE_LABEL = "Hackathon Judge Access";
+
+/**
+ * Temporary entry for hackathon judges, present only while
+ * NEXT_PUBLIC_HACKATHON_JUDGE_ACCESS is set. It is the one primary button in
+ * the bar so it reads as the special thing it is. The phone bar gets the icon
+ * alone; the drawer gets a plain item with the studios.
+ */
+function JudgeNav({ slot, pathname }: { slot: "start" | "end"; pathname: string }) {
+  const renderMode = useTopNavRenderMode();
+  if (!isJudgeAccessShown()) {
+    return null;
+  }
+  const isDrawer = renderMode === "drawer";
+  if (slot === "start" ? !isDrawer : isDrawer) {
+    return null;
+  }
+  if (isDrawer) {
+    return (
+      <>
+        <Divider orientation="horizontal" />
+        <TopNavItem
+          label={JUDGE_LABEL}
+          href={judgeAccessPath}
+          icon={<Icon icon={TrophyIcon} />}
+          isSelected={isActive(pathname, judgeAccessPath)}
+        />
+      </>
+    );
+  }
+  return (
+    <Button
+      label={JUDGE_LABEL}
+      tooltip={renderMode === "mobile-bar" ? JUDGE_LABEL : undefined}
+      variant="primary"
+      size="sm"
+      icon={<Icon icon={TrophyIcon} />}
+      isIconOnly={renderMode === "mobile-bar"}
+      href={judgeAccessPath}
+    />
   );
 }
 
@@ -161,11 +205,13 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
                 />
               ))}
               <SecondaryNav slot="start" pathname={pathname} />
+              <JudgeNav slot="start" pathname={pathname} />
             </>
           }
           endContent={
             <>
               <SecondaryNav slot="end" pathname={pathname} />
+              <JudgeNav slot="end" pathname={pathname} />
               <ThemeToggle />
               <Show when="signed-out">
                 <Button label="Sign In" variant="secondary" href={signInPath} />

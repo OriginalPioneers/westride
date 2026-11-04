@@ -87,7 +87,7 @@ const clerk = clerkMiddleware({
 });
 
 const STATIC_FILE =
-  /\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)$/i;
+  /\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|mp4|webm|csv|docx?|xlsx?|zip|webmanifest)$/i;
 
 // Chat platforms call these from servers with bot user agents (Slack sends
 // "Slackbot"). Each handler checks the platform's request signature instead.
