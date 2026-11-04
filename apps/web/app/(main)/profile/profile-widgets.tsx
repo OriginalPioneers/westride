@@ -26,7 +26,14 @@ export function SignOutButton() {
     <Button
       label="Sign Out"
       icon={<Icon icon={ArrowRightStartOnRectangleIcon} />}
-      clickAction={() => signOut({ redirectUrl: afterAuthPath })}
+      clickAction={() =>
+        // A full load of the home page. Clerk's redirectUrl stays in the
+        // app router, and this protected page then redirects to sign-in
+        // while that navigation is still pending, so the app never settles.
+        signOut(() => {
+          window.location.assign(afterAuthPath);
+        })
+      }
     />
   );
 }
