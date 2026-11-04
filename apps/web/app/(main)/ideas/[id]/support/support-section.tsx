@@ -66,7 +66,7 @@ export async function SupportSection({
   ]);
   const tokenPledge = mine.find((pledge) => pledge.kind === "TOKENS") ?? null;
   const computePledge = mine.find((pledge) => pledge.kind === "COMPUTE") ?? null;
-  const signInHref = viewerId ? undefined : `${signInPath}?redirect_url=${encodeURIComponent(ideaPath(idea.id))}`;
+  const signInHref = viewerId ? undefined : `${signInPath}?redirect_url=${encodeURIComponent(ideaPath(idea.slug))}`;
 
   const stats: string[] = [];
   if (summary.supporters > 0) stats.push(`${summary.supporters} supporter${summary.supporters === 1 ? "" : "s"}`);

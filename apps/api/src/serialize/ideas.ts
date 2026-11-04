@@ -24,6 +24,7 @@ export function toIdea(
   }));
   return {
     id: idea.id,
+    slug: idea.slug,
     name: idea.name,
     description: idea.description,
     type: idea.type,

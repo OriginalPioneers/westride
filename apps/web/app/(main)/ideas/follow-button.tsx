@@ -13,6 +13,8 @@ import { setIdeaFollow } from "./actions";
 
 type FollowButtonProps = {
   ideaId: string;
+  /** Where a visitor lands after signing in. Defaults to the idea's id address. */
+  returnTo?: string;
   isFollowing: boolean;
   /** Null for a visitor, who is sent to sign in instead. */
   viewerId: string | null;
@@ -25,6 +27,7 @@ type FollowButtonProps = {
  */
 export function FollowButton({
   ideaId,
+  returnTo,
   isFollowing,
   viewerId,
   size = "md",
@@ -40,7 +43,7 @@ export function FollowButton({
         variant="secondary"
         size={size}
         icon={<Icon icon={PlusIcon} />}
-        href={`${signInPath}?redirect_url=${encodeURIComponent(ideaPath(ideaId))}`}
+        href={`${signInPath}?redirect_url=${encodeURIComponent(returnTo ?? ideaPath(ideaId))}`}
       />
     );
   }

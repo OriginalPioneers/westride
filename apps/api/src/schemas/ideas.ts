@@ -1,4 +1,5 @@
 import { z } from "@hono/zod-openapi";
+import { IDEA_SLUG_RULES, MAX_IDEA_SLUG, MIN_IDEA_SLUG } from "@westride/db/idea-slug";
 import {
   MAX_CATEGORY_NAME,
   MAX_IDEA_CATEGORIES,
@@ -66,6 +67,10 @@ export const CapitalLinkSchema = z
 export const IdeaSchema = z
   .object({
     id: uuid(),
+    slug: z.string().openapi({
+      description: "The idea's address name: https://www.westride.org/ideas/<slug>.",
+      example: "neighborhood-tool-library",
+    }),
     name: z.string().openapi({ example: "Neighborhood Tool Library" }),
     description: z.string().openapi({ description: "Markdown." }),
     type: IdeaTypeSchema,
@@ -194,6 +199,16 @@ export const CreateIdeaBodySchema = z
 export const UpdateIdeaBodySchema = z
   .object({
     name: nameSchema.optional(),
+    slug: z
+      .string()
+      .trim()
+      .min(MIN_IDEA_SLUG)
+      .max(MAX_IDEA_SLUG)
+      .optional()
+      .openapi({
+        description: `The address name. ${IDEA_SLUG_RULES} Must not be in use by another idea; the old address stops working.`,
+        example: "neighborhood-tool-library",
+      }),
     description: descriptionSchema.optional(),
     categories: categoryNamesSchema.optional(),
     prototypeUrl: nullableText(MAX_PROTOTYPE_URL).optional().openapi({

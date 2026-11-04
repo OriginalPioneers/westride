@@ -8,6 +8,8 @@ import {
   followIdea,
   getIdea,
   listCategoryOptions,
+  SLUG_INVALID,
+  SLUG_TAKEN,
   unfollowIdea,
   updateIdeaDetails,
 } from "@westride/db/ideas";
@@ -404,7 +406,7 @@ export async function createIdeaFromStudio(
       });
     }
     revalidatePath("/ideas");
-    return { status: "created", id: created.id };
+    return { status: "created", id: created.id, slug: created.slug };
   } catch (error) {
     console.error("Idea create failed", error);
     return failure("The idea could not be saved. Try again.");
@@ -419,6 +421,7 @@ const EDIT_ERRORS = new Set([
   "Add a valid HTTPS prototype link and something to try.",
   "Test your prototype and confirm it works before sharing.",
 ]);
+const SLUG_ERRORS = new Set([SLUG_INVALID, SLUG_TAKEN]);
 
 /** A founder updates the name, description, categories, and team. Other fields stay put. */
 export async function updateIdeaFromStudio(
@@ -477,6 +480,7 @@ export async function updateIdeaFromStudio(
   try {
     await updateIdeaDetails(ideaId, userId, {
       name: parsed.data.name,
+      slug: parsed.data.slug,
       description: parsed.data.description,
       categoryNames: parsed.data.categories,
       members: parsed.data.members,
@@ -487,6 +491,9 @@ export async function updateIdeaFromStudio(
   } catch (error) {
     console.error("Idea update failed", error);
     const message = error instanceof Error ? error.message : "";
+    if (SLUG_ERRORS.has(message)) {
+      return failure(message, { slug: message });
+    }
     if (EDIT_ERRORS.has(message)) {
       return failure(message, { members: message });
     }
@@ -495,10 +502,18 @@ export async function updateIdeaFromStudio(
 
   revalidatePath("/ideas");
   revalidatePath(`/ideas/${ideaId}`);
+  revalidatePath(`/ideas/${idea.slug}`);
+  if (parsed.data.slug !== idea.slug) {
+    revalidatePath(`/ideas/${parsed.data.slug}`);
+  }
   const stillMember = parsed.data.members.some(
     (member) => member.clerkUserId === userId,
   );
-  return { status: "saved", canStillView: idea.isPublic || stillMember };
+  return {
+    status: "saved",
+    slug: parsed.data.slug,
+    canStillView: idea.isPublic || stillMember,
+  };
 }
 
 export type FollowResult =

@@ -1,7 +1,10 @@
 import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import { listAgentsForIdea } from "@westride/db/agents";
 import { listProjectsForIdea } from "@westride/db/build";
+import { slugifyIdeaName } from "@westride/db/idea-slug";
 import {
+  SLUG_INVALID,
+  SLUG_TAKEN,
   createIdea,
   followIdea,
   getIdea,
@@ -297,6 +300,7 @@ ideas.openapi(updateRoute, async (c) => {
   try {
     await updateIdeaDetails(id, caller.userId, {
       name: body.name ?? idea.name,
+      slug: body.slug === undefined ? idea.slug : slugifyIdeaName(body.slug),
       description: body.description ?? idea.description,
       categoryNames: body.categories ?? idea.tags.map((tag) => tag.name),
       members,
@@ -306,6 +310,9 @@ ideas.openapi(updateRoute, async (c) => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
+    if (message === SLUG_INVALID || message === SLUG_TAKEN) {
+      return validationFailed(c, message, { slug: message });
+    }
     if (EDIT_RULES.has(message)) {
       return validationFailed(c, message);
     }

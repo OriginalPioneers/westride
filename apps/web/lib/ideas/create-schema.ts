@@ -3,6 +3,12 @@ import { z } from "zod";
 import { prototypeUrl } from "@westride/db/builder";
 import { tagSlug } from "@westride/db/categories";
 import {
+  IDEA_SLUG_RULES,
+  MAX_IDEA_SLUG,
+  isValidIdeaSlug,
+  slugifyIdeaName,
+} from "@westride/db/idea-slug";
+import {
   MAX_CATEGORY_NAME,
   MAX_IDEA_CATEGORIES,
   MAX_IDEA_DESCRIPTION,
@@ -144,6 +150,13 @@ export const updateIdeaSchema = z
     prototypeInstructions: z.string().trim().max(600).default(""),
     prototypeTested: z.boolean().default(false),
     name: ideaNameSchema,
+    /** Typed freely; tidied into slug form before the rules are checked. */
+    slug: z
+      .string()
+      .trim()
+      .max(MAX_IDEA_SLUG + 40)
+      .transform((value) => slugifyIdeaName(value))
+      .refine(isValidIdeaSlug, IDEA_SLUG_RULES),
     description: ideaDescriptionSchema,
     categories: categoriesSchema,
     members: memberListSchema(
@@ -179,6 +192,8 @@ export type CreateIdeaFailure = {
 export type CreateIdeaSuccess = {
   status: "created";
   id: string;
+  /** The address name, for the link to the new idea. */
+  slug: string;
 };
 
 export type CreateIdeaResult = CreateIdeaFailure | CreateIdeaSuccess;
@@ -218,6 +233,7 @@ export type IdeaEditDraft = {
   prototypeInstructions: string;
   prototypeTested: boolean;
   name: string;
+  slug: string;
   description: string;
   categories: string[];
   members: { clerkUserId: string; role: IdeaMemberRole }[];
@@ -225,6 +241,8 @@ export type IdeaEditDraft = {
 
 export type UpdateIdeaSuccess = {
   status: "saved";
+  /** The address name after the save; the page moves here when it changed. */
+  slug: string;
   /** False when the editor left a private idea and can no longer open it. */
   canStillView: boolean;
 };

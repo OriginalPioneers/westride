@@ -127,7 +127,7 @@ export default async function ProjectOverviewPage({ params }: { params: Params }
             {idea ? (
               <Text type="supporting">
                 Building the idea{" "}
-                <Link href={ideaPath(idea.id)}>{idea.name}</Link>.
+                <Link href={ideaPath(idea.slug)}>{idea.name}</Link>.
               </Text>
             ) : null}
 

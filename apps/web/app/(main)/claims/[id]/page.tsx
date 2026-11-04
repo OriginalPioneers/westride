@@ -127,7 +127,7 @@ export default async function ClaimReviewPage({
               <VStack gap={1}>
                 {request.idea ? (
                   <Text>
-                    Idea: <Link href={ideaPath(request.idea.id)}>{request.idea.name}</Link>
+                    Idea: <Link href={ideaPath(request.idea.slug)}>{request.idea.name}</Link>
                   </Text>
                 ) : (
                   <Text type="supporting">The idea has been deleted.</Text>

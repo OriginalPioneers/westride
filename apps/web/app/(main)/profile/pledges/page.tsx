@@ -77,7 +77,7 @@ function PledgeList({ pledges, showStatus }: { pledges: PledgeWithIdea[]; showSt
           startContent={
             <EntityImage name={pledge.idea.name} imageUrl={pledge.idea.imageUrl} size={48} />
           }
-          label={<Link href={ideaPath(pledge.idea.id)}>{pledge.idea.name}</Link>}
+          label={<Link href={ideaPath(pledge.idea.slug)}>{pledge.idea.name}</Link>}
           description={`${pledge.kind === "TOKENS" ? "Tokens" : "Compute"} · ${pledgeDetail(pledge)}`}
           endContent={
             <HStack gap={4} vAlign="center" wrap="wrap">

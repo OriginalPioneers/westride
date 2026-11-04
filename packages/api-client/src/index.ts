@@ -94,6 +94,8 @@ export type CapitalLink = { url: string; label: string };
 
 export type Idea = {
   id: string;
+  /** The address name: https://www.westride.org/ideas/<slug>. */
+  slug: string;
   name: string;
   /** Markdown. */
   description: string;
@@ -167,6 +169,8 @@ export type CreateIdeaBody = {
 
 export type UpdateIdeaBody = {
   name?: string;
+  /** New address name. Must be free; the old address stops working. */
+  slug?: string;
   description?: string;
   categories?: string[];
   prototypeUrl?: string | null;

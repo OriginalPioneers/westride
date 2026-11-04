@@ -141,7 +141,7 @@ export default async function AgentOverviewPage({ params }: { params: Params }) 
                 {agent.idea ? (
                   <>
                     {agent.project ? "the idea " : "Works on the idea "}
-                    <Link href={ideaPath(agent.idea.id)}>{agent.idea.name}</Link>.
+                    <Link href={ideaPath(agent.idea.slug)}>{agent.idea.name}</Link>.
                   </>
                 ) : null}
               </Text>

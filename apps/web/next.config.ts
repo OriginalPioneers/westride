@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
-
-const ROBOTS_TAG =
-  "noindex, nofollow, nocache, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai";
+import { NO_INDEX, PRODUCTION_HOST_PATTERN } from "./lib/crawl-policy";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@westride/db", "@westride/runner-protocol"],
@@ -24,7 +22,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        headers: [{ key: "X-Robots-Tag", value: ROBOTS_TAG }],
+        missing: [{ type: "host", value: PRODUCTION_HOST_PATTERN }],
+        headers: [{ key: "X-Robots-Tag", value: NO_INDEX }],
       },
       // Fetched with `irm` / `curl`. Without a charset, static hosting serves
       // these as application/octet-stream and PowerShell may mis-decode them.

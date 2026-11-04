@@ -678,8 +678,17 @@ const HERO_SECTIONS: HeroSection[] = [
         </Text>
       </>
     ),
-    description:
-      "Bring your ideas to life with WeStride. Collaborate with AI-powered advisors to brainstorm, research, and refine your vision. Build real projects in GitHub with AI coding agents, create your own AI agents, and connect with a community of learners, creators, and builders.",
+    description: (
+      <>
+        WeStride is an open-source platform powered by Meta AI. Workshop ideas
+        with specialized AI advisors, build real projects with Muse Spark and
+        Muse Code, and retain full ownership of your code on GitHub. Through
+        WePledge™, connect with supporters offering AI tokens, computing power,
+        or capital.
+        <br />
+        Every Idea. Every Ambition. Every Stride.
+      </>
+    ),
     ctas: [
       {
         label: "Workshop an Idea",

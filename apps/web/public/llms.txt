@@ -1,0 +1,36 @@
+# WeStride
+
+> Stride with AI. Build with community. WeStride is a free, open-source platform where people shape an idea, build it for real, and give it AI agents, powered by Meta's Muse models. Ideas can be businesses, non-profits, games, open-source projects, websites, or mobile apps.
+
+WeStride is organised around four studios. An idea moves from one to the next on its way to a shipped product, and supporters can back it at every step without joining the team. Members bring their own Meta Model API key; WeStride never collects or holds money.
+
+## Studios
+
+- [Idea Workshop](https://www.westride.org/ideas): Shape an idea with a team of Meta AI advisors (Muse Spark and Muse Wonder) that brainstorm, research with cited web sources, challenge assumptions, and evaluate the idea. Public ideas live at https://www.westride.org/ideas/<slug>.
+- [Project Factory](https://www.westride.org/build): Turn an idea into a GitHub project. Muse plans the roadmap and writes tickets; Muse Code agents take tickets, work a branch in an isolated sandbox, and open pull requests.
+- [Agent Studio](https://www.westride.org/agents): Standing AI agents with a purpose, a backlog, a schedule, report and code jobs, and a usage ledger.
+- [Academy](https://www.westride.org/academy): Free, self-paced tracks on AI, from AI Foundations and Prompt Engineering to Build with Llama, AI Agents and Automation, and Idea to Launch. Each track is at https://www.westride.org/academy/<track-slug>.
+
+## Community
+
+- [WePledge](https://www.westride.org/wepledge): Three ways to support an idea: pledge tokens (let a team's agents run on your Meta API key, up to a cap), pledge compute (run agent jobs on your own computer in an isolated container), or pledge capital (through links the team lists, outside WeStride).
+- [Mentorship](https://www.westride.org/mentorship): Find a mentor by skill, language, or location, or become one.
+- [WeStride Cloud](https://www.westride.org/cloud): Hosted compute for agent jobs.
+- [Pricing](https://www.westride.org/pricing): The platform is free; members pay their own model and compute providers.
+
+## Developers
+
+- [Public API](https://api.westride.org): REST API for ideas, projects, agents, and the Academy. Setup guide at https://www.westride.org/settings/api.
+- [MCP server](https://mcp.westride.org): Model Context Protocol server so ChatGPT, Claude, Cursor, and other assistants can work with WeStride data. Setup guide at https://www.westride.org/settings/mcp.
+- [Source code](https://github.com/WeStrideOrg/westride): Apache 2.0. Next.js, React, TypeScript, Hono, PostgreSQL on Neon, Drizzle ORM, Clerk, Expo, Bun, and Turborepo.
+- [Design system](https://design.westride.org): Storybook documenting the brand and components.
+- [Mobile apps](https://www.westride.org/mobile-apps): iOS and Android apps in open beta, using the same account as the website.
+- Chat integrations: Slack, Discord, and WhatsApp.
+
+## About
+
+- [Our story](https://www.westride.org/our-story): Built by Garrett Hampton for the Meta Global AI Developer Hackathon, starting October 26, 2026.
+- [Tech stack](https://www.westride.org/our-story/tech-stack)
+- [Privacy](https://www.westride.org/privacy)
+- [Terms](https://www.westride.org/terms)
+- [Sitemap](https://www.westride.org/sitemap.xml)

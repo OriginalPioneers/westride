@@ -29,6 +29,7 @@ import {
 } from "@astryxdesign/core/Typeahead";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import type { IdeaMemberRole } from "@westride/db";
+import { IDEA_SLUG_RULES, MAX_IDEA_SLUG, slugifyIdeaName } from "@westride/db/idea-slug";
 import type { CategoryOption } from "@westride/db/ideas";
 import {
   MAX_IDEA_DESCRIPTION,
@@ -37,7 +38,7 @@ import {
   type CreateIdeaFieldErrors,
   type IdeaEditDraft,
 } from "@/lib/ideas/create-schema";
-import { IDEA_ROLE_LABELS } from "@/lib/ideas/filters";
+import { IDEA_ROLE_LABELS, ideaPath } from "@/lib/ideas/filters";
 import {
   searchIdeaPeople,
   updateIdeaFromStudio,
@@ -57,6 +58,8 @@ export type EditableIdea = {
   prototypeInstructions: string | null;
   isPublic: boolean;
   id: string;
+  /** The address name, /ideas/<slug>. */
+  slug: string;
   name: string;
   description: string;
   /** Category names, in order. */
@@ -71,6 +74,19 @@ type TeamMember = EditableIdeaMember & {
 const KEEP_FOUNDER = "Keep at least one founder.";
 
 const DIALOG_HEIGHT = "calc(100dvh - (2 * var(--spacing-4)))";
+
+/**
+ * Slug characters as someone types them. Unlike `slugifyIdeaName`, a
+ * trailing hyphen is kept so the next word can follow it; the save tidies it.
+ */
+function typedSlug(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+/, "")
+    .slice(0, MAX_IDEA_SLUG);
+}
 
 function fieldStatus(message: string | undefined) {
   return message ? { type: "error" as const, message } : undefined;
@@ -119,6 +135,7 @@ export function EditIdeaDialog({
   const [isSaving, startSaving] = useTransition();
   const [submitted, setSubmitted] = useState(false);
   const [name, setName] = useState(idea.name);
+  const [slug, setSlug] = useState(idea.slug);
   const [description, setDescription] = useState(idea.description);
   const [categories, setCategories] = useState<string[]>(idea.categories);
   const [prototypeUrl, setPrototypeUrl] = useState(idea.prototypeUrl ?? "");
@@ -140,6 +157,7 @@ export function EditIdeaDialog({
     prototypeInstructions,
     prototypeTested,
     name,
+    slug,
     description,
     categories,
     members: members.map((member) => ({
@@ -273,6 +291,12 @@ export function EditIdeaDialog({
           router.push("/ideas");
           return;
         }
+        if (result.slug !== idea.slug) {
+          // The old address no longer works, so move to the new one.
+          router.replace(ideaPath(result.slug));
+          onOpenChange(false);
+          return;
+        }
         try {
           await router.refresh();
         } catch (error) {
@@ -322,6 +346,18 @@ export function EditIdeaDialog({
                   description={`Up to ${MAX_IDEA_NAME} characters.`}
                   isRequired
                   status={fieldStatus(errors.name)}
+                />
+                <TextInput
+                  label="Link"
+                  value={slug}
+                  onChange={(value) => {
+                    setSlug(typedSlug(value));
+                    clearServer("slug");
+                  }}
+                  placeholder={slugifyIdeaName(name) || "my-idea"}
+                  description={`westride.org${ideaPath(slug || "…")} · ${IDEA_SLUG_RULES} Changing it breaks the old link.`}
+                  isRequired
+                  status={fieldStatus(errors.slug)}
                 />
                 <VoiceTextArea
                   label="Description"

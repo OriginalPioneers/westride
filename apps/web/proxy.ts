@@ -2,9 +2,7 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { signInPath, signUpPath } from "@/lib/auth-paths";
-
-const ROBOTS_TAG =
-  "noindex, nofollow, nocache, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai";
+import { NO_INDEX, isProductionHost } from "@/lib/crawl-policy";
 
 // Names that do not already end in bot/crawler/spider/scraper/archiver.
 const NAMED_AGENTS = [
@@ -124,19 +122,23 @@ function isCrawlablePage(pathname: string): boolean {
 export function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl;
 
-  // Crawlers need to read the disallow policy. Everything else is refused,
-  // except the legal pages listed above.
+  // Crawlers need to read the disallow policy. Off production, everything else
+  // is refused, except the legal pages listed above.
   if (pathname === "/robots.txt" || SIGNED_WEBHOOKS.has(pathname) || INSTALL_SCRIPTS.has(pathname)) {
     return NextResponse.next();
   }
 
-  if (isBlockedClient(request.headers.get("user-agent")) && !isCrawlablePage(pathname)) {
+  if (
+    !isProductionHost(request.headers.get("host")) &&
+    isBlockedClient(request.headers.get("user-agent")) &&
+    !isCrawlablePage(pathname)
+  ) {
     return new NextResponse("This site is not open to crawlers.", {
       status: 403,
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "private, no-store",
-        "X-Robots-Tag": ROBOTS_TAG,
+        "X-Robots-Tag": NO_INDEX,
       },
     });
   }

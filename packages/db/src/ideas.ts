@@ -31,6 +31,7 @@ import {
   type Tag,
 } from "./schema";
 import { prototypeUrl } from "./builder-progress";
+import { isUuid, isValidIdeaSlug, slugifyIdeaName } from "./idea-slug";
 import { tagCatalog, tagSlug } from "./tag-catalog";
 
 export type IdeaWithDetails = Idea & {
@@ -338,17 +339,76 @@ export async function listIdeasForMember(
   );
 }
 
+/** Matches an idea by id when `ref` is a UUID, otherwise by slug. */
+function ideaRefCondition(ref: string): SQL {
+  return isUuid(ref) ? eq(ideas.id, ref) : eq(ideas.slug, ref);
+}
+
+/** `ref` is the idea's id or its slug; both forms of the address resolve. */
 export async function getIdea(
-  id: string,
+  ref: string,
   viewer: IdeaViewer = ANYONE,
 ): Promise<IdeaWithDetails | null> {
   const [idea] = await findIdeas(
-    and(eq(ideas.id, id), visibilityCondition(viewer)),
+    and(ideaRefCondition(ref), visibilityCondition(viewer)),
     orderFor("newest"),
     viewer,
     1,
   );
   return idea ?? null;
+}
+
+/** Public ideas, lightest shape, for the sitemap. */
+export async function listPublicIdeaAddresses(): Promise<
+  { slug: string; updatedAt: Date }[]
+> {
+  return getDb()
+    .select({ slug: ideas.slug, updatedAt: ideas.updatedAt })
+    .from(ideas)
+    .where(eq(ideas.isPublic, true))
+    .orderBy(desc(ideas.updatedAt));
+}
+
+/**
+ * Whether no other idea uses this slug. `excludeIdeaId` is the idea being
+ * edited, whose current slug counts as free for itself.
+ */
+export async function isIdeaSlugAvailable(
+  slug: string,
+  excludeIdeaId?: string,
+): Promise<boolean> {
+  if (!isValidIdeaSlug(slug)) {
+    return false;
+  }
+  const [taken] = await getDb()
+    .select({ id: ideas.id })
+    .from(ideas)
+    .where(eq(ideas.slug, slug))
+    .limit(1);
+  return !taken || taken.id === excludeIdeaId;
+}
+
+/**
+ * A free slug made from the name: the plain form when nobody has it, else
+ * the first free of -2, -3, … A name that slugs to nothing becomes "idea".
+ */
+async function freeSlugFor(name: string): Promise<string> {
+  const base = slugifyIdeaName(name) || "idea";
+  const padded = base.length < 3 ? `${base}-idea` : base;
+  const rows = await getDb()
+    .select({ slug: ideas.slug })
+    .from(ideas)
+    .where(or(eq(ideas.slug, padded), ilike(ideas.slug, `${padded}-%`)));
+  const taken = new Set(rows.map((row) => row.slug));
+  if (!taken.has(padded)) {
+    return padded;
+  }
+  for (let n = 2; ; n += 1) {
+    const candidate = `${padded}-${n}`;
+    if (!taken.has(candidate)) {
+      return candidate;
+    }
+  }
 }
 
 /**
@@ -574,10 +634,13 @@ async function writeIdeaAssociations(
   await db.batch([first!, ...rest]);
 }
 
-export async function createIdea(input: IdeaInput): Promise<{ id: string }> {
+export async function createIdea(
+  input: IdeaInput,
+): Promise<{ id: string; slug: string }> {
   const [created] = await getDb()
     .insert(ideas)
     .values({
+      slug: await freeSlugFor(input.name),
       name: input.name,
       description: input.description,
       type: input.type,
@@ -585,7 +648,7 @@ export async function createIdea(input: IdeaInput): Promise<{ id: string }> {
       isPublic: input.isPublic,
       origin: input.origin ?? "MEMBER",
     })
-    .returning({ id: ideas.id });
+    .returning({ id: ideas.id, slug: ideas.slug });
 
   if (!created) {
     throw new Error("The idea could not be saved.");
@@ -621,6 +684,8 @@ export type IdeaDetailsPatch = {
   prototypeInstructions: string;
   prototypeTested: boolean;
   name: string;
+  /** The address name. Must be valid and not in use by another idea. */
+  slug: string;
   description: string;
   /** The full team after the edit. At least one founder is required. */
   members: IdeaMemberInput[];
@@ -630,9 +695,11 @@ export type IdeaDetailsPatch = {
 
 const FOUNDER_REQUIRED = "Keep at least one founder.";
 const FOUNDER_ONLY = "Only a founder can edit this idea.";
+export const SLUG_INVALID = "That link name is not allowed.";
+export const SLUG_TAKEN = "That link name is already in use.";
 
 /**
- * Updates the name, description, categories, and membership of an idea.
+ * Updates the name, slug, description, categories, and membership of an idea.
  * Type, visibility, and geographies stay as they are.
  * `editorClerkUserId` must already be a founder. The saved team can omit
  * that person when another founder remains.
@@ -668,6 +735,12 @@ export async function updateIdeaDetails(
   if (!editor) {
     throw new Error(FOUNDER_ONLY);
   }
+  if (!isValidIdeaSlug(input.slug)) {
+    throw new Error(SLUG_INVALID);
+  }
+  if (input.slug !== idea.slug && !(await isIdeaSlugAvailable(input.slug, id))) {
+    throw new Error(SLUG_TAKEN);
+  }
 
   const tagIds = await resolveTagIds(input.categoryNames);
   const url = input.prototypeUrl.trim()
@@ -693,6 +766,7 @@ export async function updateIdeaDetails(
       .update(ideas)
       .set({
         name: input.name,
+        slug: input.slug,
         description: input.description,
         prototypeUrl: url,
         prototypeInstructions: url ? input.prototypeInstructions.trim() : null,

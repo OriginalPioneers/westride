@@ -1,22 +1,26 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { ClerkProvider } from "@clerk/nextjs";
 import { brandTagline } from "@westride/theme";
 import { afterAuthPath, signInPath, signUpPath } from "@/lib/auth-paths";
+import { NO_INDEX, PRODUCTION_ORIGIN, isProductionHost } from "@/lib/crawl-policy";
 import "./globals.css";
 import { Providers } from "./providers";
 import { COLOR_MODE_COOKIE, parseThemeMode } from "./theme-mode";
 
-export const metadata: Metadata = {
-  title: {
-    default: "WeStride",
-    template: "%s · WeStride",
-  },
-  description: `${brandTagline} Shape an idea, build it for real, and give it AI agents, powered by Meta's models.`,
-  // Pre-launch: do not index, follow, or offer pages to AI training crawlers.
-  robots:
-    "noindex, nofollow, nocache, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const host = (await headers()).get("host");
+  return {
+    // Canonical and social-sharing links are absolute, on the production host.
+    metadataBase: new URL(PRODUCTION_ORIGIN),
+    title: {
+      default: "WeStride",
+      template: "%s · WeStride",
+    },
+    description: `${brandTagline} Shape an idea, build it for real, and give it AI agents, powered by Meta's models.`,
+    robots: isProductionHost(host) ? undefined : NO_INDEX,
+  };
+}
 
 export default async function RootLayout({
   children,

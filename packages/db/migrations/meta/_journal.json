@@ -218,6 +218,13 @@
       "when": 1793771321490,
       "tag": "0030_remove_achievements",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793832150186,
+      "tag": "0031_idea_slugs",
+      "breakpoints": true
     }
   ]
 }

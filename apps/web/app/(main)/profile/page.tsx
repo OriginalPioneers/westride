@@ -195,7 +195,7 @@ export default async function ProfilePage() {
                     return (
                       <ListItem
                         key={idea.id}
-                        href={ideaPath(idea.id)}
+                        href={ideaPath(idea.slug)}
                         label={idea.name}
                         description={detail}
                       />

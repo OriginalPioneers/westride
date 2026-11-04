@@ -34,7 +34,7 @@ export function IdeaCard({
   return (
     <LibraryCard
       name={idea.name}
-      href={ideaPath(idea.id)}
+      href={ideaPath(idea.slug)}
       imageUrl={idea.imageUrl}
       description={markdownExcerpt(idea.description)}
       meta={summarizeCountries(idea.countries.map((c) => c.name))}
@@ -42,6 +42,7 @@ export function IdeaCard({
         isMember ? null : (
           <FollowButton
             ideaId={idea.id}
+            returnTo={ideaPath(idea.slug)}
             isFollowing={idea.isFollowing}
             viewerId={viewerId}
             size="sm"
