@@ -239,11 +239,19 @@ function runMuse(
 
 type Collected = { changed: ChangedFile[]; deleted: string[]; skipped: string[] };
 
-/** Reads the working tree's changes relative to the base commit. Nothing is committed or pushed here. */
-async function collectChanges(repoDir: string): Promise<Collected> {
+/**
+ * Reads everything that differs from the base commit, whether the agent left
+ * it in the working tree or committed it (the prompt tells it to commit as it
+ * goes). Diffing against HEAD would miss committed work entirely, so the diff
+ * is against the clone's base commit. Nothing is pushed here.
+ */
+async function collectChanges(repoDir: string, baseSha: string): Promise<Collected> {
   // Stage everything so renames, new files, and deletions all show in one diff.
   must(await run("git", ["add", "-A", "--", "."], { cwd: repoDir }), "git add");
-  const diff = must(await run("git", ["diff", "--cached", "--name-status", "-z", "--no-renames"], { cwd: repoDir }), "git diff");
+  const diff = must(
+    await run("git", ["diff", "--cached", "--name-status", "-z", "--no-renames", baseSha, "--"], { cwd: repoDir }),
+    "git diff",
+  );
   const parts = diff.stdout.split("\0").filter((part) => part.length > 0);
   const changed: ChangedFile[] = [];
   const deleted: string[] = [];
@@ -355,6 +363,8 @@ export async function runJob(job: LeasedJob, config: RunnerConfig, signal: Abort
       "",
       `The repository is checked out at \`${repoDir}\`, which is your current working directory. Create and edit files with paths relative to it (for example \`index.html\`, \`src/main.ts\`), never under any other directory.`,
       "",
+      "When you finish, the harness collects every file that differs from the commit you started on, committed or not, and writes it to the branch itself. Committing is fine but optional; do not push.",
+      "",
     ].join("\n");
     await writeFile(promptFile, job.prompt + whereYouAre, "utf8");
     if (!existsSync(join(config.binDir, "muse"))) {
@@ -384,7 +394,7 @@ export async function runJob(job: LeasedJob, config: RunnerConfig, signal: Abort
     }
 
     events.emit("git", { step: "status", message: "Collecting changed files" });
-    collected = await collectChanges(repoDir);
+    collected = await collectChanges(repoDir, baseSha);
     events.emit("git", {
       step: "collect",
       message: `${collected.changed.length} changed, ${collected.deleted.length} deleted${collected.skipped.length ? `, ${collected.skipped.length} skipped (too large)` : ""}`,
