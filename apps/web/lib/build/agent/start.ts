@@ -43,7 +43,7 @@ import { createRunToken } from "./token";
 /**
  * A connection the member can fix somewhere: `meta` and `github` in Settings;
  * `compute` is their own Vercel or Modal account (Settings); `cloud` is a
- * WeStride Cloud balance (/cloud); `device` is a linked computer (Supporting).
+ * WeStride Cloud balance (/cloud); `device` is a linked computer (WePledge™).
  */
 export type AgentConnection = "meta" | "github" | "compute" | "cloud" | "device";
 
@@ -188,7 +188,7 @@ async function resolvePlacement(input: StartAgentRunInput): Promise<Placement> {
     if (online.length === 0) {
       throw new AgentStartError(
         target === "LOCAL"
-          ? "None of your computers is online. Start the WeStride runner on one, or link a computer from Supporting."
+          ? "None of your computers is online. Start the WeStride runner on one, or link a computer from WePledge™."
           : "No supporter's computer pledged to this idea is online right now. Try another place to run.",
         target === "LOCAL" ? "device" : null,
       );

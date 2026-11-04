@@ -38,7 +38,6 @@ function toAcademyTrack(track: Track): AcademyTrack {
     tags: track.tags,
     prerequisiteSlugs: track.prerequisiteSlugs,
     learningObjectives: track.learningObjectives,
-    achievementTitle: track.achievementTitle,
   };
 }
 

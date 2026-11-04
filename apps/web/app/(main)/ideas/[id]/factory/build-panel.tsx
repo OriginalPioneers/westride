@@ -65,7 +65,7 @@ function LinkedProjects({ projects }: { projects: LinkedProject[] }) {
   if (projects.length === 0) {
     return (
       <Text type="supporting">
-        No Build Studio projects are linked to this idea yet. Start one from a suggestion below,
+        No Project Factory projects are linked to this idea yet. Start one from a suggestion below,
         or with &ldquo;Build this idea&rdquo; on the idea page.
       </Text>
     );
@@ -258,7 +258,7 @@ export function BuildPanel({
                 <Text type="supporting">
                   When the idea is ready to build, Muse splits it into the repositories it needs,
                   each with a brief a coding agent can start from. Every project you start lands in
-                  Build Studio and stays linked here.
+                  Project Factory and stays linked here.
                 </Text>
               </VStack>
             </StackItem>
@@ -291,7 +291,7 @@ export function BuildPanel({
       </Card>
 
       <VStack gap={3}>
-        <Heading level={3}>Linked Build Studio projects</Heading>
+        <Heading level={3}>Linked Project Factory projects</Heading>
         <LinkedProjects projects={projects} />
       </VStack>
 

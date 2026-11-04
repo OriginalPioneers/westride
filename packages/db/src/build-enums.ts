@@ -1,7 +1,7 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
 /**
- * Enums that both Build Studio (build-schema.ts) and Agent Studio
+ * Enums that both Project Factory (build-schema.ts) and Agent Studio
  * (agent-schema.ts) use at table-definition time. They live apart because
  * schema.ts, build-schema.ts, and agent-schema.ts import one another, and
  * whichever file a route happens to load first must not find these still
@@ -57,7 +57,7 @@ export const museSource = pgEnum("muse_source", ["OWN", "WESTRIDE_CLOUD"]);
 export const computeSource = pgEnum("compute_source", ["OWN", "WESTRIDE_CLOUD"]);
 
 /**
- * Where the member asked a Build Studio run to execute. WESTRIDE_CLOUD is a
+ * Where the member asked a Project Factory run to execute. WESTRIDE_CLOUD is a
  * sandbox on WeStride's Modal account billed to their balance; LOCAL is one
  * of their own linked computers running the WeStride runner; SPONSORS is a
  * supporter's linked computer pledged to the project's idea; THIRD_PARTY is

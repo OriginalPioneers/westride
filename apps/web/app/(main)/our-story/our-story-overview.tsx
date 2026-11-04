@@ -55,9 +55,9 @@ type PathStep = {
 const PATH: PathStep[] = [
   {
     step: "Learn",
-    where: "Academy and Achievements",
+    where: "Academy",
     href: "/academy",
-    how: "Short tracks on AI fundamentals, prompting, agents, and building. Hands-on challenges get feedback from Muse, and achievements mark the progress.",
+    how: "Short tracks on AI fundamentals, prompting, agents, and building, with lesson progress saved to your account.",
   },
   {
     step: "Find a mentor",
@@ -67,13 +67,13 @@ const PATH: PathStep[] = [
   },
   {
     step: "Validate",
-    where: "Idea Studio",
+    where: "Idea Workshop",
     href: "/ideas",
     how: `An advisory team of ${AGENTS.length} Muse specialists, from market analyst to grants advisor, pressure-tests a business, non-profit, game, open-source, website, or mobile app idea with live web research.`,
   },
   {
     step: "Build",
-    where: "Build Studio",
+    where: "Project Factory",
     href: "/build",
     how: "Projects, tickets, and linked GitHub repositories. Muse drafts the backlog, and a Muse Code agent can take a ticket and open a pull request.",
   },
@@ -89,12 +89,12 @@ const META_AI = [
   {
     label: "Muse Spark and Muse Wonder",
     detail:
-      "Every Idea Studio advisor is Muse with its own specialist brief. Advisors search the web and cite their sources, and answer in structured JSON the page renders directly. When a member asks for a full evaluation, the advisors work in parallel and a final pass compares their findings. Members choose Muse Spark 1.3, its lower-cost Contributor tier, or Muse Wonder 1.0, and see an estimate of what each request cost.",
+      "Every Idea Workshop advisor is Muse with its own specialist brief. Advisors search the web and cite their sources, and answer in structured JSON the page renders directly. When a member asks for a full evaluation, the advisors work in parallel and a final pass compares their findings. Members choose Muse Spark 1.3, its lower-cost Contributor tier, or Muse Wonder 1.0, and see an estimate of what each request cost.",
   },
   {
     label: "Muse planning",
     detail:
-      "In Build Studio, Muse reads the project description, the linked idea, and the repository's README, then drafts a backlog and roadmap and ranks the open tickets. Every ticket it writes is a self-contained brief, ready for a coding agent.",
+      "In Project Factory, Muse reads the project description, the linked idea, and the repository's README, then drafts a backlog and roadmap and ranks the open tickets. Every ticket it writes is a self-contained brief, ready for a coding agent.",
   },
   {
     label: "Muse Code agents",
@@ -102,14 +102,9 @@ const META_AI = [
       "A member can hand a ticket to Muse Code without installing anything. WeStride starts an isolated sandbox, clones the repository, runs Muse Code headless on a branch named for the ticket, streams its work log to the ticket page as it happens, and opens a pull request when it finishes.",
   },
   {
-    label: "Muse as a learning companion",
-    detail:
-      "The Muse dock helps people practice talking with an AI and suggests a next step. Muse gives feedback on Academy challenges and helps learners write a post about what they built, under guardrails written for beginners and for children learning with an adult.",
-  },
-  {
     label: "Free to learn, your account to build",
     detail:
-      "WeStride covers Muse for learning, with a daily allowance. To validate and build, members connect their own Meta account through the same device sign-in Muse Code uses, so that work runs on their own key and credits.",
+      "The Academy is free. To validate and build, members connect their own Meta account through the same device sign-in Muse Code uses, so that work runs on their own key and credits.",
   },
   {
     label: "Built with Muse, too",
@@ -137,7 +132,7 @@ const AUDIENCE = [
   {
     label: "Non-profits",
     detail:
-      "Idea Studio has a non-profit path, with advisors for grants, donors and volunteers, governance, and program evaluation.",
+      "Idea Workshop has a non-profit path, with advisors for grants, donors and volunteers, governance, and program evaluation.",
   },
 ];
 

@@ -54,7 +54,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: ListS
   return (
     <PageFrame
       title="Agents"
-      description="Every agent in the AI Agent Fleet. Featured agents are called out on the member site."
+      description="Every agent in the Agent Studio. Featured agents are called out on the member site."
     >
       <ListSearch placeholder="Search by name, description, owner id, or agent id" filter={FILTER} />
       <ContentTable

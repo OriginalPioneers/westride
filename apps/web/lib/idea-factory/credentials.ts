@@ -1,5 +1,5 @@
 /**
- * Browser-side Idea Factory state. The member's Meta credential is no longer
+ * Browser-side Idea Workshop state. The member's Meta credential is no longer
  * here: it is kept encrypted on their WeStride account (see `lib/meta`).
  */
 

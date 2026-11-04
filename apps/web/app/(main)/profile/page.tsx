@@ -19,35 +19,20 @@ import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { Token } from "@astryxdesign/core/Token";
-import { challengeCatalog } from "@westride/db/challenges";
 import { getGithubConnection } from "@westride/db/github";
 import { listIdeasForMember } from "@westride/db/ideas";
-import { listLearningAttempts } from "@westride/db/learning";
 import { getMentorProfileForUser } from "@westride/db/mentorship";
-import { listAchievementsForUser } from "@westride/db/client";
-import { awardIfSignedIn } from "@/lib/achievements";
 import { IDEA_ROLE_LABELS, IDEA_TYPE_LABELS, ideaPath } from "@/lib/ideas/filters";
 import { languageName } from "@/lib/mentorship/languages";
 import { summarizeLocations } from "@/lib/mentorship/locations";
-import {
-  challengeMilestones,
-  milestoneHint,
-  trackProgress,
-} from "./achievements/track-progress";
 import { mentorPath, skillFilterPath } from "../mentorship/mentors/mentor-card";
 import { AccountTabs } from "../section-tabs";
-import {
-  ChallengeProgress,
-  EarnedAchievements,
-  EditAccountButton,
-  SignOutButton,
-} from "./profile-widgets";
+import { EditAccountButton, SignOutButton } from "./profile-widgets";
 
 export const metadata: Metadata = {
   title: "Profile",
 };
 
-const RECENT_ACHIEVEMENTS = 6;
 const VISIBLE_SKILLS = 6;
 
 /** GitHub usernames are 1–39 characters, alphanumeric or hyphen, and cannot start or end with a hyphen. */
@@ -70,17 +55,12 @@ export default async function ProfilePage() {
     return redirectToSignIn({ returnBackUrl: "/profile" });
   }
 
-  await awardIfSignedIn();
-
-  const [account, achievements, ideas, mentor, attempts, github] =
-    await Promise.all([
-      currentUser(),
-      listAchievementsForUser(userId),
-      listIdeasForMember(userId),
-      getMentorProfileForUser(userId),
-      listLearningAttempts(userId),
-      getGithubConnection(userId),
-    ]);
+  const [account, ideas, mentor, github] = await Promise.all([
+    currentUser(),
+    listIdeasForMember(userId),
+    getMentorProfileForUser(userId),
+    getGithubConnection(userId),
+  ]);
 
   const name = account?.fullName || account?.username || "Your profile";
   const username =
@@ -90,20 +70,6 @@ export default async function ProfilePage() {
     : null;
   const githubUrl = github ? githubProfileUrl(github.login) : null;
   const githubLogin = githubUrl ? github?.login : null;
-
-  const earned = achievements
-    .filter((item) => item.earnedAt)
-    .sort(
-      (a, b) => (b.earnedAt?.getTime() ?? 0) - (a.earnedAt?.getTime() ?? 0),
-    );
-  const progress = trackProgress(
-    attempts,
-    new Set(earned.map((item) => item.slug)),
-    true,
-  );
-  const next = progress.next;
-  const nextHref = next.href ?? "/profile/achievements";
-  const challengeCount = challengeCatalog.length;
   const location = mentor
     ? summarizeLocations(mentor.locations, mentor.isGlobal)
     : "";
@@ -160,18 +126,7 @@ export default async function ProfilePage() {
               </MetadataList>
             ) : null}
 
-            <Grid columns={{ minWidth: 180, max: 4 }} gap={4}>
-              <ClickableCard
-                label={`${earned.length} of ${achievements.length} achievements`}
-                href="/profile/achievements"
-              >
-                <VStack gap={1}>
-                  <Heading level={2}>{earned.length}</Heading>
-                  <Text type="supporting">
-                    of {achievements.length} achievements
-                  </Text>
-                </VStack>
-              </ClickableCard>
+            <Grid columns={{ minWidth: 180, max: 2 }} gap={4}>
               <ClickableCard
                 label={
                   ideas.length === 1 ? "1 idea" : `${ideas.length} ideas`
@@ -182,17 +137,6 @@ export default async function ProfilePage() {
                   <Heading level={2}>{ideas.length}</Heading>
                   <Text type="supporting">
                     {ideas.length === 1 ? "Idea" : "Ideas"}
-                  </Text>
-                </VStack>
-              </ClickableCard>
-              <ClickableCard
-                label={`${progress.completed.size} of ${challengeCount} challenges`}
-                href="/profile/achievements"
-              >
-                <VStack gap={1}>
-                  <Heading level={2}>{progress.completed.size}</Heading>
-                  <Text type="supporting">
-                    of {challengeCount} challenges
                   </Text>
                 </VStack>
               </ClickableCard>
@@ -215,7 +159,7 @@ export default async function ProfilePage() {
                   <Heading level={2}>Ideas</Heading>
                 </StackItem>
                 <Button
-                  label="Idea Studio"
+                  label="Idea Workshop"
                   href="/ideas"
                   variant="ghost"
                   size="sm"
@@ -224,10 +168,10 @@ export default async function ProfilePage() {
               {ideas.length === 0 ? (
                 <EmptyState
                   title="No ideas yet"
-                  description="Start one in Idea Studio. A private idea counts, and you can invite people onto it later."
+                  description="Start one in Idea Workshop. A private idea counts, and you can invite people onto it later."
                   actions={
                     <Button
-                      label="Go to Idea Studio"
+                      label="Go to Idea Workshop"
                       href="/ideas"
                       variant="primary"
                     />
@@ -258,84 +202,6 @@ export default async function ProfilePage() {
                     );
                   })}
                 </List>
-              )}
-            </VStack>
-
-            <Divider />
-
-            <VStack gap={4}>
-              <HStack gap={3} vAlign="center" wrap="wrap">
-                <StackItem size="fill">
-                  <Heading level={2}>Achievements</Heading>
-                </StackItem>
-                <Button
-                  label="View all"
-                  href="/profile/achievements"
-                  variant="ghost"
-                  size="sm"
-                />
-              </HStack>
-              <Card>
-                <VStack gap={3}>
-                  <Text type="label">Next up</Text>
-                  <Heading level={3}>{next.title}</Heading>
-                  <Text>{next.description}</Text>
-                  {next.unlocks.length > 0 ? (
-                    <Text type="supporting">
-                      Can earn {next.unlocks.join(", ")}
-                    </Text>
-                  ) : null}
-                  <HStack>
-                    <Button
-                      label={
-                        next.href ? next.label : "Continue on Achievements"
-                      }
-                      href={nextHref}
-                      variant="primary"
-                    />
-                  </HStack>
-                </VStack>
-              </Card>
-              <ChallengeProgress
-                value={progress.completed.size}
-                max={challengeCount}
-              />
-              <Text type="supporting">
-                {milestoneHint(
-                  progress.completed.size,
-                  challengeMilestones,
-                  "challenge",
-                )}
-              </Text>
-              {earned.length === 0 ? (
-                <EmptyState
-                  title="No achievements yet"
-                  description="Finish a challenge, visit the Academy, or save an idea to start your collection."
-                  actions={
-                    <Button
-                      label="View achievements"
-                      href="/profile/achievements"
-                      variant="primary"
-                    />
-                  }
-                />
-              ) : (
-                <VStack gap={2}>
-                  <EarnedAchievements
-                    items={earned.slice(0, RECENT_ACHIEVEMENTS).map((item) => ({
-                      slug: item.slug,
-                      name: item.name,
-                      description: item.description,
-                      earnedAt: item.earnedAt!.toISOString(),
-                    }))}
-                  />
-                  {earned.length > RECENT_ACHIEVEMENTS ? (
-                    <Text type="supporting">
-                      Showing {RECENT_ACHIEVEMENTS} of {earned.length}. The
-                      rest are on Achievements.
-                    </Text>
-                  ) : null}
-                </VStack>
               )}
             </VStack>
 

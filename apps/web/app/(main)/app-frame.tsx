@@ -9,7 +9,6 @@ import { Divider } from "@astryxdesign/core/Divider";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { Layout } from "@astryxdesign/core/Layout";
-import { VStack } from "@astryxdesign/core/Stack";
 import {
   TopNav,
   TopNavHeading,
@@ -19,7 +18,6 @@ import {
 import { UserCircleIcon } from "@heroicons/react/24/outline";
 import { signInPath } from "@/lib/auth-paths";
 import { ThemeToggle } from "../theme-toggle";
-import { MuseDock } from "./muse-dock";
 import { SITE_CONTAINER_WIDTH, SiteFooter } from "../site-footer";
 
 type NavLink = {
@@ -30,9 +28,9 @@ type NavLink = {
 /** The four studios, and what they cost. Left of the bar. */
 const PRIMARY_LINKS: NavLink[] = [
   { label: "Idea Workshop", href: "/ideas" },
-  { label: "Build Studio", href: "/build" },
-  { label: "AI Agent Fleet", href: "/agents" },
-  { label: "Support A Project", href: "/supporting" },
+  { label: "Project Factory", href: "/build" },
+  { label: "Agent Studio", href: "/agents" },
+  { label: "WePledge™", href: "/wepledge" },
   { label: "Pricing", href: "/pricing" },
 ];
 
@@ -129,13 +127,7 @@ function ProfileLink() {
   );
 }
 
-export function AppFrame({
-  children,
-  viewerId = null,
-}: {
-  children: React.ReactNode;
-  viewerId?: string | null;
-}) {
+export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
@@ -189,12 +181,7 @@ export function AppFrame({
       <Layout
         height="fill"
         padding={0}
-        footer={
-          <VStack gap={0} style={{ position: "relative" }}>
-            <MuseDock key={viewerId ?? "guest"} viewerId={viewerId} />
-            <SiteFooter />
-          </VStack>
-        }
+        footer={<SiteFooter />}
       >
         {children}
       </Layout>

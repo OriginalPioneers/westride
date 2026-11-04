@@ -72,7 +72,7 @@ if ((Invoke-Docker volume inspect $Volume) -eq 0) {
 }
 
 if (-not $Code -and -not $hasToken) {
-  $Code = Read-Host "Pairing code from WeStride -> Supporting -> Link a computer"
+  $Code = Read-Host "Pairing code from WeStride -> WePledge -> Link a computer"
   if (-not $Code) { Fail "A pairing code is required the first time." }
 }
 
@@ -134,6 +134,6 @@ if ((Invoke-Docker @runArgs) -ne 0) {
 }
 
 Write-Host ""
-Write-Host "The runner is starting. It shows up on your Supporting page within a minute."
+Write-Host "The runner is starting. It shows up on your WePledge page within a minute."
 Write-Host "  Logs:  docker logs -f $Container"
 Write-Host "  Stop:  docker rm -f $Container"

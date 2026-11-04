@@ -1,7 +1,6 @@
 import { sql } from "drizzle-orm";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { achievementCatalog } from "./achievement-catalog";
 import { academyLessons, validateAcademyLessons } from "./academy-lessons";
 import { academyTracks } from "./academy-tracks";
 import { getDb } from "./client";
@@ -14,7 +13,6 @@ import {
 } from "./load-env";
 import { fail } from "./run";
 import {
-  achievements,
   countries,
   lessonArtifacts,
   lessons,
@@ -56,7 +54,6 @@ const rows = academyTracks.map((track) => ({
   tags: [...track.tags],
   prerequisiteSlugs: [...track.prerequisites],
   learningObjectives: [...track.learningObjectives],
-  achievementTitle: track.achievementTitle,
 }));
 
 const db = getDb();
@@ -78,7 +75,6 @@ await db
       tags: sql`excluded.tags`,
       prerequisiteSlugs: sql`excluded.prerequisite_slugs`,
       learningObjectives: sql`excluded.learning_objectives`,
-      achievementTitle: sql`excluded.achievement_title`,
     },
   });
 
@@ -172,29 +168,6 @@ await db
   });
 
 console.log(`Seeded ${artifactRows.length} lesson artifacts.`);
-
-const achievementRows = achievementCatalog.map((achievement) => ({
-  slug: achievement.slug,
-  name: achievement.name,
-  description: achievement.description,
-  badgeUrl: achievement.badgeUrl,
-  sortOrder: achievement.sortOrder,
-}));
-
-await db
-  .insert(achievements)
-  .values(achievementRows)
-  .onConflictDoUpdate({
-    target: achievements.slug,
-    set: {
-      name: sql`excluded.name`,
-      description: sql`excluded.description`,
-      badgeUrl: sql`excluded.badge_url`,
-      sortOrder: sql`excluded.sort_order`,
-    },
-  });
-
-console.log(`Seeded ${achievementRows.length} achievements.`);
 
 const skillRows = skillCatalog.map((name) => ({ slug: skillSlug(name), name }));
 

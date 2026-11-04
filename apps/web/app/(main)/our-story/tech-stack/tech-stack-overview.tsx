@@ -30,7 +30,7 @@ const WORKSPACES: Workspace[] = [
   {
     path: "apps/web",
     description:
-      "This website: Academy, Mentorship, Idea Studio, and everything else you can sign in to.",
+      "This website: Academy, Mentorship, Idea Workshop, and everything else you can sign in to.",
     runsAt: "westride.org",
     href: "https://westride.org",
   },
@@ -146,7 +146,7 @@ const DATA: Project[] = [
   {
     name: "PostgreSQL",
     detail:
-      "Postgres holds everything: Academy tracks, achievements, mentor profiles, and ideas. It runs serverless on Neon, and the website and the API reach it over Neon's serverless driver.",
+      "Postgres holds everything: Academy tracks, mentor profiles, ideas, and projects. It runs serverless on Neon, and the website and the API reach it over Neon's serverless driver.",
     logo: "/logos/postgresql.png",
     site: "https://www.postgresql.org",
     repo: "https://github.com/postgres/postgres",
@@ -154,7 +154,7 @@ const DATA: Project[] = [
   {
     name: "Drizzle ORM",
     detail:
-      "The schema is TypeScript in @westride/db. drizzle-kit turns schema changes into SQL migrations, and a seed script loads the Academy catalog, achievements, and other reference data.",
+      "The schema is TypeScript in @westride/db. drizzle-kit turns schema changes into SQL migrations, and a seed script loads the Academy catalog and other reference data.",
     logo: "/logos/drizzle.svg",
     site: "https://orm.drizzle.team",
     repo: "https://github.com/drizzle-team/drizzle-orm",
@@ -162,7 +162,7 @@ const DATA: Project[] = [
   {
     name: "Clerk",
     detail:
-      "Accounts and sign-in. Signing in is optional. It unlocks achievements, mentor profiles, and founding ideas.",
+      "Accounts and sign-in. Signing in is optional. It unlocks lesson progress, mentor profiles, and founding ideas.",
     logo: "/logos/clerk.svg",
     site: "https://clerk.com",
     repo: "https://github.com/clerk/javascript",

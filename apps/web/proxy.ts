@@ -91,7 +91,7 @@ const STATIC_FILE =
 
 // Chat platforms call these from servers with bot user agents (Slack sends
 // "Slackbot"). Each handler checks the platform's request signature instead.
-// Build Studio's sandbox runner posts its work log with a per-run token,
+// Project Factory's sandbox runner posts its work log with a per-run token,
 // supporters' runners authenticate with a per-device token, and Stripe signs
 // its payment events.
 const SIGNED_WEBHOOKS = new Set([

@@ -247,7 +247,7 @@ export function ActivityPanel({
         <VStack gap={1}>
           <Heading level={2}>Requests sent to Muse</Heading>
           <Text type="supporting">
-            Every call the Idea Factory made for this idea, by any member.
+            Every call the Idea Workshop made for this idea, by any member.
             Select one to read exactly what was sent and what came back.
           </Text>
         </VStack>

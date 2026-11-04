@@ -269,7 +269,6 @@ export function EditIdeaDialog({
           setFormMessage(result.message);
           return;
         }
-        window.dispatchEvent(new Event("westride:achievements"));
         if (!result.canStillView) {
           router.push("/ideas");
           return;

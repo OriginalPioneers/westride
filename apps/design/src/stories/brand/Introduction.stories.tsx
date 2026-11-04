@@ -76,8 +76,8 @@ export const Guide = {
             launched, with AI alongside the whole way.
           </Text>
           <Text>
-            Three studios carry that story. Idea Studio is the spark. Build
-            Studio is the structure that makes the spark real. Agent Studio
+            Three studios carry that story. Idea Workshop is the spark. Project
+            Factory is the structure that makes the spark real. Agent Studio
             keeps it moving after launch. The mark shows all of it: people
             moving together, steps rising, a spark at the end.
           </Text>

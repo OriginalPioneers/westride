@@ -44,7 +44,7 @@ import { showsSupportSection, SupportSection, SupportSettings } from "./support/
 
 type Params = Promise<{ id: string }>;
 
-// Idea Factory server actions wait on Meta's Responses API (web search +
+// Idea Workshop server actions wait on Meta's Responses API (web search +
 // reasoning can take a couple of minutes per advisor).
 export const maxDuration = 180;
 
@@ -230,8 +230,8 @@ export default async function IdeaPage({
 
   if (projects.length > 0) {
     sections.push({
-      id: "build-studio",
-      title: "Build Studio",
+      id: "project-factory",
+      title: "Project Factory",
       content: (
         <Table>
           <TableHeader>

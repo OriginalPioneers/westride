@@ -272,7 +272,7 @@ export default async function ConnectionsPage({
               <ConnectionRow
                 value="meta"
                 name="Meta"
-                purpose="Run Muse advisors, like the Idea Factory, on your Meta Model API account."
+                purpose="Run Muse advisors, like the Idea Workshop, on your Meta Model API account."
                 logo="/logos/meta.svg"
                 status={statuses.meta}
               >

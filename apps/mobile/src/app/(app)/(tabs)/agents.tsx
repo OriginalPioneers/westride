@@ -53,7 +53,7 @@ export default function AgentsScreen() {
       onRefresh={refresh}
       header={
         <View style={styles.header}>
-          <Text variant="title">AI Agent Fleet</Text>
+          <Text variant="title">Agent Studio</Text>
           <Text variant="supporting">
             Standing Muse agents with a backlog, a schedule, and a spend you can see.
           </Text>

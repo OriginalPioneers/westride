@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Build Studio: agent runs, their event streams, and ticket comments.
+// Project Factory: agent runs, their event streams, and ticket comments.
 // ---------------------------------------------------------------------------
 import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import type { ComputeSource, MuseKeySource, RunnerKind } from "./agent-schema";

@@ -221,7 +221,7 @@ export async function completeAgentRun(run: AgentRun, payload: FinishedPayload):
           summary ?? "_Muse Code did not leave a report._",
           "",
           "---",
-          `Opened by a Muse Code agent run from WeStride Build Studio${ticket && project ? ` for ${key}` : ""}.`,
+          `Opened by a Muse Code agent run from WeStride Project Factory${ticket && project ? ` for ${key}` : ""}.`,
           succeeded ? "" : `The run ended with exit code ${payload.exitCode}; review carefully.`,
         ].join("\n"),
       );

@@ -1,6 +1,6 @@
 # Agent Studio
 
-Agent Studio is where a member sets up **standing agents**: a named Muse persona with its own description and instructions, its own backlog of tickets, an optional schedule, and a running account of tokens and spend. An agent can be tied to a project, an idea, both, or neither, and to one GitHub repository. With a repository it works tickets as Muse Code in a sandbox on the member's own Vercel or Modal account and opens pull requests, exactly like Build Studio's **Run with Muse Code**; without one it answers tickets as written reports through the Meta Model API with web search.
+Agent Studio is where a member sets up **standing agents**: a named Muse persona with its own description and instructions, its own backlog of tickets, an optional schedule, and a running account of tokens and spend. An agent can be tied to a project, an idea, both, or neither, and to one GitHub repository. With a repository it works tickets as Muse Code in a sandbox on the member's own Vercel or Modal account and opens pull requests, exactly like Project Factory's **Run with Muse Code**; without one it answers tickets as written reports through the Meta Model API with web search.
 
 The whole feature runs on the member's own accounts: their Meta key pays for the model and their Vercel plan or Modal workspace for the sandbox. Members without those can use WeStride Cloud from a prepaid balance instead (`docs/westride-cloud.md`).
 
@@ -16,7 +16,7 @@ What each part needs:
 | --- | --- |
 | Agents, tickets, log, usage pages | Nothing beyond the database. |
 | Report jobs | The member's Meta account connected in Settings (`META_TOKEN_ENCRYPTION_KEY` on the server). |
-| Code jobs (repository, sandbox, pull request) | The same as Build Studio's runner: the GitHub App (`GITHUB_APP_*`), `BUILD_RUNNER_CALLBACK_URL`, and a sandbox host (`VERCEL_TOKEN_ENCRYPTION_KEY`, `MODAL_TOKEN_ENCRYPTION_KEY`, or WeStride Cloud compute) on the server; the payer's Vercel account (with a team and project chosen) or Modal account connected in Settings, or a WeStride Cloud balance. See `docs/build-studio.md`. |
+| Code jobs (repository, sandbox, pull request) | The same as Project Factory's runner: the GitHub App (`GITHUB_APP_*`), `BUILD_RUNNER_CALLBACK_URL`, and a sandbox host (`VERCEL_TOKEN_ENCRYPTION_KEY`, `MODAL_TOKEN_ENCRYPTION_KEY`, or WeStride Cloud compute) on the server; the payer's Vercel account (with a team and project chosen) or Modal account connected in Settings, or a WeStride Cloud balance. See `docs/project-factory.md`. |
 | Schedules on exact time | `CRON_SECRET` and a scheduler calling `GET /integrations/agents/schedule`. See below. |
 
 `canRunCode(agent)` in `apps/web/lib/agents/start.ts` decides per agent: a repository is linked **and** `isAgentRunnerConfigured()`. Otherwise jobs are reports. A linked repository is kept either way, so configuring the runner later switches the agent to code jobs with no further change.
@@ -38,10 +38,10 @@ A scheduled run picks the agent's highest-priority `BACKLOG` ticket (URGENT → 
 
 ## Data model
 
-Tables live in `packages/db/src/agent-schema.ts`. Queries: `packages/db/src/agents.ts` (`@westride/db/agents`). Pure rules client components may import: `packages/db/src/agent-rules.ts` (`@westride/db/agent-rules`), which also re-exports the ticket status rules from Build Studio.
+Tables live in `packages/db/src/agent-schema.ts`. Queries: `packages/db/src/agents.ts` (`@westride/db/agents`). Pure rules client components may import: `packages/db/src/agent-rules.ts` (`@westride/db/agent-rules`), which also re-exports the ticket status rules from Project Factory.
 
 - `agents`: name, description, `instructions` (Markdown the agent reads on every job), `status` (ACTIVE, PAUSED, ARCHIVED), `is_public`, `owner_clerk_user_id`, optional `idea_id` and `project_id` (both `set null` on delete), `model`, `max_steps`, the linked repository (`repo_id`, owner, name, URL, default branch, visibility; all nullable), `schedule`, `schedule_hour_utc`, `schedule_weekday`, `standing_task`, `next_run_at`, `last_run_at`, and `next_ticket_number`.
-- `agent_tickets`: per-agent `number`, title, description, `status` and `priority` (the Build Studio enums), `sort_order`, `blocked_reason`, `source` (MEMBER or SCHEDULE), creator, `completed_at`. Keys are derived: `agentTicketKey("Release Bot", 3)` → `RB-3`.
+- `agent_tickets`: per-agent `number`, title, description, `status` and `priority` (the Project Factory enums), `sort_order`, `blocked_reason`, `source` (MEMBER or SCHEDULE), creator, `completed_at`. Keys are derived: `agentTicketKey("Release Bot", 3)` → `RB-3`.
 - `agent_jobs`: agent, ticket (nullable; a deleted ticket keeps its jobs), `ticket_title` (copied, so the list still reads after deletion), `trigger` (MANUAL or SCHEDULE), `kind` (CODE or REPORT), `status` (the `agent_run_status` enum), who started it and **who paid** (`paid_by_clerk_user_id`), model, step budget, sandbox name, repository, branch, `callback_token_hash`, Muse session id, exit code, head SHA, pull request, `muse_request_id` (reports), summary, error, event count, **usage** (`model_calls`, `input_tokens`, `cached_tokens`, `output_tokens`, `reasoning_tokens`, `total_tokens`, `estimated_cost_micros`), and timestamps.
 - `agent_job_events`: job, `sequence` (unique per job), `type` (`setup`, `muse`, `git`, `log`, `finished`), JSON payload. The same shape as `agent_run_events`.
 - `agent_log_entries`: the agent's human-readable log: `kind` (`agent`, `ticket`, `job`, `schedule`, `settings`), message, optional ticket, job, and actor.
@@ -90,7 +90,7 @@ Both are listed in `SIGNED_WEBHOOKS` in `apps/web/proxy.ts` so the crawler filte
 
 **Report job** (`startReportJob`): creates the job RUNNING and returns a `work` closure. The server action runs it in `after()` so the page returns at once; the cron route awaits it. `work` calls `callMuse` with web search, logs the request, writes two events (the answer as `run.terminal.completed`, then `finished`), copies usage onto the job, and moves the ticket to IN_REVIEW (or BLOCKED on failure). Reports that never settle are closed as failed after ten minutes by `reconcileStaleJob`.
 
-The shared runner script (`apps/web/lib/build/agent/runner-script.ts`) now reads Muse Code's `--json` envelope properly: session id from the `session` stream, the final message from `run.terminal.*` or accumulated `run.output.delta`, and usage from `run.usage`. Build Studio runs get the better session and summary detection for free; their `run.usage` record shows in the work log but is not stored on `agent_runs`.
+The shared runner script (`apps/web/lib/build/agent/runner-script.ts`) now reads Muse Code's `--json` envelope properly: session id from the `session` stream, the final message from `run.terminal.*` or accumulated `run.output.delta`, and usage from `run.usage`. Project Factory runs get the better session and summary detection for free; their `run.usage` record shows in the work log but is not stored on `agent_runs`.
 
 ## Tests
 

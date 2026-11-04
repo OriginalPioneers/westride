@@ -47,7 +47,6 @@ export function TrackCard({ track }: { track: AcademyTrack }) {
       </Text>
       <View style={styles.footer}>
         <Text variant="label">{meta}</Text>
-        <Text variant="label">Earn: {track.achievementTitle}</Text>
       </View>
     </Pressable>
   );

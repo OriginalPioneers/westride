@@ -72,7 +72,7 @@ export async function uploadIdeaFiles(
     }
     return { status: "ok", artifacts: result.artifacts };
   } catch (error) {
-    console.error("Idea Factory upload failed", error);
+    console.error("Idea Workshop upload failed", error);
     return {
       status: "error",
       message:

@@ -1,8 +1,8 @@
 import type { CollectionSort } from "@westride/db/collection-filters";
 
 /**
- * The URL contract shared by the browsable studios (Build Studio, AI Agent
- * Fleet). Empty string means unset.
+ * The URL contract shared by the browsable studios (Project Factory, Agent
+ * Studio). Empty string means unset.
  *
  * `view` and `status` are the pills under the search bar; at most one of
  * them applies, and `status` wins when both are present. `q` searches every

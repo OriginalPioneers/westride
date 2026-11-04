@@ -22,7 +22,6 @@ export type AcademyTrack = {
   tags: string[];
   prerequisiteSlugs: string[];
   learningObjectives: string[];
-  achievementTitle: string;
 };
 
 export type AcademyLesson = {

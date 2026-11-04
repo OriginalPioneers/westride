@@ -26,7 +26,7 @@ type Story = StoryObj<typeof meta>;
 const tiles = [
   ["Academy", "Lessons you can finish this week."],
   ["Mentorship", "Someone who has shipped the thing you are attempting."],
-  ["Build Studio", "A prototype with a URL."],
+  ["Project Factory", "A prototype with a URL."],
 ] as const;
 
 export const Reflowing: Story = {

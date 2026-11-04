@@ -158,7 +158,7 @@ export async function startAgentJob(input: StartJobInput): Promise<StartedJob> {
 }
 
 // ---------------------------------------------------------------------------
-// Code jobs: Muse Code in a sandbox, like Build Studio
+// Code jobs: Muse Code in a sandbox, like Project Factory
 // ---------------------------------------------------------------------------
 
 async function startCodeJob(

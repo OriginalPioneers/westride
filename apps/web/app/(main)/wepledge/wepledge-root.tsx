@@ -2,14 +2,14 @@
 
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { VStack } from "@astryxdesign/core/Stack";
-import { SUPPORTING_STYLES } from "./supporting-styles";
+import { WEPLEDGE_STYLES } from "./wepledge-styles";
 
 /**
- * Wraps the supporting page: injects its styles once and reveals
+ * Wraps the WePledge™ page: injects its styles once and reveals
  * `.sp-reveal` blocks as they scroll into view. Without JavaScript nothing
  * is ever hidden, because the hiding rule only applies under `[data-js]`.
  */
-export function SupportingRoot({ children }: { children: ReactNode }) {
+export function WePledgeRoot({ children }: { children: ReactNode }) {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -60,7 +60,7 @@ export function SupportingRoot({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <style>{SUPPORTING_STYLES}</style>
+      <style>{WEPLEDGE_STYLES}</style>
       <VStack className="sp-root" gap={0} ref={rootRef}>
         {children}
       </VStack>

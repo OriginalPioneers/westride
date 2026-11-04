@@ -8,18 +8,18 @@ Built in public for the [Meta Global AI Developer Hackathon](https://cerebralval
 
 | Studio | What it does |
 | -------- | -------------- |
-| Idea Studio | Bring a business, non-profit, game, open-source, website, or mobile app idea. A team of Muse advisors, each with a specialist brief, researches it with web search and cited sources, evaluates it in parallel, and a synthesis step weighs where they agree and disagree. Import any public GitHub repository to start from existing work. |
-| Build Studio | Projects, tickets, milestones, and linked GitHub repositories. Muse drafts the backlog and roadmap and ranks the open tickets. Muse Code takes a ticket, works it in a Vercel Sandbox on the member's own account, streams the work log live, and opens a pull request. |
+| Idea Workshop | Bring a business, non-profit, game, open-source, website, or mobile app idea. A team of Muse advisors, each with a specialist brief, researches it with web search and cited sources, evaluates it in parallel, and a synthesis step weighs where they agree and disagree. Import any public GitHub repository to start from existing work. |
+| Project Factory | Projects, tickets, milestones, and linked GitHub repositories. Muse drafts the backlog and roadmap and ranks the open tickets. Muse Code takes a ticket, works it in a Vercel Sandbox on the member's own account, streams the work log live, and opens a pull request. |
 | Agent Studio | Standing Muse agents with their own instructions, backlog, schedule, and usage ledger. With a repository they work tickets as Muse Code; without one they answer with researched reports. |
-| Supporting | Back an idea without joining its team. Pledge tokens (your Meta key pays for the team's agents up to a cap you set), pledge compute (your computer runs their jobs in an isolated container, optionally on a local model), or follow the team's own capital links. WeStride never collects or holds money. |
+| WePledge™ | Back an idea without joining its team. Pledge tokens (your Meta key pays for the team's agents up to a cap you set), pledge compute (your computer runs their jobs in an isolated container, optionally on a local model), or follow the team's own capital links. WeStride never collects or holds money. |
 
-Around the studios: free one-to-one Mentorship, an Academy with Muse feedback on challenges, a public REST API with an OpenAPI explorer, an MCP server, Slack, Discord, and WhatsApp bots, and iOS and Android apps.
+Around the studios: free one-to-one Mentorship, an AI Academy, a public REST API with an OpenAPI explorer, an MCP server, Slack, Discord, and WhatsApp bots, and iOS and Android apps.
 
 ### Meta models in use
 
 | Model | Where |
 | ----- | ----- |
-| Muse Spark 1.3 and Muse Wonder 1.0 | Every advisor, evaluation, synthesis, plan, report job, and companion reply, through the Responses API with structured JSON output and web search |
+| Muse Spark 1.3 and Muse Wonder 1.0 | Every advisor, evaluation, synthesis, plan, and report job, through the Responses API with structured JSON output and web search |
 | Muse Code | Headless in Vercel Sandbox microVMs and in supporters' Docker containers, working tickets and opening pull requests |
 | Muse Image 1.0 | Pictures for ideas, projects, and agents; Spark writes the prompt, Image renders it |
 | Muse Voice Transcribe 1.0 | Dictation on every long-text field |
@@ -44,13 +44,13 @@ Every line of WeStride was written by one person, [Garrett Hampton](https://www.
 | Oct 27 | Academy tracks, achievements, and mentorship seeds | `babdccb`, `3281e23`, `48aeb1c` |
 | Oct 27 | Public REST API and MCP server | `0ef0fb6` |
 | Oct 28 | Ideas: create, view, edit | `51262ee`, `566cbbb`, `2b04d8a` |
-| Oct 28 | Idea Studio advisory team on Muse (Responses API, web search, structured output) | `646bfb7` |
+| Oct 28 | Idea Workshop advisory team on Muse (Responses API, web search, structured output) | `646bfb7` |
 | Oct 28 | Feedback form | `b181527` |
 | Oct 28 | Achievements, Muse learning challenges, Muse dock, social bonus | `1f58380`, `37256a2` |
 | Oct 29 | GitHub connection and repository linking | `d432de8` |
 | Oct 29 | Meta account connection (device sign-in and pasted key); Slack, Discord, WhatsApp bots | `90af991` |
 | Oct 29 | Profile page | `ec21b5f` |
-| Oct 29 | Build Studio: projects, tickets, board, milestones, Muse planning | `dc57dfd` |
+| Oct 29 | Project Factory: projects, tickets, board, milestones, Muse planning | `dc57dfd` |
 | Oct 29 | Muse Code agent runs from a ticket (sandbox, work log, pull request) | `e1abe0b` |
 | Oct 29 | Mentor request form | `0c3c9a3` |
 | Oct 29 | Game idea path with its advisors | `6bc7d5e` |

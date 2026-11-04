@@ -71,7 +71,7 @@ if docker volume inspect "$VOLUME" >/dev/null 2>&1; then
 fi
 
 if [ -z "$CODE" ] && [ "$HAS_TOKEN" -eq 0 ]; then
-  CODE=$(ask "Pairing code from WeStride → Supporting → Link a computer: " "")
+  CODE=$(ask "Pairing code from WeStride → WePledge → Link a computer: " "")
   [ -n "$CODE" ] || fail "A pairing code is required the first time."
 fi
 
@@ -126,6 +126,6 @@ set -- \
 docker run "$@" "$IMAGE" >/dev/null
 
 say ""
-say "The runner is starting. It shows up on your Supporting page within a minute."
+say "The runner is starting. It shows up on your WePledge page within a minute."
 say "  Logs:  docker logs -f $CONTAINER"
 say "  Stop:  docker rm -f $CONTAINER"

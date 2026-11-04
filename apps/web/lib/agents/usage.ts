@@ -16,7 +16,7 @@ export const EMPTY_JOB_USAGE: AgentJobUsagePatch = {
 /**
  * Turns Muse Code's cumulative `run.usage` into the job's usage columns.
  * Each model is priced on its own; a model the price list does not know
- * costs zero rather than a guess, the same rule as the Idea Factory.
+ * costs zero rather than a guess, the same rule as the Idea Workshop.
  */
 export function usageFromMuseRun(usage: MuseRunUsage | null | undefined): AgentJobUsagePatch {
   if (!usage) {
@@ -40,7 +40,7 @@ export function usageFromMuseRun(usage: MuseRunUsage | null | undefined): AgentJ
   return totals;
 }
 
-/** One Model API call, as the Idea Factory already measures it. */
+/** One Model API call, as the Idea Workshop already measures it. */
 export function usageFromMuseAttempt(usage: MuseUsage): AgentJobUsagePatch {
   return {
     modelCalls: 1,

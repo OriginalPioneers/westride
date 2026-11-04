@@ -1,7 +1,6 @@
 import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import { listAgentsForIdea } from "@westride/db/agents";
 import { listProjectsForIdea } from "@westride/db/build";
-import { awardAchievement } from "@westride/db/client";
 import {
   createIdea,
   followIdea,
@@ -12,7 +11,6 @@ import {
   updateIdeaDetails,
   type IdeaWithDetails,
 } from "@westride/db/ideas";
-import { syncLearningAwards } from "@westride/db/learning";
 import type { Context } from "hono";
 import { signInRequired, viewerOf } from "../auth";
 import {
@@ -232,25 +230,20 @@ ideas.openapi(createRoute_, async (c) => {
     });
   }
 
-  const created = await createIdea(
-    {
-      name: body.name,
-      description: body.description,
-      type: body.type,
-      isFeatured: false,
-      isPublic: body.isPublic,
-      countryCodes: [],
-      tagNames: body.categories,
-      // Founder is last so a repeated id cannot replace that role.
-      members: [
-        ...invites.map((invite) => ({ clerkUserId: invite.userId, role: invite.role })),
-        { clerkUserId: caller.userId, role: "FOUNDER" as const },
-      ],
-    },
-    caller.userId,
-  );
-  await syncLearningAwards(caller.userId).catch(() => undefined);
-  await awardAchievement(caller.userId, "first-spark").catch(() => undefined);
+  const created = await createIdea({
+    name: body.name,
+    description: body.description,
+    type: body.type,
+    isFeatured: false,
+    isPublic: body.isPublic,
+    countryCodes: [],
+    tagNames: body.categories,
+    // Founder is last so a repeated id cannot replace that role.
+    members: [
+      ...invites.map((invite) => ({ clerkUserId: invite.userId, role: invite.role })),
+      { clerkUserId: caller.userId, role: "FOUNDER" as const },
+    ],
+  });
 
   const idea = await getIdea(created.id, viewerOf(c));
   if (!idea) {
@@ -318,7 +311,6 @@ ideas.openapi(updateRoute, async (c) => {
     }
     throw error;
   }
-  await syncLearningAwards(caller.userId).catch(() => undefined);
 
   const updated = await getIdea(id, viewerOf(c));
   if (!updated) {

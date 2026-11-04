@@ -99,7 +99,7 @@ export const pledgeContributions = pgTable(
     clerkUserId: text("clerk_user_id").notNull(),
     kind: pledgeKind("kind").notNull(),
     jobId: uuid("job_id").references(() => agentJobs.id, { onDelete: "set null" }),
-    /** A Build Studio run a sponsor's computer took, when the work was a ticket run rather than an agent job. */
+    /** A Project Factory run a sponsor's computer took, when the work was a ticket run rather than an agent job. */
     runId: uuid("run_id").references(() => agentRuns.id, { onDelete: "set null" }),
     deviceId: uuid("device_id").references(() => devices.id, { onDelete: "set null" }),
     estimatedCostMicros: bigint("estimated_cost_micros", { mode: "number" }).notNull().default(0),

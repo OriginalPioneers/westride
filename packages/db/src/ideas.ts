@@ -17,7 +17,6 @@ import {
   ideaFollows,
   ideaGeographies,
   ideaMembers,
-  ideaBuilderEvents,
   ideas,
   ideaTags,
   tags,
@@ -31,7 +30,7 @@ import {
   type IdeaType,
   type Tag,
 } from "./schema";
-import { changedPitch, prototypeUrl } from "./builder-progress";
+import { prototypeUrl } from "./builder-progress";
 import { tagCatalog, tagSlug } from "./tag-catalog";
 
 export type IdeaWithDetails = Idea & {
@@ -575,10 +574,7 @@ async function writeIdeaAssociations(
   await db.batch([first!, ...rest]);
 }
 
-export async function createIdea(
-  input: IdeaInput,
-  actorId?: string,
-): Promise<{ id: string }> {
+export async function createIdea(input: IdeaInput): Promise<{ id: string }> {
   const [created] = await getDb()
     .insert(ideas)
     .values({
@@ -596,22 +592,6 @@ export async function createIdea(
   }
 
   await writeIdeaAssociations(created.id, input);
-  if (
-    actorId &&
-    input.members.some(
-      (m) => m.clerkUserId === actorId && m.role === "FOUNDER",
-    ) &&
-    input.members.some((m) => m.clerkUserId !== actorId)
-  ) {
-    await getDb()
-      .insert(ideaBuilderEvents)
-      .values({
-        ideaId: created.id,
-        clerkUserId: actorId,
-        achievementSlug: "team-builder",
-      })
-      .onConflictDoNothing();
-  }
   return created;
 }
 
@@ -689,13 +669,7 @@ export async function updateIdeaDetails(
     throw new Error(FOUNDER_ONLY);
   }
 
-  const [currentTeam, tagIds] = await Promise.all([
-    db
-      .select({ user: ideaMembers.clerkUserId })
-      .from(ideaMembers)
-      .where(eq(ideaMembers.ideaId, id)),
-    resolveTagIds(input.categoryNames),
-  ]);
+  const tagIds = await resolveTagIds(input.categoryNames);
   const url = input.prototypeUrl.trim()
     ? prototypeUrl(input.prototypeUrl)
     : null;
@@ -714,18 +688,6 @@ export async function updateIdeaDetails(
   );
   if (changedPrototype && !input.prototypeTested)
     throw new Error("Test your prototype and confirm it works before sharing.");
-  const earned: string[] = [];
-  if (changedPitch(idea.description, input.description))
-    earned.push("idea-refiner");
-  if (
-    members.some(
-      (m) =>
-        m.clerkUserId !== editorClerkUserId &&
-        !currentTeam.some((old) => old.user === m.clerkUserId),
-    )
-  )
-    earned.push("team-builder");
-  if (changedPrototype) earned.push("prototype-shared");
   const statements: BatchItem<"pg">[] = [
     db
       .update(ideas)
@@ -764,19 +726,6 @@ export async function updateIdeaDetails(
     );
   }
 
-  if (earned.length)
-    statements.push(
-      db
-        .insert(ideaBuilderEvents)
-        .values(
-          earned.map((achievementSlug) => ({
-            ideaId: id,
-            clerkUserId: editorClerkUserId,
-            achievementSlug,
-          })),
-        )
-        .onConflictDoNothing(),
-    );
   const [first, ...rest] = statements;
   await db.batch([first!, ...rest]);
 }

@@ -61,11 +61,11 @@ export const STUDIOS: Studio[] = [
     href: "/ideas",
     how: "Bring your business, nonprofit, game, or open-source idea to life through collaborative brainstorming, research, and feedback. Work alongside Meta AI advisors to explore opportunities, challenge assumptions, and shape your next steps.",
     icon: LightBulbIcon,
-    tints: ["indigo", "purple"],
+    tints: ["yellow", "orange"],
   },
   {
     step: "From idea to code, in GitHub.",
-    where: "Build Studio",
+    where: "Project Factory",
     action: "Build a Project",
     href: "/build",
     how: "Turn your ideas into working projects with Meta Muse Code. Plan development, organize GitHub issues, and collaborate with AI coding agents that write code and open pull requests directly in your repository.",
@@ -99,19 +99,19 @@ export type SupporterWay = {
 export const SUPPORTER_WAYS: SupporterWay[] = [
   {
     action: "Pledge tokens",
-    href: "/supporting?kind=tokens",
+    href: "/wepledge?kind=tokens",
     how: "Let a team's agents run on your Meta API key, up to a cap you set.",
     icon: SparklesIcon,
   },
   {
     action: "Pledge compute",
-    href: "/supporting?kind=compute",
+    href: "/wepledge?kind=compute",
     how: "Run agent jobs on your own computer, in an isolated container.",
     icon: ComputerDesktopIcon,
   },
   {
     action: "Pledge capital",
-    href: "/supporting?kind=capital",
+    href: "/wepledge?kind=capital",
     how: "Contribute through the links a team lists, outside WeStride.",
     icon: BanknotesIcon,
   },
@@ -186,7 +186,7 @@ export const META_MODELS: MetaModel[] = [
     name: "Turn ideas into action",
     role: "Plan & prepare",
     detail:
-      "Bring your vision into Build Studio, where Muse analyzes your project, GitHub repository, and README to create development roadmaps, prioritize tasks, and generate structured tickets that give coding agents the context they need.",
+      "Bring your vision into Project Factory, where Muse analyzes your project, GitHub repository, and README to create development roadmaps, prioritize tasks, and generate structured tickets that give coding agents the context they need.",
     icon: BoltIcon,
     pastel: "purple",
     tint: "purple",
@@ -199,6 +199,49 @@ export const META_MODELS: MetaModel[] = [
     icon: CommandLineIcon,
     pastel: "teal",
     tint: "teal",
+  },
+];
+
+/**
+ * The models behind each step, shown as a lineup under the workflow cards.
+ * Copy follows the Meta AI panel: what each model does inside WeStride.
+ */
+export const META_MODEL_LINEUP: {
+  name: string;
+  detail: string;
+  tint: Tint;
+}[] = [
+  {
+    name: "Muse Spark 1.3",
+    detail:
+      "Oslo, the advisory team, and planning. Web search with cited sources.",
+    tint: "blue",
+  },
+  {
+    name: "Muse Wonder 1.0",
+    detail: "The deeper evaluation pass when an idea is worth the spend.",
+    tint: "purple",
+  },
+  {
+    name: "Muse Code",
+    detail:
+      "Coding agents that take a ticket, work a branch, and open a pull request.",
+    tint: "teal",
+  },
+  {
+    name: "Muse Image 1.0",
+    detail: "Pictures for every idea, project, and agent.",
+    tint: "orange",
+  },
+  {
+    name: "Muse Voice Transcribe 1.0",
+    detail: "Dictation on every long field.",
+    tint: "indigo",
+  },
+  {
+    name: "Meta Model API",
+    detail: "Members bring their own key and credits. Supporters pledge theirs.",
+    tint: "blue",
   },
 ];
 
@@ -329,17 +372,17 @@ export const MILESTONES: Milestone[] = [
   {
     date: "October 27",
     built:
-      "Seeded the Academy tracks, achievements, and Mentorship. Shipped the public API, the MCP server, and the first iOS and Android builds.",
+      "Seeded the Academy tracks and Mentorship. Shipped the public API, the MCP server, and the first iOS and Android builds.",
   },
   {
     date: "October 28",
     built:
-      "Opened Idea Studio with its Muse advisory team. Added the achievement track, Muse learning challenges, and the Muse dock.",
+      "Opened Idea Workshop with its Muse advisory team and added the feedback form.",
   },
   {
     date: "October 29",
     built:
-      "Connected GitHub and Meta accounts, and started Build Studio: projects, tickets, Muse planning, and Muse Code agent runs.",
+      "Connected GitHub and Meta accounts, and started Project Factory: projects, tickets, Muse planning, and Muse Code agent runs.",
   },
   {
     date: "October 30",

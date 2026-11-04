@@ -115,6 +115,12 @@ export const LANDING_STYLES = `
   }
 }
 
+@keyframes wl-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
 @keyframes wl-dots-drift {
   from { background-position: 0% 50%; }
   to { background-position: 100% 50%; }
@@ -160,6 +166,9 @@ export const LANDING_STYLES = `
   --wl-green: var(--color-data-categorical-green);
   --wl-pink: var(--color-data-categorical-pink);
   --wl-yellow: var(--color-data-yellow-3);
+  /* Yellow is too light to carry white, so anything drawn on it takes dark
+     ink instead. Read through --wl-tint-ink, which falls back to on-accent. */
+  --wl-yellow-ink: var(--color-on-light);
   /* Categorical purple is one deep hue in both schemes, so on a dark field
      it drops under the contrast small text needs. Dark mode mixes Electric
      Purple halfway toward the primary text color, which stays purple and
@@ -504,6 +513,16 @@ export const LANDING_STYLES = `
   transform: none;
 }
 
+/* A video plays in the same cell, letterboxed by the player itself. */
+.wl-hero-shot > .wl-hero-shot-video {
+  grid-area: 1 / 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  animation: wl-fade-in var(--duration-slow) var(--ease-standard) both;
+}
+
 /* ---------- Globe placement ---------- */
 
 /* An atmospheric element rather than the subject: anchored to the hero's
@@ -562,16 +581,27 @@ export const LANDING_STYLES = `
   letter-spacing: -0.02em;
 }
 
-/* One button, one quiet link under it. The link is plain text in the
-   body color so nothing competes with the button. */
-.wl-hero .wl-hero-link {
-  text-underline-offset: 0.2em;
-  text-decoration-color: color-mix(in srgb, var(--color-text-primary) 55%, transparent);
-  transition: text-decoration-color var(--duration-medium) var(--ease-standard);
+/* The buttons, then quiet accent links with an arrow, the same treatment
+   as the studio cards under the hero. No underline. */
+.wl-hero .wl-hero-link,
+.wl-hero .wl-hero-link:hover,
+.wl-hero .wl-hero-link:focus-visible {
+  text-decoration: none;
 }
 
-.wl-hero .wl-hero-link:hover {
-  text-decoration-color: var(--wl-scene-b);
+.wl-hero .wl-hero-link .astryx-text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.wl-hero .wl-hero-link .astryx-icon {
+  transition: translate var(--duration-medium) var(--ease-standard);
+}
+
+.wl-hero .wl-hero-link:hover .astryx-icon,
+.wl-hero .wl-hero-link:focus-visible .astryx-icon {
+  translate: var(--spacing-1) 0;
 }
 
 /* ---------- Hero panels ---------- */
@@ -620,10 +650,11 @@ export const LANDING_STYLES = `
 
 /* The four section tabs stand in one column beside the platform preview.
    Side by side they tuck in behind its right edge and peek out; stacked
-   on a phone they form a two-by-two grid under it. The import bar sits
-   under the stage and is not a carousel tab. */
+   on a phone they form a two-by-two grid under it. Import is a row under
+   the tabs, not a carousel tab. */
 .wl-hero .wl-hero-tabs {
-  --wl-hero-dwell: calc(var(--duration-slow-max) * 6);
+  /* A third shorter than the previous six-unit dwell. */
+  --wl-hero-dwell: calc(var(--duration-slow-max) * 6 * 0.67);
   /* How far each tab hides behind the preview, and how far the active one
      pulls out from the stack. */
   --wl-tab-tuck: var(--spacing-12);
@@ -715,27 +746,57 @@ export const LANDING_STYLES = `
   transform: scale(1.06) rotate(-3deg);
 }
 
-/* Import is one short pill under the stage: a smaller icon, no progress
-   rail, and it never takes a turn in the rotation or steps out of line. */
-.wl-hero .wl-hero-import-bar {
-  width: auto;
-  border-radius: var(--radius-full);
-  translate: none;
+/* The stamp carries its own colors, so its tile stays a dark surface even
+   on the active tab, where the stamp's indigo and purple would otherwise
+   sink into the fill. */
+.wl-hero .wl-hero-tab-icon[data-stamp],
+.wl-hero .wl-hero-tab[data-active] .wl-hero-tab-icon[data-stamp] {
+  background: var(--color-background-surface);
 }
 
-.wl-hero .wl-hero-import-bar .wl-hero-tab-icon {
-  width: var(--spacing-7);
-  height: var(--spacing-7);
-  border-radius: var(--radius-full);
+.wl-hero-tab-stamp {
+  display: block;
+  width: 70%;
+  height: auto;
 }
 
-.wl-hero .wl-hero-import-bar:hover .wl-hero-tab-icon,
-.wl-hero .wl-hero-import-bar[data-active] .wl-hero-tab-icon {
-  transform: none;
+/* Import sits under the tabs as a row, not a pill and not a fifth tab.
+   No progress rail, and it never steps out of line with the rotation. */
+.wl-hero .wl-hero-import {
+  justify-content: flex-start;
+  box-sizing: border-box;
+  border-radius: var(--radius-element);
+  color: var(--color-text-secondary);
+  background: transparent;
+  box-shadow: inset 0 0 0 var(--border-width) color-mix(in srgb, var(--color-border) 80%, transparent);
+  animation: wl-rise var(--duration-slow) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-medium-max) + var(--duration-fast-min) * var(--wl-i, 0));
+  transition:
+    color var(--duration-medium) var(--ease-standard),
+    background-color var(--duration-medium) var(--ease-standard),
+    box-shadow var(--duration-medium) var(--ease-standard);
 }
 
-.wl-hero-import-bar .wl-hero-tab-body::after {
-  content: none;
+.wl-hero .wl-hero-import > span {
+  flex: 1;
+  width: 100%;
+}
+
+.wl-hero .wl-hero-import > span > span:last-child {
+  margin-inline-start: auto;
+  transition: translate var(--duration-medium) var(--ease-standard);
+}
+
+.wl-hero .wl-hero-import:hover,
+.wl-hero .wl-hero-import:focus-visible {
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  box-shadow: inset 0 0 0 var(--border-width) color-mix(in srgb, var(--wl-scene-b) 55%, var(--color-border));
+}
+
+.wl-hero .wl-hero-import:hover > span > span:last-child,
+.wl-hero .wl-hero-import:focus-visible > span > span:last-child {
+  translate: var(--spacing-1) 0;
 }
 
 /* The progress rail along the bottom edge of the active tab. It belongs
@@ -767,10 +828,6 @@ export const LANDING_STYLES = `
   animation-play-state: paused;
 }
 
-.wl-hero .wl-hero-import-bar:hover {
-  translate: none;
-}
-
 /* Side by side, the tab column slides in under the preview's right edge
    by the tuck, so each tab peeks out from behind it, and the stage leaves
    room on the right for the active tab to step out. After the base rules
@@ -783,6 +840,13 @@ export const LANDING_STYLES = `
 
   .wl-hero .wl-hero-tab .wl-hero-tab-body {
     padding-inline-start: var(--wl-tab-tuck);
+  }
+
+  /* The tabs tuck behind the preview. The import row starts where they
+     become visible, so the control is never hidden under the shot. */
+  .wl-hero .wl-hero-import {
+    width: calc(100% - var(--wl-tab-tuck));
+    margin-inline-start: var(--wl-tab-tuck);
   }
 }
 
@@ -808,6 +872,12 @@ export const LANDING_STYLES = `
   .wl-hero .wl-hero-tab[data-active],
   .wl-hero .wl-hero-tab:hover {
     translate: none;
+  }
+
+  .wl-hero .wl-hero-import {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-inline-start: 0;
   }
 
   .wl-hero .wl-hero-shot-stand,
@@ -1076,7 +1146,7 @@ export const LANDING_STYLES = `
   width: var(--spacing-12);
   height: var(--spacing-12);
   border-radius: var(--radius-container);
-  color: var(--color-on-accent);
+  color: var(--wl-tint-ink, var(--color-on-accent));
   background: linear-gradient(135deg, var(--wl-tint-a), var(--wl-tint-b));
   box-shadow: 0 var(--spacing-2) var(--spacing-5) color-mix(in srgb, var(--wl-tint-a) 40%, transparent);
   transition: transform var(--duration-medium) var(--ease-standard);
@@ -1107,6 +1177,66 @@ export const LANDING_STYLES = `
   background: var(--color-background-surface);
   color: var(--wl-tint, var(--wl-indigo));
   box-shadow: var(--shadow-low);
+}
+
+/* The Meta AI wordmark sits in the section title in place of the words
+   "Meta." Dark ink on light, light ink on dark. */
+.wl-title-logo {
+  height: 0.72em;
+  width: auto;
+  display: inline-block;
+  vertical-align: -0.08em;
+  margin-inline-start: 0.12em;
+}
+
+.wl-title-logo-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .wl-title-logo-light {
+    display: none;
+  }
+
+  .wl-title-logo-dark {
+    display: inline-block;
+  }
+}
+
+[data-theme="light"] .wl-title-logo-light {
+  display: inline-block;
+}
+
+[data-theme="light"] .wl-title-logo-dark {
+  display: none;
+}
+
+[data-theme="dark"] .wl-title-logo-light {
+  display: none;
+}
+
+[data-theme="dark"] .wl-title-logo-dark {
+  display: inline-block;
+}
+
+.wl-model-card {
+  height: 100%;
+}
+
+.wl-model-name {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.wl-model-name::before {
+  content: "";
+  flex: none;
+  width: var(--spacing-2);
+  height: var(--spacing-2);
+  border-radius: var(--radius-full);
+  background: var(--wl-dot, var(--wl-blue));
+  box-shadow: 0 0 var(--spacing-2) color-mix(in srgb, var(--wl-dot, var(--wl-blue)) 65%, transparent);
 }
 
 /* ---------- Dotted bands ---------- */
@@ -1243,9 +1373,12 @@ export const LANDING_STYLES = `
   .wl-hero-panels > .wl-hero-panel,
   .wl-hero-shot-stand,
   .wl-hero-shot > .wl-hero-shot-image,
+  .wl-hero-shot > .wl-hero-shot-video,
   .wl-hero-tab,
   .wl-hero-tab-icon,
   .wl-hero-tab-body::after,
+  .wl-hero-import,
+  .wl-hero-link .astryx-icon,
   .wl-carry,
   .wl-app-tile,
   .wl-platform-tile,

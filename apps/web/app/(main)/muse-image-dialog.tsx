@@ -14,7 +14,7 @@ import { Icon } from "@astryxdesign/core/Icon";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { Spinner } from "@astryxdesign/core/Spinner";
-import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
+import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { ToggleButton, ToggleButtonGroup } from "@astryxdesign/core/ToggleButton";
 import {
@@ -33,7 +33,6 @@ const DIALOG_HEIGHT = "calc(100dvh - (2 * var(--spacing-4)))";
 // Fill the dialog so the greeting and composer stay vertically centered.
 const pageStyle = { minHeight: "100%" };
 const categoriesStyle = { paddingInline: "var(--spacing-3)" };
-const companionStyle = { width: "calc(var(--spacing-12) * 2)", height: "auto" };
 
 const KIND_NOUNS: Record<EntityImageKind, string> = {
   idea: "idea",
@@ -225,34 +224,22 @@ export function MuseImageDialog({
           <LayoutContent>
             <VStack gap={8} vAlign="center" style={pageStyle}>
               {/* Greeting */}
-              <HStack gap={4} vAlign="center">
-                <Image
-                  src="/achievements/muse-companion.png"
-                  alt="Muse, WeStride's companion"
-                  width={1086}
-                  height={1448}
-                  unoptimized
-                  style={companionStyle}
-                />
-                <StackItem size="fill">
-                  <VStack gap={1}>
-                    <HStack gap={2} vAlign="center">
-                      <Icon icon={SparklesIcon} size="md" color="accent" />
-                      <Text type="large" as="h2">
-                        Hi, I&rsquo;m Muse
-                      </Text>
-                    </HStack>
-                    <Text type="display-2" as="h1">
-                      {step.kind === "result" ? "How does this look?" : `Let’s picture your ${noun}`}
-                    </Text>
-                    <Text type="supporting">
-                      {step.kind === "result"
-                        ? `Keep it as the image for ${name}, or try again.`
-                        : `Describe an image for ${name}, pick a starting point, or ask me to write the description.`}
-                    </Text>
-                  </VStack>
-                </StackItem>
-              </HStack>
+              <VStack gap={1}>
+                <HStack gap={2} vAlign="center">
+                  <Icon icon={SparklesIcon} size="md" color="accent" />
+                  <Text type="large" as="h2">
+                    Create with Muse
+                  </Text>
+                </HStack>
+                <Text type="display-2" as="h1">
+                  {step.kind === "result" ? "How does this look?" : `Let’s picture your ${noun}`}
+                </Text>
+                <Text type="supporting">
+                  {step.kind === "result"
+                    ? `Keep it as the image for ${name}, or try again.`
+                    : `Describe an image for ${name}, pick a starting point, or let Muse write the description.`}
+                </Text>
+              </VStack>
 
               {needsConnection ? (
                 <Banner

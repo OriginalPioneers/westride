@@ -43,7 +43,7 @@ async function ensurePaired(): Promise<void> {
   }
   if (!config.pairingCode) {
     throw new Error(
-      "This runner is not paired. Start it with WESTRIDE_PAIRING_CODE set to a code from WeStride → Supporting → Link a computer.",
+      "This runner is not paired. Start it with WESTRIDE_PAIRING_CODE set to a code from WeStride → WePledge™ → Link a computer.",
     );
   }
   log(`Pairing with ${config.baseUrl} as "${config.deviceName}"…`);
@@ -57,7 +57,7 @@ async function ensurePaired(): Promise<void> {
   log(`Paired. Device ${paired.deviceId}.`);
 }
 
-/** Ollama models WeStride may offer for this computer; none unless opted in (see RunnerConfig). */
+/** Ollama models WeStride may offer for this computer; tool-capable ones, unless opted out (see RunnerConfig). */
 async function offeredModels(): Promise<string[]> {
   return config.offerOllamaModels ? listOllamaModels(config.ollamaUrl) : [];
 }
@@ -82,7 +82,7 @@ function startHeartbeats(): void {
       await heartbeat();
     } catch (error) {
       if (error instanceof ApiError && error.isUnauthorized) {
-        warn("WeStride no longer recognises this device. Unlinked in Supporting? Pair it again.");
+        warn("WeStride no longer recognises this device. Unlinked in WePledge™? Pair it again.");
         shutdown.abort();
         return;
       }
@@ -154,23 +154,20 @@ async function main(): Promise<void> {
   await ensurePaired();
   const ollama = await listOllamaModels(config.ollamaUrl);
   if (!config.offerOllamaModels) {
-    log(
-      ollama.length > 0
-        ? `Ollama has ${ollama.length} model(s), but this Muse Code build cannot use Ollama, so they are not offered. Set WESTRIDE_OFFER_OLLAMA_MODELS=1 to offer them anyway.`
-        : `Ollama not reachable at ${config.ollamaUrl}.`,
-    );
+    log("Ollama models are not offered (WESTRIDE_OFFER_OLLAMA_MODELS=0).");
+  } else if (ollama.length > 0) {
+    log(`Ollama offers ${ollama.length} tool-capable model(s): ${ollama.slice(0, 6).join(", ")}${ollama.length > 6 ? "…" : ""}`);
   } else {
-    log(
-      ollama.length > 0
-        ? `Ollama offers ${ollama.length} model(s): ${ollama.slice(0, 6).join(", ")}${ollama.length > 6 ? "…" : ""}`
-        : `Ollama not reachable at ${config.ollamaUrl}.`,
-    );
+    log(`Ollama has no tool-capable models at ${config.ollamaUrl} (not running, or only models without tool support).`);
   }
   log(
     config.metaApiKey
-      ? "A Meta key is set on this runner."
-      : "No Meta key on this runner; jobs need one. Restart with META_API_KEY set, or rerun the installer.",
+      ? "A Meta key is set on this runner, so Muse models are available too."
+      : "No Meta key on this runner; jobs use the Ollama models above. Set META_API_KEY to offer Muse models as well.",
   );
+  if (!config.metaApiKey && (!config.offerOllamaModels || ollama.length === 0)) {
+    warn("This runner can take no jobs: no Meta key and no Ollama model to offer.");
+  }
   startHeartbeats();
   await workLoop();
   log("Runner stopped.");

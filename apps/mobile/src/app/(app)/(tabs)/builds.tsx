@@ -53,7 +53,7 @@ export default function BuildsScreen() {
       onRefresh={refresh}
       header={
         <View style={styles.header}>
-          <Text variant="title">Build Studio</Text>
+          <Text variant="title">Project Factory</Text>
           <Text variant="supporting">
             Turn an idea into working software: tickets, milestones, and the repo.
           </Text>

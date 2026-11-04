@@ -17,7 +17,7 @@ import {
   fieldErrorsFrom,
   renameDeviceSchema,
   supportSettingsSchema,
-  supportingPath,
+  wePledgePath,
   tokenPledgeSchema,
 } from "@/lib/support/schema";
 
@@ -41,7 +41,7 @@ async function requireVisibleIdea(ideaId: string, userId: string) {
 }
 
 function revalidateSupport(ideaId?: string) {
-  revalidatePath(supportingPath());
+  revalidatePath(wePledgePath());
   revalidatePath(PLEDGES_PATH);
   revalidatePath("/");
   if (ideaId) {
@@ -160,7 +160,7 @@ export async function updateIdeaSupportAction(ideaId: string, input: unknown): P
 // ---------------------------------------------------------------------------
 
 function revalidateDevices() {
-  revalidatePath(supportingPath());
+  revalidatePath(wePledgePath());
   revalidatePath(DEVICES_PATH);
 }
 

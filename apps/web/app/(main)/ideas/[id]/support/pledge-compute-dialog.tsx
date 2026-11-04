@@ -12,7 +12,7 @@ import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { VoiceTextArea } from "../../../voice-text-area";
 import type { Pledge } from "@westride/db";
-import { MAX_PLEDGE_NOTE, supportingPath } from "@/lib/support/schema";
+import { MAX_PLEDGE_NOTE, wePledgePath } from "@/lib/support/schema";
 import { pledgeComputeAction, setPledgeStatusAction } from "../../../support-actions";
 
 export function PledgeComputeDialog({
@@ -90,12 +90,12 @@ export function PledgeComputeDialog({
                 <Banner
                   status="info"
                   title="No computer linked yet"
-                  description="After pledging, link one from the Supporting page. Install takes a minute and needs Docker."
+                  description="After pledging, link one from the WePledge™ page. Install takes a minute and needs Docker."
                 />
               ) : (
                 <Text type="supporting">
                   {deviceCount} computer{deviceCount === 1 ? "" : "s"} linked.{" "}
-                  <Link href={supportingPath("compute")}>Manage them</Link>
+                  <Link href={wePledgePath("compute")}>Manage them</Link>
                 </Text>
               )}
               {existing && existing.jobsTotal > 0 ? (

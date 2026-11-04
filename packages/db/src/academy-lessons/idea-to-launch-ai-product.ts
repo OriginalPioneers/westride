@@ -32,7 +32,7 @@ By the end of this track you will have a working AI product in the hands of real
 ## Setting yourself up
 
 - **Pick a scope you can finish in weeks, not months.** A narrow product that works beats a broad one that does not.
-- **Create your idea in Idea Studio.** You will use its advisory team at several points, and it keeps your notes in one place.
+- **Create your idea in Idea Workshop.** You will use its advisory team at several points, and it keeps your notes in one place.
 - **Find a mentor** through WeStride Mentorship. One conversation at the right moment saves weeks.
 - **Timebox each stage.** A week each is a reasonable default.
 
@@ -42,11 +42,11 @@ Fundamentals, prompting, building, agents, creative tools, and real-world patter
 
 ### Try it
 
-Write one sentence: "I will build ___ for ___ so they can ___." Save it in Idea Studio. You will revise it, and that is the point.`,
+Write one sentence: "I will build ___ for ___ so they can ___." Save it in Idea Workshop. You will revise it, and that is the point.`,
       keyTakeaways: [
         "The deliverable is a small product real people use, with evidence and a next plan.",
         "Nine stages, timeboxed, from problem to iteration.",
-        "Use Idea Studio and Mentorship as you go; narrow scope wins.",
+        "Use Idea Workshop and Mentorship as you go; narrow scope wins.",
       ],
       artifacts: [
         lessonVideo({
@@ -62,7 +62,7 @@ Write one sentence: "I will build ___ for ___ so they can ___." Save it in Idea 
           kind: "DIAGRAM",
           title: "The nine capstone stages",
           brief:
-            "Numbered path with nine stops: Problem, Audience, Value & positioning, Trustworthy design, Prototype, User testing, Safety & oversight, Launch, Iterate. Small checkpoint flags where Idea Studio and a mentor are suggested.",
+            "Numbered path with nine stops: Problem, Audience, Value & positioning, Trustworthy design, Prototype, User testing, Safety & oversight, Launch, Iterate. Small checkpoint flags where Idea Workshop and a mentor are suggested.",
           url: "https://ptazldkjmeuojele.public.blob.vercel-storage.com/academy/idea-to-launch-ai-product/the-capstone-journey/capstone-map.webp",
         },
       ],
@@ -103,7 +103,7 @@ Every blank must be filled with something you could check by talking to five peo
 
 ## Test it
 
-Talk to five people who should have the problem. Ask how they handle it today and what it costs them. Do not pitch. If three of five describe the pain unprompted, proceed. If not, revise or pick another problem. Idea Studio's advisory agents can help you stress-test the statement, but real conversations are the evidence.
+Talk to five people who should have the problem. Ask how they handle it today and what it costs them. Do not pitch. If three of five describe the pain unprompted, proceed. If not, revise or pick another problem. Idea Workshop's advisory agents can help you stress-test the statement, but real conversations are the evidence.
 
 ### Try it
 
@@ -169,7 +169,7 @@ Draw the task from trigger to outcome: steps, tools used, time spent, emotions, 
 
 ## Capture it
 
-Write a one-page audience profile: who, context, current process, pain points, what they value, how they decide. Put it in Idea Studio; your advisory agents and mentor will use it.
+Write a one-page audience profile: who, context, current process, pain points, what they value, how they decide. Put it in Idea Workshop; your advisory agents and mentor will use it.
 
 ### Try it
 
@@ -233,7 +233,7 @@ Lead with the outcome, not the technology. "Answers members' questions from your
 
 ## Test the message
 
-Show the sentence to five people from your audience. Ask them to say it back in their own words. If they cannot, simplify. Idea Studio's marketing advisor can help you draft variants; your audience picks the winner.
+Show the sentence to five people from your audience. Ask them to say it back in their own words. If they cannot, simplify. Idea Workshop's marketing advisor can help you draft variants; your audience picks the winner.
 
 ### Try it
 
@@ -369,7 +369,7 @@ Hosted API for speed of iteration. A small local model if privacy is central to 
 
 ## Use the ecosystem
 
-Open runtimes, Llama Stack, and community examples save days. WeStride's Build Studio and your mentor can unblock you when stuck.
+Open runtimes, Llama Stack, and community examples save days. WeStride's Project Factory and your mentor can unblock you when stuck.
 
 ## Timebox
 
@@ -442,7 +442,7 @@ If users complete tasks but do not care, the problem or the audience is wrong, n
 
 ## Share the learning
 
-Update Idea Studio with what you learned and ask the advisory team what they would change. Discuss with your mentor. Outside eyes catch what you have grown blind to.
+Update Idea Workshop with what you learned and ask the advisory team what they would change. Discuss with your mentor. Outside eyes catch what you have grown blind to.
 
 ### Try it
 
@@ -658,7 +658,7 @@ You moved from understanding AI to using it, building with it, and shipping some
 
 ## What's next
 
-Share your story in the Community. Become a mentor for the next builder. Start the next idea in Idea Studio. The Academy will keep growing, and so will you.
+Share your story in the Community. Become a mentor for the next builder. Start the next idea in Idea Workshop. The Academy will keep growing, and so will you.
 
 ### Try it
 

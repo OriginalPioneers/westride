@@ -150,7 +150,7 @@ export async function settleAgentJob(job: AgentJob, vcpus: number): Promise<void
   }
 }
 
-/** Settles a finished Build Studio run the same way. */
+/** Settles a finished Project Factory run the same way. */
 export async function settleAgentRun(run: AgentRun, vcpus: number, ticketTitle: string): Promise<void> {
   const title = ticketTitle.trim() || "Muse Code run";
   if (run.museSource === "WESTRIDE_CLOUD") {

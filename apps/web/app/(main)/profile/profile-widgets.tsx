@@ -3,17 +3,8 @@
 import { useClerk } from "@clerk/nextjs";
 import { Button } from "@astryxdesign/core/Button";
 import { Icon } from "@astryxdesign/core/Icon";
-import { List, ListItem } from "@astryxdesign/core/List";
-import { ProgressBar } from "@astryxdesign/core/ProgressBar";
-import { Text } from "@astryxdesign/core/Text";
-import { Timestamp } from "@astryxdesign/core/Timestamp";
-import {
-  ArrowRightStartOnRectangleIcon,
-  TrophyIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
 import { afterAuthPath } from "@/lib/auth-paths";
-import { challengeMilestones } from "./achievements/track-progress";
-import { achievementIcons } from "./achievements/achievement-icons";
 
 export function EditAccountButton() {
   const { openUserProfile } = useClerk();
@@ -37,61 +28,5 @@ export function SignOutButton() {
       icon={<Icon icon={ArrowRightStartOnRectangleIcon} />}
       clickAction={() => signOut({ redirectUrl: afterAuthPath })}
     />
-  );
-}
-
-export function ChallengeProgress({
-  value,
-  max,
-}: {
-  value: number;
-  max: number;
-}) {
-  return (
-    <ProgressBar
-      label="Challenges finished"
-      value={value}
-      max={max}
-      marks={challengeMilestones}
-      hasValueLabel
-      variant={value >= max && max > 0 ? "success" : "accent"}
-      formatValueLabel={(current, total) => `${current} of ${total}`}
-    />
-  );
-}
-
-export type EarnedAchievement = {
-  slug: string;
-  name: string;
-  description: string;
-  earnedAt: string;
-};
-
-function iconFor(slug: string) {
-  if (Object.prototype.hasOwnProperty.call(achievementIcons, slug)) {
-    return achievementIcons[slug as keyof typeof achievementIcons];
-  }
-  return TrophyIcon;
-}
-
-export function EarnedAchievements({ items }: { items: EarnedAchievement[] }) {
-  return (
-    <List edge="flush" density="compact" hasDividers>
-      {items.map((item) => (
-        <ListItem
-          key={item.slug}
-          href="/profile/achievements"
-          align="first-line"
-          label={item.name}
-          description={
-            <Text type="supporting" maxLines={2}>
-              {item.description}
-            </Text>
-          }
-          startContent={<Icon icon={iconFor(item.slug)} size="lg" />}
-          endContent={<Timestamp value={item.earnedAt} format="date" />}
-        />
-      ))}
-    </List>
   );
 }

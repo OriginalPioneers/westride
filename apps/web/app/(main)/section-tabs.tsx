@@ -20,7 +20,6 @@ const ACCOUNT_TABS: SectionTab[] = [
   { label: "API", href: "/settings/api" },
   { label: "MCP", href: "/settings/mcp" },
   { label: "Pledges", href: PLEDGES_PATH },
-  { label: "Achievements", href: "/profile/achievements" },
 ];
 
 /** Switches between the pages that share one side nav entry. */

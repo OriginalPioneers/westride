@@ -29,11 +29,11 @@ If a user is logged in, it would be cool to gamify the platform, allow users to 
 
 We would like to allow users to request a mentor, and for users to offer themselves as mentors.  Users would complete a mentor profile including LinkedIn, Facebook, GitHub, and other relevant URL's.  Mentorship would be offered for free.
 
-### Idea Studio
+### Idea Workshop
 
 Users interact with Muse AI Assistant to generate ideas for businesses and nonprofits.
 
-### Build Studio
+### Project Factory
 
 Users interact with Muse AI coding tools to generate applications, websites, prototypes, and MVPs.
 

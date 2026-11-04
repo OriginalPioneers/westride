@@ -50,10 +50,6 @@ export const AcademyTrackSchema = z
         "Define artificial intelligence, machine learning, and deep learning in plain language",
       ],
     }),
-    achievementTitle: z.string().openapi({
-      description: "Badge the learner earns for completing the track.",
-      example: "AI Explorer",
-    }),
   })
   .openapi("AcademyTrack", {
     description: "A WeStride Academy learning track.",

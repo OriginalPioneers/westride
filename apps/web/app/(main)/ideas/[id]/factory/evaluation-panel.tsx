@@ -636,8 +636,8 @@ function NextStepsTab({
             <VStack gap={1}>
               <Heading level={3}>Ready to build?</Heading>
               <Text type="supporting">
-                Muse can split this idea into the repositories it needs and hand each one to Build
-                Studio with a brief and first milestones.
+                Muse can split this idea into the repositories it needs and hand each one to Project
+                Factory with a brief and first milestones.
               </Text>
             </VStack>
           </StackItem>

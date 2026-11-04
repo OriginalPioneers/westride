@@ -33,7 +33,7 @@ export function IdeaFactoryButton({
   return (
     <>
       <Button
-        label="Open Idea Factory"
+        label="Open Idea Workshop"
         variant="primary"
         icon={<Icon icon={SparklesIcon} />}
         onClick={() => setIsOpen(true)}

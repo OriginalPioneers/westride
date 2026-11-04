@@ -170,7 +170,7 @@ export function PledgeTokensDialog({
                   <Banner
                     status="warning"
                     title="No cap means no limit"
-                    description="Jobs keep using your key for as long as the pledge is active. Pause or end it any time from Supporting."
+                    description="Jobs keep using your key for as long as the pledge is active. Pause or end it any time from WePledge™."
                   />
                 )}
                 <VoiceTextArea

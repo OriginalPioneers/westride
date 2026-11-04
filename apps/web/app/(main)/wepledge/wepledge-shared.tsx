@@ -8,7 +8,7 @@ import { Text } from "@astryxdesign/core/Text";
  * each side gets its own copy and nothing crosses the boundary as a reference.
  */
 
-export const SUPPORTING_CONTENT_WIDTH = 1120;
+export const WEPLEDGE_CONTENT_WIDTH = 1120;
 
 export const centered: CSSProperties = {
   marginInline: "auto",
@@ -49,7 +49,7 @@ export function Container({
   return (
     <VStack
       gap={gap}
-      maxWidth={SUPPORTING_CONTENT_WIDTH}
+      maxWidth={WEPLEDGE_CONTENT_WIDTH}
       className={className}
       style={{ ...centered, ...bandPadding, ...style }}
     >

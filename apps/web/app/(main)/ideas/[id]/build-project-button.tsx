@@ -10,7 +10,7 @@ import {
   type ProjectCreator,
 } from "../../build/create-project-dialog";
 
-/** Starts a Build Studio project from this idea, with its details filled in. */
+/** Starts a Project Factory project from this idea, with its details filled in. */
 export function BuildProjectButton({
   ideaId,
   creator,
