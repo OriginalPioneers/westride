@@ -726,7 +726,7 @@ const HERO_SECTIONS: HeroSection[] = [
     where: IDEA_STUDIO.where,
     title: (
       <>
-        Explore ideas with&nbsp;
+        Explore ideas with<br/>
         <Text type="inherit" display="inline" className="wl-gradient-text">
           Meta AI advisors.
         </Text>
