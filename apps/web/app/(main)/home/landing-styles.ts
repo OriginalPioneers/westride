@@ -433,6 +433,15 @@ export const LANDING_STYLES = `
   transform: perspective(1600px) rotateY(-2deg);
 }
 
+/* A tilted, preserve-3d ancestor mis-aims clicks inside an iframe, so the
+   demo plays on a flat stand. Screenshots keep the tilt. */
+.wl-hero-shot-stand.wl-hero-shot-flat,
+.wl-hero-shot-stand.wl-hero-shot-flat:hover {
+  animation: none;
+  transform: none;
+  transform-style: flat;
+}
+
 .wl-hero-shot-stand::before,
 .wl-hero-shot-stand::after {
   content: "";
@@ -493,7 +502,8 @@ export const LANDING_STYLES = `
   );
 }
 
-/* All pictures share one cell; the active one shows, the rest wait. */
+/* All pictures share one cell; the active one shows, the rest wait.
+   They never take clicks, so a player in the same cell stays usable. */
 .wl-hero-shot > .wl-hero-shot-image {
   grid-area: 1 / 1;
   display: block;
@@ -502,6 +512,7 @@ export const LANDING_STYLES = `
   object-fit: cover;
   object-position: top;
   opacity: 0;
+  pointer-events: none;
   transform: scale(1.02);
   transition:
     opacity var(--duration-slow) var(--ease-standard),
@@ -513,9 +524,12 @@ export const LANDING_STYLES = `
   transform: none;
 }
 
-/* A video plays in the same cell, letterboxed by the player itself. */
+/* A video plays in the same cell, letterboxed by the player itself.
+   It sits above the waiting screenshots so its controls receive clicks. */
 .wl-hero-shot > .wl-hero-shot-video {
   grid-area: 1 / 1;
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;

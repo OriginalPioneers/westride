@@ -1046,8 +1046,18 @@ function HeroShot({
   activeId: string;
   onEngage: () => void;
 }) {
+  const showsVideo = HERO_SECTIONS.some(
+    (section) => section.id === activeId && section.video != null
+  );
+
   return (
-    <Center className="wl-hero-shot-stand">
+    <Center
+      className={
+        showsVideo
+          ? "wl-hero-shot-stand wl-hero-shot-flat"
+          : "wl-hero-shot-stand"
+      }
+    >
       <Grid className="wl-hero-shot" columns={1}>
         {HERO_SECTIONS.map((section, index) => {
           const isActive = section.id === activeId;

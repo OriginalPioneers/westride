@@ -108,9 +108,11 @@ export function JudgeAccess({ visitor }: { visitor: JudgeVisitor }) {
                 label="Sign out"
                 variant="secondary"
                 clickAction={async () => {
-                  await signOut();
-                  // Same URL, so re-run the server page to recompute `visitor`.
-                  router.refresh();
+                  // Stay on this page. signOut() otherwise follows the app
+                  // router to "/", and that navigation never settles.
+                  await signOut(() => {
+                    router.refresh();
+                  });
                 }}
               />
             }
