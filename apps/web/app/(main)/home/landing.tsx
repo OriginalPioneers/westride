@@ -684,9 +684,7 @@ const HERO_SECTIONS: HeroSection[] = [
         with specialized AI advisors, build real projects with Muse Spark and
         Muse Code, and retain full ownership of your code on GitHub. Through
         WePledge™, connect with supporters offering AI tokens, computing power,
-        or capital.
-        <br />
-        Every Idea. Every Ambition. Every Stride.
+        or capital.  Every Idea. Every Ambition. Every Stride.
       </>
     ),
     ctas: [
