@@ -214,7 +214,7 @@ export const META_MODEL_LINEUP: {
   {
     name: "Muse Spark 1.3",
     detail:
-      "Oslo, the advisory team, and planning. Web search with cited sources.",
+      "The Meta AI advisory team, and planning. Web search with cited sources.",
     tint: "blue",
   },
   {
