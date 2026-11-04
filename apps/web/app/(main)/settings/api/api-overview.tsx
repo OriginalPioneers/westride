@@ -187,8 +187,9 @@ type ApiKeysClient = {
  * error takes down the whole page. The flag is on the browser client, which
  * the Next.js `useClerk()` wrapper does not expose.
  */
-function userApiKeysEnabled(clerk: ApiKeysClient | null | undefined): boolean | null {
-  const enabled = clerk?.environment?.apiKeysSettings?.user_api_keys_enabled;
+function userApiKeysEnabled(clerk: unknown): boolean | null {
+  const enabled = (clerk as ApiKeysClient | null | undefined)?.environment?.apiKeysSettings
+    ?.user_api_keys_enabled;
   return typeof enabled === "boolean" ? enabled : null;
 }
 

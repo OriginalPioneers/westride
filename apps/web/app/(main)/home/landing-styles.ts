@@ -523,6 +523,127 @@ export const LANDING_STYLES = `
   animation: wl-fade-in var(--duration-slow) var(--ease-standard) both;
 }
 
+/* A still YouTube player, used until the intro video exists. The title
+   card fills the frame; the play mark sits in the open space under the
+   headline, and the bar along the bottom is the player's chrome. */
+.wl-hero-shot > .wl-hero-poster {
+  --wl-yt-red: #ff0000;
+  grid-area: 1 / 1;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: black;
+  container-type: size;
+  animation: wl-fade-in var(--duration-slow) var(--ease-standard) both;
+}
+
+.wl-hero-poster-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.wl-hero-poster-play {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  /* Below the headline and its rule, above the player bar. */
+  top: 76%;
+  width: 68px;
+  height: 48px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.wl-yt-play {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(
+    0 var(--spacing-1) var(--spacing-3) color-mix(in srgb, black 55%, transparent)
+  );
+}
+
+.wl-hero-poster-chrome {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-top: var(--spacing-10);
+  padding-bottom: var(--spacing-2);
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, black 82%, transparent),
+    color-mix(in srgb, black 35%, transparent) 42%,
+    transparent
+  );
+  color: white;
+  pointer-events: none;
+}
+
+.wl-hero-poster-track {
+  position: relative;
+  width: 100%;
+  height: calc(var(--border-width) * 3);
+  background: color-mix(in srgb, white 34%, transparent);
+}
+
+.wl-hero-poster-track::before {
+  content: "";
+  position: absolute;
+  left: var(--spacing-3);
+  top: 50%;
+  width: var(--spacing-3);
+  height: var(--spacing-3);
+  transform: translate(-50%, -50%);
+  border-radius: var(--radius-full);
+  background: var(--wl-yt-red);
+}
+
+.wl-hero-poster-controls {
+  padding-inline: var(--spacing-3);
+  /* Clear the player's rounded corner so the wordmark stays whole. */
+  padding-right: var(--spacing-6);
+}
+
+.wl-hero-poster-time {
+  margin: 0;
+  color: white;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.wl-yt-wordmark {
+  display: block;
+  width: calc(var(--spacing-12) * 2.3);
+  height: auto;
+  overflow: visible;
+}
+
+@container (max-height: 280px) {
+  .wl-hero-poster-play {
+    top: 72%;
+    width: 52px;
+    height: 36px;
+  }
+
+  .wl-hero-poster-chrome {
+    padding-top: var(--spacing-6);
+    padding-bottom: var(--spacing-1);
+  }
+
+  .wl-yt-wordmark {
+    display: none;
+  }
+}
+
 /* ---------- Globe placement ---------- */
 
 /* An atmospheric element rather than the subject: anchored to the hero's
