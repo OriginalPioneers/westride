@@ -6,13 +6,12 @@ import { Avatar } from "@astryxdesign/core/Avatar";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
-import { Center } from "@astryxdesign/core/Center";
 import { Divider } from "@astryxdesign/core/Divider";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Grid } from "@astryxdesign/core/Grid";
 import { Link } from "@astryxdesign/core/Link";
 import { List, ListItem } from "@astryxdesign/core/List";
-import { Section } from "@astryxdesign/core/Section";
+import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
@@ -159,9 +158,11 @@ export default async function MentorPage({ params }: { params: Params }) {
   const signInHref = `${signInPath}?redirect_url=${encodeURIComponent(`/mentorship/mentors/${mentor.id}`)}`;
 
   return (
-    <Center minHeight="100%">
-      <Section maxWidth={1100} width="100%" padding={10} variant="transparent">
-        <VStack gap={10}>
+    <Layout
+      contentWidth={1100}
+      content={
+        <LayoutContent padding={10}>
+          <VStack gap={10}>
           <Grid columns={{ minWidth: 320 }} align="center" gap={10}>
             <VStack gap={6}>
               <VStack gap={3}>
@@ -301,8 +302,9 @@ export default async function MentorPage({ params }: { params: Params }) {
               </VStack>
             </Grid>
           </VStack>
-        </VStack>
-      </Section>
-    </Center>
+          </VStack>
+        </LayoutContent>
+      }
+    />
   );
 }

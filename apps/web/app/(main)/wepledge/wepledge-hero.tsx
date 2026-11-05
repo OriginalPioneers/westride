@@ -9,7 +9,7 @@ import { Heading } from "@astryxdesign/core/Heading";
 import { Icon } from "@astryxdesign/core/Icon";
 import { Link } from "@astryxdesign/core/Link";
 import { Section } from "@astryxdesign/core/Section";
-import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Theme } from "@astryxdesign/core/theme";
 import {
@@ -309,24 +309,51 @@ function StatTile({ stat, index }: { stat: Stat; index: number }) {
   return (
     <Card
       className="sp-stat"
-      padding={4}
+      padding={3}
+      variant="transparent"
       style={{ ...(stat.kind === "made" ? madeTint() : kindTint(stat.kind)), "--sp-i": index } as CSSProperties}
     >
-      <HStack gap={3} vAlign="start" wrap="nowrap">
+      <HStack gap={2} vAlign="center" wrap="nowrap">
         <Center className="sp-stat-icon">
-          <Icon icon={stat.icon} size="md" color="inherit" />
+          <Icon icon={stat.icon} size="sm" color="inherit" />
         </Center>
-        <VStack gap={0.5}>
-          <CountUp value={stat.value} format={stat.format} />
-          <Text weight="semibold" textWrap="balance">
+        <VStack gap={0}>
+          <CountUp value={stat.value} format={stat.format} type="large" />
+          <Text size="sm" weight="semibold" textWrap="balance">
             {stat.label}
           </Text>
-          <Text type="supporting" size="sm" textWrap="pretty">
+          <Text type="supporting" size="xsm" textWrap="pretty">
             {stat.detail}
           </Text>
         </VStack>
       </HStack>
     </Card>
+  );
+}
+
+/**
+ * The home hero's carry bar, with the four support totals in its tiles.
+ * It sits on the hero's bottom edge, half over the sky and half over the
+ * section below.
+ */
+function StatsBar({ stats }: { stats: PlatformSupportSummary }) {
+  return (
+    <HStack
+      className="sp-carry"
+      gap={2}
+      maxWidth={WEPLEDGE_CONTENT_WIDTH}
+      vAlign="center"
+      role="group"
+      aria-label="Support so far"
+    >
+      <StackItem size="fill">
+        <Grid columns={{ minWidth: 200, max: 4 }} gap={2}>
+          {heroStats(stats).map((stat, index) => (
+            <StatTile key={stat.kind} stat={stat} index={index} />
+          ))}
+        </Grid>
+      </StackItem>
+    </HStack>
   );
 }
 
@@ -345,68 +372,65 @@ export function WePledgeHero({
 }) {
   return (
     <Theme theme={themes[defaultThemeSlug]} mode="dark">
-      <Section className="sp-hero" variant="transparent" padding={0}>
-        <HeroSky />
-        <VStack className="sp-hero-content" gap={10} maxWidth={WEPLEDGE_CONTENT_WIDTH} style={centered}>
-          <Grid columns={{ minWidth: 440, max: 2 }} gap={8} align="center">
-            <VStack className="sp-hero-copy" gap={5} hAlign="start">
-              <Eyebrow>WePledge™</Eyebrow>
-              <Heading level={1} type="display-1" textWrap="balance" className="sp-hero-title">
-                Back an idea{" "}
-                <Text type="inherit" display="inline" className="sp-gradient-text">
-                  you believe in.
+      <VStack className="sp-hero-frame" gap={0}>
+        <Section className="sp-hero" variant="transparent" padding={0}>
+          <HeroSky />
+          <VStack className="sp-hero-content" gap={10} maxWidth={WEPLEDGE_CONTENT_WIDTH} style={centered}>
+            <Grid columns={{ minWidth: 440, max: 2 }} gap={8} align="center">
+              <VStack className="sp-hero-copy" gap={5} hAlign="start">
+                <Eyebrow>WePledge™</Eyebrow>
+                <Heading level={1} type="display-1" textWrap="balance" className="sp-hero-title">
+                  Back an idea{" "}
+                  <Text type="inherit" display="inline" className="sp-gradient-text">
+                    you believe in.
+                  </Text>
+                </Heading>
+                <Text type="large" color="secondary" textWrap="pretty">
+                  Pledge tokens or compute to the ideas you choose, without joining their team, or contribute capital
+                  through a team&apos;s own links. Everything is yours to pause or stop at any time, and WeStride never
+                  collects or holds money.
                 </Text>
-              </Heading>
-              <Text type="large" color="secondary" textWrap="pretty">
-                Pledge tokens or compute to the ideas you choose, without joining their team, or contribute capital
-                through a team&apos;s own links. Everything is yours to pause or stop at any time, and WeStride never
-                collects or holds money.
-              </Text>
-              <HStack gap={2} wrap="wrap">
-                <Button
-                  label="All support"
-                  variant={kind === null ? "primary" : "secondary"}
-                  size="lg"
-                  href={wePledgePath()}
-                />
-                {KINDS.map((entry) => (
+                <HStack gap={2} wrap="wrap">
                   <Button
-                    key={entry}
-                    label={KIND_LABEL[entry]}
-                    variant={kind === entry ? "primary" : "secondary"}
+                    label="All support"
+                    variant={kind === null ? "primary" : "secondary"}
                     size="lg"
-                    href={wePledgePath(entry)}
-                    icon={
-                      <Icon
-                        icon={entry === "tokens" ? SparklesIcon : entry === "compute" ? ComputerDesktopIcon : BanknotesIcon}
-                        color="inherit"
-                      />
-                    }
+                    href={wePledgePath()}
                   />
-                ))}
-              </HStack>
-              {isSignedIn ? (
-                <Text type="supporting" textWrap="pretty">
-                  Your pledges live on your profile.{" "}
-                  <Link href={PLEDGES_PATH}>Open your pledges</Link>
-                </Text>
-              ) : (
-                <Text type="supporting" textWrap="pretty">
-                  Browse the ideas looking for support now. Pledging needs a WeStride account.{" "}
-                  <Link href={signInHref}>Sign in to pledge</Link>
-                </Text>
-              )}
-            </VStack>
-            <FlowDiagram />
-          </Grid>
-
-          <Grid columns={{ minWidth: 230, max: 4 }} gap={3}>
-            {heroStats(stats).map((stat, index) => (
-              <StatTile key={stat.kind} stat={stat} index={index} />
-            ))}
-          </Grid>
-        </VStack>
-      </Section>
+                  {KINDS.map((entry) => (
+                    <Button
+                      key={entry}
+                      label={KIND_LABEL[entry]}
+                      variant={kind === entry ? "primary" : "secondary"}
+                      size="lg"
+                      href={wePledgePath(entry)}
+                      icon={
+                        <Icon
+                          icon={entry === "tokens" ? SparklesIcon : entry === "compute" ? ComputerDesktopIcon : BanknotesIcon}
+                          color="inherit"
+                        />
+                      }
+                    />
+                  ))}
+                </HStack>
+                {isSignedIn ? (
+                  <Text type="supporting" textWrap="pretty">
+                    Your pledges live on your profile.{" "}
+                    <Link href={PLEDGES_PATH}>Open your pledges</Link>
+                  </Text>
+                ) : (
+                  <Text type="supporting" textWrap="pretty">
+                    Browse the ideas looking for support now. Pledging needs a WeStride account.{" "}
+                    <Link href={signInHref}>Sign in to pledge</Link>
+                  </Text>
+                )}
+              </VStack>
+              <FlowDiagram />
+            </Grid>
+          </VStack>
+        </Section>
+        <StatsBar stats={stats} />
+      </VStack>
     </Theme>
   );
 }

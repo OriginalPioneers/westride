@@ -201,12 +201,13 @@ export const WEPLEDGE_STYLES = `
   position: relative;
   z-index: 1;
   padding-inline: var(--spacing-6);
-  padding-block: calc(var(--spacing-12) * 1.75) calc(var(--spacing-12) * 1.5);
+  /* Bottom padding clears the part of the carry bar that overlaps the hero. */
+  padding-block: calc(var(--spacing-12) * 1.75) calc(var(--spacing-10) + var(--spacing-4) + var(--spacing-6));
 }
 
 @media (min-width: 64rem) and (min-height: 40rem) {
   .sp-hero .sp-hero-content {
-    padding-block: calc(var(--spacing-12) * 2) calc(var(--spacing-12) * 1.75);
+    padding-block: calc(var(--spacing-12) * 2) calc(var(--spacing-10) + var(--spacing-4) + var(--spacing-6));
   }
 }
 
@@ -363,39 +364,62 @@ export const WEPLEDGE_STYLES = `
   fill: var(--color-text-secondary);
 }
 
+/* ---------- Carry bar ---------- */
+
+/* The same bar as the home hero. On one row it is centred on the hero's
+   bottom edge. It stays in flow, pulled up by half that row, so a wrapped
+   stack on a phone still pushes the next section clear instead of covering
+   it. Frosted like the home bar so the sky shows through it. */
+.sp-hero-frame {
+  position: relative;
+}
+
+.sp-hero-frame > .sp-carry {
+  position: relative;
+  z-index: 2;
+  width: calc(100% - var(--spacing-6) * 2);
+  margin-inline: auto;
+  margin-top: calc(-1 * (var(--spacing-10) + var(--spacing-4)));
+  box-sizing: border-box;
+  padding: var(--spacing-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-container);
+  background: color-mix(in srgb, var(--color-background-surface) 90%, transparent);
+  -webkit-backdrop-filter: blur(var(--spacing-3));
+  backdrop-filter: blur(var(--spacing-3));
+  box-shadow: var(--shadow-high);
+  animation: sp-rise var(--duration-slow) var(--ease-standard) both;
+  animation-delay: var(--duration-slow-min);
+}
+
+/* On one row the bar becomes a pill, and its tiles follow its curve. */
+@media (min-width: 64rem) {
+  .sp-hero-frame > .sp-carry {
+    padding: var(--spacing-2);
+    border-radius: var(--radius-full);
+  }
+
+  .sp-carry .sp-stat {
+    --_card-radius: var(--radius-full);
+  }
+}
+
 /* ---------- Stat tiles ---------- */
 
 .sp-stat {
-  position: relative;
-  overflow: hidden;
   height: 100%;
+  background: var(--color-background-surface);
   border-color: var(--color-border);
-  background: color-mix(in srgb, var(--color-background-surface) 72%, transparent);
-  -webkit-backdrop-filter: blur(var(--spacing-3));
-  backdrop-filter: blur(var(--spacing-3));
-  animation: sp-rise var(--duration-slow) var(--ease-standard) both;
-  animation-delay: calc(var(--duration-medium-max) + var(--duration-fast-min) * var(--sp-i, 0));
   transition:
     transform var(--duration-medium) var(--ease-standard),
     box-shadow var(--duration-medium) var(--ease-standard),
     border-color var(--duration-medium) var(--ease-standard);
 }
 
-/* A hairline of the tile's hue along its top edge. */
-.sp-stat::before {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: var(--spacing-0-5);
-  background: linear-gradient(90deg, var(--sp-tint), transparent);
-  opacity: 0.9;
-}
-
 .sp-stat:hover {
   transform: translateY(calc(-1 * var(--spacing-0-5)));
   border-color: color-mix(in srgb, var(--sp-tint) 45%, var(--color-border));
-  box-shadow: 0 0 var(--spacing-8) color-mix(in srgb, var(--sp-tint) 25%, transparent);
+  box-shadow: var(--shadow-med);
 }
 
 .sp-stat-icon {
@@ -506,6 +530,7 @@ export const WEPLEDGE_STYLES = `
   .sp-flow .sp-hub,
   .sp-flow .sp-node,
   .sp-flow .sp-source,
+  .sp-carry,
   .sp-stat,
   .sp-way,
   .sp-way-icon {
