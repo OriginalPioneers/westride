@@ -118,9 +118,9 @@ const JUDGE_LABEL = "Hackathon Judge Access";
  * Temporary entry for hackathon judges, present only while
  * NEXT_PUBLIC_HACKATHON_JUDGE_ACCESS is set. Signed-out visitors see it. A
  * signed-in visitor sees it only when they are the shared judge account.
- * It is the one primary button in the bar so it reads as the special thing
- * it is. The phone bar gets the icon alone; the drawer gets a plain item
- * with the studios.
+ * It stays in the bar, immediately left of Sign In, filled midnight navy so it
+ * reads as the black action in either color scheme. The phone bar gets the
+ * icon alone; the drawer gets a plain item with the studios.
  */
 function useShowJudgeNav(judgeUserId: string | null) {
   const auth = useAuth();
@@ -164,6 +164,7 @@ function JudgeNav({
   }
   return (
     <Button
+      className="westride-nav-judge"
       label={JUDGE_LABEL}
       tooltip={renderMode === "mobile-bar" ? JUDGE_LABEL : undefined}
       variant="primary"
@@ -176,23 +177,12 @@ function JudgeNav({
 }
 
 /**
- * Mentorship, Academy, and the judge button. Hidden as a group when the bar
- * gets tight; NavMore lists them instead. The phone bar keeps the judge icon.
+ * Mentorship and Academy. Hidden as a group when the bar gets tight; NavMore
+ * lists them instead. The judge button stays in the bar, beside Sign In.
  */
-function EndLinks({
-  pathname,
-  judgeUserId,
-}: {
-  pathname: string;
-  judgeUserId: string | null;
-}) {
+function EndLinks({ pathname }: { pathname: string }) {
   const renderMode = useTopNavRenderMode();
-  const links = (
-    <>
-      <SecondaryNav slot="end" pathname={pathname} />
-      <JudgeNav slot="end" pathname={pathname} judgeUserId={judgeUserId} />
-    </>
-  );
+  const links = <SecondaryNav slot="end" pathname={pathname} />;
   if (renderMode !== "default") {
     return links;
   }
@@ -231,15 +221,8 @@ function MenuLink({
  * Holds whatever no longer fits in the bar: the right-hand links first, then
  * the five studio links. The phone drawer replaces this entirely.
  */
-function NavMore({
-  pathname,
-  judgeUserId,
-}: {
-  pathname: string;
-  judgeUserId: string | null;
-}) {
+function NavMore({ pathname }: { pathname: string }) {
   const renderMode = useTopNavRenderMode();
-  const showJudge = useShowJudgeNav(judgeUserId);
   const [isOpen, setOpen] = useState(false);
   if (renderMode !== "default") {
     return null;
@@ -283,15 +266,6 @@ function NavMore({
                 onNavigate={close}
               />
             ))}
-            {showJudge ? (
-              <MenuLink
-                pathname={pathname}
-                label={JUDGE_LABEL}
-                href={judgeAccessPath}
-                icon={<Icon icon={TrophyIcon} />}
-                onNavigate={close}
-              />
-            ) : null}
           </VStack>
         }
       >
@@ -408,8 +382,9 @@ export function AppFrame({
           }
           endContent={
             <>
-              <EndLinks pathname={pathname} judgeUserId={judgeUserId} />
-              <NavMore pathname={pathname} judgeUserId={judgeUserId} />
+              <EndLinks pathname={pathname} />
+              <NavMore pathname={pathname} />
+              <JudgeNav slot="end" pathname={pathname} judgeUserId={judgeUserId} />
               <Show when="signed-out">
                 <Button label="Sign In" variant="secondary" href={signInPath} />
               </Show>

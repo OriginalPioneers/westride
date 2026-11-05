@@ -110,10 +110,10 @@ button,
 }
 
 /* The bar never compresses a label. Its content is the site column, not
-   the full window. Right-hand links (Mentorship, Academy, hackathon judge)
-   move into More once that column cannot hold the whole row. The five
-   studio links follow once they no longer fit beside More and Sign In.
-   Phones leave this bar for the drawer. */
+   the full window. Mentorship and Academy move into More once that column
+   cannot hold the whole row. The five studio links follow once they no
+   longer fit beside More, the judge button, and Sign In. The judge button
+   stays in the bar. Phones leave this bar for the drawer. */
 .westride-topnav {
   container-type: inline-size;
   container-name: westride-nav;
@@ -126,8 +126,21 @@ button,
 
 .westride-nav-primary,
 .westride-nav-end-links,
-.westride-nav-more {
+.westride-nav-more,
+.westride-nav-judge {
   flex-shrink: 0;
+}
+
+/* Midnight navy in either color scheme. The primary variant follows the
+   accent, which turns light on a dark page. */
+.westride-nav-judge {
+  background-color: var(--color-brand-navy) !important;
+  color: var(--color-brand-white) !important;
+}
+
+.westride-nav-judge:hover:where(:not(:disabled, [aria-disabled="true"])) {
+  background-color: var(--color-brand-navy) !important;
+  color: var(--color-brand-white) !important;
 }
 
 .westride-nav-more,
@@ -145,7 +158,7 @@ button,
   }
 }
 
-@container westride-nav (max-width: 56rem) {
+@container westride-nav (max-width: 71rem) {
   .westride-nav-primary {
     display: none !important;
   }
