@@ -23,7 +23,7 @@ import { TrophyIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import { signInPath } from "@/lib/auth-paths";
 import { isJudgeNavVisible, judgeAccessPath } from "@/lib/judge-access";
 import { ThemeToggle } from "../theme-toggle";
-import { SiteFooter } from "../site-footer";
+import { SITE_CONTAINER_WIDTH, SiteFooter } from "../site-footer";
 
 type NavLink = {
   label: string;
@@ -392,6 +392,9 @@ export function AppFrame({
         <TopNav
           className="westride-topnav"
           label="WeStride"
+          // Center the links in the site column. The shell keeps the
+          // divider full-bleed.
+          style={{ maxWidth: SITE_CONTAINER_WIDTH, marginInline: "auto" }}
           heading={<BrandLockup />}
           // On the wide bar, PrimaryLinks and EndLinks are rows that can
           // leave as a group. In the phone drawer they render as direct
