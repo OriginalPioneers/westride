@@ -13,6 +13,7 @@ import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Theme } from "@astryxdesign/core/theme";
 import {
+  ArrowRightIcon,
   BanknotesIcon,
   BoltIcon,
   ComputerDesktopIcon,
@@ -21,12 +22,20 @@ import {
 import type { PlatformSupportSummary } from "@westride/db/support";
 import { defaultThemeSlug, themes } from "@/astryx-themes";
 import { PLEDGES_PATH } from "@/lib/account-paths";
-import { formatMicros, formatSeconds, wePledgePath } from "@/lib/support/schema";
+import {
+  formatMicros,
+  formatSeconds,
+  wePledgePath,
+} from "@/lib/support/schema";
 import { CountUp, formatCount, type CountFormat } from "./count-up";
 import { Eyebrow, WEPLEDGE_CONTENT_WIDTH, centered } from "./wepledge-shared";
 import { kindTint, type SupportKind } from "./wepledge-styles";
 
-const KIND_LABEL: Record<SupportKind, string> = { tokens: "Tokens", compute: "Compute", capital: "Capital" };
+const KIND_LABEL: Record<SupportKind, string> = {
+  tokens: "Tokens",
+  compute: "Compute",
+  capital: "Capital",
+};
 const KINDS: SupportKind[] = ["tokens", "compute", "capital"];
 
 /* ----------------------------- Sky ------------------------------ */
@@ -41,8 +50,18 @@ function HeroSky() {
       focusable="false"
     >
       <defs>
-        <pattern id="sp-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-          <path d="M48 0H0V48" fill="none" stroke="var(--color-border-emphasized)" strokeOpacity="0.45" />
+        <pattern
+          id="sp-grid"
+          width="48"
+          height="48"
+          patternUnits="userSpaceOnUse"
+        >
+          <path
+            d="M48 0H0V48"
+            fill="none"
+            stroke="var(--color-border-emphasized)"
+            strokeOpacity="0.45"
+          />
         </pattern>
         <radialGradient id="sp-fade" cx="0.5" cy="0.45" r="0.75">
           <stop offset="0" stopColor="white" />
@@ -64,10 +83,33 @@ function HeroSky() {
           <stop offset="1" stopColor="var(--sp-green)" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <rect width="100%" height="100%" fill="url(#sp-grid)" mask="url(#sp-grid-mask)" />
-      <circle className="sp-blob sp-blob-a" cx="260" cy="240" r="320" fill="url(#sp-g-teal)" />
-      <circle className="sp-blob sp-blob-b" cx="1150" cy="220" r="360" fill="url(#sp-g-indigo)" />
-      <circle className="sp-blob sp-blob-c" cx="780" cy="700" r="300" fill="url(#sp-g-green)" />
+      <rect
+        width="100%"
+        height="100%"
+        fill="url(#sp-grid)"
+        mask="url(#sp-grid-mask)"
+      />
+      <circle
+        className="sp-blob sp-blob-a"
+        cx="260"
+        cy="240"
+        r="320"
+        fill="url(#sp-g-teal)"
+      />
+      <circle
+        className="sp-blob sp-blob-b"
+        cx="1150"
+        cy="220"
+        r="360"
+        fill="url(#sp-g-indigo)"
+      />
+      <circle
+        className="sp-blob sp-blob-c"
+        cx="780"
+        cy="700"
+        r="300"
+        fill="url(#sp-g-green)"
+      />
     </svg>
   );
 }
@@ -91,9 +133,16 @@ const IDEAS = [
   { x: 356, y: 280 },
 ];
 
-function streamPath(fromX: number, fromY: number, toX: number, toY: number): string {
+function streamPath(
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number
+): string {
   const bend = (toX - fromX) * 0.55;
-  return `M${fromX} ${fromY} C ${fromX + bend} ${fromY}, ${toX - bend} ${toY}, ${toX} ${toY}`;
+  return `M${fromX} ${fromY} C ${fromX + bend} ${fromY}, ${
+    toX - bend
+  } ${toY}, ${toX} ${toY}`;
 }
 
 /**
@@ -164,23 +213,83 @@ function FlowDiagram() {
 
         {/* Sources. */}
         {SOURCES.map((source) => (
-          <g key={source.kind} className="sp-source" style={kindTint(source.kind)}>
-            <circle cx={sourceX} cy={source.y} r="20" fill="var(--sp-tint)" fillOpacity="0.18" />
-            <circle cx={sourceX} cy={source.y} r="20" fill="none" stroke="var(--sp-tint)" strokeWidth="2" />
-            <circle cx={sourceX} cy={source.y} r="7" fill="var(--sp-tint)" filter="url(#sp-glow)" />
-            <text className="sp-source-label" x={sourceX} y={source.y + 40} textAnchor="middle">
+          <g
+            key={source.kind}
+            className="sp-source"
+            style={kindTint(source.kind)}
+          >
+            <circle
+              cx={sourceX}
+              cy={source.y}
+              r="20"
+              fill="var(--sp-tint)"
+              fillOpacity="0.18"
+            />
+            <circle
+              cx={sourceX}
+              cy={source.y}
+              r="20"
+              fill="none"
+              stroke="var(--sp-tint)"
+              strokeWidth="2"
+            />
+            <circle
+              cx={sourceX}
+              cy={source.y}
+              r="7"
+              fill="var(--sp-tint)"
+              filter="url(#sp-glow)"
+            />
+            <text
+              className="sp-source-label"
+              x={sourceX}
+              y={source.y + 40}
+              textAnchor="middle"
+            >
               {source.label}
             </text>
           </g>
         ))}
 
         {/* Hub: orbit rings, pings, and the heart. */}
-        <circle className="sp-orbit" cx={HUB.x} cy={HUB.y} r={HUB.r + 24} strokeWidth="1.5" strokeDasharray="4 10" />
-        <circle className="sp-orbit" cx={HUB.x} cy={HUB.y} r={HUB.r + 44} strokeWidth="1" strokeDasharray="2 14" />
-        <circle className="sp-ring" cx={HUB.x} cy={HUB.y} r={HUB.r} strokeWidth="2" />
-        <circle className="sp-ring" cx={HUB.x} cy={HUB.y} r={HUB.r} strokeWidth="2" />
+        <circle
+          className="sp-orbit"
+          cx={HUB.x}
+          cy={HUB.y}
+          r={HUB.r + 24}
+          strokeWidth="1.5"
+          strokeDasharray="4 10"
+        />
+        <circle
+          className="sp-orbit"
+          cx={HUB.x}
+          cy={HUB.y}
+          r={HUB.r + 44}
+          strokeWidth="1"
+          strokeDasharray="2 14"
+        />
+        <circle
+          className="sp-ring"
+          cx={HUB.x}
+          cy={HUB.y}
+          r={HUB.r}
+          strokeWidth="2"
+        />
+        <circle
+          className="sp-ring"
+          cx={HUB.x}
+          cy={HUB.y}
+          r={HUB.r}
+          strokeWidth="2"
+        />
         <g className="sp-hub">
-          <circle cx={HUB.x} cy={HUB.y} r={HUB.r} fill="url(#sp-hub-fill)" filter="url(#sp-glow)" />
+          <circle
+            cx={HUB.x}
+            cy={HUB.y}
+            r={HUB.r}
+            fill="url(#sp-hub-fill)"
+            filter="url(#sp-glow)"
+          />
           <path
             d={HEART_PATH}
             fill="none"
@@ -195,7 +304,14 @@ function FlowDiagram() {
         {/* Ideas. */}
         <g filter="url(#sp-glow)">
           {IDEAS.map((idea) => (
-            <circle key={`${idea.x}-${idea.y}`} className="sp-node" cx={idea.x} cy={idea.y} r="7" fill="var(--sp-purple)" />
+            <circle
+              key={`${idea.x}-${idea.y}`}
+              className="sp-node"
+              cx={idea.x}
+              cy={idea.y}
+              r="7"
+              fill="var(--sp-purple)"
+            />
           ))}
         </g>
       </svg>
@@ -215,12 +331,17 @@ type Stat = {
 };
 
 function madeTint(): CSSProperties {
-  return { "--sp-tint": "var(--sp-purple)", "--sp-tint-b": "var(--sp-indigo)" } as CSSProperties;
+  return {
+    "--sp-tint": "var(--sp-purple)",
+    "--sp-tint-b": "var(--sp-indigo)",
+  } as CSSProperties;
 }
 
 /** Turns the summary into four headline numbers, each with a one-line footnote. */
 function heroStats(stats: PlatformSupportSummary): Stat[] {
-  const pledgeCount = `${stats.tokenPledges} token pledge${stats.tokenPledges === 1 ? "" : "s"}`;
+  const pledgeCount = `${stats.tokenPledges} token pledge${
+    stats.tokenPledges === 1 ? "" : "s"
+  }`;
   const tokens: Stat =
     stats.monthlyCapMicros > 0
       ? {
@@ -230,35 +351,46 @@ function heroStats(stats: PlatformSupportSummary): Stat[] {
           format: "dollars",
           label: "a month in tokens pledged",
           detail: [
-            stats.oneTimeCapMicros > 0 ? `plus ${formatMicros(stats.oneTimeCapMicros)} one-time` : null,
-            stats.uncappedTokenPledges > 0 ? `${stats.uncappedTokenPledges} uncapped` : null,
+            stats.oneTimeCapMicros > 0
+              ? `plus ${formatMicros(stats.oneTimeCapMicros)} one-time`
+              : null,
+            stats.uncappedTokenPledges > 0
+              ? `${stats.uncappedTokenPledges} uncapped`
+              : null,
             pledgeCount,
           ]
             .filter(Boolean)
             .join(" · "),
         }
       : stats.oneTimeCapMicros > 0
-        ? {
-            kind: "tokens",
-            icon: SparklesIcon,
-            value: stats.oneTimeCapMicros,
-            format: "dollars",
-            label: "in tokens pledged",
-            detail: [stats.uncappedTokenPledges > 0 ? `${stats.uncappedTokenPledges} uncapped` : null, pledgeCount]
-              .filter(Boolean)
-              .join(" · "),
-          }
-        : {
-            kind: "tokens",
-            icon: SparklesIcon,
-            value: stats.tokenPledges,
-            format: "int",
-            label: stats.tokenPledges === 1 ? "token pledge" : "token pledges",
-            detail:
-              stats.uncappedTokenPledges > 0
-                ? `${stats.uncappedTokenPledges} with no cap`
-                : `${stats.ideasWantingTokens} idea${stats.ideasWantingTokens === 1 ? "" : "s"} looking for tokens`,
-          };
+      ? {
+          kind: "tokens",
+          icon: SparklesIcon,
+          value: stats.oneTimeCapMicros,
+          format: "dollars",
+          label: "in tokens pledged",
+          detail: [
+            stats.uncappedTokenPledges > 0
+              ? `${stats.uncappedTokenPledges} uncapped`
+              : null,
+            pledgeCount,
+          ]
+            .filter(Boolean)
+            .join(" · "),
+        }
+      : {
+          kind: "tokens",
+          icon: SparklesIcon,
+          value: stats.tokenPledges,
+          format: "int",
+          label: stats.tokenPledges === 1 ? "token pledge" : "token pledges",
+          detail:
+            stats.uncappedTokenPledges > 0
+              ? `${stats.uncappedTokenPledges} with no cap`
+              : `${stats.ideasWantingTokens} idea${
+                  stats.ideasWantingTokens === 1 ? "" : "s"
+                } looking for tokens`,
+        };
 
   return [
     tokens,
@@ -272,20 +404,29 @@ function heroStats(stats: PlatformSupportSummary): Stat[] {
         stats.devices > 0
           ? [
               `${stats.devicesOnline} online`,
-              `${stats.cpus.toLocaleString()} CPU${stats.cpus === 1 ? "" : "s"}`,
+              `${stats.cpus.toLocaleString()} CPU${
+                stats.cpus === 1 ? "" : "s"
+              }`,
               formatCount(stats.memoryMb, "gb"),
             ].join(" · ")
-          : `${stats.ideasWantingCompute} idea${stats.ideasWantingCompute === 1 ? "" : "s"} looking for compute`,
+          : `${stats.ideasWantingCompute} idea${
+              stats.ideasWantingCompute === 1 ? "" : "s"
+            } looking for compute`,
     },
     {
       kind: "capital",
       icon: BanknotesIcon,
       value: stats.ideasWantingCapital,
       format: "int",
-      label: stats.ideasWantingCapital === 1 ? "idea accepting capital" : "ideas accepting capital",
+      label:
+        stats.ideasWantingCapital === 1
+          ? "idea accepting capital"
+          : "ideas accepting capital",
       detail:
         stats.capitalLinks > 0
-          ? `${stats.capitalLinks} link${stats.capitalLinks === 1 ? "" : "s"} to give through, outside WeStride`
+          ? `${stats.capitalLinks} link${
+              stats.capitalLinks === 1 ? "" : "s"
+            } to give through, outside WeStride`
           : "Teams list their own links; WeStride never holds money",
     },
     {
@@ -293,11 +434,18 @@ function heroStats(stats: PlatformSupportSummary): Stat[] {
       icon: BoltIcon,
       value: stats.jobs,
       format: "int",
-      label: stats.jobs === 1 ? "agent job made possible" : "agent jobs made possible",
+      label:
+        stats.jobs === 1
+          ? "agent job made possible"
+          : "agent jobs made possible",
       detail: [
         `${stats.supporters} supporter${stats.supporters === 1 ? "" : "s"}`,
-        stats.sponsoredMicros > 0 ? `${formatMicros(stats.sponsoredMicros)} covered` : null,
-        stats.computeSeconds > 0 ? `${formatSeconds(stats.computeSeconds)} of compute` : null,
+        stats.sponsoredMicros > 0
+          ? `${formatMicros(stats.sponsoredMicros)} covered`
+          : null,
+        stats.computeSeconds > 0
+          ? `${formatSeconds(stats.computeSeconds)} of compute`
+          : null,
       ]
         .filter(Boolean)
         .join(" · "),
@@ -311,7 +459,12 @@ function StatTile({ stat, index }: { stat: Stat; index: number }) {
       className="sp-stat"
       padding={3}
       variant="transparent"
-      style={{ ...(stat.kind === "made" ? madeTint() : kindTint(stat.kind)), "--sp-i": index } as CSSProperties}
+      style={
+        {
+          ...(stat.kind === "made" ? madeTint() : kindTint(stat.kind)),
+          "--sp-i": index,
+        } as CSSProperties
+      }
     >
       <HStack gap={2} vAlign="center" wrap="nowrap">
         <Center className="sp-stat-icon">
@@ -333,8 +486,8 @@ function StatTile({ stat, index }: { stat: Stat; index: number }) {
 
 /**
  * The home hero's carry bar, with the four support totals in its tiles.
- * It sits on the hero's bottom edge, half over the sky and half over the
- * section below.
+ * It sits on the midline of the hero's wavy bottom edge, half over the sky
+ * and half over the section below.
  */
 function StatsBar({ stats }: { stats: PlatformSupportSummary }) {
   return (
@@ -357,6 +510,152 @@ function StatsBar({ stats }: { stats: PlatformSupportSummary }) {
   );
 }
 
+/* ----------------------------- Wave ----------------------------- */
+
+const WAVE_WIDTH = 1440;
+const WAVE_HEIGHT = 144;
+
+/**
+ * A wave along the bottom of the hero. Each one is drawn wider than the
+ * box by at least one full period and then slid sideways by exactly one
+ * period, so the loop is seamless. `flow` is the slide as a fraction of the
+ * path's own width, which is what the CSS transform needs.
+ *
+ * The curve matches the home hero. The still path at the end traces the
+ * wave `.sp-hero`'s mask cuts, so those two must change together.
+ */
+type Wave = {
+  d: string;
+  /** One period as a fraction of the path width, negative to slide left. */
+  flow: number;
+  /** Seconds for one period, so each layer moves at its own pace. */
+  seconds: number;
+  isReversed: boolean;
+  isFilled: boolean;
+  opacity: number;
+  strokeWidth?: number;
+};
+
+function makeWave({
+  baseline,
+  amplitude,
+  halfPeriod,
+  seconds,
+  isReversed = false,
+  isFilled,
+  opacity,
+  strokeWidth,
+}: {
+  baseline: number;
+  amplitude: number;
+  halfPeriod: number;
+  seconds: number;
+  isReversed?: boolean;
+  isFilled: boolean;
+  opacity: number;
+  strokeWidth?: number;
+}): Wave {
+  const period = halfPeriod * 2;
+  const periods = Math.ceil(WAVE_WIDTH / period) + 1;
+  const width = periods * period;
+  // Two control points a third of the way in, both at the same offset,
+  // peak at three quarters of that offset.
+  const control = amplitude / 0.75;
+  let d = `M0 ${baseline}`;
+  for (let i = 0; i < periods * 2; i++) {
+    const x = i * halfPeriod;
+    const cy = baseline + (i % 2 === 0 ? -control : control);
+    d += ` C${x + halfPeriod / 3} ${cy} ${x + (halfPeriod * 2) / 3} ${cy} ${x + halfPeriod} ${baseline}`;
+  }
+  if (isFilled) d += ` V${WAVE_HEIGHT} H0 Z`;
+  return { d, flow: period / width, seconds, isReversed, isFilled, opacity, strokeWidth };
+}
+
+/** Back to front: broad slow swells behind, quicker thin lines in front. */
+const WAVES: Wave[] = [
+  makeWave({ baseline: 56, amplitude: 24, halfPeriod: 480, seconds: 46, isFilled: true, opacity: 0.16 }),
+  makeWave({
+    baseline: 86,
+    amplitude: 20,
+    halfPeriod: 360,
+    seconds: 36,
+    isReversed: true,
+    isFilled: true,
+    opacity: 0.22,
+  }),
+  makeWave({ baseline: 112, amplitude: 14, halfPeriod: 720, seconds: 28, isFilled: true, opacity: 0.3 }),
+  makeWave({
+    baseline: 44,
+    amplitude: 22,
+    halfPeriod: 480,
+    seconds: 40,
+    isReversed: true,
+    isFilled: false,
+    opacity: 0.7,
+    strokeWidth: 2,
+  }),
+  makeWave({
+    baseline: 78,
+    amplitude: 16,
+    halfPeriod: 288,
+    seconds: 32,
+    isFilled: false,
+    opacity: 0.5,
+    strokeWidth: 1.5,
+  }),
+];
+
+function HeroWave() {
+  return (
+    <svg
+      className="sp-hero-wave"
+      viewBox={`0 0 ${WAVE_WIDTH} ${WAVE_HEIGHT}`}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        <linearGradient id="sp-wave-gradient" gradientUnits="userSpaceOnUse" x1="0" x2={WAVE_WIDTH} y1="0" y2="0">
+          <stop offset="0" stopColor="var(--sp-teal)" />
+          <stop offset="0.5" stopColor="var(--sp-green)" />
+          <stop offset="1" stopColor="var(--sp-tokens)" />
+        </linearGradient>
+        <linearGradient id="sp-wave-fade" gradientUnits="userSpaceOnUse" x1="0" x2="0" y1="0" y2={WAVE_HEIGHT}>
+          <stop offset="0" stopColor="var(--sp-green)" stopOpacity="0.9" />
+          <stop offset="1" stopColor="var(--sp-teal)" stopOpacity="0.2" />
+        </linearGradient>
+      </defs>
+      {WAVES.map((wave) => (
+        <path
+          key={wave.d}
+          className="sp-wave-flow"
+          data-reversed={wave.isReversed ? "" : undefined}
+          d={wave.d}
+          fill={wave.isFilled ? "url(#sp-wave-fade)" : "none"}
+          stroke={wave.isFilled ? undefined : "url(#sp-wave-gradient)"}
+          strokeWidth={wave.strokeWidth}
+          vectorEffect={wave.isFilled ? undefined : "non-scaling-stroke"}
+          opacity={wave.opacity}
+          style={
+            {
+              "--sp-wave-shift": `${(wave.flow * 100).toFixed(4)}%`,
+              "--sp-wave-time": `${wave.seconds}s`,
+            } as CSSProperties
+          }
+        />
+      ))}
+      <path
+        d="M0 120C120 146.67 240 146.67 360 120C480 93.33 600 93.33 720 120C840 146.67 960 146.67 1080 120C1200 93.33 1320 93.33 1440 120"
+        fill="none"
+        stroke="url(#sp-wave-gradient)"
+        strokeWidth="3"
+        vectorEffect="non-scaling-stroke"
+        opacity="0.8"
+      />
+    </svg>
+  );
+}
+
 /* ----------------------------- Hero ----------------------------- */
 
 export function WePledgeHero({
@@ -375,20 +674,38 @@ export function WePledgeHero({
       <VStack className="sp-hero-frame" gap={0}>
         <Section className="sp-hero" variant="transparent" padding={0}>
           <HeroSky />
-          <VStack className="sp-hero-content" gap={10} maxWidth={WEPLEDGE_CONTENT_WIDTH} style={centered}>
+          <HeroWave />
+          <VStack
+            className="sp-hero-content"
+            gap={10}
+            maxWidth={WEPLEDGE_CONTENT_WIDTH}
+            style={centered}
+          >
             <Grid columns={{ minWidth: 440, max: 2 }} gap={8} align="center">
               <VStack className="sp-hero-copy" gap={5} hAlign="start">
                 <Eyebrow>WePledge™</Eyebrow>
-                <Heading level={1} type="display-1" textWrap="balance" className="sp-hero-title">
+                <Heading
+                  level={1}
+                  type="display-1"
+                  textWrap="balance"
+                  className="sp-hero-title"
+                >
                   Back an idea{" "}
-                  <Text type="inherit" display="inline" className="sp-gradient-text">
+                  <Text
+                    type="inherit"
+                    display="inline"
+                    className="sp-gradient-text"
+                  >
                     you believe in.
                   </Text>
                 </Heading>
                 <Text type="large" color="secondary" textWrap="pretty">
-                  Pledge tokens or compute to the ideas you choose, without joining their team, or contribute capital
-                  through a team&apos;s own links. Everything is yours to pause or stop at any time, and WeStride never
-                  collects or holds money.
+                  Help promising ideas become real projects. Support builders by
+                  pledging AI tokens, sharing your computers available
+                  processing power to help run AI workloads, or contributing
+                  capital through external funding links. Choose the projects
+                  you believe in, support them on your terms, and help bring the
+                  next big idea to life.
                 </Text>
                 <HStack gap={2} wrap="wrap">
                   <Button
@@ -406,7 +723,13 @@ export function WePledgeHero({
                       href={wePledgePath(entry)}
                       icon={
                         <Icon
-                          icon={entry === "tokens" ? SparklesIcon : entry === "compute" ? ComputerDesktopIcon : BanknotesIcon}
+                          icon={
+                            entry === "tokens"
+                              ? SparklesIcon
+                              : entry === "compute"
+                              ? ComputerDesktopIcon
+                              : BanknotesIcon
+                          }
                           color="inherit"
                         />
                       }
@@ -419,10 +742,16 @@ export function WePledgeHero({
                     <Link href={PLEDGES_PATH}>Open your pledges</Link>
                   </Text>
                 ) : (
-                  <Text type="supporting" textWrap="pretty">
-                    Browse the ideas looking for support now. Pledging needs a WeStride account.{" "}
-                    <Link href={signInHref}>Sign in to pledge</Link>
-                  </Text>
+                  <VStack gap={2} hAlign="start">
+                    <Link className="sp-pledge-link" href={signInHref}>
+                      Sign in to pledge
+                      <Icon icon={ArrowRightIcon} size="xsm" color="accent" />
+                    </Link>
+                    <Text type="supporting" textWrap="pretty">
+                      Browse the ideas looking for support now. Pledging needs a
+                      WeStride account.
+                    </Text>
+                  </VStack>
                 )}
               </VStack>
               <FlowDiagram />

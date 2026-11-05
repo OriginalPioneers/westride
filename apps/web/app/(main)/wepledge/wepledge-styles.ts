@@ -100,6 +100,19 @@ export const WEPLEDGE_STYLES = `
   100% { opacity: 0; transform: scale(2.2); }
 }
 
+/* A wave slides sideways by exactly one of its own periods (set per path as
+   --sp-wave-shift, a fraction of the path's width), so the loop never shows
+   a seam. Reversed layers run the same distance the other way. */
+@keyframes sp-wave-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-1 * var(--sp-wave-shift))); }
+}
+
+@keyframes sp-wave-slide-reverse {
+  from { transform: translateX(calc(-1 * var(--sp-wave-shift))); }
+  to { transform: translateX(0); }
+}
+
 /* The theme publishes the brand palette as --color-brand-*; the extra tints
    this page needs come from the data-visualization ramp. */
 .sp-root {
@@ -153,22 +166,43 @@ export const WEPLEDGE_STYLES = `
 
 /* ---------- Hero ---------- */
 
+/* The bottom edge is a wave rather than a straight line: the mask keeps
+   everything above a curve that swings either side of a midline half a
+   wave height above the box's bottom. HeroWave traces the same curve. */
 .sp-hero {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   background: var(--color-background-body);
+  --sp-wave-mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath d='M0 24C120 50.67 240 50.67 360 24C480 -2.67 600 -2.67 720 24C840 50.67 960 50.67 1080 24C1200 -2.67 1320 -2.67 1440 24V0H0Z'/%3E%3C/svg%3E")
+      bottom / 100% var(--sp-wave) no-repeat,
+    linear-gradient(black, black)
+      top / 100% calc(100% - var(--sp-wave) + var(--border-width)) no-repeat;
+  -webkit-mask: var(--sp-wave-mask);
+  mask: var(--sp-wave-mask);
 }
 
-/* A soft brand line closes the hero against the page below. */
-.sp-hero::after {
-  content: "";
+.sp-hero-wave {
   position: absolute;
   inset-inline: 0;
   bottom: 0;
-  height: var(--border-width);
-  background: linear-gradient(90deg, transparent, var(--sp-teal), var(--sp-green), var(--sp-tokens), transparent);
-  opacity: 0.7;
+  z-index: 0;
+  width: 100%;
+  height: calc(var(--sp-wave) * 5);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Each layer is wider than the box and slides by one period (see HeroWave),
+   so the percentages are of the path's own box. */
+.sp-hero-wave .sp-wave-flow {
+  transform-box: fill-box;
+  animation: sp-wave-slide var(--sp-wave-time) linear infinite;
+}
+
+.sp-hero-wave .sp-wave-flow[data-reversed] {
+  animation-name: sp-wave-slide-reverse;
 }
 
 .sp-hero-sky {
@@ -201,13 +235,13 @@ export const WEPLEDGE_STYLES = `
   position: relative;
   z-index: 1;
   padding-inline: var(--spacing-6);
-  /* Bottom padding clears the part of the carry bar that overlaps the hero. */
-  padding-block: calc(var(--spacing-12) * 1.75) calc(var(--spacing-10) + var(--spacing-4) + var(--spacing-6));
+  /* Bottom padding clears the carry bar, which sits on the wave midline. */
+  padding-block: calc(var(--spacing-12) * 1.75) calc(var(--spacing-10) + var(--spacing-4) + var(--spacing-6) + var(--sp-wave) / 2);
 }
 
 @media (min-width: 64rem) and (min-height: 40rem) {
   .sp-hero .sp-hero-content {
-    padding-block: calc(var(--spacing-12) * 2) calc(var(--spacing-10) + var(--spacing-4) + var(--spacing-6));
+    padding-block: calc(var(--spacing-12) * 2) calc(var(--spacing-10) + var(--spacing-4) + var(--spacing-6) + var(--sp-wave) / 2);
   }
 }
 
@@ -232,6 +266,28 @@ export const WEPLEDGE_STYLES = `
 .sp-hero-copy > :nth-child(3) { animation-delay: var(--duration-fast-max); }
 .sp-hero-copy > :nth-child(4) { animation-delay: var(--duration-medium-min); }
 .sp-hero-copy > :nth-child(5) { animation-delay: var(--duration-medium-max); }
+
+/* Quiet accent link with an arrow, the same treatment as the home hero links. */
+.sp-hero .sp-pledge-link,
+.sp-hero .sp-pledge-link:hover,
+.sp-hero .sp-pledge-link:focus-visible {
+  text-decoration: none;
+}
+
+.sp-hero .sp-pledge-link .astryx-text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.sp-hero .sp-pledge-link .astryx-icon {
+  transition: translate var(--duration-medium) var(--ease-standard);
+}
+
+.sp-hero .sp-pledge-link:hover .astryx-icon,
+.sp-hero .sp-pledge-link:focus-visible .astryx-icon {
+  translate: var(--spacing-1) 0;
+}
 
 .sp-gradient-text {
   background-image: linear-gradient(
@@ -366,11 +422,13 @@ export const WEPLEDGE_STYLES = `
 
 /* ---------- Carry bar ---------- */
 
-/* The same bar as the home hero. On one row it is centred on the hero's
-   bottom edge. It stays in flow, pulled up by half that row, so a wrapped
-   stack on a phone still pushes the next section clear instead of covering
-   it. Frosted like the home bar so the sky shows through it. */
+/* The same bar as the home hero. On one row it is centred on the midline
+   of the hero's wavy bottom edge. It stays in flow, pulled up by half that
+   row plus half the wave, so a wrapped stack on a phone still pushes the
+   next section clear instead of covering it. Frosted like the home bar so
+   the sky shows through it. */
 .sp-hero-frame {
+  --sp-wave: var(--spacing-12);
   position: relative;
 }
 
@@ -379,7 +437,7 @@ export const WEPLEDGE_STYLES = `
   z-index: 2;
   width: calc(100% - var(--spacing-6) * 2);
   margin-inline: auto;
-  margin-top: calc(-1 * (var(--spacing-10) + var(--spacing-4)));
+  margin-top: calc(-1 * (var(--spacing-10) + var(--spacing-4) + var(--sp-wave) / 2));
   box-sizing: border-box;
   padding: var(--spacing-3);
   border: var(--border-width) solid var(--color-border);
@@ -521,6 +579,7 @@ export const WEPLEDGE_STYLES = `
   }
 
   .sp-hero-sky .sp-blob,
+  .sp-hero-wave .sp-wave-flow,
   .sp-hero-copy > *,
   .sp-gradient-text,
   .sp-flow,
@@ -533,7 +592,8 @@ export const WEPLEDGE_STYLES = `
   .sp-carry,
   .sp-stat,
   .sp-way,
-  .sp-way-icon {
+  .sp-way-icon,
+  .sp-pledge-link .astryx-icon {
     animation: none;
     transition: none;
   }
