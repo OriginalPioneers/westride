@@ -109,11 +109,11 @@ button,
   font-weight: var(--font-weight-normal);
 }
 
-/* The bar never compresses a label. It uses the full window, so a wide
-   screen keeps every link in the row. Right-hand links (Mentorship, Academy,
-   hackathon judge) move into More once the bar is narrower than that row.
-   The five studio links follow once they no longer fit beside More and
-   Sign In. Phones leave this bar for the drawer. */
+/* The bar never compresses a label. Its content is the site column, not
+   the full window. Right-hand links (Mentorship, Academy, hackathon judge)
+   move into More once that column cannot hold the whole row. The five
+   studio links follow once they no longer fit beside More and Sign In.
+   Phones leave this bar for the drawer. */
 .westride-topnav {
   container-type: inline-size;
   container-name: westride-nav;
