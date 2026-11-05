@@ -36,29 +36,33 @@ type Way = {
   blurb: string;
   how: string;
   icon: GlyphName;
+  ctalink: string;
 };
 
 const WAYS: Way[] = [
   {
     kind: "tokens",
     label: "Tokens",
-    blurb: "Let a team's agents run on your Meta API key, up to a cap you set each month or once.",
-    how: "Jobs run on your key through WeStride's runner, and you see every one it paid for. The cap is a limit you can change or pause at any time.",
+    blurb: "Pledge access to your Meta AI API key to help builders run AI agents, develop projects, and bring their ideas to life. Set your own usage limits, track activity, and pause or stop your pledge at any time.",
+    how: "",
     icon: "sparkles",
+    ctalink: "Explore Projects Seeking Token Pledges"
   },
   {
     kind: "compute",
     label: "Compute",
-    blurb: "Run agent code jobs on your own computer, in an isolated container, with a local model or your key.",
-    how: "Link a computer with one command. It only takes jobs for ideas you pledged to, and only when that team opted in.",
+    blurb: "Share your computer's available processing power to help builders run AI models, execute code, and develop their projects. Securely connect your computer and support the projects you choose. Tasks run in isolated environments, keeping you in control.",
+    how: "",
     icon: "computer",
+    ctalink: "Explore Projects Seeking Compute"
   },
   {
     kind: "capital",
     label: "Capital",
-    blurb: "Teams list where they take contributions. WeStride never touches the money.",
-    how: "Open an idea to find its team's own links: a sponsorship page, a crowdfunding campaign, a tip jar. You give there, directly.",
+    blurb: "Support promising projects through their own crowdfunding campaigns, sponsorship opportunities, or contribution links. Contribute directly through each project's external funding platform. WeStride never collects or holds your money.",
+    how: "",
     icon: "banknotes",
+    ctalink: "Explore Projects Seeking Funding"
   },
 ];
 
@@ -98,8 +102,8 @@ function WaysSection({ kind, platform }: { kind: SupportWant | null; platform: P
       <Container>
         <SectionIntro
           eyebrow="Three ways to help"
-          title="Give what you have: a key, a computer, or a contribution"
-          lede="Each kind of support is a standing offer you control. Pick one to narrow the page to it, or open an idea below and choose from its page."
+          title="Every contribution moves an idea forward."
+          lede="Support projects you believe in with AI tokens, computing power, or financial contributions. Choose how you want to help and make an impact on your terms."
         />
         <Grid columns={{ minWidth: 280, max: 3 }} gap={4}>
           {WAYS.map((way, index) => (
@@ -119,9 +123,6 @@ function WaysSection({ kind, platform }: { kind: SupportWant | null; platform: P
                   <Glyph name={way.icon} size="lg" color="inherit" />
                 </Center>
                 <VStack gap={1}>
-                  <Text type="supporting" size="xsm" weight="semibold">
-                    {String(index + 1).padStart(2, "0")} · {wayStat(way, platform)}
-                  </Text>
                   <Heading level={3}>{way.label}</Heading>
                 </VStack>
                 <Text type="supporting">{way.blurb}</Text>
@@ -130,7 +131,7 @@ function WaysSection({ kind, platform }: { kind: SupportWant | null; platform: P
                 </Text>
                 <HStack gap={1} vAlign="center">
                   <Text size="sm" weight="semibold" color="accent">
-                    {kind === way.kind ? "Showing" : `Show ${way.label.toLowerCase()}`}
+                    {kind === way.kind ? "Showing" : `${way.ctalink}`}
                   </Text>
                   <Glyph name="arrowRight" size="xsm" color="accent" />
                 </HStack>
