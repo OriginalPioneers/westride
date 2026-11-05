@@ -108,3 +108,50 @@ button,
 .westride-nav-secondary:not([aria-current="page"]) {
   font-weight: var(--font-weight-normal);
 }
+
+/* The bar never compresses a label. It uses the full window, so a wide
+   screen keeps every link in the row. Right-hand links (Mentorship, Academy,
+   hackathon judge) move into More once the bar is narrower than that row.
+   The five studio links follow once they no longer fit beside More and
+   Sign In. Phones leave this bar for the drawer. */
+.westride-topnav {
+  container-type: inline-size;
+  container-name: westride-nav;
+}
+
+.westride-topnav .astryx-top-nav-item {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.westride-nav-primary,
+.westride-nav-end-links,
+.westride-nav-more {
+  flex-shrink: 0;
+}
+
+.westride-nav-more,
+.westride-nav-more-primary {
+  display: none !important;
+}
+
+@container westride-nav (max-width: 76rem) {
+  .westride-nav-end-links {
+    display: none !important;
+  }
+
+  .westride-nav-more {
+    display: flex !important;
+  }
+}
+
+@container westride-nav (max-width: 56rem) {
+  .westride-nav-primary {
+    display: none !important;
+  }
+
+  .westride-nav-more-primary {
+    display: flex !important;
+    flex-direction: column;
+  }
+}

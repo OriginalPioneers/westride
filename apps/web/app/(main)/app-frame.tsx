@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Show, useAuth } from "@clerk/nextjs";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -9,18 +10,20 @@ import { Divider } from "@astryxdesign/core/Divider";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { Layout } from "@astryxdesign/core/Layout";
-import { Stack } from "@astryxdesign/core/Stack";
+import { Popover } from "@astryxdesign/core/Popover";
+import { HStack, Stack, VStack } from "@astryxdesign/core/Stack";
 import {
   TopNav,
   TopNavHeading,
   TopNavItem,
   useTopNavRenderMode,
 } from "@astryxdesign/core/TopNav";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { TrophyIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import { signInPath } from "@/lib/auth-paths";
 import { isJudgeNavVisible, judgeAccessPath } from "@/lib/judge-access";
 import { ThemeToggle } from "../theme-toggle";
-import { SITE_CONTAINER_WIDTH, SiteFooter } from "../site-footer";
+import { SiteFooter } from "../site-footer";
 
 type NavLink = {
   label: string;
@@ -44,6 +47,28 @@ const SECONDARY_LINKS: NavLink[] = [
 
 function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function PrimaryLinks({ pathname }: { pathname: string }) {
+  const renderMode = useTopNavRenderMode();
+  const items = PRIMARY_LINKS.map((link) => (
+    <TopNavItem
+      key={link.href}
+      label={link.label}
+      href={link.href}
+      isSelected={isActive(pathname, link.href)}
+    />
+  ));
+  // The drawer lays its children out as a column, so the row wrapper stays
+  // on the wide bar only. The bar hides this row once More holds every link.
+  if (renderMode !== "default") {
+    return <>{items}</>;
+  }
+  return (
+    <HStack className="westride-nav-primary" gap={1} vAlign="center" wrap="nowrap">
+      {items}
+    </HStack>
+  );
 }
 
 /**
@@ -97,6 +122,15 @@ const JUDGE_LABEL = "Hackathon Judge Access";
  * it is. The phone bar gets the icon alone; the drawer gets a plain item
  * with the studios.
  */
+function useShowJudgeNav(judgeUserId: string | null) {
+  const auth = useAuth();
+  return isJudgeNavVisible({
+    authLoaded: auth.isLoaded,
+    userId: auth.userId,
+    judgeUserId,
+  });
+}
+
 function JudgeNav({
   slot,
   pathname,
@@ -106,15 +140,9 @@ function JudgeNav({
   pathname: string;
   judgeUserId: string | null;
 }) {
-  const auth = useAuth();
   const renderMode = useTopNavRenderMode();
-  if (
-    !isJudgeNavVisible({
-      authLoaded: auth.isLoaded,
-      userId: auth.userId,
-      judgeUserId,
-    })
-  ) {
+  const showJudge = useShowJudgeNav(judgeUserId);
+  if (!showJudge) {
     return null;
   }
   const isDrawer = renderMode === "drawer";
@@ -144,6 +172,137 @@ function JudgeNav({
       isIconOnly={renderMode === "mobile-bar"}
       href={judgeAccessPath}
     />
+  );
+}
+
+/**
+ * Mentorship, Academy, and the judge button. Hidden as a group when the bar
+ * gets tight; NavMore lists them instead. The phone bar keeps the judge icon.
+ */
+function EndLinks({
+  pathname,
+  judgeUserId,
+}: {
+  pathname: string;
+  judgeUserId: string | null;
+}) {
+  const renderMode = useTopNavRenderMode();
+  const links = (
+    <>
+      <SecondaryNav slot="end" pathname={pathname} />
+      <JudgeNav slot="end" pathname={pathname} judgeUserId={judgeUserId} />
+    </>
+  );
+  if (renderMode !== "default") {
+    return links;
+  }
+  return (
+    <HStack className="westride-nav-end-links" gap={1} vAlign="center" wrap="nowrap">
+      {links}
+    </HStack>
+  );
+}
+
+function MenuLink({
+  pathname,
+  label,
+  href,
+  icon,
+  onNavigate,
+}: {
+  pathname: string;
+  label: string;
+  href: string;
+  icon?: React.ReactNode;
+  onNavigate: () => void;
+}) {
+  return (
+    <TopNavItem
+      label={label}
+      href={href}
+      icon={icon}
+      isSelected={isActive(pathname, href)}
+      onClick={onNavigate}
+    />
+  );
+}
+
+/**
+ * Holds whatever no longer fits in the bar: the right-hand links first, then
+ * the five studio links. The phone drawer replaces this entirely.
+ */
+function NavMore({
+  pathname,
+  judgeUserId,
+}: {
+  pathname: string;
+  judgeUserId: string | null;
+}) {
+  const renderMode = useTopNavRenderMode();
+  const showJudge = useShowJudgeNav(judgeUserId);
+  const [isOpen, setOpen] = useState(false);
+  if (renderMode !== "default") {
+    return null;
+  }
+  const close = () => setOpen(false);
+
+  return (
+    <HStack className="westride-nav-more" gap={1} vAlign="center">
+      <Divider
+        orientation="vertical"
+        style={{ height: "var(--spacing-4)", alignSelf: "center" }}
+      />
+      <Popover
+        placement="below"
+        alignment="end"
+        label="More pages"
+        padding={3}
+        width="max-content"
+        isOpen={isOpen}
+        onOpenChange={setOpen}
+        content={
+          <VStack gap={2}>
+            <VStack className="westride-nav-more-primary" gap={1}>
+              {PRIMARY_LINKS.map((link) => (
+                <MenuLink
+                  key={link.href}
+                  pathname={pathname}
+                  label={link.label}
+                  href={link.href}
+                  onNavigate={close}
+                />
+              ))}
+              <Divider />
+            </VStack>
+            {SECONDARY_LINKS.map((link) => (
+              <MenuLink
+                key={link.href}
+                pathname={pathname}
+                label={link.label}
+                href={link.href}
+                onNavigate={close}
+              />
+            ))}
+            {showJudge ? (
+              <MenuLink
+                pathname={pathname}
+                label={JUDGE_LABEL}
+                href={judgeAccessPath}
+                icon={<Icon icon={TrophyIcon} />}
+                onNavigate={close}
+              />
+            ) : null}
+          </VStack>
+        }
+      >
+        <Button
+          label="More"
+          variant="ghost"
+          size="sm"
+          endContent={<Icon icon={ChevronDownIcon} size="sm" />}
+        />
+      </Popover>
+    </HStack>
   );
 }
 
@@ -231,31 +390,23 @@ export function AppFrame({
       height="fill"
       topNav={
         <TopNav
+          className="westride-topnav"
           label="WeStride"
-          // Center the bar's content in the site column; the shell keeps
-          // the divider full-bleed.
-          style={{ maxWidth: SITE_CONTAINER_WIDTH, marginInline: "auto" }}
           heading={<BrandLockup />}
-          // Items sit directly in the slot (no wrapper) so TopNav can lay
-          // them out as a row in the bar and as a column in the phone drawer.
+          // On the wide bar, PrimaryLinks and EndLinks are rows that can
+          // leave as a group. In the phone drawer they render as direct
+          // items so the drawer can stack them.
           startContent={
             <>
-              {PRIMARY_LINKS.map((link) => (
-                <TopNavItem
-                  key={link.href}
-                  label={link.label}
-                  href={link.href}
-                  isSelected={isActive(pathname, link.href)}
-                />
-              ))}
+              <PrimaryLinks pathname={pathname} />
               <SecondaryNav slot="start" pathname={pathname} />
               <JudgeNav slot="start" pathname={pathname} judgeUserId={judgeUserId} />
             </>
           }
           endContent={
             <>
-              <SecondaryNav slot="end" pathname={pathname} />
-              <JudgeNav slot="end" pathname={pathname} judgeUserId={judgeUserId} />
+              <EndLinks pathname={pathname} judgeUserId={judgeUserId} />
+              <NavMore pathname={pathname} judgeUserId={judgeUserId} />
               <Show when="signed-out">
                 <Button label="Sign In" variant="secondary" href={signInPath} />
               </Show>
